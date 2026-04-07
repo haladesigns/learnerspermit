@@ -1,0 +1,48 @@
+{
+  "skill_name": "yt-pipeline",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Research what YouTubers are saying about Claude Code and Obsidian — what are the best use cases people are finding?",
+      "expected_output": "Should search YouTube for Claude Code + Obsidian content, show full search results, auto-select 5-8 relevant videos, create a NotebookLM notebook, add videos as sources, run analysis questions, and present a structured summary with Key Takeaways section",
+      "files": [],
+      "expectations": [
+        "Runs yt-search script with a query related to Claude Code and Obsidian",
+        "Shows the full YouTube search results to the user with metadata",
+        "Auto-selects videos without asking the user to pick",
+        "Explains which videos were selected and why",
+        "Creates a NotebookLM notebook",
+        "Adds selected YouTube URLs as sources",
+        "Runs notebooklm ask questions about key themes and takeaways",
+        "Presents a summary with a Key Takeaways section",
+        "Does NOT ask unnecessary confirmation questions mid-pipeline"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Find YouTube videos about AI coding agents and create a podcast from them",
+      "expected_output": "Should run the full pipeline through to podcast generation — search, select, notebook, sources, analysis, then trigger notebooklm generate audio and spawn a background agent to wait for completion",
+      "files": [],
+      "expectations": [
+        "Runs yt-search script with a query about AI coding agents",
+        "Auto-selects videos and creates a NotebookLM notebook",
+        "Adds videos as sources and waits for processing",
+        "Runs analysis questions before generating the podcast",
+        "Calls notebooklm generate audio with --json flag",
+        "Spawns a background agent to wait for the podcast and download it",
+        "Tells the user the podcast is generating and they will be notified"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "research stuff about AI note-taking",
+      "expected_output": "Should recognize the query is too vague and ask ONE clarifying question before proceeding. Should NOT just run with 'AI note-taking' as-is or ask multiple follow-up questions.",
+      "files": [],
+      "expectations": [
+        "Asks exactly one clarifying question to narrow down the topic",
+        "Does NOT immediately run the full pipeline without clarification",
+        "Does NOT ask more than one question before proceeding"
+      ]
+    }
+  ]
+}

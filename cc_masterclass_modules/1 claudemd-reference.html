@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLAUDE.md Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg: #0d0f14;
+    --bg-card: #13161e;
+    --bg-code: #0a0c10;
+    --border: #1e2330;
+    --border-accent: #2e3550;
+    --text: #c8d0e8;
+    --text-muted: #5a6380;
+    --text-dim: #3a4060;
+    --accent: #4f8ef7;
+    --accent-glow: rgba(79,142,247,0.15);
+    --accent2: #e05f7a;
+    --accent2-glow: rgba(224,95,122,0.12);
+    --accent3: #3ecf8e;
+    --accent3-glow: rgba(62,207,142,0.12);
+    --accent4: #f7a23e;
+    --tag-bg: #1a1f2e;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg: #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg: #f0f2f8;
+    --bg-card: #ffffff;
+    --bg-code: #e8ebf5;
+    --border: #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text: #1a1f35;
+    --text-muted: #6b748f;
+    --text-dim: #adb5cc;
+    --accent: #2563eb;
+    --accent-glow: rgba(37,99,235,0.1);
+    --accent2: #c9354f;
+    --accent2-glow: rgba(201,53,79,0.1);
+    --accent3: #0d7c4e;
+    --accent3-glow: rgba(13,124,78,0.1);
+    --accent4: #c47400;
+    --tag-bg: #e8ebf5;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg: #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* HEADER */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  /* TOGGLE */
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toggle-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .toggle {
+    width: 44px;
+    height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.3s;
+    appearance: none;
+    outline: none;
+  }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s, background 0.3s;
+  }
+
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  /* NAV TABS */
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  nav button:hover { color: var(--text); }
+  nav button.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* MAIN */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .card-title.red::before { background: var(--accent2); }
+  .card-title.green::before { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  /* HERO BOX */
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+
+  .hero p {
+    color: var(--text);
+    font-size: 15px;
+    max-width: 680px;
+    line-height: 1.7;
+  }
+
+  .hero p strong {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* TWO-COL GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* HIERARCHY TABLE */
+  .hierarchy {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .hier-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 180px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  .hier-row:last-child { border-bottom: none; }
+  .hier-row:hover { background: var(--accent-glow); }
+
+  .hier-row.header {
+    background: var(--bg-code);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    cursor: default;
+  }
+
+  .hier-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .hier-path {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  .hier-desc { font-size: 12px; color: var(--text-muted); }
+
+  .priority-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+  }
+
+  .p-high { background: rgba(224,95,122,0.15); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+  .p-low  { background: rgba(79,142,247,0.1); color: var(--accent); border: 1px solid rgba(79,142,247,0.2); }
+
+  /* CODE BLOCK */
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .cm { color: var(--text-muted); font-style: italic; }   /* comment */
+  .kw { color: var(--accent); }                            /* keyword */
+  .hd { color: var(--accent4); font-weight: 600; }         /* heading */
+  .li { color: var(--accent3); }                           /* list item/value */
+  .fn { color: var(--accent2); }                           /* function/command */
+
+  /* RULE ROWS */
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+
+  .rule-row:hover { border-color: var(--border-accent); }
+
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  /* DECISION MATRIX */
+  .decision-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .decision-col {
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .decision-col-header.use { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  /* COMMAND TABLE */
+  .cmd-table { width: 100%; border-collapse: collapse; }
+  .cmd-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .cmd-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .cmd-table tr:last-child td { border-bottom: none; }
+  .cmd-table tr:hover td { background: var(--accent-glow); }
+  .cmd-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .cmd-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  /* STAT PILLS */
+  .stat-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .stat-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--accent2);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* TEST BLOCK */
+  .test-block {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent4);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+
+  .test-block .test-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent4);
+    margin-bottom: 8px;
+  }
+
+  .test-block p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .test-block p em { color: var(--accent3); font-style: normal; font-weight: 500; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  /* ANIMATE IN */
+  .section.active .card,
+  .section.active .hero,
+  .section.active .grid-2 {
+    animation: fadeUp 0.25s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">CLAUDE<span>.md</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="hierarchy">Hierarchy</button>
+  <button data-tab="when">When to Use</button>
+  <button data-tab="structure">Structure</button>
+  <button data-tab="commands">Commands</button>
+  <button data-tab="gotchas">Gotchas</button>
+  <button data-tab="setup">Setup</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="tab-overview">
+    <div class="hero">
+      <h2>CLAUDE.md</h2>
+      <p>A markdown file that Claude Code reads <strong>automatically at session start</strong>. It's injected into every single prompt — so whatever's in it, Claude always has it. Think of it as a cheat sheet handed to a brilliant assistant on day one.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">The Core Problem It Solves</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔄</div>
+            <div class="rule-text">Every Claude Code session starts with a <strong>blank slate</strong> — no memory of your stack, commands, or conventions.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📄</div>
+            <div class="rule-text"><code>CLAUDE.md</code> is auto-loaded before you type anything. It becomes Claude's background knowledge.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text">Appended to <strong>every prompt</strong> — even just typing "hi" sends the full file along with it.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title red">The Research Warning</div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-val">&gt;20%</div>
+            <div class="stat-label">Inference cost increase when using agents.md</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">↓</div>
+            <div class="stat-label">Agent task completion rate reduced</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted); line-height:1.6">
+          Feb 2026 study: unnecessary context files made tasks <em style="color:var(--accent2)">harder</em>, not easier. Like handing someone a policy doc to read before every single task — relevant or not.
+        </div>
+      </div>
+    </div>
+
+    <div class="test-block">
+      <div class="test-label">🧪 The Litmus Test (for every line)</div>
+      <p>Ask yourself: <em>"If I deleted this line, would Claude actually do something wrong?"</em> If the answer is no — delete it.</p>
+    </div>
+  </div>
+
+  <!-- HIERARCHY -->
+  <div class="section" id="tab-hierarchy">
+    <div class="card">
+      <div class="card-title">Memory Hierarchy — Higher Priority Wins</div>
+      <div class="hierarchy">
+        <div class="hier-row header">
+          <div>#</div>
+          <div>Location / File</div>
+          <div>Scope</div>
+        </div>
+        <div class="hier-row">
+          <div class="hier-num">1</div>
+          <div class="hier-path">Managed policy (org IT)</div>
+          <div class="hier-desc"><span class="priority-tag p-high">HIGHEST</span></div>
+        </div>
+        <div class="hier-row">
+          <div class="hier-num">2</div>
+          <div class="hier-path">.claude/rules/*.md</div>
+          <div class="hier-desc">Modular project rules by topic</div>
+        </div>
+        <div class="hier-row">
+          <div class="hier-num">3</div>
+          <div class="hier-path">./CLAUDE.md</div>
+          <div class="hier-desc">Project root — shared via git</div>
+        </div>
+        <div class="hier-row">
+          <div class="hier-num">4</div>
+          <div class="hier-path">~/.claude/CLAUDE.md</div>
+          <div class="hier-desc">Your personal prefs, all projects</div>
+        </div>
+        <div class="hier-row">
+          <div class="hier-num">5</div>
+          <div class="hier-path">./CLAUDE.local.md</div>
+          <div class="hier-desc">Personal overrides, this project only</div>
+        </div>
+        <div class="hier-row">
+          <div class="hier-num">6</div>
+          <div class="hier-path">subdirectory/CLAUDE.md</div>
+          <div class="hier-desc">Loaded only when Claude works in that folder</div>
+        </div>
+        <div class="hier-row">
+          <div class="hier-num">7</div>
+          <div class="hier-path">Auto-memory</div>
+          <div class="hier-desc"><span class="priority-tag p-low">LOWEST</span> Notes Claude writes itself</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">@import System</div>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">Keep <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">CLAUDE.md</code> short. Point to detailed docs instead:</p>
+        <pre><span class="cm"># In your CLAUDE.md</span>
+See <span class="kw">@README.md</span> for project overview.
+See <span class="kw">@package.json</span> for commands.
+
+<span class="hd">## Git Workflow</span>
+<span class="kw">@docs/git-instructions.md</span></pre>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:10px">Imports go up to <strong style="color:var(--accent4)">5 levels deep</strong>.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">CLAUDE.local.md</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔒</div>
+            <div class="rule-text">Auto-added to <code>.gitignore</code> — never shared with team.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔑</div>
+            <div class="rule-text">Use for: sandbox URLs, personal test API keys, personal prefs you don't want to impose.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📁</div>
+            <div class="rule-text"><code>CLAUDE.md</code> goes in git. <code>CLAUDE.local.md</code> stays local. Simple split.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHEN TO USE -->
+  <div class="section" id="tab-when">
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Use CLAUDE.md</div>
+        <div class="decision-item"><span class="di">🗂️</span>Personal assistant / Obsidian vault use case</div>
+        <div class="decision-item"><span class="di">📋</span>Context that's relevant to literally every session</div>
+        <div class="decision-item"><span class="di">🤝</span>Team project — shared conventions everyone needs</div>
+        <div class="decision-item"><span class="di">🌐</span>Non-coding workflows (knowledge management, writing)</div>
+        <div class="decision-item"><span class="di">⚠️</span>Monorepos — root file + child files per package</div>
+        <div class="decision-item"><span class="di">🔧</span>Project has genuinely non-obvious gotchas (e.g. RLS policies on all new tables)</div>
+      </div>
+
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Skip CLAUDE.md</div>
+        <div class="decision-item"><span class="di">💻</span>Typical coding project — Claude can infer conventions from code</div>
+        <div class="decision-item"><span class="di">🎨</span>Front-end builds where you're not dictating specific conventions</div>
+        <div class="decision-item"><span class="di">🧑‍💻</span>You're not at the level where you're confidently dictating coding conventions</div>
+        <div class="decision-item"><span class="di">📚</span>Rules a linter or formatter could enforce automatically</div>
+        <div class="decision-item"><span class="di">🗑️</span>Context that's only relevant to some sessions, not all</div>
+        <div class="decision-item"><span class="di">📝</span>Stuff Claude would figure out from reading your code anyway</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">The Honest Question to Ask</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🤔</div>
+          <div class="rule-text"><strong>"Does this need to be in every prompt?"</strong> If you'd only need to say it occasionally, don't put it in CLAUDE.md — say it when you need it.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📏</div>
+          <div class="rule-text"><strong>Less is more.</strong> A lean 35-line file outperforms a bloated 300-line one. Context pollution degrades performance.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRUCTURE -->
+  <div class="section" id="tab-structure">
+    <div class="card">
+      <div class="card-title">Lean Starter Template (&lt; 60 lines)</div>
+      <pre><span class="hd"># Project</span>
+<span class="li">Next.js 14 e-commerce with TypeScript, Tailwind, Supabase.</span>
+<span class="li">Uses App Router with server components by default.</span>
+
+<span class="hd"># Commands</span>
+<span class="li">- npm run dev      — Start dev server on port 3000</span>
+<span class="li">- npm run build    — Production build</span>
+<span class="li">- npm test         — Run test suite</span>
+<span class="li">- npm run typecheck — TypeScript type check</span>
+
+<span class="hd"># Code Style</span>
+<span class="cm"># Only rules Claude WOULDN'T figure out from your code:</span>
+<span class="li">- Use ES modules (import/export), never CommonJS (require)</span>
+<span class="li">- Named exports only, not default exports</span>
+<span class="li">- Prefer interface over type for object shapes</span>
+
+<span class="hd"># Workflow</span>
+<span class="li">- Always run typecheck after code changes</span>
+<span class="li">- Never commit directly to main</span>
+
+<span class="hd"># Gotchas</span>
+<span class="li">- NEXT_PUBLIC_ prefix required for client-side env vars</span>
+<span class="li">- Supabase RLS enabled — new tables need policies before queries</span>
+
+<span class="hd"># Further Reading</span>
+<span class="cm">IMPORTANT: Read relevant doc before starting work in that area.</span>
+<span class="li">- @docs/api-conventions.md    — API patterns and error handling</span>
+<span class="li">- @docs/database-schema.md   — Full schema with relationships</span></pre>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Monorepo Pattern</div>
+        <pre><span class="cm"># Root CLAUDE.md — loaded every session</span>
+<span class="hd"># Monorepo: Acme Platform</span>
+<span class="li">Turborepo + pnpm. Packages: web, api, shared.</span>
+
+<span class="hd"># Global Commands</span>
+<span class="li">- pnpm install</span>
+<span class="li">- turbo run test</span>
+
+<span class="hd"># Conventions</span>
+<span class="li">- Shared types live in packages/shared/src/types/</span>
+<span class="li">- Never duplicate types — import from shared</span>
+
+<span class="cm">---</span>
+<span class="cm"># packages/web/CLAUDE.md — loaded only when</span>
+<span class="cm"># Claude works in that folder</span>
+<span class="hd"># Web Package (Next.js 14)</span>
+<span class="li">- pnpm --filter web dev  — port 3000</span>
+<span class="li">- pnpm --filter web test</span></pre>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Personal User-Level File</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Lives at <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">~/.claude/CLAUDE.md</code> — applies to all projects.</p>
+        <pre><span class="hd"># Personal Preferences</span>
+<span class="li">- When presenting options, use numbered</span>
+<span class="li">  lists so I can respond with a number</span>
+<span class="li">- Prefer concise explanations — skip</span>
+<span class="li">  background unless I ask</span>
+<span class="li">- Use conventional commit format</span>
+<span class="li">- Always suggest running tests after changes</span></pre>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:10px">Keep this <em style="color:var(--accent4)">genuinely personal</em>. Don't put project-specific stuff here.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMANDS -->
+  <div class="section" id="tab-commands">
+    <div class="card">
+      <div class="card-title">Key Commands</div>
+      <table class="cmd-table">
+        <thead>
+          <tr>
+            <th>Command / Syntax</th>
+            <th>What It Does</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>/init</td>
+            <td>Auto-generates a starter CLAUDE.md from your codebase</td>
+            <td>Treat as a rough draft — edit heavily</td>
+          </tr>
+          <tr>
+            <td>/memory</td>
+            <td>Opens any memory file in your editor for editing</td>
+            <td>Quick access mid-session</td>
+          </tr>
+          <tr>
+            <td># (during session)</td>
+            <td>Adds a quick note to CLAUDE.md without leaving the conversation</td>
+            <td>Builds up organically over time</td>
+          </tr>
+          <tr>
+            <td>@path/to/file</td>
+            <td>Imports another file's content into CLAUDE.md</td>
+            <td>Max 5 levels deep</td>
+          </tr>
+          <tr>
+            <td>CLAUDE.local.md</td>
+            <td>Personal project-specific overrides</td>
+            <td>Auto-gitignored, never shared</td>
+          </tr>
+          <tr>
+            <td>.claude/rules/*.md</td>
+            <td>Modular rule files, loaded automatically</td>
+            <td>Can be scoped to paths via header</td>
+          </tr>
+          <tr>
+            <td>--add-dir ../other</td>
+            <td>Load an additional directory into the session</td>
+            <td>Useful for monorepos</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Scoped Rules in .claude/rules/</div>
+      <pre><span class="cm"># .claude/rules/api-rules.md</span>
+<span class="cm"># Limit this rule file to specific paths:</span>
+<span class="kw">paths: "src/api/**/*.ts"</span>
+
+<span class="li">- All endpoints must include input validation</span>
+<span class="li">- Use standard error response format from @docs/api-conventions.md</span>
+
+<span class="cm"># Rules without a paths field apply everywhere</span></pre>
+    </div>
+  </div>
+
+  <!-- GOTCHAS -->
+  <div class="section" id="tab-gotchas">
+    <div class="card">
+      <div class="card-title red">What Goes Wrong</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📏</div>
+          <div class="rule-text"><span class="neg">Hard limit: ~60 lines of content.</span> Claude can follow ~100–150 instructions total; the system already uses some of that budget. Go over and Claude starts ignoring rules <em>across the board</em> — not just the new ones.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔧</div>
+          <div class="rule-text"><span class="neg">Don't use CLAUDE.md as a linter.</span> If a tool can enforce a rule (formatting, import order, semicolons), use the tool. Put it in pre-commit hooks, not here.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🤖</div>
+          <div class="rule-text"><span class="neg">Don't just accept /init output.</span> Auto-generated files include obvious stuff Claude can infer from your code. Treat it as a rough draft — manually review every single line.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🚨</div>
+          <div class="rule-text"><span class="neg">Use emphasis sparingly.</span> Adding "IMPORTANT" or "YOU MUST" helps for critical rules. But if everything is marked IMPORTANT, nothing is.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🕰️</div>
+          <div class="rule-text"><span class="neg">Stale files degrade performance.</span> Review every few weeks. Delete stale instructions, consolidate duplicates, clarify anything confusing.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="test-block" style="flex:1">
+        <div class="test-label">🧪 The Deletion Test</div>
+        <p>For every line: <em>"If I deleted this, would Claude actually do something wrong?"</em> If no → delete it. This is the single most effective way to keep the file lean.</p>
+      </div>
+
+      <div class="card" style="flex:1">
+        <div class="card-title green">What to Do Right</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">✓</div>
+            <div class="rule-text"><span class="pos">Commit CLAUDE.md to git.</span> It's a team resource. Everyone benefits from shared context.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✓</div>
+            <div class="rule-text"><span class="pos">Use # shortcut</span> during sessions to grow the file organically from real pain points.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✓</div>
+            <div class="rule-text"><span class="pos">Use @imports</span> to keep the root file short while giving Claude access to detailed docs.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div class="section" id="tab-setup">
+
+    <div class="hero">
+      <h2>Setup: Steps 1–7</h2>
+      <p>The full sequence for creating your first <strong>CLAUDE.md</strong> from scratch — or validating an existing one.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Step-by-Step Walkthrough</div>
+      <div class="rule-list">
+
+        <div class="rule-row">
+          <div class="rule-icon" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--accent);min-width:20px;text-align:center">1</div>
+          <div class="rule-text">
+            <strong>Bootstrap with /init (recommended)</strong><br>
+            Open Claude Code in your project and run <code>/init</code>. Claude scans your codebase and generates a starter <code>CLAUDE.md</code>.<br>
+            <span style="color:var(--accent2);font-size:12px">⚠ Treat it as a rough draft — auto-generated files include too much. Review and cut every line.</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--accent);min-width:20px;text-align:center">2</div>
+          <div class="rule-text">
+            <strong>Or create the file manually</strong><br>
+            If starting from scratch: <code>touch CLAUDE.md</code> in your project root. Skip if you used <code>/init</code>.
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--accent);min-width:20px;text-align:center">3</div>
+          <div class="rule-text">
+            <strong>Add your project identity</strong><br>
+            One short paragraph: what the project is, the tech stack, and any key architectural patterns Claude needs to know upfront.
+            <pre style="margin-top:8px"><span class="hd"># Project</span>
+<span class="li">Next.js 14 e-commerce platform with TypeScript,</span>
+<span class="li">Tailwind CSS, and Supabase. Uses App Router with</span>
+<span class="li">server components by default.</span></pre>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--accent);min-width:20px;text-align:center">4</div>
+          <div class="rule-text">
+            <strong>Add essential commands</strong><br>
+            The commands Claude needs to build, test, lint, and type-check your project.
+            <pre style="margin-top:8px"><span class="hd"># Commands</span>
+<span class="li">- npm run dev      — Start dev server on port 3000</span>
+<span class="li">- npm run build    — Production build</span>
+<span class="li">- npm test         — Run test suite</span>
+<span class="li">- npm run typecheck — TypeScript type checking</span></pre>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--accent);min-width:20px;text-align:center">5</div>
+          <div class="rule-text">
+            <strong>Add code style rules</strong><br>
+            <span style="color:var(--accent4)">Only include rules Claude wouldn't figure out on its own</span> from reading your codebase. Skip anything a linter enforces automatically.
+            <pre style="margin-top:8px"><span class="hd"># Code Style</span>
+<span class="li">- Use ES modules (import/export), never CommonJS</span>
+<span class="li">- Named exports only, not default exports</span>
+<span class="li">- Prefer interface over type for object shapes</span></pre>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--accent);min-width:20px;text-align:center">6</div>
+          <div class="rule-text">
+            <strong>Add workflow rules and gotchas</strong><br>
+            Non-obvious process rules and traps that would cause real mistakes if Claude didn't know them.
+            <pre style="margin-top:8px"><span class="hd"># Workflow</span>
+<span class="li">- Always run typecheck after making code changes</span>
+<span class="li">- Never commit directly to main</span>
+
+<span class="hd"># Gotchas</span>
+<span class="li">- NEXT_PUBLIC_ prefix required for client-side env vars</span>
+<span class="li">- Supabase RLS enabled — new tables need policies</span>
+<span class="li">  before any queries will work</span></pre>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--accent);min-width:20px;text-align:center">7</div>
+          <div class="rule-text">
+            <strong>Point to detailed docs + commit</strong><br>
+            Don't cram everything in. Reference docs for deeper detail, then commit so the whole team shares the same baseline.
+            <pre style="margin-top:8px"><span class="hd"># Further Reading</span>
+<span class="cm">IMPORTANT: Read relevant doc before starting work there.</span>
+<span class="li">- @docs/api-conventions.md   — API patterns, error handling</span>
+<span class="li">- @docs/database-schema.md  — Full schema + relationships</span></pre>
+            <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">Then: <code>git add CLAUDE.md</code> → <code>git commit -m "Add CLAUDE.md for project context"</code></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="test-block">
+      <div class="test-label">✅ Done? Run the deletion test on every line</div>
+      <p><em>"If I deleted this line, would Claude actually do something wrong?"</em> If no — cut it. A lean file that passes this test beats a thorough one that doesn't.</p>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+  // TAB NAVIGATION
+  const tabs = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  // THEME TOGGLE
+  const toggle = document.getElementById('themeToggle');
+  const label = document.getElementById('toggle-label');
+  const html = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

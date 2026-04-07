@@ -1,0 +1,16 @@
+{
+  "eval_id": 1,
+  "eval_name": "basic-research",
+  "prompt": "Research what YouTubers are saying about Claude Code and Obsidian — what are the best use cases people are finding?",
+  "assertions": [
+    "Runs yt-search script with a query related to Claude Code and Obsidian",
+    "Shows the full YouTube search results to the user with metadata",
+    "Auto-selects videos without asking the user to pick",
+    "Explains which videos were selected and why",
+    "Creates a NotebookLM notebook",
+    "Adds selected YouTube URLs as sources",
+    "Runs notebooklm ask questions about key themes and takeaways",
+    "Presents a summary with a Key Takeaways section",
+    "Does NOT ask unnecessary confirmation questions mid-pipeline"
+  ]
+}

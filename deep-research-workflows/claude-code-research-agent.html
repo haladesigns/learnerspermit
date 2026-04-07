@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Research Agent Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --accent5:       #b57cf7;
+    --accent5-glow:  rgba(181,124,247,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --accent5:       #7c3aed;
+    --accent5-glow:  rgba(124,58,237,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+  .card.purple { border-left: 3px solid var(--accent5); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+  .card-title.purple::before { background: var(--accent5); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text .pur    { color: var(--accent5); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .sub   { color: var(--accent5); font-size: 12px; display: block; margin-top: 4px; font-family: 'IBM Plex Mono', monospace; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .pu { color: var(--accent5); }
+  .st { color: #7ec8e3; }     /* string / path */
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout.purple { border-left: 3px solid var(--accent5); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout.purple .callout-label { color: var(--accent5); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+  .callout.purple p em { color: var(--accent5); }
+
+  /* ============ VERTICAL PIPELINE ============ */
+  .pipeline-v {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 4px 0;
+  }
+
+  .pv-row {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    gap: 0;
+    position: relative;
+  }
+
+  .pv-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 14px;
+  }
+
+  .pv-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-glow);
+    border: 1px solid rgba(79,142,247,0.35);
+    border-radius: 50%;
+    width: 32px; height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    z-index: 1;
+    letter-spacing: 0;
+  }
+
+  .pv-num-final {
+    background: var(--accent4-glow);
+    border-color: rgba(247,162,62,0.35);
+    color: var(--accent4);
+  }
+
+  .pv-line {
+    width: 2px;
+    flex: 1;
+    background: var(--border-accent);
+    margin: 4px 0;
+    min-height: 20px;
+  }
+
+  .pv-box {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 8px 0 8px 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .pv-box:hover {
+    border-color: var(--border-accent);
+    box-shadow: 0 0 16px var(--accent-glow);
+  }
+
+  .pv-box-optional {
+    border-style: dashed;
+    border-color: rgba(247,162,62,0.3);
+  }
+  .pv-box-optional:hover {
+    border-color: var(--accent4);
+    box-shadow: 0 0 16px var(--accent4-glow);
+  }
+
+  .pv-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  .pv-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.04em;
+  }
+
+  .pv-optional-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--accent4-glow);
+    color: var(--accent4);
+    border: 1px solid rgba(247,162,62,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .pv-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+  .pv-desc strong { color: var(--text); }
+  .pv-desc em { color: var(--text); font-style: normal; }
+  .pv-desc code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .pv-cmd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 10px;
+    display: inline-block;
+  }
+
+  .pv-criteria {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .pv-last .pv-left { padding-bottom: 0; }
+
+  /* kept for sub-skill badges used in pv-header */
+  .pipe-sub-badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--accent5-glow);
+    color: var(--accent5);
+    border: 1px solid rgba(181,124,247,0.3);
+    letter-spacing: 0.04em;
+  }
+
+  .pipe-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--tag-bg);
+    color: var(--accent3);
+    border: 1px solid rgba(62,207,142,0.2);
+  }
+
+  /* ============ FRONTMATTER BLOCK ============ */
+  .frontmatter {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--accent5);
+    border-radius: 6px;
+    padding: 14px 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .fm-key   { color: var(--accent4); }
+  .fm-val   { color: var(--accent3); }
+  .fm-delim { color: var(--text-dim); }
+
+  /* ============ PARAM TABLE ============ */
+  .param-table { width: 100%; border-collapse: collapse; }
+  .param-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .param-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .param-table tr:last-child td { border-bottom: none; }
+  .param-table tr:hover td { background: var(--accent-glow); }
+  .param-table .p-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .param-table .p-default {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent3);
+  }
+  .param-table .p-desc { color: var(--text); font-size: 12px; }
+
+  /* ============ DELIVERABLE TABLE ============ */
+  .deliv-table { width: 100%; border-collapse: collapse; }
+  .deliv-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .deliv-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .deliv-table tr:last-child td { border-bottom: none; }
+  .deliv-table tr:hover td { background: var(--accent5-glow); }
+  .deliv-table .d-trigger {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .deliv-table .d-cmd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .deliv-table .d-speed {
+    font-size: 11px;
+  }
+  .d-fast { color: var(--accent3); }
+  .d-slow { color: var(--accent4); }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+
+  .tag-inline {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+  }
+  .tag-sub  { background: var(--accent5-glow); color: var(--accent5); border: 1px solid rgba(181,124,247,0.3); }
+  .tag-pipe { background: var(--accent-glow);  color: var(--accent);  border: 1px solid rgba(79,142,247,0.3); }
+  .tag-auto { background: var(--accent3-glow); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .tag-warn { background: var(--accent2-glow); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    padding: 0 4px;
+    margin-bottom: -8px;
+  }
+
+  .pause-row {
+    background: var(--accent2-glow);
+    border: 1px solid rgba(224,95,122,0.25);
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--text);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .pause-row .pi { color: var(--accent2); font-size: 14px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Claude Code<span> — Research Agent</span></div>
+    <div class="badge">DEEP DIVE #1</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="pipeline">Pipeline</button>
+  <button data-tab="yt-search">YT Search Skill</button>
+  <button data-tab="yt-pipeline-skill">YT Pipeline Skill</button>
+  <button data-tab="skill-design">Skill Design</button>
+  <button data-tab="automation">Automation</button>
+</nav>
+
+<main>
+
+  <!-- ============================================================ OVERVIEW -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Claude Code as Research Agent</h2>
+      <p>Move beyond "super Google." This deep dive shows how to build a <strong>modular skill pipeline</strong> that searches YouTube, selects the best videos, feeds them into NotebookLM, runs deep analysis, and delivers a research report — fully autonomously. The same philosophy applies to any research niche.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">What Claude Code Can Do Out-of-Box</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🌐</div>
+            <div class="rule-text"><span class="pos">Web search</span> — basic Google-style search, good for text sources. Sometimes requires explicit instruction: <code>use web search to find…</code></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧠</div>
+            <div class="rule-text"><strong>Training data</strong> — has a cutoff (~9 months). Zero knowledge of anything after that. Always verify recent topics with web search.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🚫</div>
+            <div class="rule-text"><span class="neg">Can't handle video</span> — no LLM reliably ingests full-length YouTube content. This is the core problem the pipeline solves.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Why YouTube Needs a Skill</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📡</div>
+            <div class="rule-text"><strong>Fountainhead problem</strong> — relying on Medium / news articles means you're already late. Real signal lives on YouTube, Twitter, and GitHub first.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text"><strong>Repetition = skill</strong> — any time you find yourself giving Claude the same specialized instructions repeatedly, that process should become a skill.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text"><strong>Specificity required</strong> — plain language can't reliably search YouTube, scrape metadata, filter by engagement, and route to NotebookLM. A skill can.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">The Full Research System at a Glance</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🔍</div>
+          <div class="rule-text"><span class="pos">YT Search subskill</span> — uses <code>yt-dlp</code> CLI to search YouTube and return structured metadata (title, channel, subs, views, ratio, URL).</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🎛️</div>
+          <div class="rule-text"><span class="pos">Auto-select</span> — Claude picks the best 5–8 videos by relevance, engagement ratio, recency, depth, and source diversity. No user input needed.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📓</div>
+          <div class="rule-text"><span class="pos">NotebookLM stack</span> — creates a notebook, adds video URLs as sources, and runs analysis questions. Runs on Google's servers — doesn't cost tokens.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📄</div>
+          <div class="rule-text"><span class="pos">Obsidian integration</span> — the report is dumped directly into an Obsidian vault as a structured markdown note with date, summaries, gaps, and opportunities.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚡</div>
+          <div class="rule-text"><strong>Extensible in-prompt</strong> — skills aren't rigid automations. You can say <code>/yt-pipeline</code> and add: "also search GitHub and Twitter for this topic."</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Core Takeaway</div>
+      <p>Most people use Claude Code as <em>super Google</em>. Skills let you use it as a <em>research system</em> — one that searches primary sources, filters by signal quality, offloads heavy analysis, and delivers structured output, all from a single sentence.</p>
+    </div>
+
+  </div>
+
+  <!-- ============================================================ PIPELINE -->
+  <div class="section" id="tab-pipeline">
+
+    <div class="hero">
+      <h2>7-Step YT Pipeline</h2>
+      <p>One skill, five sub-skills, fully autonomous. Invoke with a single natural language sentence and receive a structured research report. <strong>No user input between steps.</strong></p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pipeline Flow</div>
+      <div class="pipeline-v">
+
+        <div class="pv-row">
+          <div class="pv-left">
+            <div class="pv-num">00</div>
+            <div class="pv-line"></div>
+          </div>
+          <div class="pv-box">
+            <div class="pv-header">
+              <span class="pv-title">PRE-FLIGHT</span>
+            </div>
+            <div class="pv-desc">Check NotebookLM auth + validate topic. Catches auth failures before any work is done — not mid-pipeline after search work is already done.</div>
+            <div class="pv-cmd">notebooklm status</div>
+          </div>
+        </div>
+
+        <div class="pv-row">
+          <div class="pv-left">
+            <div class="pv-num">01</div>
+            <div class="pv-line"></div>
+          </div>
+          <div class="pv-box">
+            <div class="pv-header">
+              <span class="pv-title">UNDERSTAND REQUEST</span>
+            </div>
+            <div class="pv-desc">Extract: <strong>search query</strong>, analysis goal, and deliverable type from the user's message. Ask ONE short clarifying question only if the request is genuinely too vague. Otherwise proceed immediately.</div>
+          </div>
+        </div>
+
+        <div class="pv-row">
+          <div class="pv-left">
+            <div class="pv-num">02</div>
+            <div class="pv-line"></div>
+          </div>
+          <div class="pv-box">
+            <div class="pv-header">
+              <span class="pv-title">SEARCH YOUTUBE</span>
+              <span class="pipe-sub-badge">SUB-SKILL: /yt-search</span>
+            </div>
+            <div class="pv-desc">Searches YouTube via yt-dlp. Returns 10 videos with full metadata. Shows <em>all</em> results to the user. If no results, auto-retries with broader query or <code>--no-date-filter</code>.</div>
+            <div class="pv-cmd">search.py &lt;query&gt; --count 10 --months 6</div>
+          </div>
+        </div>
+
+        <div class="pv-row">
+          <div class="pv-left">
+            <div class="pv-num">03</div>
+            <div class="pv-line"></div>
+          </div>
+          <div class="pv-box">
+            <div class="pv-header">
+              <span class="pv-title">AUTO-SELECT VIDEOS</span>
+            </div>
+            <div class="pv-desc">Immediately after showing results — no waiting for user input. Targets 5–8 videos. Drops mismatches, off-topic shorts, duplicate channels.</div>
+            <div class="pv-criteria">
+              <span class="pipe-tag">relevance</span>
+              <span class="pipe-tag">engagement ratio</span>
+              <span class="pipe-tag">recency</span>
+              <span class="pipe-tag">depth (10+ min)</span>
+              <span class="pipe-tag">source diversity</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pv-row">
+          <div class="pv-left">
+            <div class="pv-num">04</div>
+            <div class="pv-line"></div>
+          </div>
+          <div class="pv-box">
+            <div class="pv-header">
+              <span class="pv-title">CREATE NOTEBOOK</span>
+              <span class="pipe-sub-badge">SUB-SKILL: /notebooklm</span>
+            </div>
+            <div class="pv-desc">Creates a new NotebookLM notebook, sets it as active context, then adds each selected video URL as a source. Waits for all sources to process sequentially (10–60s each).</div>
+            <div class="pv-cmd">notebooklm create "YT Research: &lt;topic&gt;" --json</div>
+            <div class="pv-cmd" style="margin-top:4px;">notebooklm source add "&lt;url&gt;" --json</div>
+          </div>
+        </div>
+
+        <div class="pv-row">
+          <div class="pv-left">
+            <div class="pv-num">05</div>
+            <div class="pv-line"></div>
+          </div>
+          <div class="pv-box">
+            <div class="pv-header">
+              <span class="pv-title">ANALYZE</span>
+              <span class="pipe-sub-badge">SUB-SKILL: /notebooklm</span>
+            </div>
+            <div class="pv-desc">Runs analysis questions tailored to the user's stated goal, or uses three default questions. Uses <code>--new</code> on the first question to start a fresh thread. Offers to save report to Obsidian vault.</div>
+            <div class="pv-cmd">notebooklm ask "What are the key themes...?" --new</div>
+          </div>
+        </div>
+
+        <div class="pv-row pv-last">
+          <div class="pv-left">
+            <div class="pv-num pv-num-final">07</div>
+          </div>
+          <div class="pv-box pv-box-optional">
+            <div class="pv-header">
+              <span class="pv-title">DELIVERABLE</span>
+              <span class="pipe-sub-badge">SUB-SKILL: output skill</span>
+              <span class="pv-optional-badge">OPTIONAL</span>
+            </div>
+            <div class="pv-desc">Only fires if the user explicitly requested a deliverable. Instant artifacts (report, mind map) are returned immediately. Long-running artifacts (podcast, quiz, slides) spawn a background agent and notify when ready.</div>
+            <div class="pv-cmd">notebooklm generate &lt;type&gt; --json</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card red">
+        <div class="card-title red">Only 3 Valid Pause Points</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+          <div class="pause-row">
+            <div class="pi">⛔</div>
+            <div><strong>Step 1:</strong> Request is too vague to form a search query → ask ONE clarifying question, then proceed.</div>
+          </div>
+          <div class="pause-row">
+            <div class="pi">⛔</div>
+            <div><strong>Step 4:</strong> Auth failure → tell user to run <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">notebooklm login</code> and stop.</div>
+          </div>
+          <div class="pause-row">
+            <div class="pi">⛔</div>
+            <div><strong>Step 7:</strong> Generating a deliverable the user did NOT explicitly ask for → confirm first.</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-muted);">Everything else flows automatically. The pipeline's value is end-to-end automation.</div>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">Default Analysis Questions</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">Q1</div>
+            <div class="step-body">What are the key themes and main points across these videos?<span class="sub">--new flag (fresh conversation)</span></div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">Q2</div>
+            <div class="step-body">Where do the creators agree and where do they have different perspectives?</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">Q3</div>
+            <div class="step-body">What are the most actionable takeaways someone could apply immediately?</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">When a user specifies an analysis goal, all questions are tailored to that angle instead.</div>
+      </div>
+
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">💬 How to Invoke</div>
+      <p>Natural language or slash command: <em>"Hey, use the YT pipeline skill. See what's going on with Claude Code and Dispatch — what's trending, any outlier videos, any gaps?"</em> — That's the entire prompt needed to run the full 7-step pipeline.</p>
+    </div>
+
+  </div>
+
+  <!-- ============================================================ YT-SEARCH SKILL -->
+  <div class="section" id="tab-yt-search">
+
+    <div class="hero">
+      <h2>YT Search Skill — Internals</h2>
+      <p>The foundational sub-skill. Searches YouTube as if a human typed into the search bar, then returns structured metadata including the engagement ratio (views ÷ subs) that identifies <strong>outlier videos</strong>. Only 55 lines.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card purple">
+        <div class="card-title purple">Frontmatter (YAML Header)</div>
+        <div class="frontmatter">
+          <span class="fm-delim">---</span><br>
+          <span class="fm-key">name:</span> <span class="fm-val">yt-search</span><br>
+          <span class="fm-key">description:</span> <span class="fm-val">"Search YouTube and return structured<br>&nbsp;&nbsp;video results with metadata. Use this<br>&nbsp;&nbsp;skill whenever the user wants to search<br>&nbsp;&nbsp;YouTube, find videos on a topic,<br>&nbsp;&nbsp;research what's trending..."</span><br>
+          <span class="fm-delim">---</span>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-muted);line-height:1.6;">
+          When skills are loaded, Claude sees <em>only</em> the name + description first. The skill body activates only once the skill is invoked. This is why description quality is critical for correct triggering.
+        </div>
+      </div>
+
+      <div class="card blue">
+        <div class="card-title">Dependency</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📦</div>
+            <div class="rule-text"><strong>yt-dlp</strong> — CLI tool that powers the search. Acts as a YouTube client; handles the actual HTTP requests to YouTube search. Must be installed: <code>pip install yt-dlp</code></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🐍</div>
+            <div class="rule-text"><strong>search.py</strong> — Python wrapper around yt-dlp. Status messages go to <code>stderr</code>; clean formatted results go to <code>stdout</code>. Fetches 2× count to compensate for date filtering.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📍</div>
+            <div class="rule-text">Path: <code>~/.claude/skills/yt-search/scripts/search.py</code> (or full Windows path per skill file)</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="p-name">&lt;query&gt;</td>
+            <td class="p-default">required</td>
+            <td class="p-desc">Search terms. Claude crafts this from user intent — may differ from exact user words for better results.</td>
+          </tr>
+          <tr>
+            <td class="p-name">--count N</td>
+            <td class="p-default">20</td>
+            <td class="p-desc">Number of results to return. Pipeline skill uses 10 by default for focused sets.</td>
+          </tr>
+          <tr>
+            <td class="p-name">--months N</td>
+            <td class="p-default">6</td>
+            <td class="p-desc">Only return videos from the last N months. Use 12 for evergreen topics.</td>
+          </tr>
+          <tr>
+            <td class="p-name">--no-date-filter</td>
+            <td class="p-default">off</td>
+            <td class="p-desc">Include videos of any age. Auto-retried if initial filtered search returns no results.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Output Fields Per Video</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📌</div>
+          <div class="rule-text"><strong>Title</strong> — used for relevance filtering in step 3</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📣</div>
+          <div class="rule-text"><strong>Channel name + subscriber count</strong> — baseline for ratio calculation. May show N/A if unavailable.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">👁️</div>
+          <div class="rule-text"><strong>View count</strong> — raw views</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⏱️</div>
+          <div class="rule-text"><strong>Duration</strong> — pipeline prefers 10+ min videos for research depth; shorts/clips are deprioritized</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📅</div>
+          <div class="rule-text"><strong>Upload date</strong> — used for recency scoring in step 3</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📈</div>
+          <div class="rule-text"><strong>Engagement ratio (views ÷ subs)</strong> — the key signal. A high ratio means the video outperformed the channel's baseline = outlier content worth investigating.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔗</div>
+          <div class="rule-text"><strong>Direct URL</strong> — passed to NotebookLM as a source in step 4</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Example Invocations</div>
+      <pre><span class="cm"># Basic search — top 20, last 6 months (defaults)</span>
+python <span class="st">"~/.claude/skills/yt-search/scripts/search.py"</span> claude code tutorial
+
+<span class="cm"># Fewer results, tighter window</span>
+python <span class="st">"~/.claude/skills/yt-search/scripts/search.py"</span> obsidian workflow <span class="kw">--count</span> <span class="li">5</span> <span class="kw">--months</span> <span class="li">3</span>
+
+<span class="cm"># All-time, no date filter (evergreen topics)</span>
+python <span class="st">"~/.claude/skills/yt-search/scripts/search.py"</span> AI agents <span class="kw">--count</span> <span class="li">10</span> <span class="kw">--no-date-filter</span>
+
+<span class="cm"># When called from within yt-pipeline (auto-retry pattern)</span>
+<span class="cm"># If no results → retries with broader query or --no-date-filter automatically</span></pre>
+    </div>
+
+    <div class="callout purple">
+      <div class="callout-label">🔧 Skill Design Insight</div>
+      <p>The search skill is <em>intentionally narrow</em> — search + metadata only. It knows nothing about NotebookLM, selection criteria, or analysis. This makes it independently useful (<code>/yt-search</code> alone) and easy to test before wiring into the pipeline.</p>
+    </div>
+
+    <div class="card purple">
+      <div class="card-title purple">📄 Raw Source — YT-search-skill.md</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">The complete file as Claude Code sees it. Color-coded by token type.</div>
+<pre style="white-space:pre-wrap;word-break:break-word;"><span class="fm-delim">---</span>
+<span class="fm-key">name:</span> <span class="fm-val">yt-search</span>
+<span class="fm-key">description:</span> <span class="fm-val">Search YouTube and return structured video results with metadata. Use this skill whenever the user wants to search YouTube, find videos on a topic, research what's trending on YouTube, compare YouTube videos, or look up YouTube creators/channels. Triggers on phrases like "search YouTube for", "find videos about", "what videos are there on", "YouTube results for", or any request involving YouTube video discovery or research.</span>
+<span class="fm-delim">---</span>
+
+<span class="hd"># YouTube Search</span>
+
+<span class="cm">Search YouTube using yt-dlp and return structured, formatted results with engagement metrics.</span>
+
+<span class="hd">## How to use</span>
+
+<span class="cm">Run the search script:</span>
+
+<span class="fn">python</span> <span class="st">"C:/Users/Chase/.claude/skills/yt-search/scripts/search.py"</span> <span class="kw">&lt;query&gt;</span> [<span class="kw">--count</span> N] [<span class="kw">--months</span> N] [<span class="kw">--no-date-filter</span>]
+
+<span class="hd">### Parameters</span>
+<span class="li">- `&lt;query&gt;`</span> <span class="cm">— search terms (required)</span>
+<span class="li">- `--count N`</span> <span class="cm">— number of results to return (default: 20)</span>
+<span class="li">- `--months N`</span> <span class="cm">— only show videos from the last N months (default: 6)</span>
+<span class="li">- `--no-date-filter`</span> <span class="cm">— include videos of any age</span>
+
+<span class="hd">### Examples</span>
+
+<span class="cm"># Basic search (top 20, last 6 months)</span>
+<span class="fn">python</span> <span class="st">"C:/Users/Chase/.claude/skills/yt-search/scripts/search.py"</span> <span class="li">claude code tutorial</span>
+
+<span class="cm"># Fewer results, shorter window</span>
+<span class="fn">python</span> <span class="st">"C:/Users/Chase/.claude/skills/yt-search/scripts/search.py"</span> <span class="li">obsidian workflow</span> <span class="kw">--count</span> <span class="li">5</span> <span class="kw">--months</span> <span class="li">3</span>
+
+<span class="cm"># All time, no date filter</span>
+<span class="fn">python</span> <span class="st">"C:/Users/Chase/.claude/skills/yt-search/scripts/search.py"</span> <span class="li">AI agents</span> <span class="kw">--count</span> <span class="li">10</span> <span class="kw">--no-date-filter</span>
+
+<span class="hd">## Output format</span>
+
+<span class="cm">Each result includes:</span>
+<span class="li">- Title</span>
+<span class="li">- Channel name and subscriber count</span>
+<span class="li">- View count</span>
+<span class="li">- Duration</span>
+<span class="li">- Upload date</span>
+<span class="li">- Engagement ratio (views / subscribers)</span> <span class="cm">— higher means the video outperformed the channel's base</span>
+<span class="li">- Direct URL</span>
+
+<span class="cm">Results are separated by dividers for easy scanning. Status messages (searching, filtering) go to stderr; the formatted results go to stdout.</span>
+
+<span class="hd">## Notes</span>
+
+<span class="li">- yt-dlp must be installed (`pip install yt-dlp`)</span>
+<span class="li">- The script fetches 2x the requested count to compensate for date filtering</span>
+<span class="li">- Subscriber counts come from yt-dlp metadata and may occasionally be unavailable (shown as N/A)</span></pre>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent4);"></span><span style="color:var(--text-muted);">YAML key</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent3);"></span><span style="color:var(--text-muted);">YAML value / list item</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--text-dim);"></span><span style="color:var(--text-muted);">YAML delimiter / comment</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent4);"></span><span style="color:var(--text-muted);">Markdown heading</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent);"></span><span style="color:var(--text-muted);">CLI flag / keyword</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent2);"></span><span style="color:var(--text-muted);">Command / function</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#7ec8e3;"></span><span style="color:var(--text-muted);">String / path</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================ YT-PIPELINE SKILL -->
+  <div class="section" id="tab-yt-pipeline-skill">
+
+    <div class="hero">
+      <h2>YT Pipeline Skill — Internals</h2>
+      <p>The "super skill" that orchestrates five sub-skills across seven steps. Three times longer than the search skill because it coordinates the entire workflow. Understand this structure and you understand how to build any pipeline skill.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card purple">
+        <div class="card-title purple">Frontmatter</div>
+        <div class="frontmatter">
+          <span class="fm-delim">---</span><br>
+          <span class="fm-key">name:</span> <span class="fm-val">yt-pipeline</span><br>
+          <span class="fm-key">description:</span> <span class="fm-val">"End-to-end YouTube research pipeline<br>&nbsp;&nbsp;— searches YouTube, auto-selects the best<br>&nbsp;&nbsp;videos, creates a NotebookLM notebook,<br>&nbsp;&nbsp;adds them as sources, runs analysis, and<br>&nbsp;&nbsp;optionally generates deliverables..."</span><br>
+          <span class="fm-delim">---</span>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-muted);line-height:1.6;">
+          Description includes explicit <strong>trigger phrases</strong> and explicit <strong>DO NOT activate for</strong> cases. This prevents the pipeline from firing when the user just wants a quick search.
+        </div>
+      </div>
+
+      <div class="card blue">
+        <div class="card-title">Intent Detection Block</div>
+        <div style="font-size:13px;color:var(--text);line-height:1.6;margin-bottom:10px;">The skill opens with an explicit <strong>when to activate / when NOT to activate</strong> section:</div>
+        <div class="decision-grid" style="margin-top:0;">
+          <div class="decision-col">
+            <div class="decision-col-header use">✓ Activate</div>
+            <div class="decision-item"><span class="di">✅</span>"Research X on YouTube"</div>
+            <div class="decision-item"><span class="di">✅</span>"Find YouTube videos about X and analyze"</div>
+            <div class="decision-item"><span class="di">✅</span>"Make a podcast from YouTube videos about Y"</div>
+            <div class="decision-item"><span class="di">✅</span>"What's YouTube saying about Z?"</div>
+          </div>
+          <div class="decision-col">
+            <div class="decision-col-header skip">✗ Don't Activate</div>
+            <div class="decision-item"><span class="di">❌</span>Simple search with no analysis intent → use <code style="font-size:11px;">/yt-search</code></div>
+            <div class="decision-item"><span class="di">❌</span>NotebookLM tasks not involving YouTube → use <code style="font-size:11px;">/notebooklm</code></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">Auto-Select Criteria (Step 3) — Priority Order</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Priority</th><th>Criterion</th><th>How It's Applied</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1 — Highest</td>
+            <td>Relevance</td>
+            <td>Does the title/channel match user intent? Drop obvious mismatches immediately.</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Engagement ratio</td>
+            <td>Views ÷ subs outliers signal the video resonated beyond the channel's base audience.</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Recency</td>
+            <td>Prefer newer content when quality is comparable.</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Depth</td>
+            <td>Prefer 10+ min videos. Shorts/clips deprioritized for research purposes.</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Source diversity</td>
+            <td>Avoid multiple videos from the same creator. Broader perspective = better analysis.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Deliverable Generation Map</div>
+      <table class="deliv-table">
+        <thead>
+          <tr><th>User says…</th><th>Command</th><th>Speed</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="d-trigger">"podcast" / "audio"</td>
+            <td class="d-cmd">notebooklm generate audio "..." --json</td>
+            <td class="d-speed d-slow">⏳ Long — background agent</td>
+          </tr>
+          <tr>
+            <td class="d-trigger">"video"</td>
+            <td class="d-cmd">notebooklm generate video "..." --json</td>
+            <td class="d-speed d-slow">⏳ Long — background agent</td>
+          </tr>
+          <tr>
+            <td class="d-trigger">"report" / "summary"</td>
+            <td class="d-cmd">notebooklm generate report --format briefing-doc</td>
+            <td class="d-speed d-fast">⚡ Instant</td>
+          </tr>
+          <tr>
+            <td class="d-trigger">"study guide"</td>
+            <td class="d-cmd">notebooklm generate report --format study-guide</td>
+            <td class="d-speed d-fast">⚡ Instant</td>
+          </tr>
+          <tr>
+            <td class="d-trigger">"quiz"</td>
+            <td class="d-cmd">notebooklm generate quiz --json</td>
+            <td class="d-speed d-slow">⏳ Long — background agent</td>
+          </tr>
+          <tr>
+            <td class="d-trigger">"flashcards"</td>
+            <td class="d-cmd">notebooklm generate flashcards --json</td>
+            <td class="d-speed d-slow">⏳ Long — background agent</td>
+          </tr>
+          <tr>
+            <td class="d-trigger">"mind map"</td>
+            <td class="d-cmd">notebooklm generate mind-map</td>
+            <td class="d-speed d-fast">⚡ Instant</td>
+          </tr>
+          <tr>
+            <td class="d-trigger">"slide deck" / "slides"</td>
+            <td class="d-cmd">notebooklm generate slide-deck --json</td>
+            <td class="d-speed d-slow">⏳ Long — background agent</td>
+          </tr>
+          <tr>
+            <td class="d-trigger">"infographic"</td>
+            <td class="d-cmd">notebooklm generate infographic --json</td>
+            <td class="d-speed d-slow">⏳ Long — background agent</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">Long-running artifacts: parse <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">artifact_id</code> from JSON output and spawn a background agent to wait + download. User is notified when ready.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Error Handling Rules (Step 4 / Add Sources)</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🔐</div>
+          <div class="rule-text"><span class="neg">Auth failure</span> → tell user to run <code>notebooklm login</code> and stop pipeline. Don't attempt to continue.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⏭️</div>
+          <div class="rule-text"><strong>Individual source failure</strong> → skip it, continue with remaining sources. Report all skipped sources at end.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🛑</div>
+          <div class="rule-text"><span class="neg">All sources fail</span> → stop and report the error. Nothing to analyze if no sources were added.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout purple">
+      <div class="callout-label">📐 Structural Insight</div>
+      <p>The pipeline skill is long (~3× the search skill) because it has to explicitly describe all 7 steps, autonomy rules, error handling, deliverable mappings, and output style. Every rule that's <em>not</em> written in the skill file will default to Claude's judgment — which may not match what you want. <em>Be explicit.</em></p>
+    </div>
+
+    <div class="card purple">
+      <div class="card-title purple">📄 Raw Source — YT-pipeline-skill.md</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">The complete file as Claude Code sees it. Notice how much more explicit every section is compared to the search skill — autonomy rules, error handling, pause points, output style all spelled out.</div>
+<pre style="white-space:pre-wrap;word-break:break-word;"><span class="fm-delim">---</span>
+<span class="fm-key">name:</span> <span class="fm-val">yt-pipeline</span>
+<span class="fm-key">description:</span> <span class="fm-val">"End-to-end YouTube research pipeline — searches YouTube, auto-selects the best videos, creates a NotebookLM notebook, adds them as sources, runs analysis, and optionally generates deliverables (podcasts, reports, quizzes, etc). Trigger on phrases like 'research X on YouTube', 'find YouTube videos about X and analyze them', 'what are YouTubers saying about Z', 'create a podcast from YouTube videos about Y'."</span>
+<span class="fm-delim">---</span>
+
+<span class="hd"># YouTube Research Pipeline</span>
+
+<span class="cm">Fully automated pipeline: YouTube search → smart video selection → NotebookLM notebook → analysis → deliverable. Runs end-to-end without asking for input mid-flow unless the request is genuinely too vague.</span>
+
+<span class="hd">## When This Skill Activates</span>
+
+<span class="hd">**Intent detection — activate when the user wants to:**</span>
+<span class="li">- Research a topic using YouTube as a source</span>
+<span class="li">- Find and analyze YouTube videos on a topic</span>
+<span class="li">- Create a deliverable (podcast, report, quiz, etc.) from YouTube content</span>
+<span class="li">- Understand what YouTubers are saying about something</span>
+
+<span class="hd">**Example triggers:**</span>
+<span class="li">- "Research what YouTubers are saying about Claude Code"</span>
+<span class="li">- "Find YouTube videos about AI agents and make a podcast"</span>
+<span class="li">- "What's the YouTube consensus on [topic]?"</span>
+<span class="li">- "Search YouTube for [topic] and summarize the findings"</span>
+<span class="li">- "Create a study guide from YouTube videos about [topic]"</span>
+
+<span class="hd">**Do NOT activate for:**</span>
+<span class="li">- Simple YouTube searches with no analysis intent (use `/yt-search` instead)</span>
+<span class="li">- NotebookLM tasks that don't involve YouTube (use `/notebooklm` instead)</span>
+
+<span class="hd">## Pipeline Steps</span>
+
+<span class="hd">### Step 0 — Pre-flight Check</span>
+
+<span class="cm">Before starting the pipeline, verify NotebookLM auth is working:</span>
+<span class="fn">notebooklm</span> <span class="kw">status</span>
+<span class="cm">If it fails or shows no authentication, tell the user to run `notebooklm login` and stop. This catches auth issues early instead of discovering them mid-pipeline after the search and selection work is already done.</span>
+
+<span class="hd">### Step 1 — Understand the Request</span>
+
+<span class="cm">Extract from the user's message:</span>
+<span class="li">- **Search query** — the topic to search for</span>
+<span class="li">- **Analysis goal** — what they want to learn (optional)</span>
+<span class="li">- **Deliverable type** — podcast, report, quiz, etc. (optional)</span>
+
+<span class="cm">**If the request is too vague** to form a useful YouTube search query (e.g. "research stuff"), ask ONE short clarifying question, then proceed.</span>
+<span class="cm">**Otherwise, proceed immediately.** Do not ask unnecessary questions. Infer reasonable defaults.</span>
+
+<span class="hd">### Step 2 — Search YouTube</span>
+
+<span class="cm">Run the yt-search script:</span>
+<span class="fn">python</span> <span class="st">~/.claude/skills/yt-search/scripts/search.py</span> <span class="kw">&lt;query&gt;</span> <span class="kw">--count</span> <span class="li">10</span> <span class="kw">--months</span> <span class="kw">&lt;M&gt;</span>
+
+<span class="li">- Craft the best search query from the user's intent — this may differ from their exact words</span>
+<span class="li">- Default to `--months 6` unless the topic warrants a wider window (evergreen content → `--months 12` or `--no-date-filter`)</span>
+<span class="li">- **Show the full results to the user** — present all videos with their complete metadata</span>
+
+<span class="cm">**If no results:** Automatically retry with a broader query or `--no-date-filter` before reporting failure.</span>
+
+<span class="hd">### Step 3 — Auto-Select Videos</span>
+
+<span class="cm">Immediately after showing results, auto-select the best videos. **Do not wait for user input.**</span>
+
+<span class="hd">**Selection criteria (in priority order):**</span>
+<span class="li">1. **Relevance** — does the title/channel match the user's intent?</span>
+<span class="li">2. **Engagement** — views-to-subs ratio outliers signal high-quality content</span>
+<span class="li">3. **Recency** — prefer newer content when quality is comparable</span>
+<span class="li">4. **Depth** — prefer longer videos (10+ min) over shorts/clips for research purposes</span>
+<span class="li">5. **Source diversity** — prefer videos from different channels over multiple from the same creator</span>
+
+<span class="cm">**Drop obvious mismatches:** wrong topic, unrelated shorts, clickbait with low engagement.</span>
+<span class="cm">**Target 5-8 videos.** NotebookLM works best with focused source sets.</span>
+
+<span class="hd">### Step 4 — Create Notebook &amp; Add Sources</span>
+
+<span class="cm">1. Create notebook:</span>
+<span class="fn">notebooklm</span> <span class="kw">create</span> <span class="st">"YT Research: &lt;topic&gt;"</span> <span class="kw">--json</span>
+<span class="cm">   Parse the notebook ID from the JSON output.</span>
+
+<span class="cm">2. Set context:</span>
+<span class="fn">notebooklm</span> <span class="kw">use</span> <span class="kw">&lt;notebook_id&gt;</span>
+
+<span class="cm">3. Add each selected video as a source:</span>
+<span class="fn">notebooklm</span> <span class="kw">source add</span> <span class="st">"&lt;youtube_url&gt;"</span> <span class="kw">--json</span>
+<span class="cm">   Collect source IDs from the JSON output.</span>
+
+<span class="cm">4. Wait for all sources to process:</span>
+<span class="fn">notebooklm</span> <span class="kw">source wait</span> <span class="kw">&lt;source_id&gt;</span>
+<span class="cm">   Run these sequentially. Each takes 10-60 seconds.</span>
+
+<span class="hd">**Error handling:**</span>
+<span class="li">- Auth failure → tell user to run `notebooklm login`</span>
+<span class="li">- Individual source failure → skip it, continue with others, report skipped sources at the end</span>
+<span class="li">- If all sources fail → stop and report the error</span>
+
+<span class="hd">### Step 5 — Analysis</span>
+
+<span class="cm">Run analytical questions via `notebooklm ask "..."` tailored to the user's goal.</span>
+
+<span class="hd">**Default questions (no specific goal):**</span>
+<span class="li">1. `notebooklm ask "What are the key themes and main points across these videos?" --new`</span>
+<span class="li">2. `notebooklm ask "Where do the creators agree and where do they have different perspectives?"`</span>
+<span class="li">3. `notebooklm ask "What are the most actionable takeaways someone could apply immediately?"`</span>
+
+<span class="cm">Use `--new` on the first question to start a fresh conversation. Subsequent questions are follow-ups in the same thread (no `--new` flag).</span>
+
+<span class="cm">**If in an Obsidian vault:** Offer to save the analysis as a research note to `/research/` following vault conventions.</span>
+
+<span class="hd">### Step 6 — Generate Deliverable (If Requested)</span>
+
+<span class="cm">Only if the user asked for a specific deliverable (podcast, report, quiz, study guide, etc.).</span>
+
+<span class="hd">**Map user intent to NotebookLM generation commands:**</span>
+
+<span class="cm">| User says              | Command                                              |</span>
+<span class="cm">|------------------------|------------------------------------------------------|</span>
+<span class="li">| "podcast" / "audio"   </span><span class="cm">| `notebooklm generate audio "Focus on [goal]" --json` |</span>
+<span class="li">| "video"               </span><span class="cm">| `notebooklm generate video "Focus on [goal]" --json` |</span>
+<span class="li">| "report" / "summary"  </span><span class="cm">| `notebooklm generate report --format briefing-doc`   |</span>
+<span class="li">| "study guide"         </span><span class="cm">| `notebooklm generate report --format study-guide`    |</span>
+<span class="li">| "quiz"                </span><span class="cm">| `notebooklm generate quiz --json`                    |</span>
+<span class="li">| "flashcards"          </span><span class="cm">| `notebooklm generate flashcards --json`              |</span>
+<span class="li">| "mind map"            </span><span class="cm">| `notebooklm generate mind-map`                       |</span>
+<span class="li">| "slide deck"          </span><span class="cm">| `notebooklm generate slide-deck --json`              |</span>
+<span class="li">| "infographic"         </span><span class="cm">| `notebooklm generate infographic --json`             |</span>
+
+<span class="hd">**For long-running artifacts (audio, video, quiz, flashcards, slide-deck, infographic):**</span>
+<span class="li">- Parse the `task_id` / `artifact_id` from the `--json` output</span>
+<span class="li">- Spawn a background agent to wait and download</span>
+<span class="li">- Tell the user generation has started and they'll be notified when it's ready</span>
+
+<span class="hd">**For instant/fast artifacts (report, mind map, data table):**</span>
+<span class="li">- Generate and present immediately</span>
+<span class="li">- Offer to save to the vault if applicable</span>
+
+<span class="hd">## Autonomy Rules</span>
+
+<span class="cm">**Run the full pipeline automatically.** The entire point of this skill is end-to-end automation. Do not pause for confirmation between steps unless something fails.</span>
+
+<span class="hd">**The only acceptable pause points:**</span>
+<span class="li">- Step 1: Request is too vague to search → ask ONE clarifying question</span>
+<span class="li">- Step 4: Auth failure → tell user to run `notebooklm login`</span>
+<span class="li">- Step 6: Before generating a deliverable the user didn't explicitly ask for</span>
+
+<span class="cm">**Everything else flows automatically:** search → show results → select → notebook → sources → analysis → deliverable.</span>
+
+<span class="hd">## Output Style</span>
+
+<span class="li">- Show YouTube search results in full (the script output is well-formatted)</span>
+<span class="li">- Keep selection reasoning to 1-2 sentences</span>
+<span class="li">- Present analysis findings in bullet points with a `## Key Takeaways` section</span>
+<span class="li">- Use progress updates between steps: "Searching YouTube...", "Creating notebook...", "Adding 6 sources...", "Analyzing content..."</span></pre>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent4);"></span><span style="color:var(--text-muted);">YAML key / MD heading</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent3);"></span><span style="color:var(--text-muted);">YAML value / list item</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--text-dim);"></span><span style="color:var(--text-muted);">YAML delimiter / comment / prose</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent);"></span><span style="color:var(--text-muted);">CLI flag / keyword</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent2);"></span><span style="color:var(--text-muted);">Command / function</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'IBM Plex Mono',monospace;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#7ec8e3;"></span><span style="color:var(--text-muted);">String / path / quoted value</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================ SKILL DESIGN -->
+  <div class="section" id="tab-skill-design">
+
+    <div class="hero">
+      <h2>Skill Design Philosophy</h2>
+      <p>Mastering skills is the value unlock of Claude Code. Here's the mental model and process for turning any workflow into a <strong>modular, testable, composable skill system</strong>.</p>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">The Modular Skill Mindset</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Break the large task into discrete phases</strong><br>
+            Before writing any skill, map out your workflow from step zero to the end deliverable. If you can't articulate it, Claude Code can help — stream-of-consciousness explain what you do, then ask it to identify phases.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Turn each phase into its own skill</strong><br>
+            One skill = one well-defined job. Keep them narrow. The YT search skill doesn't know about NotebookLM. The pipeline skill doesn't contain the search logic.
+            <span class="tip">💡 Each skill should be independently invokable and testable.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Test each skill in isolation first</strong><br>
+            Before building the "super skill," verify every sub-skill works. Troubleshooting a 7-step pipeline is exponentially harder than troubleshooting a 55-line search script.
+            <span class="note">⚠ Don't build the pipeline until all sub-skills are locked in.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Combine into a pipeline skill</strong><br>
+            Once sub-skills are proven, create a higher-order skill that calls them in sequence. The pipeline skill is essentially: step 0 calls X, step 1 calls Y, step 2 calls Z.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card green">
+        <div class="card-title green">Why Modular > Monolithic</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🧩</div>
+            <div class="rule-text"><span class="pos">Use sub-skills independently</span> — you don't always want the full pipeline. Sometimes just <code>/yt-search</code> is enough.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔬</div>
+            <div class="rule-text"><span class="pos">Easier to debug</span> — isolate which step is failing without guessing across 7 steps simultaneously.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">♻️</div>
+            <div class="rule-text"><span class="pos">Reusable across pipelines</span> — the NotebookLM skill could be called from a Twitter pipeline, a GitHub pipeline, etc.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><span class="pos">Piecemeal improvement</span> — improve the search skill without touching the pipeline skill. Changes are contained.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Skill Creation Process</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">A</div>
+            <div class="step-body"><strong>Open Claude Code + invoke Skill Creator</strong><br>The Skill Creator skill (from Anthropic) tests and benchmarks skills as you build them.</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">B</div>
+            <div class="step-body"><strong>Enable Plan Mode</strong><br>Use plan mode so Claude thinks before acting. You're designing, not executing yet.</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">C</div>
+            <div class="step-body"><strong>Stream-of-consciousness explain your workflow</strong><br>Talk for 2–5 minutes. Include deliverables, examples, edge cases, what you don't want.</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">D</div>
+            <div class="step-body"><strong>Ask: "How do we break this into phases and skills?"</strong><br>Claude will identify logical boundaries and propose a modular structure.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">What to Think About When Designing a Skill</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🎯</div>
+          <div class="rule-text"><strong>End result / deliverable</strong> — what does success look like? A markdown file? A list of URLs? A report? Define this first.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚙️</div>
+          <div class="rule-text"><strong>Parameters</strong> — what inputs does this skill need? What are sensible defaults? (e.g. <code>--count 10</code>, <code>--months 6</code>)</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🚦</div>
+          <div class="rule-text"><strong>Trigger conditions</strong> — when should this skill activate? When should it explicitly NOT activate? Write both into the frontmatter description.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🤖</div>
+          <div class="rule-text"><strong>Autonomy rules</strong> — where should Claude pause and ask? Where should it proceed without asking? Be explicit. Silence = Claude uses judgment.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">💥</div>
+          <div class="rule-text"><strong>Error handling</strong> — what happens when a step fails? Skip and continue? Stop entirely? Report at end? Define for each possible failure point.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📤</div>
+          <div class="rule-text"><strong>Output format</strong> — bullet points? Markdown file? JSON? Terminal summary + long-form report? Specify exactly.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">🚦 The Trigger Signal</div>
+      <p>If you find yourself giving Claude Code the same specialized instructions <em>more than once</em>, that's your signal. Stop and create a skill. The goal is to <em>never repeat yourself</em> — any repeated, specialized workflow is a skill waiting to be written.</p>
+    </div>
+
+  </div>
+
+  <!-- ============================================================ AUTOMATION -->
+  <div class="section" id="tab-automation">
+
+    <div class="hero">
+      <h2>Beyond Manual — Automation</h2>
+      <p>Skills require Claude Code to be open and running. But some research tasks can be <strong>fully automated</strong> — running on your machine every morning without you doing anything.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">Two Automation Paths</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🖥️</div>
+            <div class="rule-text"><strong>Claude Code Desktop — Scheduled Tasks</strong><br>If you use the Claude Code desktop app, you can set up scheduled tasks that run skills on a schedule automatically.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Direct API / Task Scheduler</strong><br>If the research is a simple API request (no LLM needed), have Claude Code write a task scheduler script that runs independently on your machine.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">Real Example: GitHub Trending</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📅</div>
+            <div class="rule-text">GitHub publishes a <strong>daily trending report</strong> via their API. Pure API call — no LLM required.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🤖</div>
+            <div class="rule-text">Claude Code wrote a <strong>task scheduler script</strong> — runs on the machine itself at 8am every day. Claude doesn't need to be running.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🌅</div>
+            <div class="rule-text">Every morning: wake up to a report of <span class="pos">trending AI repos</span> — weekly and monthly. Ground-floor signal before anyone else is talking about it.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">How to Find Your Own Automated Source</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Identify your "fountainhead"</strong><br>
+            What is the primary source of signal in your niche? GitHub repos? arXiv papers? A specific API? Twitter/X? Product changelogs? Wherever the information originates is where you want to tap.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Ask Claude Code if an API exists</strong><br>
+            "Is there an API for [source] that gives me [type of data]?" If yes, Claude can write the retrieval + formatting code for you.
+            <span class="tip">💡 You don't need to know if an API exists — that's Claude's job.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Have Claude write the task scheduler</strong><br>
+            Specify: what to fetch, how to format it, where to save it (Obsidian vault, email, etc.), and what time to run.
+            <span class="note">⚠ Claude writes the code; your machine runs it. Claude doesn't need to be involved at runtime.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Wake up to a report</strong><br>
+            That's it. You now have a passive intelligence feed on your niche that requires zero manual effort after setup.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">🧠 Ideation + Execution</div>
+      <p>Don't do your workflow planning in isolation and then bring Claude Code just for execution. Open Skill Creator, put it in plan mode, and <em>stream-of-consciousness your life</em>. Let Claude identify what can be automated, what can be a skill, and what should stay manual. It can do <em>both</em> ideation and execution — you just have to give it context.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card red">
+        <div class="card-title red">Manual Research (Skills)</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">💬</div>
+            <div class="rule-text">Requires Claude Code to be open and active. You initiate each session.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔍</div>
+            <div class="rule-text">Best for <strong>ad-hoc topics</strong> — "what's going on with X right now?" — where the topic changes each time.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🛠️</div>
+            <div class="rule-text">Full pipeline: search → select → analyze → report. 5 sub-skills. Full autonomy within the session.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">Automated Research (Scheduler)</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⏰</div>
+            <div class="rule-text">Runs on a schedule. No Claude Code needed at runtime. You wrote it once; it runs forever.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📊</div>
+            <div class="rule-text">Best for <strong>recurring, predictable data</strong> — GitHub trending, daily API snapshots, changelog monitoring.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📥</div>
+            <div class="rule-text">Delivers to Obsidian, email, or a file. You wake up with the report already waiting.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+  // Tab navigation
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  // Theme toggle
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Teams — Claude Code Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .badge-exp {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent2-glow);
+    color: var(--accent2);
+    border: 1px solid rgba(224,95,122,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+
+  .toggle-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 780px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+  .hero .meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .hero .meta-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .str { color: var(--accent3); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+  .ref-table td.green { color: var(--accent3) !important; }
+  .ref-table td.red   { color: var(--accent2) !important; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di        { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 120px;
+  }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent2); }
+  .stat-val.green { color: var(--accent3); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Architecture diagram */
+  .arch-diagram {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .arch-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .arch-node {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .arch-node.lead {
+    background: rgba(79,142,247,0.15);
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    min-width: 120px;
+  }
+
+  .arch-node.user {
+    background: rgba(247,162,62,0.12);
+    border: 1.5px solid var(--accent4);
+    color: var(--accent4);
+    min-width: 80px;
+  }
+
+  .arch-node.worker {
+    background: rgba(62,207,142,0.10);
+    border: 1.5px solid var(--accent3);
+    color: var(--accent3);
+    min-width: 100px;
+    font-size: 10px;
+  }
+
+  .arch-node.shared {
+    background: rgba(224,95,122,0.10);
+    border: 1.5px dashed var(--accent2);
+    color: var(--accent2);
+    min-width: 160px;
+    font-size: 10px;
+  }
+
+  .arch-arrow {
+    font-size: 16px;
+    color: var(--text-dim);
+    line-height: 1;
+  }
+
+  .arch-connector {
+    width: 1px;
+    height: 20px;
+    background: var(--border-accent);
+  }
+
+  .arch-workers-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .arch-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  /* OS toggle for keyboard shortcuts */
+  .os-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 14px;
+  }
+
+  .os-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 4px 14px;
+    border: 1px solid var(--border-accent);
+    background: var(--bg-code);
+    color: var(--text-muted);
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .os-btn:first-child { border-radius: 4px 0 0 4px; border-right: none; }
+  .os-btn:last-child  { border-radius: 0 4px 4px 0; }
+  .os-btn.active      { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); }
+
+  /* cycle-key spans for OS swapping */
+  .cycle-key { transition: opacity 0.15s; }
+
+  .kbd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    border: 1px solid var(--border-accent);
+    border-bottom-width: 2px;
+    padding: 1px 7px;
+    border-radius: 4px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  /* pattern cards */
+  .pattern-card {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    transition: border-color 0.2s;
+  }
+  .pattern-card:hover { border-color: var(--border-accent); }
+
+  .pattern-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pattern-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .prompt-block {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent4);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent4);
+    line-height: 1.6;
+  }
+
+  .prompt-block .pl { color: var(--text-muted); font-style: italic; font-size: 10px; display: block; margin-bottom: 4px; }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Agent Teams<span> — Claude Code</span></div>
+    <div class="badge">MODULE 17</div>
+    <div class="badge-exp">EXPERIMENTAL</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="setup">Setup</button>
+  <button data-tab="usage">Usage</button>
+  <button data-tab="patterns">Patterns</button>
+  <button data-tab="gotchas">Gotchas</button>
+</nav>
+
+<main>
+
+  <!-- =========================================================
+       OVERVIEW
+       ========================================================= -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Agent Teams</h2>
+      <p>Sub-agents on steroids. Instead of isolated workers reporting back to one boss, agent teams give every member a <strong>shared task list</strong> and <strong>direct messaging</strong> — so teammates talk to each other, not just the lead. Real engineers in a room, not interns at the library.</p>
+      <div class="meta">
+        <span class="meta-pill">DIFFICULTY: ADVANCED</span>
+        <span class="meta-pill">PREREQS: MODULES 1–10, 16</span>
+        <span class="meta-pill">READ TIME: ~12 MIN</span>
+      </div>
+    </div>
+
+    <!-- Architecture diagram -->
+    <div class="card">
+      <div class="card-title">Architecture</div>
+      <div class="arch-diagram">
+        <div class="arch-row">
+          <div class="arch-node user">👤 YOU</div>
+          <div class="arch-arrow">↕</div>
+          <div class="arch-node lead">🧠 TEAM LEAD</div>
+        </div>
+        <div class="arch-connector"></div>
+        <div class="arch-workers-row">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="arch-node worker">⚙ FRONTEND</div>
+            <div class="arch-label">Teammate A</div>
+          </div>
+          <div class="arch-arrow" style="font-size:12px;color:var(--accent3);">↔</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="arch-node worker">⚙ BACKEND</div>
+            <div class="arch-label">Teammate B</div>
+          </div>
+          <div class="arch-arrow" style="font-size:12px;color:var(--accent3);">↔</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="arch-node worker">⚙ TESTS</div>
+            <div class="arch-label">Teammate C</div>
+          </div>
+        </div>
+        <div class="arch-connector"></div>
+        <div class="arch-node shared">📋 SHARED TASK LIST + MAILBOX</div>
+      </div>
+      <div style="margin-top:14px; font-size:12px; color:var(--text-muted); line-height:1.6">
+        The lead creates teammates, assigns work, and pulls results together. You only talk to the lead — no managing chaos. Teammates communicate with each other directly via the shared mailbox, not through the lead as a relay.
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">Four Components</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🧠</div>
+            <div class="rule-text"><span class="pos">Team Lead</span> — Your main Claude Code session. Creates the team, assigns work, coordinates results. You talk only to this.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚙</div>
+            <div class="rule-text"><span class="pos">Teammates</span> — Separate Claude Code instances. Each has its own conversation memory, works independently, messages other teammates directly.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📋</div>
+            <div class="rule-text"><span class="pos">Task List</span> — Shared work items. States: <code>pending → in progress → completed</code>. Dependencies auto-unblock when prerequisites finish.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📬</div>
+            <div class="rule-text"><span class="pos">Mailbox</span> — Direct messaging between any agents. No bottleneck through the lead.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title yellow">When Agent Teams Shine</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔬</div>
+            <div class="rule-text"><strong>Research with debate</strong> — Multiple agents test competing theories and actively try to disprove each other. Finds root causes faster than one agent guessing.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Parallel work across layers</strong> — Frontend, backend, and tests each owned by a different teammate working simultaneously.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔍</div>
+            <div class="rule-text"><strong>Multi-angle review</strong> — Security, performance, and test coverage reviewers all examining the same code at the same time.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🆕</div>
+            <div class="rule-text"><strong>New models or features</strong> — Research and recommendation across multiple competing approaches.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sub-Agents vs. Agent Teams</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Sub-Agents</th>
+            <th>Agent Teams</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Communication</td>
+            <td>Report back to main agent only</td>
+            <td class="green">Message each other directly</td>
+          </tr>
+          <tr>
+            <td>Coordination</td>
+            <td>Managed entirely by main agent</td>
+            <td class="green">Self-coordinate via shared task list</td>
+          </tr>
+          <tr>
+            <td>Best for</td>
+            <td>Focused tasks where only the result matters</td>
+            <td class="green">Work requiring discussion + collaboration</td>
+          </tr>
+          <tr>
+            <td>Cost</td>
+            <td class="green">Cheaper (results summarized back)</td>
+            <td>More expensive (each = full instance)</td>
+          </tr>
+          <tr>
+            <td>Nesting</td>
+            <td>Cannot create sub-agents</td>
+            <td>Cannot create sub-teams</td>
+          </tr>
+          <tr>
+            <td>Analogy</td>
+            <td>Interns sent to the library</td>
+            <td class="green">Senior engineers in a room</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Rule of Thumb</div>
+      <p>Use <em>sub-agents</em> when you need quick, focused workers that report back. Use <em>agent teams</em> when teammates need to share findings, challenge each other, and coordinate on their own.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- =========================================================
+       SETUP
+       ========================================================= -->
+  <div class="section" id="tab-setup">
+
+    <div class="hero">
+      <h2>Enabling Agent Teams</h2>
+      <p>Agent teams are <strong>disabled by default</strong>. One environment variable is all it takes. Recommend settings.json — it persists across sessions.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Option 1 — settings.json (Recommended)</div>
+      <pre><span class="cm">// Add to your Claude Code settings.json</span>
+{
+  <span class="kw">"env"</span>: {
+    <span class="str">"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"</span>: <span class="li">"1"</span>
+  }
+}</pre>
+      <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">Persists across all sessions. Recommended approach.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Option 2 — Shell Environment</div>
+      <pre><span class="fn">export</span> <span class="kw">CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS</span>=<span class="li">1</span></pre>
+      <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">Session-only. Must re-export each terminal session.</div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">💡 Quick Enable Trick</div>
+      <p>Copy the documentation page, paste it into Claude Code, and say: <em>"Enable agent teams for me."</em> Claude will update the settings automatically.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Display Modes</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Mode</th>
+            <th>Description</th>
+            <th>Requires</th>
+            <th>Does NOT Work In</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>in-process (default)</td>
+            <td>All teammates in your main terminal. Navigate with Shift+Down.</td>
+            <td>Nothing extra</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>tmux (split-pane)</td>
+            <td>Each teammate gets its own pane. See everyone simultaneously.</td>
+            <td>tmux or iTerm2</td>
+            <td class="red">VS Code terminal, Windows Terminal, Ghostty</td>
+          </tr>
+        </tbody>
+      </table>
+      <pre style="margin-top:14px"><span class="cm">// Enable split-pane in settings.json</span>
+{ <span class="kw">"teammateMode"</span>: <span class="str">"tmux"</span> }
+
+<span class="cm">// Or for one session only:</span>
+<span class="fn">claude</span> --teammate-mode in-process</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Cost Reality</div>
+      <div class="stat-row">
+        <div class="stat">
+          <div class="stat-val green">~200K</div>
+          <div class="stat-label">Solo session</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" style="color:var(--accent4)">~440K</div>
+          <div class="stat-label">3 sub-agents</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">~800K</div>
+          <div class="stat-label">3-person agent team</div>
+        </div>
+      </div>
+      <div style="margin-top:14px; font-size:12px; color:var(--text-muted); line-height:1.6">
+        The jump from sub-agents to agent teams is significant because teammates maintain persistent conversations (sub-agents shut down after their task). Worthwhile for research, review, and new feature work. Use a single session for routine tasks.
+      </div>
+    </div>
+
+  </div><!-- /setup -->
+
+
+  <!-- =========================================================
+       USAGE
+       ========================================================= -->
+  <div class="section" id="tab-usage">
+
+    <div class="card">
+      <div class="card-title">Step-by-Step: Your First Team</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Enable the feature</strong><br>
+            Add <code>CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1</code> to your settings.json (see Setup tab).
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Use explicit language</strong><br>
+            You must say "create an agent team" — Claude will not spawn a team on its own just because the task is large.
+            <div class="prompt-block" style="margin-top:8px">
+              <span class="pl">Try this:</span>
+              "I'm designing a CLI tool that helps developers track TODO comments. Create an agent team to explore this from different angles: one teammate on UX, one on technical design, one playing devil's advocate."
+            </div>
+            <span class="note">⚠ Saying "do multiple tasks" or "use sub-agents" will NOT create a team. You must explicitly say "agent team."</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Watch the team form</strong><br>
+            The lead's terminal shows all teammates, their tasks, and status. Claude creates the team automatically — no manual management needed.
+            <span class="tip">💡 The lead shows a breakdown of the team structure and scope as it creates each teammate.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Navigate between teammates</strong><br>
+            <div style="margin-top:8px">
+              <!-- OS toggle -->
+              <div class="os-toggle-wrap">
+                <button class="os-btn active" onclick="setOS('mac')">macOS</button>
+                <button class="os-btn" onclick="setOS('win')">Win/Linux</button>
+              </div>
+              <table class="ref-table">
+                <thead><tr><th>Action</th><th>Shortcut</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Cycle through teammates</td>
+                    <td><span class="kbd cycle-key" data-mac="Shift+Down" data-win="Shift+Down">Shift+Down</span> <span style="font-size:11px;color:var(--text-muted)">(wraps back to lead)</span></td>
+                  </tr>
+                  <tr>
+                    <td>View teammate's full session</td>
+                    <td><span class="kbd cycle-key" data-mac="Enter" data-win="Enter">Enter</span></td>
+                  </tr>
+                  <tr>
+                    <td>Interrupt a teammate's turn</td>
+                    <td><span class="kbd cycle-key" data-mac="Escape" data-win="Escape">Escape</span></td>
+                  </tr>
+                  <tr>
+                    <td>Toggle the task list</td>
+                    <td><span class="kbd cycle-key" data-mac="Ctrl+T" data-win="Ctrl+T">Ctrl+T</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Message a specific teammate directly</strong><br>
+            Press Shift+Down to cycle to the teammate you want, then type your message.
+            <div class="prompt-block" style="margin-top:8px">
+              <span class="pl">Example:</span>
+              "Also check the session token rotation logic — I think there's a race condition when two tabs are open simultaneously."
+            </div>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <strong>Clean up when done</strong><br>
+            Always use the <em>lead</em> to clean up, not a teammate. Shut down all teammates first.
+            <pre><span class="cm"># Shut down individual teammate</span>
+<span class="fn">Ask the researcher teammate to shut down</span>
+
+<span class="cm"># Then clean up the team</span>
+<span class="fn">Clean up the team</span></pre>
+            <span class="note">⚠ The lead fails if teammates are still running. Shut them all down first.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Task Sizing</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">Just right</span> — Self-contained units with clear deliverables. E.g., build one API endpoint, write tests for one module. Aim for <strong>5–6 tasks per teammate</strong>.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Too small</span> — Coordination overhead exceeds benefit. E.g., renaming a variable.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Too large</span> — Teammates work too long without check-ins. E.g., "refactor the entire app."</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Team Sizing</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⭐</div>
+            <div class="rule-text"><strong>Start with 3–5 teammates</strong> for most workflows. Three focused teammates often outperform five scattered ones.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📈</div>
+            <div class="rule-text">Scale up only when the work genuinely benefits from more parallel sessions.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🚫</div>
+            <div class="rule-text">No nested teams — teammates cannot create their own teams or sub-teams.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Context and Permissions</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🔐</div>
+          <div class="rule-text"><strong>Permissions</strong> — Teammates start with the lead's permission settings. You can change individual teammate modes after creating them. Pre-approve permissions before creating teammates to avoid friction.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📚</div>
+          <div class="rule-text"><strong>Context loading</strong> — Each teammate loads the same project context (CLAUDE.md files, MCP servers, Skills) as a regular session.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No conversation inheritance</span> — Teammates do NOT inherit the lead's conversation history. Include enough context in the task description for each teammate to do its job.</div>
+        </div>
+      </div>
+      <div class="prompt-block" style="margin-top:14px">
+        <span class="pl">Good context example:</span>
+        "Create a security reviewer teammate with the prompt: 'Review the authentication module at src/auth/ for security vulnerabilities. Focus on token handling, session management, and input validation. The app uses JWT tokens stored in httpOnly cookies.'"
+      </div>
+    </div>
+
+  </div><!-- /usage -->
+
+
+  <!-- =========================================================
+       PATTERNS
+       ========================================================= -->
+  <div class="section" id="tab-patterns">
+
+    <div class="callout green">
+      <div class="callout-label">📖 Usage Note</div>
+      <p>These are the five core patterns from the official docs. <em>Start with Pattern 1 or 2 if you're new to agent teams</em> — review and investigation are safer than parallel code changes for beginners.</p>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pattern-title">📝 Pattern 1 — Parallel Code Review</div>
+      <div class="pattern-desc">Split review criteria into independent areas so security, performance, and test coverage all get thorough attention simultaneously.</div>
+      <div class="prompt-block">
+        <span class="pl">Try this prompt:</span>
+        "Create an agent team to review PR #142. Three reviewers: one focused on security implications, one checking performance impact, one validating test coverage. Have them each review and report findings."
+      </div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pattern-title">🔬 Pattern 2 — Adversarial Debugging</div>
+      <div class="pattern-desc">When the root cause is unclear, multiple agents testing competing theories — and actively trying to disprove each other — find the answer faster than one agent guessing.</div>
+      <div class="prompt-block">
+        <span class="pl">Try this prompt:</span>
+        "Users report the app exits after one message instead of staying connected. Create 5 agent teammates to investigate different hypotheses. Have them talk to each other to try to disprove each other's theories, like a scientific debate. Update the findings doc with whatever consensus emerges."
+      </div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pattern-title">🏗 Pattern 3 — Cross-Layer Feature Build</div>
+      <div class="pattern-desc">When a feature spans frontend, backend, and tests, each layer can be owned by a different teammate. Use task dependencies to sequence work — backend schema first, then frontend and tests.</div>
+      <div class="prompt-block">
+        <span class="pl">Try this prompt:</span>
+        "Build the user notification system. Create an agent team: 'backend' teammate builds the notification API endpoints and database schema, 'frontend' teammate builds the notification bell component and dropdown UI, 'tests' teammate writes integration tests for the notification flow. The backend teammate should finish the API schema first, then message the frontend and test teammates so they know what endpoints to hit."
+      </div>
+      <div style="margin-top:10px; font-size:12px; color:var(--accent2);">⚠ Make sure each teammate works on different files to avoid conflicts — two teammates editing the same file leads to overwrites.</div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pattern-title">🔭 Pattern 4 — Research and Recommendation</div>
+      <div class="pattern-desc">Multiple teammates investigate different options simultaneously. The lead picks the best approach based on findings.</div>
+      <div class="prompt-block">
+        <span class="pl">Try this prompt:</span>
+        "We need to add real-time updates to the dashboard. Create an agent team: one teammate researches WebSockets, one teammate researches Server-Sent Events, one teammate researches polling with smart intervals. Have each write a recommendation, then the lead picks the best approach based on our Next.js + Supabase stack."
+      </div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pattern-title">✅ Pattern 5 — Plan Approval Workflow</div>
+      <div class="pattern-desc">For risky tasks, require teammates to get their plan approved before implementing. Useful when you need to validate approach before any files are touched.</div>
+      <div class="prompt-block">
+        <span class="pl">Try this prompt:</span>
+        "Create a teammate to refactor the authentication module. Require plan approval before they make any changes."
+      </div>
+      <div style="margin-top:10px">
+        <div class="prompt-block">
+          <span class="pl">With criteria:</span>
+          "Only approve plans that include test coverage. Reject any plan that modifies the database schema."
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /patterns -->
+
+
+  <!-- =========================================================
+       GOTCHAS
+       ========================================================= -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="card">
+      <div class="card-title red">Gotchas</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No session resumption with teammates.</span> After resuming a session, the lead may try to message teammates that no longer exist. Tell it to create new ones.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Task status can lag.</span> Teammates sometimes fail to mark tasks as completed. Check manually and update if needed.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">One team per session.</span> You cannot have multiple active teams in one session. Clean up before starting a new one.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">File conflicts are real.</span> Two teammates editing the same file leads to overwrites. Break work so each teammate owns different files.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">The lead sometimes starts doing work itself.</span> If the lead starts implementing tasks instead of delegating, say: <code>"Wait for your teammates to complete their tasks before proceeding."</code></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Lead may finish too early.</span> It may decide work is done before all tasks complete. Tell it to keep going or explicitly wait for teammates.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No nested teams.</span> Teammates cannot create their own teams. One level only.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Best Practices</div>
+        <div class="decision-item"><span class="di">✅</span>Start with research/review tasks before trying parallel code changes.</div>
+        <div class="decision-item"><span class="di">✅</span>Pre-approve permissions before creating teammates.</div>
+        <div class="decision-item"><span class="di">✅</span>Monitor actively — check progress, redirect bad approaches, review findings as they arrive.</div>
+        <div class="decision-item"><span class="di">✅</span>Include full context in each task description (teammates don't inherit lead's history).</div>
+        <div class="decision-item"><span class="di">✅</span>Aim for 5–6 tasks per teammate, 3–5 teammates per team.</div>
+        <div class="decision-item"><span class="di">✅</span>Assign each teammate distinct files to own.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Things to Avoid</div>
+        <div class="decision-item"><span class="di">❌</span>Letting a team run unattended too long.</div>
+        <div class="decision-item"><span class="di">❌</span>Using for routine or small tasks — single session is more cost-effective.</div>
+        <div class="decision-item"><span class="di">❌</span>Assigning overlapping file ownership to multiple teammates.</div>
+        <div class="decision-item"><span class="di">❌</span>Expecting teammates to know the lead's conversation history.</div>
+        <div class="decision-item"><span class="di">❌</span>Cleaning up from a teammate instead of the lead.</div>
+        <div class="decision-item"><span class="di">❌</span>Forgetting to shut down all teammates before cleaning up.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">Troubleshooting</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Problem</th>
+            <th>Fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Teammates not appearing</td>
+            <td>Press Shift+Down — they may be running but not visible. Or task may not be complex enough. For split panes, run: <code style="font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">which tmux</code></td>
+          </tr>
+          <tr>
+            <td>Teammates stopping on errors</td>
+            <td>Check their output (Shift+Down), give recovery instructions, or create a replacement teammate.</td>
+          </tr>
+          <tr>
+            <td>Lead finishes too early</td>
+            <td>Tell it to keep going or explicitly say "Wait for all teammates to complete before proceeding."</td>
+          </tr>
+          <tr>
+            <td>Teammates messaging dead instances</td>
+            <td>Occurs after session resume. Tell the lead to create new teammates.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Resources</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📖</div>
+          <div class="rule-text"><strong>Official Docs: Agent Teams</strong> — <code>code.claude.com/docs/en/agent-teams</code> — Canonical reference with all features, limitations, and configuration.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📖</div>
+          <div class="rule-text"><strong>Official Docs: Sub-Agents</strong> — <code>code.claude.com/docs/en/sub-agents</code> — Companion reference for when sub-agents are the better choice.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📖</div>
+          <div class="rule-text"><strong>Official Docs: Hooks</strong> — <code>code.claude.com/docs/en/hooks</code> — TeammateIdle and TaskCompleted hook reference.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔗</div>
+          <div class="rule-text"><strong>Addy Osmani: Claude Code Swarms</strong> — <code>addyosmani.com/blog/claude-code-agent-teams/</code> — Practical patterns and real-world examples.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔗</div>
+          <div class="rule-text"><strong>alexop.dev: From Tasks to Swarms</strong> — Technical breakdown of team primitives and how they work under the hood.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔗</div>
+          <div class="rule-text"><strong>SitePoint: Claude Code Agent Teams Guide</strong> — Setup walkthrough and practical guide for getting started.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /gotchas -->
+
+</main>
+
+<script>
+  // Tab navigation
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  // Theme toggle
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+
+  // OS toggle for keyboard shortcuts
+  function setOS(os) {
+    document.querySelectorAll('.os-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`.os-btn[onclick="setOS('${os}')"]`).classList.add('active');
+    document.querySelectorAll('.cycle-key').forEach(el => {
+      const val = el.dataset[os] || el.dataset['win'];
+      if (val) el.textContent = val;
+    });
+  }
+  // Default to mac
+  setOS('mac');
+</script>
+</body>
+</html>

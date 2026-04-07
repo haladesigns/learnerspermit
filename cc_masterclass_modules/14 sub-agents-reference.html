@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sub-Agents — Claude Code Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+
+  .toggle-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 720px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .str { color: var(--accent3); }
+  .val { color: var(--accent4); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+  .ref-table td.mid { color: var(--text); }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Agent model pills */
+  .model-pill {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+    margin-left: 6px;
+  }
+  .m-haiku  { background: rgba(62,207,142,0.15);  color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .m-sonnet { background: rgba(79,142,247,0.15);  color: var(--accent);  border: 1px solid rgba(79,142,247,0.3); }
+  .m-opus   { background: rgba(224,95,122,0.15);  color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+
+  /* Built-in agents panel */
+  .agent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 700px) { .agent-grid { grid-template-columns: 1fr; } }
+
+  .agent-card {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+  .agent-card:hover { border-color: var(--border-accent); }
+
+  .agent-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .agent-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .agent-meta { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .agent-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--tag-bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .agent-tag.ro { color: var(--accent3); border-color: rgba(62,207,142,0.3); background: rgba(62,207,142,0.08); }
+
+  /* Scope priority table */
+  .priority-stack { display: flex; flex-direction: column; gap: 6px; }
+  .prio-row {
+    display: grid;
+    grid-template-columns: 24px 180px 1fr 70px;
+    gap: 12px;
+    align-items: center;
+    padding: 9px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .prio-row:hover { border-color: var(--border-accent); }
+  .prio-row.header { background: transparent; border-color: transparent; padding-bottom: 2px; }
+  .prio-n { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); text-align: center; }
+  .prio-path { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); }
+  .prio-desc { font-size: 12px; color: var(--text-muted); }
+  .prio-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 3px; text-align: center; }
+  .p-highest { background: rgba(224,95,122,0.15); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+  .p-project { background: rgba(79,142,247,0.15); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); }
+  .p-global  { background: rgba(247,162,62,0.15); color: var(--accent4); border: 1px solid rgba(247,162,62,0.3); }
+  .p-plugin  { background: rgba(90,99,128,0.15); color: var(--text-muted); border: 1px solid var(--border); }
+  .prio-row.header .prio-n,
+  .prio-row.header .prio-path,
+  .prio-row.header .prio-desc { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Sub-Agents<span> — Claude Code</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="setup">Setup & File Format</button>
+  <button data-tab="examples">Example Agents</button>
+  <button data-tab="commands">Commands & Gotchas</button>
+</nav>
+
+<main>
+
+  <!-- ===================== OVERVIEW ===================== -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Sub-Agents</h2>
+      <p>A sub-agent is a <strong>separate Claude worker</strong> — its own conversation, its own context window — that handles one focused task and reports a summary back to your main session. Instead of one agent doing everything and filling up memory, you have a team of specialists.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">Why Sub-Agents?</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🧹</div>
+            <div class="rule-text"><strong>Keeps context clean.</strong> An agent that explores 50 files doesn't dump all that output into your main chat — you get the summary only.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔒</div>
+            <div class="rule-text"><strong>Safety through tool restrictions.</strong> A read-only reviewer literally <span class="pos">cannot</span> edit your files — enforced at the tool level, not just by asking nicely.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💸</div>
+            <div class="rule-text"><strong>Route by cost.</strong> Simple file exploration → <code>haiku</code>. Deep reasoning → <code>sonnet</code>. You control spend per agent.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Parallelism.</strong> Claude Code can spin up sub-agents automatically for tasks like "write 20 blog posts" — splitting work across workers simultaneously.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title green">Built-in Sub-Agents</div>
+        <div class="agent-grid">
+          <div class="agent-card">
+            <div class="agent-name">Explore <span class="model-pill m-haiku">haiku</span></div>
+            <div class="agent-desc">Read-only codebase search. Auto-used for "find all places where…" queries.</div>
+            <div class="agent-meta"><span class="agent-tag ro">read-only</span></div>
+          </div>
+          <div class="agent-card">
+            <div class="agent-name">Plan <span class="model-pill m-sonnet">sonnet</span></div>
+            <div class="agent-desc">Research agent used when you're in plan mode. Cannot modify files.</div>
+            <div class="agent-meta"><span class="agent-tag ro">read-only</span></div>
+          </div>
+          <div class="agent-card">
+            <div class="agent-name">General-Purpose</div>
+            <div class="agent-desc">All tools available. Used for complex multi-step delegated operations.</div>
+            <div class="agent-meta"><span class="agent-tag">all tools</span></div>
+          </div>
+          <div class="agent-card">
+            <div class="agent-name">Bash</div>
+            <div class="agent-desc">Terminal commands only, in its own separate conversation context.</div>
+            <div class="agent-meta"><span class="agent-tag">bash only</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">Foreground vs. Background</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⏸️</div>
+            <div class="rule-text"><strong>Foreground (default).</strong> Blocks your main conversation until the sub-agent finishes.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">▶️</div>
+            <div class="rule-text"><strong>Background.</strong> Runs while you keep working. Set <code>background: true</code> in the agent file, or press <code>Ctrl+B</code> to send a running task to the background.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📋</div>
+            <div class="rule-text">Use <code>/tasks</code> to view all running background sub-agents and their status.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">One Rule to Remember</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🚫</div>
+            <div class="rule-text"><span class="neg">Sub-agents cannot create other sub-agents.</span> Always one level deep. For multi-step chains, launch each sub-agent from your main conversation, passing results forward.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔗</div>
+            <div class="rule-text">Chain pattern: <strong>Agent A finishes</strong> → you get summary → <strong>launch Agent B</strong> with Agent A's output as input.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Key Takeaway</div>
+      <p>99% of the time Claude Code spins up sub-agents <em>automatically</em>. Custom sub-agents are for when you have a very specific, reusable specialist — like a "skill on steroids" with its own tools and instructions.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== SETUP & FILE FORMAT ===================== -->
+  <div class="section" id="tab-setup">
+
+    <div class="card">
+      <div class="card-title">Step-by-Step: Creating Your First Sub-Agent</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Create the agent file</strong><br>
+            Save a Markdown file at <code>.claude/agents/your-agent-name.md</code> in your project.
+            <span class="tip">💡 Use lowercase letters and hyphens for the filename.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Add frontmatter + instructions</strong><br>
+            The top block (between <code>---</code> lines) configures the agent. Everything below it is the agent's system prompt.
+            <pre><span class="fn">---</span>
+<span class="kw">name:</span> <span class="str">code-reviewer</span>
+<span class="kw">description:</span> <span class="str">Expert code review specialist. Reviews code for quality,
+  security, and maintainability. Use proactively after writing
+  or modifying code.</span>
+<span class="kw">tools:</span> <span class="val">Read, Grep, Glob, Bash</span>
+<span class="kw">model:</span> <span class="val">sonnet</span>
+<span class="fn">---</span>
+
+<span class="cm">Your agent's instructions go here as normal Markdown.</span></pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>No restart needed</strong><br>
+            Claude Code picks up new agent files immediately. You can also use the interactive builder instead of writing the file manually.
+            <pre><span class="cm"># Interactive agent manager</span>
+<span class="fn">/agents</span>  <span class="cm">→ Create new agent → Generate with Claude</span></pre>
+            <span class="tip">💡 "Generate with Claude" lets you describe the agent in plain English and it writes the config for you.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Use it in conversation</strong><br>
+            Reference the agent by name — Claude delegates automatically.
+            <pre><span class="cm">"Use the code-reviewer agent to review the changes I just made."</span>
+<span class="cm">"Run the code-reviewer and test-runner subagents in parallel."</span></pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Iterate on the instructions</strong><br>
+            Treat the agent file like any important project file — version control it, refine the prompt, improve the checklist over time.
+            <span class="tip">💡 Test on a simple task first before relying on the agent in a real workflow.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Full Frontmatter Reference</div>
+      <pre><span class="fn">---</span>
+<span class="kw">name:</span>            <span class="str">agent-name</span>          <span class="cm"># lowercase, hyphens only</span>
+<span class="kw">description:</span>     <span class="str">When Claude should use this agent</span>   <span class="cm"># Claude reads this to decide when to delegate</span>
+<span class="kw">tools:</span>           <span class="val">Read, Grep, Glob, Bash</span>    <span class="cm"># explicit list — omit = inherit ALL (usually wrong)</span>
+<span class="kw">disallowedTools:</span> <span class="val">Write, Edit</span>              <span class="cm"># tools to explicitly block</span>
+<span class="kw">model:</span>           <span class="val">sonnet</span>                   <span class="cm"># sonnet | opus | haiku | inherit</span>
+<span class="kw">permissionMode:</span>  <span class="val">default</span>                  <span class="cm"># default | acceptEdits | plan</span>
+<span class="kw">maxTurns:</span>        <span class="val">25</span>                       <span class="cm"># max steps before stopping</span>
+<span class="kw">background:</span>      <span class="val">false</span>                    <span class="cm"># true = always runs in background</span>
+<span class="kw">memory:</span>          <span class="val">project</span>                  <span class="cm"># enables persistent memory across sessions</span>
+<span class="fn">---</span></pre>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">Model Selection Guide</div>
+        <table class="ref-table">
+          <thead>
+            <tr><th>Model</th><th>Best For</th><th>Cost</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>haiku</td>
+              <td class="mid">File reads, grepping, exploration — tasks with many steps but little reasoning</td>
+              <td>Lowest</td>
+            </tr>
+            <tr>
+              <td>sonnet</td>
+              <td class="mid">Code review, test analysis, most agent tasks — good balance</td>
+              <td>Mid</td>
+            </tr>
+            <tr>
+              <td>opus</td>
+              <td class="mid">Complex reasoning, architecture decisions — only when needed</td>
+              <td>Highest</td>
+            </tr>
+            <tr>
+              <td>inherit</td>
+              <td class="mid">Same model as your main session</td>
+              <td>Varies</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">permissionMode Options</div>
+        <table class="ref-table">
+          <thead>
+            <tr><th>Mode</th><th>What It Does</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>default</td>
+              <td class="mid">Normal permission prompts — agent asks before sensitive actions</td>
+            </tr>
+            <tr>
+              <td>acceptEdits</td>
+              <td class="mid">Auto-accepts file edit permissions — less interruption</td>
+            </tr>
+            <tr>
+              <td>plan</td>
+              <td class="mid">Read-only exploration — agent physically cannot modify anything</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">Scope & Priority (where to save agent files)</div>
+      <div class="priority-stack">
+        <div class="prio-row header">
+          <div class="prio-n">#</div>
+          <div class="prio-path">Location</div>
+          <div class="prio-desc">Scope</div>
+          <div class="prio-label">Priority</div>
+        </div>
+        <div class="prio-row">
+          <div class="prio-n">1</div>
+          <div class="prio-path">--agents CLI flag</div>
+          <div class="prio-desc">Current session only — highest priority, wins all conflicts</div>
+          <div class="prio-label p-highest">HIGHEST</div>
+        </div>
+        <div class="prio-row">
+          <div class="prio-n">2</div>
+          <div class="prio-path">.claude/agents/</div>
+          <div class="prio-desc">Current project only — checked in to your repo</div>
+          <div class="prio-label p-project">PROJECT</div>
+        </div>
+        <div class="prio-row">
+          <div class="prio-n">3</div>
+          <div class="prio-path">~/.claude/agents/</div>
+          <div class="prio-desc">Available across all your projects</div>
+          <div class="prio-label p-global">GLOBAL</div>
+        </div>
+        <div class="prio-row">
+          <div class="prio-n">4</div>
+          <div class="prio-path">plugin agents/ dir</div>
+          <div class="prio-desc">Where plugin is enabled — lowest priority</div>
+          <div class="prio-label p-plugin">PLUGIN</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== EXAMPLES ===================== -->
+  <div class="section" id="tab-examples">
+
+    <div class="card green">
+      <div class="card-title green">Example 1: Codebase Researcher</div>
+      <div class="rule-list" style="margin-bottom:14px">
+        <div class="rule-row">
+          <div class="rule-icon">🎯</div>
+          <div class="rule-text"><strong>Use case:</strong> Understand how a system is built before making changes — without dumping 50 file reads into your main conversation.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔑</div>
+          <div class="rule-text"><strong>Why Haiku?</strong> Exploration involves many file reads, not deep reasoning. Fast + cheap for this use case. <code>maxTurns: 40</code> to allow thorough exploration.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔒</div>
+          <div class="rule-text"><strong>Why plan mode?</strong> Hard guarantee: the agent cannot modify files. Not just "please don't" — physically impossible.</div>
+        </div>
+      </div>
+      <pre><span class="fn">---</span>
+<span class="kw">name:</span>           <span class="str">codebase-researcher</span>
+<span class="kw">description:</span>    <span class="str">Deep codebase research specialist. Use when you need to understand
+                how a system is implemented before making changes.</span>
+<span class="kw">tools:</span>          <span class="val">Read, Grep, Glob, Bash</span>
+<span class="kw">model:</span>          <span class="val">haiku</span>
+<span class="kw">permissionMode:</span> <span class="val">plan</span>
+<span class="kw">maxTurns:</span>       <span class="val">40</span>
+<span class="fn">---</span>
+
+<span class="cm">You are a codebase research specialist. Produce a structured report:</span>
+<span class="cm">1. Start broad — use Glob to understand project structure</span>
+<span class="cm">2. Use Grep to search for key terms and patterns</span>
+<span class="cm">3. Read the most relevant files for detail</span>
+<span class="cm">4. Trace data flow start to finish</span>
+
+<span class="cm">Output sections: Summary | Key Files | Architecture | Patterns | Issues | Recommendations</span></pre>
+      <div style="margin-top:12px">
+        <div class="callout blue">
+          <div class="callout-label">Example Prompt</div>
+          <p>"Use the codebase-researcher subagent to investigate how our authentication system works end-to-end. I need to understand the full flow before adding OAuth support."</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">Example 2: Test Runner</div>
+      <div class="rule-list" style="margin-bottom:14px">
+        <div class="rule-row">
+          <div class="rule-icon">🎯</div>
+          <div class="rule-text"><strong>Use case:</strong> Run tests after changes, but only surface failures — not the wall of passing-test output.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">▶️</div>
+          <div class="rule-text"><strong>Why background?</strong> Tests can take minutes. <code>background: true</code> lets you keep working while they run.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🧠</div>
+          <div class="rule-text"><strong>Why Sonnet?</strong> Analyzing test failures requires reasoning about code logic — worth the extra capability.</div>
+        </div>
+      </div>
+      <pre><span class="fn">---</span>
+<span class="kw">name:</span>       <span class="str">test-runner</span>
+<span class="kw">description:</span> <span class="str">Test execution specialist. Use after making code changes to run
+             tests and provide fix recommendations. Use proactively.</span>
+<span class="kw">tools:</span>      <span class="val">Bash, Read, Grep, Glob</span>
+<span class="kw">model:</span>      <span class="val">sonnet</span>
+<span class="kw">background:</span> <span class="val">true</span>
+<span class="fn">---</span>
+
+<span class="cm">For each failing test report: File | Error | Root Cause | Suggested Fix</span>
+<span class="cm">Do NOT include passing test output. Only failures + final pass/fail summary.</span></pre>
+      <div style="margin-top:12px">
+        <div class="callout blue">
+          <div class="callout-label">Example Prompt</div>
+          <p>"I just refactored the user service. Use the test-runner subagent to run the user-related tests and tell me what broke."</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Example 3: Smart Reviewer (with Memory)</div>
+      <div class="rule-list" style="margin-bottom:14px">
+        <div class="rule-row">
+          <div class="rule-icon">🧠</div>
+          <div class="rule-text"><strong>memory: project</strong> — the agent maintains a memory file that persists across sessions. Each review builds on what it learned from the last.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📚</div>
+          <div class="rule-text">After a few reviews it builds up project-specific knowledge: naming conventions, intentional patterns (empty catch blocks that are "fire-and-forget"), types that are acceptable in legacy dirs, etc.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">👍</div>
+          <div class="rule-text">The "Positive Notes" section calls out good patterns — making reviews feel less adversarial.</div>
+        </div>
+      </div>
+      <pre><span class="fn">---</span>
+<span class="kw">name:</span>       <span class="str">smart-reviewer</span>
+<span class="kw">description:</span> <span class="str">Adaptive code reviewer that learns project patterns over time.
+             Use after any significant code changes.</span>
+<span class="kw">tools:</span>      <span class="val">Read, Grep, Glob, Bash</span>
+<span class="kw">model:</span>      <span class="val">sonnet</span>
+<span class="kw">memory:</span>     <span class="val">project</span>
+<span class="fn">---</span>
+
+<span class="cm">BEFORE REVIEWING: Read agent memory for known project patterns.</span>
+<span class="cm">Don't flag things previously learned to be intentional.</span>
+
+<span class="cm">Output: Review Summary | Critical | Warnings | Suggestions | Positive Notes</span>
+
+<span class="cm">AFTER REVIEWING: Update memory with new patterns discovered.</span></pre>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">💡 What memory accumulates over time</div>
+      <p>Project Conventions (repo pattern for DB access, error response format, validation middleware) · Known Patterns not to flag (intentional empty catch blocks, <em>any</em> types in legacy dirs during migration) · Preferred code style specifics per module</p>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== COMMANDS & GOTCHAS ===================== -->
+  <div class="section" id="tab-commands">
+
+    <div class="card">
+      <div class="card-title">Management Commands</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Command</th><th>What It Does</th><th>Where</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>/agents</td>
+            <td class="mid">Interactive sub-agent manager — create, edit, delete, view agents</td>
+            <td>Claude Code</td>
+          </tr>
+          <tr>
+            <td>/tasks</td>
+            <td class="mid">View all running background sub-agents and their status</td>
+            <td>Claude Code</td>
+          </tr>
+          <tr>
+            <td>Ctrl+B</td>
+            <td class="mid">Send a currently-running foreground sub-agent to the background</td>
+            <td>Claude Code</td>
+          </tr>
+          <tr>
+            <td>claude agents</td>
+            <td class="mid">List all configured agents from the command line</td>
+            <td>Terminal</td>
+          </tr>
+          <tr>
+            <td>--agents flag</td>
+            <td class="mid">Load agent files for current session only (highest priority scope)</td>
+            <td>CLI flag</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Good Practices</div>
+        <div class="decision-item"><span class="di">✅</span>Always explicitly list <code>tools:</code> — never rely on the default (inherits everything).</div>
+        <div class="decision-item"><span class="di">✅</span>Write a specific, detailed <code>description:</code> — Claude uses it to decide when to delegate.</div>
+        <div class="decision-item"><span class="di">✅</span>Use <code>permissionMode: plan</code> for any research/exploration agent — hard read-only guarantee.</div>
+        <div class="decision-item"><span class="di">✅</span>Use Haiku for file-read-heavy exploration; Sonnet for reasoning-heavy tasks.</div>
+        <div class="decision-item"><span class="di">✅</span>Test sub-agents on a simple task before relying on them in real workflows.</div>
+        <div class="decision-item"><span class="di">✅</span>Version control your <code>.claude/agents/</code> files — they're part of the project.</div>
+        <div class="decision-item"><span class="di">✅</span>Use <code>isolation: worktree</code> for agents that make experimental code changes.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Avoid These</div>
+        <div class="decision-item"><span class="di">❌</span>Omitting <code>tools:</code> — sub-agent inherits ALL tools including destructive ones.</div>
+        <div class="decision-item"><span class="di">❌</span>Vague descriptions like <code>"Helps with code"</code> — Claude won't know when to delegate.</div>
+        <div class="decision-item"><span class="di">❌</span>Expecting a sub-agent to create its own sub-agents — one level deep only.</div>
+        <div class="decision-item"><span class="di">❌</span>Background sub-agents that ask clarifying questions — they can't interact mid-task.</div>
+        <div class="decision-item"><span class="di">❌</span>Using prompts alone to prevent destructive commands — use hooks for hard guarantees.</div>
+        <div class="decision-item"><span class="di">❌</span>Using Opus for every agent — route simple tasks to Haiku/Sonnet to control cost.</div>
+      </div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">Gotchas</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Omitting tools = inheriting everything.</span> If you don't specify <code>tools:</code>, the sub-agent gets ALL tools — including Edit, Write, and Bash. Always be explicit.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Description quality matters enormously.</span> This is what Claude reads to decide whether to delegate. Vague = missed delegations. Be specific about when and why to use the agent.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Background agents can't ask questions.</span> Design their prompts to be entirely self-sufficient — include all needed context upfront.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Hooks enforce, prompts suggest.</span> Prompts say "please don't do X." Hooks make X physically impossible. Use hooks if you need a real guarantee on destructive commands.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">One level of delegation only.</span> Sub-agents cannot create sub-agents. Chain them from your main conversation by passing results from Agent A into Agent B's instructions.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">🌐 Resources</div>
+      <p>
+        Official docs: <em>code.claude.com/docs/en/sub-agents</em> ·
+        Community agents: <em>github.com/VoltAgent/awesome-claude-code-subagents</em> (127+ ready-to-use) ·
+        Best practices: <em>pubnub.com/blog/best-practices-for-claude-code-sub-agents</em> ·
+        Hooks guide: <em>claude.com/blog/how-to-configure-hooks</em>
+      </p>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

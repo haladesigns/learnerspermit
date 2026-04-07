@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clone Any Site — Claude Code Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 720px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* Step pipeline (overview visual) */
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .pipe-step {
+    flex: 1;
+    padding: 16px 14px;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .pipe-step:last-child { border-right: none; }
+  .pipe-step:hover { background: var(--accent-glow); }
+  .pipe-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+  }
+  .pipe-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .pipe-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  @media (max-width: 700px) {
+    .pipeline { flex-direction: column; }
+    .pipe-step { border-right: none; border-bottom: 1px solid var(--border); }
+    .pipe-step:last-child { border-bottom: none; }
+  }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .pos   { color: var(--accent3); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Teardown checklist */
+  .checklist { display: flex; flex-direction: column; gap: 8px; }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .check-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    white-space: nowrap;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .cb-manual  { background: rgba(247,162,62,0.15); color: var(--accent4); border: 1px solid rgba(247,162,62,0.3); }
+  .cb-auto    { background: var(--accent3-glow);   color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .cb-skill   { background: var(--accent-glow);    color: var(--accent);  border: 1px solid rgba(79,142,247,0.3); }
+  .check-text { font-size: 13px; color: var(--text); }
+  .check-text span { color: var(--text-muted); font-size: 12px; }
+
+  /* Asset flow diagram */
+  .asset-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    flex-wrap: wrap;
+  }
+  .af-step {
+    flex: 1;
+    min-width: 120px;
+    padding: 14px 16px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .af-step:last-child { border-right: none; }
+  .af-icon { font-size: 18px; }
+  .af-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .af-sub { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+  .af-arrow {
+    font-size: 18px;
+    color: var(--text-dim);
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Clone Any Site<span> — Claude Code</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="process">5-Step Process</button>
+  <button data-tab="teardown">Site Teardown</button>
+  <button data-tab="assets">Asset Creation</button>
+  <button data-tab="gotchas">Gotchas & Iteration</button>
+  <button data-tab="skillsource">Skill Source</button>
+</nav>
+
+<main>
+
+  <!-- ===================== OVERVIEW ===================== -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Clone → Deconstruct → Build Your Own</h2>
+      <p>This isn't about stealing websites. It's about <strong>exposing yourself to techniques you didn't know existed</strong>, then building the skills to apply them with your own spin. Cloning award-winning frontends with Claude Code is how you escape generic AI output and start creating something that actually stands out.</p>
+    </div>
+
+    <!-- 5-step pipeline at a glance -->
+    <div class="card">
+      <div class="card-title">The 5 Steps at a Glance</div>
+      <div class="pipeline">
+        <div class="pipe-step">
+          <div class="pipe-num">01</div>
+          <div class="pipe-label">Inspiration</div>
+          <div class="pipe-sub">Find a site worth studying — Awards, etc.</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">02</div>
+          <div class="pipe-label">Site Teardown</div>
+          <div class="pipe-sub">Extract HTML, CSS, JS + screenshots</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">03</div>
+          <div class="pipe-label">Asset Creation</div>
+          <div class="pipe-sub">Generate images &amp; video on green screen</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">04</div>
+          <div class="pipe-label">The Build</div>
+          <div class="pipe-sub">Hand everything to Claude Code</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">05</div>
+          <div class="pipe-label">Iteration</div>
+          <div class="pipe-sub">Make it yours — swap assets &amp; content</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">Why Clone at All?</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text"><strong>Exposure</strong> — Most devs see the same SaaS templates over and over. Award sites show you what's actually possible.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧠</div>
+            <div class="rule-text"><strong>Understanding</strong> — The act of cloning forces you to figure out <em>how</em> an effect works, not just that it exists.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text"><strong>Skill building</strong> — Copy → fail → copy again → add your twist. This is how mastery works in every domain.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🚀</div>
+            <div class="rule-text"><strong>90% solution fast</strong> — Claude Code gets you close enough that iteration handles the rest.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title yellow">Important Mindset</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">You are not creating the original.</span> You're using it as a learning template, then putting your own spin on it.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎨</div>
+            <div class="rule-text"><strong>Step 5 matters</strong> — Change the assets, headline, colors, and copy. The technique is the gift; the content is yours.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📐</div>
+            <div class="rule-text"><strong>Expect a 90% match</strong> — The original was built by a full design studio. Claude Code gets you close, not identical.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔍</div>
+            <div class="rule-text"><strong>Study the breakdown</strong> — When Claude Code explains GSAP, ScrollTrigger, Lenis — that's the real lesson. Don't skip it.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Core Purpose</div>
+      <p>After one project like this, when you see a site with scroll animations, <em>it won't feel impossible anymore</em>. You'll recognize the pattern. That's the whole point.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== 5-STEP PROCESS ===================== -->
+  <div class="section" id="tab-process">
+
+    <div class="card">
+      <div class="card-title">Step-by-Step Walkthrough</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Find Inspiration</strong><br>
+            Go to <code>awwwards.com</code> (Awards — three W's) or similar frontend showcases. Find a site you can imagine templating and making your own. Look for design techniques you've never seen before — parallax, scroll animations, shadowing effects, etc.
+            <span class="tip">💡 Awards shows you how pros actually build frontends — not the 10 millionth version of a boring SaaS site.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Site Teardown — Extract the Source</strong><br>
+            Give Claude Code three things: the HTML (press <code>Ctrl+U</code> on the page, select all, copy, paste), the page URL, and screenshots of key effects. Then use the <strong>site teardown skill</strong> so Claude Code can fetch and fully analyze the CSS and JavaScript files found in the HTML.
+            <span class="note">⚠ Don't rely on screenshots alone — without the JS and CSS, Claude Code won't understand how effects actually work.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Asset Creation — Build Your Visual Raw Material</strong><br>
+            Find or generate any bespoke images/assets. For animated assets (like a shading moon), generate a start-state and end-state image, create a short transition video using an AI video tool, then have Claude Code extract all frames from the video. Each frame corresponds to a state in the animation.
+            <span class="tip">💡 Always generate on a green screen so AI can cleanly remove the background across all extracted frames.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>The Build — Hand It All to Claude Code</strong><br>
+            By now Claude Code has done its teardown analysis. Hand it your MP4 (or extracted frames), your other assets, and say: get to work. It will implement the effect stack it identified — GSAP, ScrollTrigger, Lenis, or whatever the original used. Review its breakdown; that's where you learn.
+            <span class="pos">✓ Claude Code will name the techniques it sees. Look them up. This is front-end education happening in real time.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Iteration — Make It Yours</strong><br>
+            Compare screenshots of your version vs. the original. Feed the diff back into Claude Code ("here's mine, here's the original, what's different?"). Once you're happy with fidelity, swap in your own assets, headlines, colors, and copy. You're no longer cloning — you're building.
+            <span class="tip">💡 Swap the scroll animation subject for something relevant to your project. The technique transfers; the asset is yours to replace.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">📋 What Claude Code Needs — Quick Summary</div>
+      <p>HTML (pasted from Ctrl+U) · Page URL · Screenshots of effects · Teardown skill run · Asset files (MP4 / images). That's the complete input set for a successful build.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== SITE TEARDOWN ===================== -->
+  <div class="section" id="tab-teardown">
+
+    <!-- Sub-tab nav -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="display:flex;border-bottom:1px solid var(--border);background:var(--bg-code);">
+        <button class="sub-tab active" data-sub="td-overview" style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;padding:10px 18px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);cursor:pointer;">Overview</button>
+        <button class="sub-tab" data-sub="td-pipeline" style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);cursor:pointer;">Skill Pipeline</button>
+        <button class="sub-tab" data-sub="td-output" style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);cursor:pointer;">Output Format</button>
+        <button class="sub-tab" data-sub="td-patterns" style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);cursor:pointer;">Common Patterns</button>
+      </div>
+
+      <!-- SUB: Overview -->
+      <div class="sub-section active" id="sub-td-overview" style="padding:20px 24px;display:flex;flex-direction:column;gap:16px;">
+
+        <div class="hero" style="margin:0;">
+          <h2>Step 2 — Site Teardown</h2>
+          <p>This is the most technically important step. Claude Code needs all three building blocks — HTML (structure), CSS (styling), JavaScript (behavior) — to understand what's happening under the hood. The teardown skill handles the heavy lifting.</p>
+        </div>
+
+        <div>
+          <div class="card-title" style="margin-bottom:12px;">The Three Building Blocks</div>
+          <table class="ref-table">
+            <thead>
+              <tr><th>Layer</th><th>What It Is</th><th>How to Get It</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>HTML</td>
+                <td>The bones — structure, elements, class names, image/video paths</td>
+                <td><code style="font-family:IBM Plex Mono,monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">Ctrl+U</code> → Select All → Copy → Paste into Claude Code</td>
+              </tr>
+              <tr>
+                <td>CSS</td>
+                <td>The clothes — visual styling, animations, layout, design tokens</td>
+                <td>Linked files found inside the HTML; skill fetches them automatically</td>
+              </tr>
+              <tr>
+                <td>JavaScript</td>
+                <td>The behavior — scroll triggers, parallax, mouse tracking, interactions</td>
+                <td>Also linked in the HTML; skill fetches and extracts all relevant code</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <div class="card-title" style="margin-bottom:12px;">Teardown Input Checklist</div>
+          <div class="checklist">
+            <div class="check-item">
+              <span class="check-badge cb-manual">MANUAL</span>
+              <div class="check-text">Full HTML source <span>— Ctrl+U on the target page → select all → copy → paste directly into Claude Code</span></div>
+            </div>
+            <div class="check-item">
+              <span class="check-badge cb-manual">MANUAL</span>
+              <div class="check-text">Page URL <span>— so Claude Code can construct full paths to JS/CSS files</span></div>
+            </div>
+            <div class="check-item">
+              <span class="check-badge cb-manual">MANUAL</span>
+              <div class="check-text">Screenshots of key effects <span>— hero state, animation end state, shading, parallax moments</span></div>
+            </div>
+            <div class="check-item">
+              <span class="check-badge cb-skill">TEARDOWN SKILL</span>
+              <div class="check-text">Run the site-teardown skill <span>— dynamically builds fetch prompts from the HTML's class names to pull everything relevant from JS &amp; CSS</span></div>
+            </div>
+            <div class="check-item">
+              <span class="check-badge cb-auto">AUTO</span>
+              <div class="check-text">CSS &amp; JS files <span>— skill locates them in the HTML, constructs full URLs, and fetches with targeted prompts</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="callout red">
+            <div class="callout-label">⚠ Web Fetch Limitation</div>
+            <p>Web fetch delegates to a <em>smaller sub-model</em>. Large JS/CSS files will be partially dropped with a plain fetch. The skill's dynamic prompts are specifically built to work around this — they target class names from the HTML so only relevant code is returned.</p>
+          </div>
+          <div class="callout green">
+            <div class="callout-label">✓ Teardown Output</div>
+            <p>The skill saves a <em>structured markdown file</em> to <code style="font-family:IBM Plex Mono,monospace;font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">research/YYYY-MM-DD-{slug}-teardown.md</code> — tech stack, effects breakdown, design system, assets list, and section-by-section build plan.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SUB: Skill Pipeline -->
+      <div class="sub-section" id="sub-td-pipeline" style="padding:20px 24px;display:none;flex-direction:column;gap:14px;">
+
+        <div class="callout blue" style="margin-bottom:4px;">
+          <div class="callout-label">How the Skill Works Internally</div>
+          <p>The skill runs a <em>5-step pipeline</em>: get HTML → find JS/CSS paths → fetch JS with dynamic prompt → fetch CSS with dynamic prompt → assemble output document. The dynamic prompting (using class names from the HTML) is what separates it from a plain web fetch.</p>
+        </div>
+
+        <div class="step-list">
+
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Get the HTML</strong><br>
+              If you pasted raw HTML — use it directly (more complete than a fetch for large pages). If only a URL was provided, fetch with a prompt asking for full class names, element hierarchy, image/video paths, SVGs, script paths, and inline styles. Don't summarize.
+              <span class="tip">💡 Pasted HTML always wins over fetched HTML. Ctrl+U → Ctrl+A → Ctrl+C on the page.</span>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Find JS &amp; CSS File Paths</strong><br>
+              Scan the HTML for <code>&lt;link rel="stylesheet"&gt;</code> and <code>&lt;script src&gt;</code> tags. Construct full URLs from domain + path. Skip all third-party scripts (GTM, analytics, consent tools, CDN-hosted libraries — note what they are, don't fetch them).
+              <span class="tip">💡 Target files in <code>/dist/</code>, <code>/build/</code>, <code>/assets/</code>, <code>/static/</code> with names like <code>main.js</code>, <code>app.css</code>. Also check <code>&lt;link rel="modulepreload"&gt;</code>.</span>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Fetch the JavaScript — Dynamic Prompt</strong><br>
+              Build the fetch prompt by taking the base JS extraction prompt and appending the actual class names found in the HTML. The prompt asks for: all animation code, ScrollTrigger configs, mouse/scroll handlers, GSAP timelines, IntersectionObserver, CSS custom property manipulation, cursor code, preloaders, image sequences — with actual code snippets, not summaries.
+              <span class="note">⚠ Focus on classes with words like: hero, animate, scroll, slide, reveal, split, parallax, hover, frame, cursor, loader, marquee, zoom.</span>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Fetch the CSS — Dynamic Prompt</strong><br>
+              Same dynamic approach: take the base CSS extraction prompt and append class name stems from the HTML. Asks for: every color value, @font-face declarations, @keyframes, CSS custom properties, media query breakpoints, transforms, z-index stacking, spacing system, blend modes, noise/grain overlays, mask-image, clip-path — actual CSS rules, not summaries.
+              <span class="tip">💡 Use stems not full names: if the HTML has <code>.home-hero__moon-inner</code>, pass <code>hero, moon</code> to the prompt.</span>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <strong>Assemble the Teardown Document</strong><br>
+              Combines all three sources into a structured markdown file saved to <code>research/</code>. The document is thorough enough that someone could build a clone in a fresh Claude Code session without ever visiting the original site.
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- SUB: Output Format -->
+      <div class="sub-section" id="sub-td-output" style="padding:20px 24px;display:none;flex-direction:column;gap:14px;">
+
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">The teardown skill produces a markdown file with these sections. Use this as a checklist to verify the output is complete before moving to the build phase.</p>
+
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🏗️</div>
+            <div class="rule-text"><strong>Header</strong> — Site name, URL, built-by (if identifiable), platform (Next.js / WordPress / custom), date analyzed</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📦</div>
+            <div class="rule-text"><strong>Tech Stack</strong> — Table of confirmed technologies with evidence (where it appeared in source) and purpose on this specific site</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎨</div>
+            <div class="rule-text"><strong>Design System</strong> — Colors table, typography (font families, weights, sizes, letter-spacing), spacing approach, responsive breakpoints</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Effects Breakdown</strong> — Table of every effect: name, implementation summary, complexity (Low/Med/High), cloneability</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔬</div>
+            <div class="rule-text"><strong>Implementation Details</strong> — Deep-dive on each major effect with actual code snippets, the key insight, and what makes it work</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🖼️</div>
+            <div class="rule-text"><strong>Assets Needed</strong> — List of every asset to recreate, with type, description, and suggested source (Midjourney prompt, stock, generated with code)</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🛠️</div>
+            <div class="rule-text"><strong>Build Plan</strong> — Recommended stack with rationale, npm install command, and section-by-section build order with key interactions per section</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📝</div>
+            <div class="rule-text"><strong>Notes</strong> — Gotchas, premium plugins, licensing concerns, things that can't be cloned easily and their alternatives</div>
+          </div>
+        </div>
+
+        <div class="callout yellow">
+          <div class="callout-label">Quality Signal</div>
+          <p>A good teardown is <em>specific, not vague</em>. "GSAP ScrollTrigger with scrub:true pinned to .hero, scaling from 1 to 0.3" is useful. "Uses scroll animations" is not. The document should also distinguish <em>confirmed</em> (found in source) vs <em>inferred</em> (guessed from class names).</p>
+        </div>
+
+      </div>
+
+      <!-- SUB: Common Patterns -->
+      <div class="sub-section" id="sub-td-patterns" style="padding:20px 24px;display:none;flex-direction:column;gap:14px;">
+
+        <div class="callout blue" style="margin-bottom:4px;">
+          <div class="callout-label">The Core Insight</div>
+          <p>Award-winning visual effects almost always have <em>simple underlying implementations</em>. The teardown reveals this. Here are the patterns you'll encounter most often.</p>
+        </div>
+
+        <table class="ref-table">
+          <thead>
+            <tr><th>Effect (what it looks like)</th><th>Implementation (what it actually is)</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Video / 3D object reacting to scroll or mouse</td>
+              <td>Preloaded image frames — swap visibility based on input position. Just images.</td>
+            </tr>
+            <tr>
+              <td>Characters flying in one by one</td>
+              <td>GSAP SplitText wraps each character in a span, staggers opacity/transform.</td>
+            </tr>
+            <tr>
+              <td>Elements moving at different speeds on scroll</td>
+              <td>Multiple elements with different multipliers on transform — parallax layers.</td>
+            </tr>
+            <tr>
+              <td>Animations tied precisely to scroll position</td>
+              <td>GSAP ScrollTrigger with <code>scrub: true</code>. Binds any animation to scroll progress.</td>
+            </tr>
+            <tr>
+              <td>Complex CSS-driven effects that JS controls</td>
+              <td>JS updates a <code>--progress</code> CSS variable; CSS uses <code>calc()</code> with it.</td>
+            </tr>
+            <tr>
+              <td>Buttery smooth scrolling</td>
+              <td>Lenis or Locomotive Scroll library. One init call.</td>
+            </tr>
+            <tr>
+              <td>Page-to-page transitions</td>
+              <td>Barba.js or Swup — overlay fades in, content swaps, overlay fades out.</td>
+            </tr>
+            <tr>
+              <td>Film grain / noise texture overlay</td>
+              <td>Fixed <code>div</code> with noise texture image + <code>mix-blend-mode: overlay</code>.</td>
+            </tr>
+            <tr>
+              <td>Custom cursor that tracks smoothly</td>
+              <td>GSAP <code>quickSetter</code> tracking mouse position on a fixed element.</td>
+            </tr>
+            <tr>
+              <td>Infinite scrolling text marquee</td>
+              <td>CSS or GSAP infinite horizontal translation loop.</td>
+            </tr>
+            <tr>
+              <td>Button that subtly follows your cursor</td>
+              <td>Mousemove + transform on the button — magnetic button effect.</td>
+            </tr>
+            <tr>
+              <td>Elements that fade/slide in when scrolled to</td>
+              <td>IntersectionObserver or ScrollTrigger adds a class; CSS handles the transition.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout green">
+          <div class="callout-label">✓ Use This List</div>
+          <p>When you see an effect on an award site and can't figure out how it works, check this list first. The teardown will confirm it — but chances are it's one of these twelve patterns dressed up with good design.</p>
+        </div>
+
+      </div>
+
+    </div><!-- /sub-tab card -->
+
+  </div>
+
+
+  <!-- ===================== ASSET CREATION ===================== -->
+  <div class="section" id="tab-assets">
+
+    <div class="hero">
+      <h2>Step 3 — Asset Creation</h2>
+      <p>Bespoke sites use bespoke assets. Claude Code can't conjure a custom moon or cocktail glass — you need to create or source those visuals. The technique below handles <strong>animated assets</strong> (the scroll-animation subject) using a video-to-frames workflow.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">The Video-to-Frames Technique</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">The original Moon site loaded 54 individual frame images for its shading animation. Instead of generating 54 images, generate two + a video transition, then extract the frames.</p>
+      <div class="asset-flow">
+        <div class="af-step">
+          <div class="af-icon">🌑</div>
+          <div class="af-label">Start Image</div>
+          <div class="af-sub">Asset fully illuminated — on green screen</div>
+        </div>
+        <div class="af-step">
+          <div class="af-icon">🌕</div>
+          <div class="af-label">End Image</div>
+          <div class="af-sub">Asset fully shadowed — on green screen</div>
+        </div>
+        <div class="af-step">
+          <div class="af-icon">🎬</div>
+          <div class="af-label">Video Transition</div>
+          <div class="af-sub">AI video tool (e.g. Veo 3.1) animates between states</div>
+        </div>
+        <div class="af-step">
+          <div class="af-icon">🖼️</div>
+          <div class="af-label">Frame Extraction</div>
+          <div class="af-sub">Claude Code strips every frame from the MP4</div>
+        </div>
+        <div class="af-step">
+          <div class="af-icon">🌐</div>
+          <div class="af-label">Animation</div>
+          <div class="af-sub">Mouse position / scroll maps to a frame index</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">Image Generation Tips</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">💚</div>
+            <div class="rule-text"><strong>Always use green screen.</strong> The asset needs to be isolated from its background across every extracted frame — green screen makes AI removal easy.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📸</div>
+            <div class="rule-text"><strong>Take screenshots from the original</strong> as reference. Screenshot the fully lit state and the fully shadowed state, then pass them to your image generator with: <em>"remove all text and make the background a green screen."</em></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔧</div>
+            <div class="rule-text"><strong>Tool suggestion:</strong> NanoBanana Pro for image generation. Google Veo 3.1 (or similar) for the video transition.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title red">Video Generation Warnings</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🚫</div>
+            <div class="rule-text"><span class="neg">No camera movement.</span> Explicitly prompt: no zoom, no drift, no rotation. If the asset changes size across frames, it will look broken when mapped to mouse position.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⏱️</div>
+            <div class="rule-text"><span class="neg">Keep it short — 4 seconds max.</span> 8 seconds = hundreds of frames = too much to load and too slow. 4 seconds gives you ~50–60 usable frames.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text"><strong>Expect to run it several times.</strong> Video generation is more inconsistent than image generation. Find one you like, then download it.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">Exact Video Prompt Structure</div>
+      <pre><span class="cm"># Key instructions to include in your video generation prompt:</span>
+
+<span class="li">Static shot</span> — camera doesn't move
+<span class="li">Shadow sweeps across the surface</span> following the 3D contours
+<span class="fn">No camera movement</span>
+<span class="fn">No zoom</span>
+<span class="fn">No drift</span>
+<span class="fn">No rotation</span>
+
+<span class="cm"># Repeat the no-movement constraint multiple times in your prompt.</span>
+<span class="cm"># AI video models will drift or zoom unless you're explicit.</span></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title green">Green Screen Example</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">This is what a correctly prepared asset looks like mid-transition — the moon partially shadowed, isolated against pure green. Notice: no background texture, no vignette, no camera drift. Just the asset and the key color.</p>
+      <div style="border-radius:6px;overflow:hidden;border:1px solid var(--border);background:#000;display:flex;align-items:center;justify-content:center;">
+        <img src="/mnt/user-data/uploads/1775502179518_image.png"
+             alt="Moon on green screen — mid-shadow transition frame"
+             style="width:100%;max-height:340px;object-fit:contain;display:block;">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;background:var(--bg-code);border:1px solid var(--border);border-left:3px solid var(--accent3);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--text);">
+          <span style="color:var(--accent3);font-weight:600;">✓ Correct</span> — pure #00b140 green field, no gradients, no shadows bleeding into background
+        </div>
+        <div style="flex:1;min-width:180px;background:var(--bg-code);border:1px solid var(--border);border-left:3px solid var(--accent3);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--text);">
+          <span style="color:var(--accent3);font-weight:600;">✓ Correct</span> — asset fills frame but doesn't touch edges — clean extraction boundary
+        </div>
+        <div style="flex:1;min-width:180px;background:var(--bg-code);border:1px solid var(--border);border-left:3px solid var(--accent3);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--text);">
+          <span style="color:var(--accent3);font-weight:600;">✓ Correct</span> — shadow is part of the asset surface, not cast onto the background
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">ℹ How the Animation Works</div>
+      <p>Each <em>mouse position</em> (or scroll position) maps to a specific frame number. The original Moon site used 54 frames. Your extracted video frames serve the same role — load them all, then show the frame that corresponds to the current input position.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== GOTCHAS & ITERATION ===================== -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="card">
+      <div class="card-title red">Gotchas</div>
+      <div class="rule-list">
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Screenshots alone ≠ a good build.</span> Claude Code needs the actual JS and CSS — not just how things look, but how they're built. Always run the teardown skill.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Plain web fetch is incomplete.</span> The sub-model Claude Code uses for fetching won't return large JS/CSS files in full. The teardown skill's enhanced prompt is specifically designed to work around this.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Camera movement in video kills the effect.</span> Any zoom, drift, or rotation means the asset changes size/position across frames — it will look broken when mouse-mapped. No exceptions.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Too many frames = slow load.</span> Keep video to 4 seconds. 8 seconds generates hundreds of frames that will kill page load performance.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No green screen = messy frame extraction.</span> AI background removal across dozens of frames only works cleanly when the source background is pure green. A complex background will produce inconsistent cutouts.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Don't stop at the clone.</span> If you just copy the site and never swap the content, you missed the whole point. The output should eventually look nothing like the original.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Iteration Strategy</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Side-by-side screenshot compare</strong><br>
+            Take a screenshot of your build. Take a screenshot of the original. Notice the differences: text sizing, spacing, proportions, animation timing.
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Feed the diff back to Claude Code</strong><br>
+            Paste both screenshots into Claude Code and say: <em>"Here's my version. Here's the original. What's different in the code? Let's line those up."</em>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>When it's close enough — make it yours</strong><br>
+            Swap out the scroll-animation asset for something relevant to your project. Change the headline. Update the color palette. The scroll-animation technique stays; everything else becomes original.
+            <span class="pos">✓ After this step, you own a unique site that no AI template could have produced.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Good Habits</div>
+        <div class="decision-item"><span class="di">✅</span>Always run the teardown skill before the build</div>
+        <div class="decision-item"><span class="di">✅</span>Green screen every generated asset</div>
+        <div class="decision-item"><span class="di">✅</span>Keep video transitions to 4 seconds or less</div>
+        <div class="decision-item"><span class="di">✅</span>Read Claude Code's tech stack breakdown — that's the lesson</div>
+        <div class="decision-item"><span class="di">✅</span>Browse Awards regularly to expand your design vocabulary</div>
+        <div class="decision-item"><span class="di">✅</span>Iterate with screenshot comparisons, not just vibes</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Avoid These</div>
+        <div class="decision-item"><span class="di">❌</span>Relying on screenshots alone as the teardown input</div>
+        <div class="decision-item"><span class="di">❌</span>Generating video longer than ~4 seconds for frame assets</div>
+        <div class="decision-item"><span class="di">❌</span>Any camera movement in the video generation prompt</div>
+        <div class="decision-item"><span class="di">❌</span>Skipping Step 5 — finishing the clone and never customizing it</div>
+        <div class="decision-item"><span class="di">❌</span>Expecting a 1:1 match — a design studio built the original</div>
+        <div class="decision-item"><span class="di">❌</span>Using complex backgrounds when green screen is possible</div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">🎓 The Real Outcome</div>
+      <p>After one project like this, scroll animations stop feeling like magic. You'll see a parallax effect on a site and think: <em>"I know how that works. I could build that."</em> That shift in perception — that's what you're actually building toward.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== SKILL SOURCE ===================== -->
+  <div class="section" id="tab-skillsource">
+
+    <div class="hero">
+      <h2>site-teardown — Skill Source</h2>
+      <p>The raw skill file that powers Step 2. Reading a skill's source is one of the best ways to understand how skills are structured — what each section does and why.</p>
+    </div>
+
+    <!-- Anatomy legend -->
+    <div class="card">
+      <div class="card-title">Skill File Anatomy</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>Frontmatter (<code>---</code> block)</strong> — The skill's identity card. <code>name</code> is the internal ID. <code>description</code> is the full natural-language trigger list Claude uses to decide when to activate this skill.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🎯</div>
+          <div class="rule-text"><strong>When This Skill Activates</strong> — Explicit activation conditions and example trigger phrases. The more specific, the more reliably Claude fires the skill at the right moment.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔢</div>
+          <div class="rule-text"><strong>Pipeline steps</strong> — The numbered sequence of actions Claude executes. Each step has a clear input, a method, and an output. This is the procedural core of the skill.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📝</div>
+          <div class="rule-text"><strong>Prompt templates</strong> — The actual text sent to web fetch. These are dynamic — class names from the HTML are inserted at runtime. This is what separates a targeted fetch from a generic one.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📄</div>
+          <div class="rule-text"><strong>Output template</strong> — The exact markdown structure the skill produces. Defining the output format in the skill ensures the teardown document is always consistent and build-ready.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🧠</div>
+          <div class="rule-text"><strong>Common Patterns section</strong> — Reference knowledge baked into the skill. Claude uses this to recognize effects faster and produce more accurate teardowns without needing to infer from scratch each time.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Raw source -->
+    <div class="card">
+      <div class="card-title">Frontmatter + Activation</div>
+      <pre><span class="cm">---</span>
+<span class="kw">name</span>: site-teardown
+<span class="kw">description</span>: <span class="li">"Reverse engineer any website into a complete build blueprint.
+  Analyzes the HTML structure, fetches and extracts all animation/interaction
+  code from the site's JavaScript, and pulls the complete design system from
+  the CSS. Outputs a structured teardown document with tech stack, every
+  visual effect and how it's implemented, design tokens, assets needed,
+  and a section-by-section build plan.</span>
+
+  <span class="li">Use this skill whenever the user wants to analyze how a website was built,
+  reverse engineer a site, clone or recreate a website, understand what tech
+  stack or animations a site uses, do a site teardown, deconstruct a page,
+  figure out how an effect works on a website, or says things like
+  'steal this website', 'break down this site', 'how did they build this',
+  'website blueprint', 'analyze this site for me', or gives you a URL and
+  asks you to figure out how it works. Also trigger when the user pastes
+  raw HTML source code and asks what's going on or how to recreate it."</span>
+<span class="cm">---</span>
+
+<span class="hd">## When This Skill Activates</span>
+
+<span class="hd">Activate when the user wants to:</span>
+<span class="li">- Analyze how a website was built</span>
+<span class="li">- Reverse engineer or deconstruct a site</span>
+<span class="li">- Clone or recreate a website's design and animations</span>
+<span class="li">- Understand what tech stack, libraries, or animation techniques a site uses</span>
+<span class="li">- Get a build blueprint for a website they want to recreate</span>
+<span class="li">- Understand how a specific effect on a website works</span>
+
+<span class="hd">Example triggers:</span>
+<span class="li">- "Tear down this site: https://example.com"</span>
+<span class="li">- "How did they build this website?"</span>
+<span class="li">- "I want to steal this website's design"</span>
+<span class="li">- "/site-teardown [URL]"</span>
+<span class="li">- User pastes raw HTML and asks how to recreate it</span></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pipeline — Steps 1 &amp; 2</div>
+      <pre><span class="hd">## Pipeline</span>
+
+<span class="hd">### Step 1 — Get the HTML</span>
+
+<span class="cm"># If user pastes raw HTML:</span>
+<span class="li">- Use it directly — more complete than WebFetch for large pages</span>
+<span class="li">- Extract: section/component class names, image/video src paths,</span>
+<span class="li">  SVG elements, form structures, nav structure, meta tags,</span>
+<span class="li">  inline styles/scripts</span>
+
+<span class="cm"># If only a URL is provided, fetch with this prompt:</span>
+<span class="kw">"Return the complete HTML structure of this page. Include all class names,
+element hierarchy, image/video src paths, SVG elements, meta tags, script
+src paths, stylesheet href paths, and any inline styles or scripts.
+Preserve the exact class names and data attributes.
+Do not summarize the structure — return as much detail as possible."</span>
+
+<span class="hd">### Step 2 — Find JS and CSS File Paths</span>
+
+<span class="cm"># Look for in &lt;head&gt;:</span>
+<span class="li">&lt;link rel="stylesheet" href="/path/to/main.css"&gt;</span>
+
+<span class="cm"># Look for before &lt;/body&gt;:</span>
+<span class="li">&lt;script src="/path/to/main.js"&gt;&lt;/script&gt;</span>
+<span class="li">&lt;script type="module" src="/dist/assets/app.js"&gt;&lt;/script&gt;</span>
+
+<span class="fn">SKIP (third-party — note but don't fetch):</span>
+<span class="fn">- Google Tag Manager / Analytics / gtag</span>
+<span class="fn">- Cookie consent tools (iubenda, OneTrust, CookieBot)</span>
+<span class="fn">- reCAPTCHA / hCaptcha</span>
+<span class="fn">- CDN-hosted libraries (cdnjs, unpkg, jsdelivr)</span>
+<span class="fn">- WordPress core scripts (/wp-includes/js/)</span>
+
+<span class="li">KEEP: /dist/, /build/, /assets/, /static/ — main.js, app.css, bundle.js
+Also check: &lt;link rel="modulepreload" href="..."&gt;</span></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pipeline — Step 3: JS Fetch Prompt</div>
+      <pre><span class="hd">### Step 3 — Fetch the JavaScript (Dynamic Prompt)</span>
+
+<span class="cm"># Build this prompt, then append class names found in the HTML:</span>
+
+<span class="kw">"Extract ALL animation code, event listeners, scroll effects, mouse
+interactions, click handlers, and GSAP/animation library usage.
+
+Include:
+- Every function that manipulates the DOM, changes styles, or responds to input
+- All ScrollTrigger/scroll-based animation configurations
+- All timeline definitions and animation sequences
+- All mousemove/mouseenter/mouseleave/click/touch handlers
+- All class toggling and DOM manipulation
+- All IntersectionObserver usage
+- All CSS custom property manipulation
+- All Lenis/locomotive/smooth scroll configurations
+- All Barba.js/Swup/page transition code
+- All slider/carousel/draggable configurations
+- All parallax implementations
+- All image sequence/frame animation logic
+- All cursor/pointer customization
+- All preloader/loading animations
+- All lazy loading logic
+- All form interaction handlers
+- All accordion/toggle/menu animations
+- Custom easing functions and timing values
+
+Also look for any code targeting these class names from the HTML:
+[INSERT COMMA-SEPARATED LIST OF KEY CLASS NAMES FROM THE HTML]
+
+Return actual code snippets with context.
+Do not summarize — return as much raw code as possible."</span>
+
+<span class="cm"># Focus on classes with words like:</span>
+<span class="li">hero, animate, scroll, slide, reveal, split, parallax, hover, active,
+open, toggle, frame, moon, star, video, zoom, marquee, cursor, loader,
+transition</span></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pipeline — Step 4: CSS Fetch Prompt</div>
+      <pre><span class="hd">### Step 4 — Fetch the CSS (Dynamic Prompt)</span>
+
+<span class="cm"># Same pattern — append class name STEMS from the HTML:</span>
+<span class="cm"># e.g. .home-hero__moon-inner → use stems: hero, moon</span>
+
+<span class="kw">"Extract the COMPLETE design system from this CSS file:
+
+Include:
+- Every color value (hex, rgb, hsl, CSS custom properties)
+- Every @font-face declaration with font-family names, src paths, weights
+- Every font-family assignment and which elements use them
+- Every @keyframes animation with full keyframe definitions
+- Every CSS custom property (--variable) definition and usage
+- Every media query breakpoint and what changes at each
+- All transform and transition properties
+- All position:fixed and position:sticky elements
+- All z-index values and stacking context
+- The spacing/sizing system (padding, margin, gap patterns)
+- Border-radius, box-shadow, text-shadow values
+- Gradient definitions
+- Mix-blend-mode and filter usage
+- The responsive typography system
+- CSS animations on ::before, ::after pseudo-elements
+- Grid and flexbox layout patterns for major sections
+- Any mask-image or clip-path usage
+- The noise/grain/texture overlay implementation if present
+
+Also extract all CSS rules for classes containing these terms:
+[INSERT COMMA-SEPARATED LIST OF KEY CLASS NAME STEMS FROM THE HTML]
+
+Return actual CSS rules and values.
+Do not summarize — return as much raw CSS as possible."</span></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pipeline — Step 5: Output Template</div>
+      <pre><span class="hd">### Step 5 — Assemble the Teardown Document</span>
+
+<span class="cm"># Save to: research/YYYY-MM-DD-{site-slug}-teardown.md</span>
+
+<span class="hd"># Site Teardown: {Site Name}</span>
+
+<span class="kw">URL:</span> {url}
+<span class="kw">Built by:</span> {agency/developer if identifiable}
+<span class="kw">Platform:</span> {WordPress/Next.js/custom/etc}
+<span class="kw">Date analyzed:</span> {YYYY-MM-DD}
+
+<span class="hd">## Tech Stack (Confirmed from Source)</span>
+<span class="li">| Technology | Evidence | Purpose |</span>
+
+<span class="hd">## Design System</span>
+<span class="li">### Colors   — hex/rgb/hsl/CSS custom properties table
+### Typography — font family, weight, letter-spacing, sizes per role
+### Spacing   — CSS custom properties, fluid sizing, clamp() approach
+### Responsive — breakpoints, orientation queries, container queries</span>
+
+<span class="hd">## Effects Breakdown</span>
+<span class="li">| Effect | Implementation | Complexity | Cloneable? |</span>
+
+<span class="hd">## Implementation Details</span>
+<span class="cm"># Deep-dive per major effect — code snippets + key insight</span>
+
+<span class="hd">## Assets Needed to Recreate</span>
+<span class="cm"># Type, description, suggested source (Midjourney prompt / stock / code)</span>
+
+<span class="hd">## Build Plan</span>
+<span class="li">### Recommended Stack  — framework, styling, animation library + rationale
+### NPM Packages       — npm install command
+### Section Build Order — each section: contents + interactions + approach</span>
+
+<span class="hd">## Notes</span>
+<span class="cm"># Gotchas, premium plugins, licensing, hard-to-clone items + alternatives</span></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">Filling the Output — Quality Rules</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🎯</div>
+          <div class="rule-text"><strong>Be specific, not vague.</strong> "GSAP ScrollTrigger with <code>scrub:true</code> pinned to <code>.hero</code>, scaling from 1 to 0.3" is useful. "Uses scroll animations" is not.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">💡</div>
+          <div class="rule-text"><strong>Include the "reveal"</strong> — show that an impressive effect has a simple implementation. If the moon is just 54 images swapped on mousemove, say that clearly.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔍</div>
+          <div class="rule-text"><strong>Distinguish confirmed vs inferred.</strong> If you found the exact GSAP config in the JS, say "confirmed from source." If guessing from class names, say "inferred."</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📦</div>
+          <div class="rule-text"><strong>Be practical about assets.</strong> Don't just say "needs images." Say how many, what kind, suggest Midjourney prompts or note if any can be generated with code (SVGs, noise textures, gradients).</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  // Sub-tab switching (Teardown tab)
+  document.querySelectorAll('.sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.sub;
+      document.querySelectorAll('.sub-tab').forEach(b => {
+        b.style.borderBottomColor = 'transparent';
+        b.style.color = 'var(--text-muted)';
+      });
+      btn.style.borderBottomColor = 'var(--accent)';
+      btn.style.color = 'var(--accent)';
+      document.querySelectorAll('.sub-section').forEach(s => s.style.display = 'none');
+      document.getElementById('sub-' + target).style.display = 'flex';
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

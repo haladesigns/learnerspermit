@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remote Access — Claude Code Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .badge.preview {
+    background: rgba(247,162,62,0.12);
+    color: var(--accent4);
+    border-color: rgba(247,162,62,0.3);
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+
+  .toggle-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+  .ref-table td.mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+  }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.blue  { background: var(--accent-glow);  color: var(--accent);  border-bottom: 1px solid rgba(79,142,247,0.2); }
+  .decision-col-header.green { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.amber { background: rgba(247,162,62,0.1); color: var(--accent4); border-bottom: 1px solid rgba(247,162,62,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.5;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di        { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Feature comparison table special cells */
+  .check  { color: var(--accent3); font-weight: 600; }
+  .cross  { color: var(--accent2); font-weight: 600; }
+  .maybe  { color: var(--accent4); font-weight: 600; }
+
+  /* three-column feature grid */
+  .feature-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 1fr 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .feature-row:last-child { border-bottom: none; }
+  .feature-row:hover { background: var(--accent-glow); }
+
+  .feature-row.header {
+    background: var(--bg-code);
+    cursor: default;
+  }
+  .feature-row.header:hover { background: var(--bg-code); }
+
+  .feature-cell {
+    padding: 9px 14px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .feature-cell.label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border);
+  }
+  .feature-cell.header-cell {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .feature-cell.header-cell.c { color: var(--accent);  }
+  .feature-cell.header-cell.d { color: var(--accent4); }
+  .feature-cell.header-cell.r { color: var(--accent3); }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Remote Access<span> — Claude Code</span></div>
+    <div class="badge">REFERENCE</div>
+    <div class="badge preview">RESEARCH PREVIEW</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="compare">Comparison</button>
+  <button data-tab="channels">Channels Setup</button>
+  <button data-tab="keepalive">Keep-Alive</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>3 Ways to Access Claude Code Remotely</h2>
+      <p>Anthropic dropped three remote-access features in quick succession. They sound similar but solve different problems. <strong>For 99% of people, Remote Control is all you need.</strong> Here's the full breakdown.</p>
+    </div>
+
+    <div class="grid-3">
+
+      <div class="card blue">
+        <div class="card-title">Remote Control</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📱</div>
+            <div class="rule-text"><span class="pos">Best for most people.</span> Control an active Claude Code terminal session from your phone via the <strong>official Claude app</strong>.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔴</div>
+            <div class="rule-text"><strong>Live stream</strong> of terminal output — you see everything in real time, not just a completion message.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✋</div>
+            <div class="rule-text">Can <strong>approve or deny permissions</strong> from your phone (unless running <code>--dangerously-skip-permissions</code>).</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text">Easiest setup. Uses <strong>outbound HTTPS polling + streaming TLS</strong>. Auto-reconnects after a <strong>10-minute timeout</strong>.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🌐</div>
+            <div class="rule-text">Available on <strong>iOS, Android,</strong> and <strong>claude.ai/code</strong> — not just the mobile app.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Dispatch</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🖥️</div>
+            <div class="rule-text"><span class="neg">Claude Cowork (desktop app) only.</span> Not for Claude Code / terminal. Different product entirely.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔥</div>
+            <div class="rule-text"><strong>Fire-and-forget.</strong> Send tasks from your phone; Cowork executes them in a sandboxed desktop environment.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔗</div>
+            <div class="rule-text">Access to <strong>38+ native integrations</strong> — calendar, email, files, etc. Great for non-technical tasks.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📱</div>
+            <div class="rule-text">Pairs phone to desktop via <strong>QR code</strong>. Runs tasks inside an <strong>Electron + sandboxed</strong> environment.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🍎</div>
+            <div class="rule-text"><strong>Mac only.</strong> Requires the Claude Cowork desktop app — not available on Windows or Linux.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">Channels</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">💬</div>
+            <div class="rule-text">Talk to Claude Code via <strong>Telegram or Discord</strong>. Text a task, go grab coffee — async by design.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚙️</div>
+            <div class="rule-text">Runs via <strong>MCP server</strong>. Same protocol as the rest of Claude Code's ecosystem. More hackable.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🛠️</div>
+            <div class="rule-text">More <strong>developer-friendly</strong> — custom channels buildable in ~30 lines of TypeScript. Good for tinkerers.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text">Only returns <strong>completion summaries</strong>, not a live terminal stream. No mid-task permission prompts.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">⚠️ Key Distinction</div>
+      <p><em>Remote Control and Channels</em> are both for Claude Code (terminal). <em>Dispatch</em> is for Claude Cowork (desktop app). They are not interchangeable.</p>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">💡 The Big Shift</div>
+      <p>Channels represents a move from <em>synchronous</em> "ask-and-wait" to <em>asynchronous</em> "text-and-forget" workflows. Remote Control keeps the synchronous model, just on your phone.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- COMPARISON -->
+  <div class="section" id="tab-compare">
+
+    <div class="card">
+      <div class="card-title">Feature Matrix</div>
+      <div style="border: 1px solid var(--border); border-radius: 6px; overflow: hidden;">
+        <div class="feature-row header">
+          <div class="feature-cell label header-cell" style="color:var(--text-muted)">Feature</div>
+          <div class="feature-cell header-cell c">Channels</div>
+          <div class="feature-cell header-cell d">Dispatch</div>
+          <div class="feature-cell header-cell r">Remote Control</div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Product</div>
+          <div class="feature-cell">Claude Code (terminal)</div>
+          <div class="feature-cell">Claude Cowork (desktop app)</div>
+          <div class="feature-cell">Claude Code (terminal)</div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Launched</div>
+          <div class="feature-cell">Mar 19–20, 2026</div>
+          <div class="feature-cell">Mar 17 (Max); Mar 20 (Pro)</div>
+          <div class="feature-cell">Feb 25, 2026</div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Client app</div>
+          <div class="feature-cell">Telegram / Discord (+ custom)</div>
+          <div class="feature-cell">Official Claude app</div>
+          <div class="feature-cell">iOS, Android, claude.ai/code</div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Direction</div>
+          <div class="feature-cell">Bidirectional (chat bridge)</div>
+          <div class="feature-cell">Phone → Desktop (fire-and-forget)</div>
+          <div class="feature-cell">Phone ↔ Terminal (synchronous)</div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Architecture</div>
+          <div class="feature-cell">MCP server as subprocess, polls platform APIs locally</div>
+          <div class="feature-cell">Electron + sandboxing, mobile-to-desktop, QR code pairing</div>
+          <div class="feature-cell">Outbound HTTPS polling, streaming TLS, auto-reconnect (10 min timeout)</div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Communication</div>
+          <div class="feature-cell">Event-driven async (push/poll via MCP)</div>
+          <div class="feature-cell">Persistent single thread, fire-and-forget</div>
+          <div class="feature-cell">Synchronous — same conversation, real-time</div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Live terminal stream</div>
+          <div class="feature-cell"><span class="cross">✗ No</span></div>
+          <div class="feature-cell"><span class="cross">✗ No</span></div>
+          <div class="feature-cell"><span class="check">✓ Yes</span></div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Approve permissions</div>
+          <div class="feature-cell"><span class="cross">✗ No</span></div>
+          <div class="feature-cell"><span class="cross">✗ No</span></div>
+          <div class="feature-cell"><span class="check">✓ Yes</span></div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Platforms</div>
+          <div class="feature-cell">Telegram, Discord (+ custom MCP)</div>
+          <div class="feature-cell"><span class="maybe">Mac only</span> (Cowork desktop)</div>
+          <div class="feature-cell">iOS, Android, claude.ai/code</div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Extensibility</div>
+          <div class="feature-cell"><span class="check">✓ Yes</span> — custom channel plugins via MCP</div>
+          <div class="feature-cell"><span class="cross">✗ No</span> — fixed to 38+ native integrations</div>
+          <div class="feature-cell"><span class="cross">✗ No</span> — fixed to claude.ai/mobile app</div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Async / fire-and-forget</div>
+          <div class="feature-cell"><span class="check">✓ Yes</span></div>
+          <div class="feature-cell"><span class="check">✓ Yes</span></div>
+          <div class="feature-cell"><span class="cross">✗ No</span></div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Setup complexity</div>
+          <div class="feature-cell"><span class="maybe">~ Medium</span></div>
+          <div class="feature-cell"><span class="check">✓ Low</span></div>
+          <div class="feature-cell"><span class="check">✓ Lowest</span></div>
+        </div>
+        <div class="feature-row">
+          <div class="feature-cell label">Status</div>
+          <div class="feature-cell"><span class="maybe">Research Preview</span></div>
+          <div class="feature-cell"><span class="maybe">Research Preview</span></div>
+          <div class="feature-cell"><span class="maybe">Research Preview</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Which One Do You Need?</div>
+      <div class="decision-grid">
+        <div class="decision-col">
+          <div class="decision-col-header blue">📱 Remote Control</div>
+          <div class="decision-item"><span class="di">→</span>You have a Claude Code terminal session running and want phone access to it.</div>
+          <div class="decision-item"><span class="di">→</span>You want to see real-time output or approve tool calls remotely.</div>
+          <div class="decision-item"><span class="di">→</span>You hate work-life balance but love simplicity.</div>
+          <div class="decision-item"><span class="di">→</span>You don't want to set up a bot or MCP server.</div>
+        </div>
+        <div class="decision-col">
+          <div class="decision-col-header amber">🖥️ Dispatch</div>
+          <div class="decision-item"><span class="di">→</span>You're on a Mac using Claude Cowork (the desktop app).</div>
+          <div class="decision-item"><span class="di">→</span>You want to fire off non-coding tasks: emails, calendar, documents.</div>
+          <div class="decision-item"><span class="di">→</span>You don't need a terminal — you want the full desktop app scope.</div>
+          <div class="decision-item"><span class="di">→</span>You don't need to watch it work, just get results.</div>
+        </div>
+        <div class="decision-col">
+          <div class="decision-col-header green">💬 Channels</div>
+          <div class="decision-item"><span class="di">→</span>You want Claude Code available as a Telegram or Discord bot.</div>
+          <div class="decision-item"><span class="di">→</span>You want async workflows — queue tasks and check results later.</div>
+          <div class="decision-item"><span class="di">→</span>You want to build custom integrations via MCP.</div>
+          <div class="decision-item"><span class="di">→</span>You like tinkering under the hood.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠️ All Three: Research Preview</div>
+      <p>Syntax and behavior <em>may change</em> for all three features. Don't hardcode Channels plugin commands into scripts you depend on — check the docs when things break.</p>
+    </div>
+
+  </div><!-- /compare -->
+
+
+  <!-- CHANNELS SETUP -->
+  <div class="section" id="tab-channels">
+
+    <div class="callout yellow">
+      <div class="callout-label">📌 Before You Start</div>
+      <p>Channels needs an <em>active Claude Code session open on your computer</em>. It is a local process, not a cloud service. Close the terminal = no Channels.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title green">Telegram Setup</div>
+        <div class="step-list">
+
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Create a bot via BotFather</strong><br>
+              Open Telegram → message <code>@BotFather</code> → <code>/newbot</code>. Follow prompts. Save the <strong>token</strong> it gives you.
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Install the Telegram plugin</strong>
+              <pre><span class="fn">/plugin install</span> <span class="li">telegram@claude-plugins-official</span></pre>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Configure with your token</strong>
+              <pre><span class="fn">/telegram:configure</span> <span class="hd">&lt;token&gt;</span></pre>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Restart Claude Code with Channels enabled</strong>
+              <pre><span class="kw">claude</span> <span class="fn">--channels</span> <span class="li">plugin:telegram@claude-plugins-official</span></pre>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <strong>DM your bot on Telegram</strong><br>
+              Send any message to get your <strong>pairing code</strong>.
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">6</div>
+            <div class="step-body">
+              <strong>Pair the session</strong>
+              <pre><span class="fn">/telegram:access pair</span> <span class="hd">&lt;code&gt;</span></pre>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">7</div>
+            <div class="step-body">
+              <strong>Lock down access</strong>
+              <pre><span class="fn">/telegram:access policy</span> <span class="li">allowlist</span></pre>
+              <span class="note">⚠ Do this — otherwise anyone who finds your bot could use it.</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title blue">Discord Setup</div>
+        <div class="step-list">
+
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Create app in Discord Developer Portal</strong><br>
+              Go to <code>discord.com/developers</code> → New Application → Bot tab → enable <strong>Message Content Intent</strong>.
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Invite bot with required permissions</strong><br>
+              OAuth2 → URL Generator. Scopes: <code>bot</code>. Permissions needed:
+              <pre><span class="li">View Channels
+Send Messages
+Read Message History
+Attach Files
+Add Reactions</span></pre>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Install the Discord plugin</strong>
+              <pre><span class="fn">/plugin install</span> <span class="li">discord@claude-plugins-official</span></pre>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Configure with your bot token</strong>
+              <pre><span class="fn">/discord:configure</span> <span class="hd">&lt;token&gt;</span></pre>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <strong>Restart Claude Code with Channels enabled</strong>
+              <pre><span class="kw">claude</span> <span class="fn">--channels</span> <span class="li">plugin:discord@claude-plugins-official</span></pre>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">6</div>
+            <div class="step-body">
+              <strong>DM the bot → get pairing code → pair</strong>
+              <pre><span class="fn">/discord:access pair</span> <span class="hd">&lt;code&gt;</span></pre>
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-num">7</div>
+            <div class="step-body">
+              <strong>Lock down access</strong>
+              <pre><span class="fn">/discord:access policy</span> <span class="li">allowlist</span></pre>
+              <span class="note">⚠ Do this — same reason as Telegram.</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /grid-2 -->
+
+    <div class="callout blue">
+      <div class="callout-label">💡 Setup Tip</div>
+      <p>For Telegram: the official docs describe this as <em>four steps</em> — copy the setup prompt into Claude Code and it'll walk you through it interactively. Easier than doing it manually.</p>
+    </div>
+
+  </div><!-- /channels -->
+
+
+  <!-- KEEP-ALIVE -->
+  <div class="section" id="tab-keepalive">
+
+    <div class="hero" style="border-left-color: var(--accent2); box-shadow: var(--shadow), inset 0 0 60px var(--accent2-glow);">
+      <h2 style="color: var(--accent2);">The Catch</h2>
+      <p>Channels only works while your Claude Code session is open. It is a <strong>local process</strong>, not a cloud service. No session = no Channels. Remote Control handles disconnects better — it auto-reconnects after a <strong>10-minute timeout</strong> — but still requires the terminal session to be running. Here are strategies to keep Channels alive.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Keep-Alive Strategies</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>tmux + LaunchAgent (macOS)</strong><br>
+            Run Claude Code inside a persistent <code>tmux</code> session. Use <code>launchctl</code> (via a <code>.plist</code> LaunchAgent) to automatically restart the session daily or on login. This is the most robust option.
+            <pre><span class="cm"># Create tmux session on startup via LaunchAgent</span>
+<span class="kw">tmux</span> new-session -d -s claude <span class="fn">'claude --channels plugin:telegram@claude-plugins-official'</span></pre>
+            <span class="tip">💡 Tip: Use <code>tmux attach -t claude</code> to check in from a local terminal.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Ralph Plugin — Autonomous Loops</strong><br>
+            Use the Ralph plugin's <code>/ralph-loop</code> command to keep the session active with autonomous task loops.
+            <pre><span class="fn">/ralph-loop</span> <span class="cm"># keeps session alive via periodic activity</span></pre>
+            <span class="tip">💡 Good if you're already using Ralph for autonomous work.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Custom Heartbeat Channel</strong><br>
+            Build a simple MCP channel (~30 lines of TypeScript) that sends periodic pings to keep the session from timing out. The MCP architecture makes this straightforward.
+            <pre><span class="cm">// Minimal heartbeat MCP channel concept</span>
+<span class="kw">setInterval</span>(() => {
+  channel.<span class="fn">ping</span>(); <span class="cm">// keep-alive every N minutes</span>
+}, <span class="li">5 * 60 * 1000</span>);</pre>
+            <span class="tip">💡 Most developer-friendly option — you control the timing and logic.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title red">Gotchas</div>
+      <div class="rule-list">
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No session = silent failure.</span> If your computer sleeps, restarts, or Claude Code crashes, Channels goes dark. Your Telegram/Discord messages won't error — they just won't get processed.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No permission prompts via Channels.</span> If Claude hits something it needs approval for mid-task, it can't ask you through Telegram. Plan your tasks accordingly or pre-configure permissions.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Research Preview syntax changes.</span> Plugin install commands and configure flags may change. Don't hardcode these in long-lived scripts without checking the docs periodically.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Access policy matters.</span> If you skip <code>/telegram:access policy allowlist</code>, anyone who finds your bot ID could potentially send it tasks. Always lock it down.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">💡</div>
+          <div class="rule-text"><span class="pos">Custom channels are buildable.</span> The MCP-based architecture means you can build your own channel in ~30 lines of TypeScript — not just Telegram/Discord. SMS, Slack, webhook endpoints, etc. are all possible.</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /keepalive -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

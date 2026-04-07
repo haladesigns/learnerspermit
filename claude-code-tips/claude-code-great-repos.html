@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5 OSS Repos — Claude Code Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; color: var(--accent); letter-spacing: -0.02em; }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em; }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle { width: 44px; height: 24px; background: var(--toggle-bg); border: 1px solid var(--border-accent); border-radius: 12px; cursor: pointer; position: relative; appearance: none; outline: none; transition: background 0.3s; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: var(--accent); border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s; }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; overflow-x: auto; }
+  nav button { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.2s; letter-spacing: 0.04em; text-transform: uppercase; }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+  .section.active > * { animation: fadeUp 0.25s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; box-shadow: var(--shadow); transition: background 0.3s, border 0.3s; }
+  .card.blue   { border-left: 3px solid var(--accent); }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+  .card-title.red::before   { background: var(--accent2); }
+  .card-title.green::before { background: var(--accent3); }
+  .card-title.yellow::before{ background: var(--accent4); }
+
+  .hero { background: var(--bg-card); border: 1px solid var(--border-accent); border-left: 3px solid var(--accent); border-radius: 8px; padding: 24px; box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow); }
+  .hero h2 { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em; }
+  .hero p { color: var(--text); font-size: 15px; max-width: 740px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row { display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos { color: var(--accent3); font-weight: 600; }
+  .rule-text code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row { display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: flex-start; padding: 12px 16px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); text-align: center; margin-top: 1px; }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip  { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--text); margin-top: 10px; }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent); }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); text-align: left; padding: 8px 12px; background: var(--bg-code); border-bottom: 1px solid var(--border); }
+  .ref-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); white-space: nowrap; }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header { padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item { padding: 9px 16px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .stat { display: flex; flex-direction: column; align-items: center; background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px; flex: 1; min-width: 100px; }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent2); }
+  .stat-val.green { color: var(--accent3); }
+  .stat-val.amber { color: var(--accent4); }
+  .stat-val.blue  { color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  .callout { background: var(--bg-code); border: 1px solid var(--border-accent); border-radius: 6px; padding: 16px 20px; }
+  .callout.blue   { border-left: 3px solid var(--accent); }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .callout.blue   .callout-label { color: var(--accent); }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent); }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Repo cards on overview */
+  .repo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .repo-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; transition: border-color 0.2s, box-shadow 0.2s; cursor: pointer; }
+  .repo-card:hover { border-color: var(--border-accent); box-shadow: 0 0 0 1px var(--accent-glow), var(--shadow); }
+  .repo-card.active-card { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-glow), var(--shadow); }
+  .repo-num { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim); }
+  .repo-name { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600; color: var(--accent); }
+  .repo-author { font-size: 11px; color: var(--text-muted); }
+  .repo-desc { font-size: 13px; color: var(--text); line-height: 1.5; flex: 1; }
+  .repo-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 2px 7px; border-radius: 3px; background: var(--tag-bg); color: var(--text-muted); border: 1px solid var(--border); letter-spacing: 0.05em; }
+  .tag.blue  { color: var(--accent);  border-color: rgba(79,142,247,0.3); background: var(--accent-glow); }
+  .tag.green { color: var(--accent3); border-color: rgba(62,207,142,0.3); background: var(--accent3-glow); }
+  .tag.red   { color: var(--accent2); border-color: rgba(224,95,122,0.3); background: var(--accent2-glow); }
+  .tag.amber { color: var(--accent4); border-color: rgba(247,162,62,0.3);  background: rgba(247,162,62,0.1); }
+
+  .repo-link { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim); text-decoration: none; margin-top: 4px; display: inline-block; }
+  .repo-link:hover { color: var(--accent); }
+  .stars { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent4); }
+
+  /* Loop diagram */
+  .loop-diagram { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; padding: 20px 0; }
+  .loop-node { background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text); text-align: center; min-width: 100px; }
+  .loop-node.accent { border-color: var(--accent); color: var(--accent); }
+  .loop-node.green  { border-color: var(--accent3); color: var(--accent3); }
+  .loop-node.red    { border-color: var(--accent2); color: var(--accent2); }
+  .loop-arrow { font-size: 18px; color: var(--text-dim); padding: 0 4px; }
+  .loop-branch { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .loop-branch-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text-muted); letter-spacing: 0.06em; }
+
+  /* Bucket cards for OpenSpace */
+  .bucket-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 700px) { .bucket-row { grid-template-columns: 1fr; } }
+  .bucket { border-radius: 8px; padding: 16px 18px; border: 1px solid var(--border); background: var(--bg-code); }
+  .bucket-icon { font-size: 22px; margin-bottom: 6px; }
+  .bucket-title { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+  .bucket-desc  { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .bucket.fix  { border-top: 2px solid var(--accent2); } .bucket.fix .bucket-title { color: var(--accent2); }
+  .bucket.imp  { border-top: 2px solid var(--accent4); } .bucket.imp .bucket-title { color: var(--accent4); }
+  .bucket.lrn  { border-top: 2px solid var(--accent3); } .bucket.lrn .bucket-title { color: var(--accent3); }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">5 OSS Repos<span> — Claude Code</span></div>
+    <div class="badge">MARCH 2026</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="autoresearch">AutoResearch</button>
+  <button data-tab="openspace">OpenSpace</button>
+  <button data-tab="cli">CLI Anything</button>
+  <button data-tab="peers">Claude Peers</button>
+  <button data-tab="gws">GWS CLI</button>
+</nav>
+
+<main>
+
+  <!-- ======================================================= OVERVIEW -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>5 Open-Source Repos Changing Claude Code</h2>
+      <p>All five repos launched in <strong>March 2026</strong> and integrate directly with Claude Code. Together they cover self-improving ML loops, auto-evolving skills, CLI bridging, multi-agent coordination, and Google Workspace integration.</p>
+    </div>
+
+    <div class="repo-grid">
+
+      <div class="repo-card" onclick="switchTab('autoresearch')">
+        <div class="repo-num">01</div>
+        <div class="repo-name">AutoResearch</div>
+        <div class="repo-author">karpathy/autoresearch</div>
+        <div class="repo-desc">ML algorithm-in-a-box. Points Claude Code at a task and runs automatic test loops to self-improve — committing wins, discarding losses.</div>
+        <div class="repo-tags">
+          <span class="tag blue">ML LOOP</span>
+          <span class="tag">PYTHON</span>
+          <span class="tag amber">NEEDS SCORING METRIC</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span class="stars">★ 65.9k</span>
+          <a href="https://github.com/karpathy/autoresearch" class="repo-link" target="_blank">github ↗</a>
+        </div>
+      </div>
+
+      <div class="repo-card" onclick="switchTab('openspace')">
+        <div class="repo-num">02</div>
+        <div class="repo-name">OpenSpace</div>
+        <div class="repo-author">HKUDS/OpenSpace</div>
+        <div class="repo-desc">MCP that monitors skill quality in real time, auto-routing each skill into fix / improve / lock buckets — reducing agent token costs by 46%.</div>
+        <div class="repo-tags">
+          <span class="tag blue">MCP</span>
+          <span class="tag green">SELF-EVOLVING SKILLS</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span class="stars">★ 1.7k</span>
+          <a href="https://github.com/HKUDS/OpenSpace" class="repo-link" target="_blank">github ↗</a>
+        </div>
+      </div>
+
+      <div class="repo-card" onclick="switchTab('cli')">
+        <div class="repo-num">03</div>
+        <div class="repo-name">CLI Anything</div>
+        <div class="repo-author">HKUDS/CLI-Anything</div>
+        <div class="repo-desc">One command turns any open-source project into a Claude Code CLI tool — analyzes, tests, documents, and publishes automatically.</div>
+        <div class="repo-tags">
+          <span class="tag blue">CLI</span>
+          <span class="tag">AGENT BRIDGE</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span class="stars">★ 24k</span>
+          <a href="https://github.com/HKUDS/CLI-Anything" class="repo-link" target="_blank">github ↗</a>
+        </div>
+      </div>
+
+      <div class="repo-card" onclick="switchTab('peers')">
+        <div class="repo-num">04</div>
+        <div class="repo-name">Claude Peers</div>
+        <div class="repo-author">louislva/claude-peers</div>
+        <div class="repo-desc">MCP + SQLite layer that lets multiple Claude Code sessions find each other and share context — enabling planner / executor / evaluator harnesses.</div>
+        <div class="repo-tags">
+          <span class="tag blue">MCP</span>
+          <span class="tag">MULTI-AGENT</span>
+          <span class="tag">SQLITE</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span class="stars">★ 1k+</span>
+          <a href="https://github.com/louislva/claude-peers" class="repo-link" target="_blank">github ↗</a>
+        </div>
+      </div>
+
+      <div class="repo-card" onclick="switchTab('gws')">
+        <div class="repo-num">05</div>
+        <div class="repo-name">Google Workspace CLI</div>
+        <div class="repo-author">googleworkspace/cli</div>
+        <div class="repo-desc">Google-developer-built CLI giving Claude Code access to Gmail, Drive, Docs, Calendar — with Model Armor prompt-injection scanning built in.</div>
+        <div class="repo-tags">
+          <span class="tag green">OFFICIAL-ISH</span>
+          <span class="tag red">PROMPT INJECTION GUARD</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span class="stars">–</span>
+          <a href="https://github.com/googleworkspace/cli" class="repo-link" target="_blank">github ↗</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Pattern Across All 5</div>
+      <p><em>Every repo extends Claude Code's reach</em> — either inward (self-improvement loops, skill quality) or outward (bridging apps it can't touch natively, multi-session coordination, productivity suites). Pick based on your current bottleneck.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ======================================================= AUTORESEARCH -->
+  <div class="section" id="tab-autoresearch">
+
+    <div class="hero">
+      <h2>AutoResearch</h2>
+      <p>Karpathy's machine-learning-in-a-box: Claude Code runs experiments automatically, commits improvements, and discards regressions — no human in the loop after setup. <strong>~65.9k stars</strong> as of April 2026. <strong>No framework. No dependencies. 3 files.</strong></p>
+    </div>
+
+    <!-- Key stats -->
+    <div class="card">
+      <div class="card-title yellow">Real-World Results</div>
+      <div class="stat-row">
+        <div class="stat"><div class="stat-val green">19%</div><div class="stat-label">Shopify model efficiency gain (0.8B params, 8h, 37 experiments)</div></div>
+        <div class="stat"><div class="stat-val amber">37</div><div class="stat-label">Auto-experiments run on Shopify task</div></div>
+        <div class="stat"><div class="stat-val blue">15</div><div class="stat-label">Kept improvements out of 83 attempts (repo's own benchmark)</div></div>
+        <div class="stat"><div class="stat-val" style="color:var(--text-muted)">68</div><div class="stat-label">Discarded — that's normal; most runs won't improve</div></div>
+      </div>
+    </div>
+
+    <!-- The three files — richer version from screenshot -->
+    <div class="card">
+      <div class="card-title">The Entire Repo — 3 Files</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+        <!-- prepare.py -->
+        <div style="background:var(--bg-code);border:1px solid var(--accent2);border-radius:8px;padding:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--accent2)">prepare.py</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(224,95,122,0.15);color:var(--accent2);border:1px solid rgba(224,95,122,0.3)">LOCKED</span>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">The scoring function</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:8px">Data, tokenizer, and <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">evaluate_bpb()</code></div>
+          <div style="font-size:11px;color:var(--accent2);font-family:'IBM Plex Mono',monospace">Agent CANNOT edit this</div>
+        </div>
+        <!-- train.py -->
+        <div style="background:var(--bg-code);border:1px solid var(--accent3);border-radius:8px;padding:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--accent3)">train.py</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(62,207,142,0.15);color:var(--accent3);border:1px solid rgba(62,207,142,0.3)">EDITABLE</span>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">The only file the agent edits</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6">Model architecture, hyperparameters, optimizer, batch size, training loop — everything is fair game</div>
+        </div>
+        <!-- program.md -->
+        <div style="background:var(--bg-code);border:1px solid var(--accent);border-radius:8px;padding:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--accent)">program.md</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;background:var(--accent-glow);color:var(--accent);border:1px solid rgba(79,142,247,0.3)">THE RULES</span>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">Instructions for the AI agent</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6">Not code — just Markdown. Defines the loop, rules, and constraints. Basically a Claude Code skill</div>
+        </div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border-accent);border-radius:6px;padding:10px 16px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted)">
+        That's it. No framework. No dependencies. 3 files.
+      </div>
+    </div>
+
+    <!-- The loop — step by step from screenshot -->
+    <div class="card">
+      <div class="card-title">The Karpathy Loop — Step by Step</div>
+
+      <!-- Human phase -->
+      <div style="margin-bottom:12px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);margin-bottom:8px">Human (one-time setup)</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="background:var(--accent4);color:#000;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;white-space:nowrap">Write program.md</div>
+          <div class="loop-arrow">→</div>
+          <div style="background:var(--bg-code);border:1px solid var(--border-accent);border-radius:6px;padding:8px 14px;font-size:12px;color:var(--text);white-space:nowrap">
+            Lock scoring function<br><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted)">evaluate_bpb() in prepare.py</span>
+          </div>
+          <div class="loop-arrow">→</div>
+          <div style="background:var(--bg-code);border:1px solid var(--border-accent);border-radius:6px;padding:8px 14px;font-size:12px;color:var(--text);white-space:nowrap">Launch agent<br><span style="font-size:10px;color:var(--text-muted)">Then walk away</span></div>
+        </div>
+      </div>
+
+      <!-- Agent phase -->
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);margin-bottom:8px">AI Agent (loops forever)</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="background:var(--accent-glow);border:1px solid var(--accent);border-radius:6px;padding:8px 14px;font-size:12px;text-align:center">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);display:block;margin-bottom:2px">1.</span>
+            <span style="color:var(--text)">Hypothesize</span><br>
+            <span style="font-size:10px;color:var(--text-muted)">Think of something to try</span>
+          </div>
+          <div class="loop-arrow">→</div>
+          <div style="background:var(--accent-glow);border:1px solid var(--accent);border-radius:6px;padding:8px 14px;font-size:12px;text-align:center">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);display:block;margin-bottom:2px">2.</span>
+            <span style="color:var(--text)">Edit train.py</span><br>
+            <span style="font-size:10px;color:var(--text-muted)">Change code + git commit</span>
+          </div>
+          <div class="loop-arrow">→</div>
+          <div style="background:var(--accent-glow);border:1px solid var(--accent);border-radius:6px;padding:8px 14px;font-size:12px;text-align:center">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);display:block;margin-bottom:2px">3.</span>
+            <span style="color:var(--text)">Run + Score</span><br>
+            <span style="font-size:10px;color:var(--text-muted)">train_model(), read val_bpb</span>
+          </div>
+          <div class="loop-arrow">→</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="background:var(--accent-glow);border:1px solid var(--accent);border-radius:6px;padding:8px 14px;font-size:12px;text-align:center;min-width:120px">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);display:block;margin-bottom:2px">4.</span>
+                <span style="color:var(--text)">Improved?</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font-size:11px;color:var(--accent3);font-family:'IBM Plex Mono',monospace">YES</span>
+                  <div class="loop-node green" style="padding:6px 12px;font-size:11px">Keep commit ↺</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font-size:11px;color:var(--accent2);font-family:'IBM Plex Mono',monospace">NO</span>
+                  <div class="loop-node red" style="padding:6px 12px;font-size:11px">Git reset ↺</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;background:var(--bg);border:1px solid var(--border-accent);border-radius:6px;padding:10px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted);text-align:center">
+        The agent takes the test. It never writes the test. That's why it works.
+      </div>
+    </div>
+
+    <!-- Qualification checklist -->
+    <div class="card green">
+      <div class="card-title green">Does the Karpathy Loop Work For Your Use Case?</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--accent3-glow);border:1px solid rgba(62,207,142,0.25);border-radius:6px">
+          <span style="font-size:16px;flex-shrink:0">☑</span>
+          <div>
+            <div style="font-weight:600;color:var(--text);margin-bottom:2px">Something to Change</div>
+            <div style="font-size:12px;color:var(--text-muted)">A single file: prompt, skill, config, or code</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--accent3-glow);border:1px solid rgba(62,207,142,0.25);border-radius:6px">
+          <span style="font-size:16px;flex-shrink:0">☑</span>
+          <div>
+            <div style="font-weight:600;color:var(--text);margin-bottom:2px">A Machine-Scorable Metric</div>
+            <div style="font-size:12px;color:var(--text-muted)">Binary yes/no — NOT a 1–7 scale, NOT vibes</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--accent3-glow);border:1px solid rgba(62,207,142,0.25);border-radius:6px">
+          <span style="font-size:16px;flex-shrink:0">☑</span>
+          <div>
+            <div style="font-weight:600;color:var(--text);margin-bottom:2px">No Human in the Loop</div>
+            <div style="font-size:12px;color:var(--text-muted)">If someone has to grade each run, the loop breaks</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:rgba(224,95,122,0.12);border:1px solid rgba(224,95,122,0.3);border-radius:6px;padding:10px 16px;font-size:13px;color:var(--accent2)">
+        Missing any of these? You're optimizing for an AI's opinion, not reality.
+      </div>
+    </div>
+
+    <!-- Good vs Bad use cases -->
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Works — Has a real, machine-scorable metric</div>
+        <div class="decision-item">
+          <span class="di">✅</span>
+          <div><strong>ML Model Training</strong><br><span style="font-size:12px;color:var(--text-muted)">Validation loss — a number. Lower = better.</span></div>
+        </div>
+        <div class="decision-item">
+          <span class="di">✅</span>
+          <div><strong>Prompt Optimization</strong><br><span style="font-size:12px;color:var(--text-muted)">Binary: "Does it have a white background?" Y/N</span></div>
+        </div>
+        <div class="decision-item">
+          <span class="di">✅</span>
+          <div><strong>Claude Code Skills</strong><br><span style="font-size:12px;color:var(--text-muted)">Test cases: pass/fail against expected output</span></div>
+        </div>
+        <div class="decision-item">
+          <span class="di">✅</span>
+          <div><strong>System Prompts</strong><br><span style="font-size:12px;color:var(--text-muted)">Output matches expected format? Yes or no.</span></div>
+        </div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Overhyped — Metric is subjective or requires live data</div>
+        <div class="decision-item">
+          <span class="di">❌</span>
+          <div><strong>Social Media Content</strong><br><span style="font-size:12px;color:var(--text-muted)">No ground truth — LLM grading its own posts</span></div>
+        </div>
+        <div class="decision-item">
+          <span class="di">❌</span>
+          <div><strong>Marketing / Cold Emails</strong><br><span style="font-size:12px;color:var(--text-muted)">CTR requires real traffic, not AI judgment</span></div>
+        </div>
+        <div class="decision-item">
+          <span class="di">❌</span>
+          <div><strong>Creative Writing</strong><br><span style="font-size:12px;color:var(--text-muted)">"Is this good?" is an opinion, not a metric</span></div>
+        </div>
+        <div class="decision-item">
+          <span class="di">❌</span>
+          <div><strong>Brand Voice Copy</strong><br><span style="font-size:12px;color:var(--text-muted)">"Does this sound right?" requires human taste</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠ The Rule</div>
+      <p><em>If a machine can't score it with a yes/no, the loop is just vibes.</em></p>
+    </div>
+
+  </div><!-- /autoresearch -->
+
+
+  <!-- ======================================================= OPENSPACE -->
+  <div class="section" id="tab-openspace">
+
+    <div class="hero">
+      <h2>OpenSpace</h2>
+      <p>A self-evolving skill engine from HKUDS that treats skills as <strong>living entities</strong> — not static files. Every task execution feeds back into the skill library: broken skills auto-repair, successful patterns get captured, and improvements propagate to any connected agent via the cloud community at <a href="https://open-space.cloud" target="_blank" style="color:var(--accent)">open-space.cloud</a>.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="card">
+      <div class="card-title green">GDPVal Benchmark Results (50 professional tasks, 6 industries)</div>
+      <div class="stat-row">
+        <div class="stat"><div class="stat-val green">46%</div><div class="stat-label">Fewer tokens on real-world tasks vs baseline (cold→warm rerun)</div></div>
+        <div class="stat"><div class="stat-val green">4.2×</div><div class="stat-label">Higher GDPVal income vs ClawWork baseline (same LLM backbone)</div></div>
+        <div class="stat"><div class="stat-val amber">70%</div><div class="stat-label">Quality score vs 40% baseline (220 tasks, 44 occupations)</div></div>
+        <div class="stat"><div class="stat-val blue">60+</div><div class="stat-label">Skills self-generated from 6 seeds in the showcase dashboard demo</div></div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
+        Cold start = no prior skills (reasons from scratch). Warm start = evolved skills reused. The gap between them <em>is</em> the value. GDPVal is HKUDS's own economic benchmark — read the arXiv paper before treating dollar figures as ground truth.
+      </div>
+    </div>
+
+    <!-- The three evolution modes — corrected from repo -->
+    <div class="card">
+      <div class="card-title">The Three Skill Evolution Modes</div>
+      <div class="bucket-row">
+        <div class="bucket fix">
+          <div class="bucket-icon">🔧</div>
+          <div class="bucket-title">FIX</div>
+          <div class="bucket-desc">Skill is broken. OpenSpace auto-repairs it — detects the failure pattern and patches the SKILL.md. Agent cannot proceed until this resolves.</div>
+        </div>
+        <div class="bucket imp">
+          <div class="bucket-icon">🌿</div>
+          <div class="bucket-title">DERIVED</div>
+          <div class="bucket-desc">Creates an enhanced or specialized version of an existing skill. New skill directory, co-exists with the parent — lineage tracked with full diffs.</div>
+        </div>
+        <div class="bucket lrn">
+          <div class="bucket-icon">📸</div>
+          <div class="bucket-title">CAPTURED</div>
+          <div class="bucket-desc">Extracts a new reusable pattern from a successful task execution. Turns one-off solutions into permanent skills the agent can reuse.</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
+        All three modes trigger automatically inside <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">execute_task</code> — no manual invocation needed. Evolution runs every N calls (default: 5).
+      </div>
+    </div>
+
+    <!-- The 4 MCP tools -->
+    <div class="card">
+      <div class="card-title">The 4 MCP Tools Exposed to Your Agent</div>
+      <table class="ref-table">
+        <thead><tr><th>Tool</th><th>What it does</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>execute_task</td>
+            <td>Multi-step grounding agent loop — runs the task and triggers skill evolution automatically</td>
+            <td>Main entry point; FIX / DERIVED / CAPTURED all fire here</td>
+          </tr>
+          <tr>
+            <td>search_skills</td>
+            <td>Local + cloud skill search — finds the best matching skill before executing</td>
+            <td>Falls back to local-only if no API key configured</td>
+          </tr>
+          <tr>
+            <td>fix_skill</td>
+            <td>Explicitly repair a broken SKILL.md</td>
+            <td>Usually triggered automatically, but can be called manually</td>
+          </tr>
+          <tr>
+            <td>upload_skill</td>
+            <td>Push an evolved skill to the cloud community</td>
+            <td>Requires <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">OPENSPACE_API_KEY</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Quick install -->
+    <div class="card">
+      <div class="card-title">Setup for Claude Code</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>Install</strong>
+            <pre><span class="cm"># Sparse clone skips ~50MB of image assets</span>
+<span class="fn">git clone</span> <span class="li">--filter=blob:none --sparse</span> https://github.com/HKUDS/OpenSpace.git
+<span class="kw">cd</span> OpenSpace <span class="li">&amp;&amp;</span> <span class="fn">git</span> sparse-checkout set <span class="hd">'/*' '!assets/'</span>
+<span class="fn">pip install</span> -e .
+<span class="fn">openspace-mcp --help</span>  <span class="cm"># verify install</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>Add to Claude Code MCP config</strong>
+            <pre>{
+  <span class="hd">"mcpServers"</span>: {
+    <span class="li">"openspace"</span>: {
+      <span class="kw">"command"</span>: <span class="li">"openspace-mcp"</span>,
+      <span class="kw">"toolTimeout"</span>: <span class="li">600</span>,
+      <span class="kw">"env"</span>: {
+        <span class="hd">"OPENSPACE_HOST_SKILL_DIRS"</span>: <span class="li">"/path/to/your/claude-code/skills"</span>,
+        <span class="hd">"OPENSPACE_WORKSPACE"</span>: <span class="li">"/path/to/OpenSpace"</span>,
+        <span class="hd">"OPENSPACE_API_KEY"</span>: <span class="li">"sk-xxx"</span>  <span class="cm">// optional, for cloud</span>
+      }
+    }
+  }
+}</pre>
+            <span class="tip">💡 Two host skills ship with the repo: <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">skill-discovery</code> and <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">delegate-task</code> — copy these into your Claude Code skills dir.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>Run cold-start tasks — evolution begins automatically</strong><br>
+            The first runs are expensive (no skills yet). Each subsequent run on a similar task gets cheaper as skills accumulate.
+            <span class="note">⚠ The cold→warm transition is where the token savings materialize. Don't judge it on the first run.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body"><strong>Optional: connect to cloud community</strong><br>
+            Register at <a href="https://open-space.cloud" target="_blank" style="color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:12px">open-space.cloud</a> for an API key. Evolved skills can be shared publicly, within groups, or kept private. Every evolution is lineage-tracked.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Showcase: the dashboard demo -->
+    <div class="card yellow">
+      <div class="card-title yellow">Showcase: My Daily Monitor</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:12px">
+        The repo's flagship demo: a 20+ panel real-time personal dashboard (processes, servers, news, markets, email, calendar) built <strong>entirely by the agent</strong>. Zero lines of human code written.
+      </div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">①</div>
+          <div class="step-body"><strong>Seed reference:</strong> OpenSpace analyzed WorldMonitor (open-source TypeScript dashboard) and extracted 6 initial skills — codebase-pattern-analyzer, skill-template-generator, worldmonitor-reference, panel-component, and others.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">②</div>
+          <div class="step-body"><strong>Domain adaptation:</strong> A <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">personal-monitor-domain</code> skill defined target panels, data sources, and priority ordering for the new project.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">③</div>
+          <div class="step-body"><strong>Iterative evolution:</strong> Each iteration added panels, fixed bugs, refined existing ones, and extracted new skills from the evolving codebase. Skills became more specific and battle-tested over time.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">④</div>
+          <div class="step-body"><strong>Result:</strong> 60+ skills accumulated across panel patterns, data services, full-stack feature authoring, and more. Full evolution history is open-sourced as a SQLite DB in the repo — browse it with any SQLite viewer.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Use cases from repo -->
+    <div class="grid-2">
+      <div class="card green">
+        <div class="card-title green">Best Use Cases (from repo)</div>
+        <div class="rule-list">
+          <div class="rule-row"><div class="rule-icon">🏗️</div><div class="rule-text"><strong>Complex task automation</strong> — software dev, data analysis, web ops, system management</div></div>
+          <div class="rule-row"><div class="rule-icon">🔄</div><div class="rule-text"><strong>Long-running enterprise agents</strong> — systems that get cheaper and more efficient over time</div></div>
+          <div class="rule-row"><div class="rule-icon">🤝</div><div class="rule-text"><strong>Multi-agent systems</strong> — share evolved skills across agents for collective intelligence</div></div>
+          <div class="rule-row"><div class="rule-icon">💸</div><div class="rule-text"><strong>High-frequency automation</strong> — anywhere token costs compound, skill reuse pays off fast</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Compatibility</div>
+        <div class="rule-list">
+          <div class="rule-row"><div class="rule-icon">✅</div><div class="rule-text">Works with any agent that supports <strong>SKILL.md</strong> format — Claude Code, Codex, OpenClaw, nanobot, Cursor</div></div>
+          <div class="rule-row"><div class="rule-icon">🐚</div><div class="rule-text">Backends: <strong>shell, GUI, MCP, web, system</strong> — each with independent security policies</div></div>
+          <div class="rule-row"><div class="rule-icon">🔒</div><div class="rule-text">Sandboxing optional (E2B). Shell commands have platform-specific blacklists (<code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">rm -rf</code>, etc.)</div></div>
+          <div class="rule-row"><div class="rule-icon">🌐</div><div class="rule-text">Can also run <strong>standalone</strong> (not just as MCP) — interactive REPL, single-query mode, Python API</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">Key Insight</div>
+      <p>OpenSpace shifts agents from <em>stateless tools that reason from scratch every time</em> to self-improving systems that accumulate expertise with each task. The cold→warm transition is the whole game — run enough tasks and the system genuinely gets cheaper to operate.</p>
+    </div>
+
+  </div><!-- /openspace -->
+
+
+  <!-- ======================================================= CLI ANYTHING -->
+  <div class="section" id="tab-cli">
+
+    <div class="hero">
+      <h2>CLI Anything</h2>
+      <p>A Claude Code <strong>plugin</strong> that generates production-grade CLI harnesses for any GUI software — turning it agent-native. <strong>24k stars</strong>. 1,245+ passing tests across 11+ shipped harnesses. Community hub at <a href="https://clianything.cc" target="_blank" style="color:var(--accent)">clianything.cc</a>.</p>
+    </div>
+
+    <!-- Why CLIs -->
+    <div class="card blue">
+      <div class="card-title">Why CLI Over MCP?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px">
+        <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:12px;text-align:center">
+          <div style="font-size:18px;margin-bottom:4px">🧩</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:4px">STRUCTURED</div>
+          <div style="font-size:11px;color:var(--text-muted)">Text commands match LLM format, chain into complex workflows</div>
+        </div>
+        <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:12px;text-align:center">
+          <div style="font-size:18px;margin-bottom:4px">⚡</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:4px">LIGHTWEIGHT</div>
+          <div style="font-size:11px;color:var(--text-muted)">Minimal overhead, works across all systems, no extra dependencies</div>
+        </div>
+        <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:12px;text-align:center">
+          <div style="font-size:18px;margin-bottom:4px">📖</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:4px">SELF-DESCRIBING</div>
+          <div style="font-size:11px;color:var(--text-muted)"><code style="font-size:10px">--help</code> flags let agents auto-discover all functionality</div>
+        </div>
+        <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:12px;text-align:center">
+          <div style="font-size:18px;margin-bottom:4px">🤖</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:4px">AGENT-FIRST</div>
+          <div style="font-size:11px;color:var(--text-muted)">Structured JSON output — agents need zero extra parsing</div>
+        </div>
+        <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:12px;text-align:center">
+          <div style="font-size:18px;margin-bottom:4px">✅</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:4px">PROVEN</div>
+          <div style="font-size:11px;color:var(--text-muted)">Claude Code already runs thousands of real workflows through CLIs daily</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Install -->
+    <div class="card">
+      <div class="card-title">Install the Plugin (Claude Code)</div>
+      <pre><span class="cm"># Option A — marketplace (recommended)</span>
+<span class="fn">/plugin</span> marketplace add HKUDS/CLI-Anything
+<span class="fn">/plugin</span> install cli-anything
+
+<span class="cm"># Option B — manual clone</span>
+<span class="fn">git clone</span> https://github.com/HKUDS/CLI-Anything.git
+<span class="fn">cp -r</span> CLI-Anything/cli-anything-plugin ~/.claude/plugins/cli-anything
+<span class="fn">/reload-plugins</span></pre>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
+        Requires Python 3.10+, Click 8.0+, pytest 7.0+. Windows users: install Git for Windows (includes bash + cygpath) or use WSL — Claude Code runs shell commands via bash.
+      </div>
+    </div>
+
+    <!-- The 4-command workflow -->
+    <div class="card">
+      <div class="card-title">The 4-Command Workflow</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>Generate — build a full CLI harness (all 7 phases)</strong>
+            <pre><span class="cm"># Point at a local path or GitHub repo</span>
+<span class="fn">/cli-anything:cli-anything</span> <span class="li">./gimp</span>
+<span class="fn">/cli-anything:cli-anything</span> <span class="li">https://github.com/blender/blender</span></pre>
+            <span class="note">⚠ Claude Code 2.x users: use <code>/cli-anything</code> instead of <code>/cli-anything:cli-anything</code></span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>Install — make it available system-wide</strong>
+            <pre><span class="kw">cd</span> &lt;software&gt;/agent-harness
+<span class="fn">pip install</span> -e .
+<span class="fn">which</span> cli-anything-&lt;software&gt;   <span class="cm"># verify it's in PATH</span>
+cli-anything-&lt;software&gt; --help   <span class="cm"># check commands</span>
+cli-anything-&lt;software&gt;          <span class="cm"># enters REPL mode</span>
+cli-anything-&lt;software&gt; --json &lt;command&gt;  <span class="cm"># JSON output for agents</span></pre>
+            <span class="tip">💡 Multiple CLIs coexist: <code>pip install cli-anything-gimp cli-anything-blender</code> — namespace packages don't conflict.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>Refine — iterative gap analysis, non-destructive</strong>
+            <pre><span class="cm"># Broad: agent finds all capability gaps</span>
+<span class="fn">/cli-anything:refine</span> <span class="li">./gimp</span>
+<span class="cm"># Focused: target a specific area</span>
+<span class="fn">/cli-anything:refine</span> <span class="li">./gimp</span> <span class="hd">"image batch processing and filters"</span></pre>
+            Each refine run is incremental — it adds new commands, tests, and docs without breaking what already works. Run as many times as needed.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body"><strong>Validate + Test — confirm it meets all standards</strong>
+            <pre><span class="fn">/cli-anything:validate</span> <span class="li">./gimp</span>
+<span class="kw">cd</span> &lt;software&gt;/agent-harness
+<span class="cm"># Unit tests (no backend needed)</span>
+<span class="fn">python3 -m pytest</span> cli_anything/&lt;software&gt;/tests/test_core.py -v
+<span class="cm"># E2E tests (real software must be installed)</span>
+<span class="fn">CLI_ANYTHING_FORCE_INSTALLED=1</span> python3 -m pytest cli_anything/&lt;software&gt;/tests/ -v -s</pre>
+            <span class="note">⚠ E2E tests require the actual backend software installed. The CLI is a wrapper TO the software — not a replacement. Hard dependency, not optional.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What a harness contains -->
+    <div class="card">
+      <div class="card-title">What Gets Generated — Harness Structure</div>
+      <pre><span class="hd">&lt;software&gt;/agent-harness/</span>
+├── <span class="li">&lt;SOFTWARE&gt;.md</span>        <span class="cm"># Software-specific SOP</span>
+├── <span class="li">setup.py</span>             <span class="cm"># PyPI config (namespace packages — NO __init__.py at root)</span>
+└── <span class="fn">cli_anything/&lt;software&gt;/</span>
+    ├── <span class="li">&lt;software&gt;_cli.py</span>  <span class="cm"># Main CLI entry point</span>
+    ├── <span class="li">core/</span>              <span class="cm"># project.py, session.py (undo/redo), export.py, domain modules</span>
+    ├── <span class="li">skills/SKILL.md</span>    <span class="cm"># AI-discoverable skill definition (installed with package)</span>
+    ├── <span class="li">utils/repl_skin.py</span> <span class="cm"># Unified REPL skin</span>
+    ├── <span class="li">README.md</span>          <span class="cm"># Install + usage</span>
+    └── <span class="li">tests/</span>
+        ├── <span class="fn">test_core.py</span>   <span class="cm"># Unit tests — no backend needed</span>
+        ├── <span class="fn">test_full_e2e.py</span> <span class="cm"># E2E tests — real software required</span>
+        └── <span class="fn">TEST.md</span>        <span class="cm"># Documents coverage + full test output</span></pre>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">Every harness includes REPL mode, <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">--json</code> output on all commands, undo/redo session management, and a SKILL.md so Claude Code can discover it automatically.</div>
+    </div>
+
+    <!-- Shipped CLIs -->
+    <div class="grid-2">
+      <div class="card green">
+        <div class="card-title green">Shipped CLIs (1,245+ passing tests)</div>
+        <div class="rule-list">
+          <div class="rule-row"><div class="rule-icon">🎨</div><div class="rule-text"><strong>GIMP</strong> — image editing, filters, batch processing</div></div>
+          <div class="rule-row"><div class="rule-icon">🧊</div><div class="rule-text"><strong>Blender</strong> — 3D modeling, rendering, animation</div></div>
+          <div class="rule-row"><div class="rule-icon">✏️</div><div class="rule-text"><strong>Inkscape</strong> — vector graphics, SVG manipulation</div></div>
+          <div class="rule-row"><div class="rule-icon">🎧</div><div class="rule-text"><strong>Audacity</strong> — audio editing with eval harness + regression reporting</div></div>
+          <div class="rule-row"><div class="rule-icon">📄</div><div class="rule-text"><strong>LibreOffice</strong> — documents, spreadsheets (Windows + macOS backend enabled)</div></div>
+          <div class="rule-row"><div class="rule-icon">📹</div><div class="rule-text"><strong>OBS Studio</strong> — streaming, scene transitions, recording</div></div>
+          <div class="rule-row"><div class="rule-icon">🎬</div><div class="rule-text"><strong>Kdenlive</strong> — video editing</div></div>
+          <div class="rule-row"><div class="rule-icon">📞</div><div class="rule-text"><strong>Zoom</strong> — video conferencing (11th harness added)</div></div>
+          <div class="rule-row"><div class="rule-icon">🤖</div><div class="rule-text"><strong>Ollama</strong> — local LLM management (community contribution)</div></div>
+          <div class="rule-row"><div class="rule-icon">🌐</div><div class="rule-text"><strong>Browser automation</strong> — via DOMShell MCP server</div></div>
+          <div class="rule-row"><div class="rule-icon">🛡️</div><div class="rule-text"><strong>AdGuardHome</strong> — first REST API service harness</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Categories of Software That Work Well</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="padding:8px 12px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px;font-size:12px">
+            <span style="color:var(--accent4);font-weight:600">Creative / Media</span><br>
+            <span style="color:var(--text-muted)">Stable Diffusion, ComfyUI, InvokeAI, LMMS, Ardour, Darktable, Shotcut, Krita</span>
+          </div>
+          <div style="padding:8px 12px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px;font-size:12px">
+            <span style="color:var(--accent4);font-weight:600">Data / Analytics</span><br>
+            <span style="color:var(--text-muted)">JupyterLab, Metabase, DBeaver, KNIME, Orange, Redash, OpenSearch</span>
+          </div>
+          <div style="padding:8px 12px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px;font-size:12px">
+            <span style="color:var(--accent4);font-weight:600">DevOps / Infrastructure</span><br>
+            <span style="color:var(--text-muted)">Jenkins, Gitea, Portainer, pgAdmin, SonarQube, ArgoCD, Insomnia</span>
+          </div>
+          <div style="padding:8px 12px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px;font-size:12px">
+            <span style="color:var(--accent4);font-weight:600">Productivity / Self-Hosted</span><br>
+            <span style="color:var(--text-muted)">NextCloud, GitLab, Grafana, Mattermost, AppFlowy, NocoDB, Odoo, ERPNext</span>
+          </div>
+          <div style="padding:8px 12px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px;font-size:12px">
+            <span style="color:var(--accent4);font-weight:600">AI Tooling</span><br>
+            <span style="color:var(--text-muted)">AnythingLLM, SillyTavern, Text-generation-webui, Open WebUI, Fooocus</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLI Hub + contributing -->
+    <div class="card yellow">
+      <div class="card-title yellow">CLI-Hub & Community</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:12px">
+        All available CLIs are listed in <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">registry.json</code> at the repo root and displayed live at <a href="https://clianything.cc" target="_blank" style="color:var(--accent)">clianything.cc</a>. The hub reads directly from <code>main</code>, so it updates the moment a PR is merged.
+      </div>
+      <div class="rule-list">
+        <div class="rule-row"><div class="rule-icon">📦</div><div class="rule-text">Install any community CLI: <code>pip install cli-anything-&lt;software&gt;</code> — published to PyPI</div></div>
+        <div class="rule-row"><div class="rule-icon">🔍</div><div class="rule-text">List what's installed: <code>/cli-anything:list</code> — also accepts <code>--depth</code>, <code>--path</code>, <code>--json</code> flags</div></div>
+        <div class="rule-row"><div class="rule-icon">⬆️</div><div class="rule-text">Contribute a new harness: generate it, add to <code>registry.json</code>, submit PR via <code>PUBLISHING.md</code></div></div>
+        <div class="rule-row"><div class="rule-icon">🔒</div><div class="rule-text">Security note: GIMP Script-Fu path injection was patched (Mar 14). All harnesses run <code>check_skill_safety</code> before loading.</div></div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Start Here</div>
+      <p>Before building your own, run <em><code>/cli-anything:list</code></em> and check <a href="https://clianything.cc" target="_blank" style="color:var(--accent4)">clianything.cc</a> — the CLI you need may already exist. Start with simpler apps (GIMP, Inkscape) before tackling complex ones (Blender, LibreOffice).</p>
+    </div>
+
+  </div><!-- /cli -->
+
+
+  <!-- ======================================================= CLAUDE PEERS -->
+  <div class="section" id="tab-peers">
+
+    <div class="hero">
+      <h2>Claude Peers</h2>
+      <p>A local MCP server that lets all your Claude Code sessions find each other and message each other <strong>ad-hoc</strong> — in real time, push-based, fully localhost. No cloud, no pre-planning. One clone to install.</p>
+    </div>
+
+    <!-- Architecture diagram -->
+    <div class="card">
+      <div class="card-title">Architecture — How It Works</div>
+      <pre><span class="cm">         ┌───────────────────────────┐
+         │       broker daemon        │
+         │   localhost:7899 + SQLite  │   <span class="kw">← auto-launches on first session</span>
+         └──────┬───────────────┬────┘
+                │               │
+         MCP server A      MCP server B    <span class="cm">(stdio — one per session)</span>
+            (stdio)           (stdio)
+                │               │
+           <span class="li">Claude A</span>         <span class="li">Claude B</span></span></pre>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+        <div style="padding:8px 14px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">
+          <span style="color:var(--accent4);font-weight:600">Polling:</span> Each MCP server polls the broker every <strong>1 second</strong> for new messages
+        </div>
+        <div style="padding:8px 14px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">
+          <span style="color:var(--accent3);font-weight:600">Push delivery:</span> Inbound messages are pushed into the session via <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">claude/channel</code> protocol — lands in context window <em>without a user prompt</em>
+        </div>
+        <div style="padding:8px 14px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text)">
+          <span style="color:var(--accent2);font-weight:600">Self-healing:</span> Broker cleans up dead peers automatically via PID checks. Everything is localhost-only.
+        </div>
+      </div>
+    </div>
+
+    <!-- Install -->
+    <div class="card">
+      <div class="card-title">Install & Run</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>Clone + install (requires Bun)</strong>
+            <pre><span class="fn">git clone</span> https://github.com/louislva/claude-peers-mcp.git ~/claude-peers-mcp
+<span class="kw">cd</span> ~/claude-peers-mcp
+<span class="fn">bun install</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>Register as a user-scoped MCP (available in every session)</strong>
+            <pre><span class="fn">claude mcp add</span> <span class="li">--scope user --transport stdio</span> claude-peers <span class="cm">\</span>
+  <span class="hd">-- bun ~/claude-peers-mcp/server.ts</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>Launch with channel push enabled</strong>
+            <pre><span class="fn">claude</span> <span class="li">--dangerously-load-development-channels</span> server:claude-peers</pre>
+            <span class="tip">💡 Add an alias: <code>alias claudepeers='claude --dangerously-load-development-channels server:claude-peers'</code></span>
+            <span class="note">⚠ The broker daemon starts automatically on first launch — no separate step needed.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body"><strong>Open a second terminal with the same command — they find each other</strong><br>
+            Ask either session: <em>"list all peers"</em> — it shows every running instance with working directory, git repo, and a summary of what it's doing.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The 4 peer capabilities -->
+    <div class="card">
+      <div class="card-title">What Each Session Can Do</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="padding:12px 14px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);margin-bottom:6px">list_peers</div>
+          <div style="font-size:13px;color:var(--text)">Discover all running instances — shows working directory, git root, and auto-generated summary of what each is working on</div>
+        </div>
+        <div style="padding:12px 14px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);margin-bottom:6px">send_message</div>
+          <div style="font-size:13px;color:var(--text)">Send a message to any peer by ID — arrives in their context window <em>instantly</em> via channel push, no user prompt needed</div>
+        </div>
+        <div style="padding:12px 14px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);margin-bottom:6px">set_summary</div>
+          <div style="font-size:13px;color:var(--text)">Manually set what this session is working on — visible to all other peers via list_peers. Auto-set if <code style="font-size:10px">OPENAI_API_KEY</code> is present</div>
+        </div>
+        <div style="padding:12px 14px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);margin-bottom:6px">auto-summary (optional)</div>
+          <div style="font-size:13px;color:var(--text)">Set <code style="font-size:10px">OPENAI_API_KEY</code> → each instance auto-generates context from git branch, working dir, recent files via <code style="font-size:10px">gpt-4o-mini</code> (fractions of a cent per session)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLI debug tools -->
+    <div class="card">
+      <div class="card-title">CLI Debug Tools</div>
+      <pre><span class="fn">bun cli.ts status</span>       <span class="cm"># broker status + all registered peers</span>
+<span class="fn">bun cli.ts peers</span>        <span class="cm"># list peers with summaries</span>
+<span class="fn">bun cli.ts send</span> <span class="li">&lt;id&gt; &lt;msg&gt;</span>  <span class="cm"># inject a message into a Claude session</span>
+<span class="fn">bun cli.ts kill-broker</span>  <span class="cm"># stop the broker daemon</span></pre>
+      <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">DB path: <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">~/.claude-peers.db</code> — override with <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">CLAUDE_PEERS_DB</code> env var. Port default 7899, override with <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">CLAUDE_PEERS_PORT</code>.</div>
+    </div>
+
+    <!-- Bottom-up vs top-down -->
+    <div class="card yellow">
+      <div class="card-title yellow">Bottom-Up vs Top-Down — The Key Philosophy Difference</div>
+      <div class="decision-grid" style="margin-top:4px">
+        <div class="decision-col">
+          <div class="decision-col-header use">✓ Claude Peers (bottom-up)</div>
+          <div class="decision-item"><span class="di">✅</span>Sessions started <strong>independently</strong> discover each other on their own</div>
+          <div class="decision-item"><span class="di">✅</span><strong>Flat hierarchy</strong> — all agents are peers, no God-mode controller</div>
+          <div class="decision-item"><span class="di">✅</span>Collaboration is <strong>ad-hoc</strong> — one instance notices overlapping work and reaches out spontaneously</div>
+          <div class="decision-item"><span class="di">✅</span>No pre-planning required — works across projects you started for different reasons</div>
+        </div>
+        <div class="decision-col">
+          <div class="decision-col-header skip">✗ Built-in Claude Code Teams (top-down)</div>
+          <div class="decision-item"><span class="di">❌</span>Requires <strong>pre-planning</strong> — you decide upfront who talks to whom</div>
+          <div class="decision-item"><span class="di">❌</span><strong>Central orchestrator</strong> model — one controller, subordinate agents</div>
+          <div class="decision-item"><span class="di">❌</span>Collaboration is <strong>structured</strong> — must be configured before the sessions start</div>
+          <div class="decision-item"><span class="di">❌</span>Sessions started independently remain blind to each other</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3-role harness -->
+    <div class="card blue">
+      <div class="card-title">The 3-Role Harness (Anthropic blog pattern)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:4px">
+        <div style="background:var(--bg-code);border:1px solid var(--accent);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:22px;margin-bottom:6px">🗺️</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--accent)">PLANNER</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Breaks down the problem, coordinates the other sessions</div>
+        </div>
+        <div style="background:var(--bg-code);border:1px solid var(--accent4);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:22px;margin-bottom:6px">⚙️</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--accent4)">EXECUTOR</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Actually writes and runs the code</div>
+        </div>
+        <div style="background:var(--bg-code);border:1px solid var(--accent3);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:22px;margin-bottom:6px">🔍</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--accent3)">EVALUATOR</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Grades the output — separate session avoids self-hype bias</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:13px;color:var(--text);line-height:1.6">
+        Claude Code is a <strong>poor evaluator of its own work</strong>. The 3-role harness separates creator from critic. With Claude Peers, the evaluator session's feedback arrives in the executor's context window as a push message — no copy-pasting, no manual bridging.
+      </div>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Strong Use Cases</div>
+        <div class="decision-item"><span class="di">✅</span>Frontend + backend in separate sessions — frontend asks backend what the JSON type looks like, answer lands instantly</div>
+        <div class="decision-item"><span class="di">✅</span>Frontend design needing iterative subjective evaluation</div>
+        <div class="decision-item"><span class="di">✅</span>Game development — complex, multi-system, needs external grading</div>
+        <div class="decision-item"><span class="di">✅</span>Any project spanning multiple repos or workspaces simultaneously</div>
+        <div class="decision-item"><span class="di">✅</span>Automated review pipelines where you're running 5+ sessions</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Overkill For</div>
+        <div class="decision-item"><span class="di">❌</span>Single-session work that fits in one context window</div>
+        <div class="decision-item"><span class="di">❌</span>Simple scripts with no cross-session coordination needed</div>
+        <div class="decision-item"><span class="di">❌</span>Tasks without an evaluation or review loop</div>
+        <div class="decision-item"><span class="di">❌</span>No-Bun environments (workarounds exist but add complexity)</div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠ Gotcha — Requires Bun</div>
+      <p>The broker uses <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent2)">bun:sqlite</code> and <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent2)">Bun.serve()</code> — <em>not portable to Node.js without a rewrite</em>. Enterprise / restricted environments can containerize the broker via Podman/Docker as a workaround, but it adds setup friction. Plain npm/Node.js is not natively supported.</p>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">💡 Key Insight</div>
+      <p>The push-based interruption is the differentiator. Instead of polling or copy-pasting, <em>a message from Peer A physically appears in Peer B's context window without a user prompt</em> — a digital shoulder tap that transforms AI from a passive tool into an active collaborator.</p>
+    </div>
+
+  </div><!-- /peers -->
+
+
+  <!-- ======================================================= GWS CLI -->
+  <div class="section" id="tab-gws">
+
+    <div class="hero">
+      <h2>Google Workspace CLI <code style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:400;color:var(--text-muted)">gws</code></h2>
+      <p>One CLI for all of Google Workspace — Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin, and every Workspace API. Written in <strong>Rust</strong>, distributed via npm. <strong>40+ agent skills</strong> included. Built by Google Developer Relations — <em>not an officially supported Google product</em>. ~22.9k stars.</p>
+    </div>
+
+    <!-- The killer feature — dynamic command surface -->
+    <div class="card blue">
+      <div class="card-title">The Architecture — Dynamic Command Surface</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:12px">
+        <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">gws</code> doesn't ship a static list of commands. It reads <strong>Google's Discovery Service at runtime</strong> and builds its entire command surface dynamically. When Google Workspace adds a new API endpoint, <code>gws</code> picks it up automatically — no waiting for a package update. Every response is structured JSON.
+      </div>
+      <pre><span class="cm"># Command pattern: gws &lt;service&gt; &lt;resource&gt; [sub-resource] &lt;method&gt; [flags]</span>
+<span class="fn">gws</span> <span class="li">drive files list</span> --params <span class="hd">'{"pageSize": 5}'</span>
+<span class="fn">gws</span> <span class="li">gmail users messages</span> get --params <span class="hd">'{"userId": "me", "id": "MSG_ID"}'</span>
+<span class="fn">gws</span> <span class="li">calendar events</span> list --params <span class="hd">'{"calendarId": "primary"}'</span>
+<span class="fn">gws</span> <span class="li">sheets spreadsheets values</span> get \
+  --params <span class="hd">'{"spreadsheetId": "ID", "range": "Sheet1!A1:D10"}'</span>
+
+<span class="cm"># Every command has --help, --dry-run (preview), and --json output</span>
+<span class="fn">gws</span> drive --help
+<span class="fn">gws</span> gmail users messages list <span class="li">--dry-run</span>  <span class="cm"># preview without executing</span></pre>
+    </div>
+
+    <!-- Install -->
+    <div class="card">
+      <div class="card-title">Install & Authenticate</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>Install</strong>
+            <pre><span class="fn">npm install</span> -g @googleworkspace/cli   <span class="cm"># bundles pre-built binary, no Rust needed</span>
+<span class="cm"># Or download binary from GitHub Releases page</span>
+<span class="cm"># Or via Nix: nix run github:googleworkspace/cli</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>Set up a Google Cloud project + OAuth credentials</strong>
+            <pre><span class="fn">gws auth setup</span>   <span class="cm"># interactive — walks you through GCP project + OAuth client creation</span></pre>
+            <span class="note">⚠ You need a Google Cloud project with OAuth credentials (Desktop app type). Each Google API (Gmail, Drive, etc.) must be enabled separately in your GCP project — one-time per API, but expect to click through the Cloud Console several times.</span>
+            <span class="note">⚠ Windows: <code>gws auth setup</code> is broken on Windows due to Rust PATH resolution. Use env vars and manual OAuth flow instead.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>Log in (OAuth browser flow)</strong>
+            <pre><span class="fn">gws auth login</span>   <span class="cm"># opens browser, stores encrypted refresh token in OS keyring</span>
+<span class="cm"># Subsequent runs are silent — no browser window</span>
+<span class="cm"># For CI/CD: gws auth export --unmasked credentials.json</span>
+<span class="cm"># Then: GOOGLE_WORKSPACE_CLI_CREDENTIALS_FILE=/path/to/credentials.json</span></pre>
+            <span class="tip">💡 Credentials are encrypted at rest using AES-256-GCM and stored in your OS keyring.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Three integration modes -->
+    <div class="card">
+      <div class="card-title">Three Ways to Use gws with AI Agents</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+
+        <div style="background:var(--bg-code);border:1px solid var(--accent3);border-radius:8px;padding:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--accent3)">MODE A — MCP SERVER (recommended for Claude Code)</span>
+          </div>
+          <pre style="margin-top:0"><span class="fn">gws mcp</span> <span class="li">-s drive</span>                  <span class="cm"># expose Drive tools only</span>
+<span class="fn">gws mcp</span> <span class="li">-s drive,gmail,calendar</span>   <span class="cm"># multiple services</span>
+<span class="fn">gws mcp</span> <span class="li">-s all</span>                    <span class="cm"># ⚠ exposes hundreds of tools — stay under client limit</span></pre>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:6px">Starts an MCP server over stdio. Works with Claude Code, Claude Desktop, VS Code, Cursor — any MCP-compatible client. Each service adds roughly 10–80 tools. Most clients cap at 50–100 tools total, so scope carefully.</div>
+        </div>
+
+        <div style="background:var(--bg-code);border:1px solid var(--accent);border-radius:8px;padding:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--accent)">MODE B — AGENT SKILLS (Claude Code native)</span>
+          </div>
+          <pre style="margin-top:0"><span class="cm"># Install all skills at once</span>
+<span class="fn">npx skills add</span> https://github.com/googleworkspace/cli
+
+<span class="cm"># Or install only what you need</span>
+<span class="fn">npx skills add</span> https://github.com/googleworkspace/cli/tree/main/skills/gws-drive
+<span class="fn">npx skills add</span> https://github.com/googleworkspace/cli/tree/main/skills/gws-gmail</pre>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:6px">40+ pre-built skills tell Claude Code <em>how</em> to use gws effectively — which params to pass, how to handle pagination, common error patterns. Makes it agent-ready, not just agent-compatible. The <code>gws-shared</code> skill auto-installs the CLI via npm if gws isn't on PATH.</div>
+        </div>
+
+        <div style="background:var(--bg-code);border:1px solid var(--accent4);border-radius:8px;padding:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--accent4)">MODE C — GEMINI CLI EXTENSION</span>
+          </div>
+          <pre style="margin-top:0"><span class="fn">gemini extensions install</span> https://github.com/googleworkspace/cli</pre>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:6px">Gives Gemini CLI direct access to all gws commands and skills. Auth is inherited from <code>gws auth login</code> — no separate configuration needed.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services covered -->
+    <div class="grid-2">
+      <div class="card green">
+        <div class="card-title green">Services Covered</div>
+        <div class="rule-list">
+          <div class="rule-row"><div class="rule-icon">📧</div><div class="rule-text"><strong>Gmail</strong> — search, read, send, labels, threads</div></div>
+          <div class="rule-row"><div class="rule-icon">📁</div><div class="rule-text"><strong>Drive</strong> — files, folders, upload, download, share</div></div>
+          <div class="rule-row"><div class="rule-icon">📅</div><div class="rule-text"><strong>Calendar</strong> — events, attendees, recurring, multi-calendar</div></div>
+          <div class="rule-row"><div class="rule-icon">📊</div><div class="rule-text"><strong>Sheets</strong> — read/write ranges, append rows, batch</div></div>
+          <div class="rule-row"><div class="rule-icon">📄</div><div class="rule-text"><strong>Docs</strong> — create, read, edit documents</div></div>
+          <div class="rule-row"><div class="rule-icon">💬</div><div class="rule-text"><strong>Chat</strong> — send messages to spaces and threads</div></div>
+          <div class="rule-row"><div class="rule-icon">⚙️</div><div class="rule-text"><strong>Admin SDK</strong> — user management, org-wide settings</div></div>
+          <div class="rule-row"><div class="rule-icon">➕</div><div class="rule-text"><strong>Every other Workspace API</strong> — auto-discovered from Discovery Service at runtime</div></div>
+        </div>
+      </div>
+      <div class="card red">
+        <div class="card-title red">Security — Model Armor + Prompt Injection</div>
+        <div class="rule-list">
+          <div class="rule-row"><div class="rule-icon">🛡️</div><div class="rule-text">The <code>--sanitize</code> flag pipes API responses through <strong>Google Cloud Model Armor</strong> before they reach your agent</div></div>
+          <div class="rule-row"><div class="rule-icon">📨</div><div class="rule-text">Defends against <strong>indirect prompt injection</strong> — e.g. a malicious email body instructing the agent to forward your messages</div></div>
+          <div class="rule-row"><div class="rule-icon">🔒</div><div class="rule-text">Additional hardening: resource-name validation, path-traversal protection, path-parameter encoding</div></div>
+          <div class="rule-row"><div class="rule-icon">⚠️</div><div class="rule-text"><strong>Model Armor only covers gws tools.</strong> Claude Code's other tools (web requests, file writes, code execution, other MCPs) are not protected by it</div></div>
+        </div>
+        <pre style="margin-top:10px"><span class="cm"># Scan a Gmail message response before it reaches your agent</span>
+<span class="fn">gws</span> gmail users messages get --params <span class="hd">'...'</span> \
+  <span class="li">--sanitize</span> <span class="hd">"projects/P/locations/L/templates/T"</span></pre>
+      </div>
+    </div>
+
+    <!-- Scoping strategy -->
+    <div class="card yellow">
+      <div class="card-title yellow">Scoping Strategy — Don't Go Full Access Day One</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>Start scoped — pick services based on actual need</strong>
+            <pre><span class="fn">gws mcp</span> <span class="li">-s drive</span>              <span class="cm"># drive only to start</span>
+<span class="fn">gws mcp</span> <span class="li">-s drive,calendar</span>     <span class="cm"># expand incrementally</span></pre>
+            <span class="tip">💡 Clone the repo and ask Claude: "Walk me through which skills make sense for my use case" before installing everything.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>Use shared-folder sandboxing for Drive</strong><br>Give access to a specific shared folder rather than your root Drive — limits blast radius if something goes wrong.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>For Gmail — use a dedicated address and enable --sanitize</strong><br>Email carries the highest prompt injection risk. A dedicated Gmail account + Model Armor before going near your primary inbox.
+            <span class="note">⚠ Even with --sanitize, Claude Code's other tools remain potential exfiltration vectors. Review SECURITY.md.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body"><strong>Stay under your MCP client's tool limit</strong><br>Running <code>gws mcp -s all</code> exposes hundreds of tools. Most clients cap at 50–100. Pick only what you need.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gotchas -->
+    <div class="card">
+      <div class="card-title red">Gotchas</div>
+      <div class="rule-list">
+        <div class="rule-row"><div class="rule-icon">⚠️</div><div class="rule-text"><span class="neg">Pre-1.0 / breaking changes:</span> README explicitly warns about this. Don't pin in production without expecting config updates.</div></div>
+        <div class="rule-row"><div class="rule-icon">⚠️</div><div class="rule-text"><span class="neg">Windows auth setup broken:</span> <code>gws auth setup</code> fails on Windows. Use environment variables and manual OAuth flow instead.</div></div>
+        <div class="rule-row"><div class="rule-icon">⚠️</div><div class="rule-text"><span class="neg">Per-API enablement:</span> Each Google API must be enabled in your GCP project individually. Expect several Cloud Console clicks on first setup.</div></div>
+        <div class="rule-row"><div class="rule-icon">⚠️</div><div class="rule-text"><span class="neg">zsh Sheets ranges:</span> <code>Sheet1!A1</code> contains <code>!</code> which zsh interprets as history expansion. Always use double quotes: <code>"Sheet1!A1:D10"</code></div></div>
+        <div class="rule-row"><div class="rule-icon">⚠️</div><div class="rule-text"><span class="neg">Tool count explosion:</span> <code>-s all</code> exposes hundreds of tools — far exceeds typical MCP client limits. Scope to specific services.</div></div>
+        <div class="rule-row"><div class="rule-icon">⚠️</div><div class="rule-text"><span class="neg">OAuth app in testing mode:</span> Limited to ~25 scopes. Unverified app warning is expected — click "Advanced → Go to app" for personal use.</div></div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">Best Use Case</div>
+      <p>Claude Code as a <em>personal assistant operating system</em>. Email triage, Drive organization, calendar management, Sheets automation — all from the terminal without touching a browser. The more of your daily work lives in Google, the higher the ROI. For enterprise: evaluate in a sandboxed Workspace environment first, identify 2–3 high-friction use cases, then expand.</p>
+    </div>
+
+  </div><!-- /gws -->
+
+</main>
+
+<script>
+  // Tab navigation
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  function switchTab(name) {
+    tabs.forEach(b => b.classList.remove('active'));
+    sections.forEach(s => s.classList.remove('active'));
+    const btn = document.querySelector(`nav button[data-tab="${name}"]`);
+    if (btn) btn.classList.add('active');
+    const sec = document.getElementById('tab-' + name);
+    if (sec) sec.classList.add('active');
+  }
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Theme toggle
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Trading — Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; color: var(--accent); letter-spacing: -0.02em; }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em; }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle { width: 44px; height: 24px; background: var(--toggle-bg); border: 1px solid var(--border-accent); border-radius: 12px; cursor: pointer; position: relative; appearance: none; outline: none; transition: background 0.3s; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: var(--accent); border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s; }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; overflow-x: auto; gap: 0; }
+  nav button { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.2s; letter-spacing: 0.04em; text-transform: uppercase; }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; box-shadow: var(--shadow); transition: background 0.3s, border 0.3s; }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero { background: var(--bg-card); border: 1px solid var(--border-accent); border-left: 3px solid var(--accent); border-radius: 8px; padding: 24px; box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow); }
+  .hero h2 { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em; }
+  .hero p { color: var(--text); font-size: 15px; max-width: 780px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+  .hero p + p { margin-top: 8px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row { display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos { color: var(--accent3); font-weight: 600; }
+  .rule-text code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row { display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: flex-start; padding: 12px 16px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); text-align: center; margin-top: 1px; }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .good  { color: var(--accent3); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--text); margin-top: 10px; }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); text-align: left; padding: 8px 12px; background: var(--bg-code); border-bottom: 1px solid var(--border); }
+  .ref-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); white-space: nowrap; }
+  .ref-table td.green { color: var(--accent3) !important; font-family: 'IBM Plex Mono', monospace; font-size: 12px; white-space: nowrap; }
+  .ref-table td.red { color: var(--accent2) !important; font-family: 'IBM Plex Mono', monospace; font-size: 12px; white-space: nowrap; }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header { padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item { padding: 9px 16px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .stat { display: flex; flex-direction: column; align-items: center; background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px; flex: 1; min-width: 120px; }
+  .stat-val { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent2); }
+  .stat-val.green { color: var(--accent3); }
+  .stat-val.blue  { color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  .callout { background: var(--bg-code); border: 1px solid var(--border-accent); border-radius: 6px; padding: 16px 20px; }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Glossary term cards */
+  .gloss-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 700px) { .gloss-grid { grid-template-columns: 1fr; } }
+  .gloss-item { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; transition: border-color 0.2s; }
+  .gloss-item:hover { border-color: var(--border-accent); }
+  .gloss-term { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+  .gloss-def  { font-size: 12px; color: var(--text); line-height: 1.55; }
+  .gloss-def em { color: var(--accent4); font-style: normal; font-weight: 500; }
+
+  /* Strategy flow diagram */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-node { display: flex; align-items: flex-start; gap: 16px; padding: 14px 18px; background: var(--bg-code); border: 1px solid var(--border); position: relative; transition: border-color 0.2s; }
+  .flow-node:first-child { border-radius: 6px 6px 0 0; }
+  .flow-node:last-child  { border-radius: 0 0 6px 6px; }
+  .flow-node:not(:last-child) { border-bottom: none; }
+  .flow-node:hover { border-color: var(--border-accent); z-index: 1; }
+  .flow-icon { font-size: 20px; flex-shrink: 0; width: 32px; text-align: center; margin-top: 2px; }
+  .flow-content {}
+  .flow-title { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent3); font-weight: 600; margin-bottom: 4px; }
+  .flow-desc  { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .flow-desc code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent4); }
+  .flow-arrow { text-align: center; color: var(--text-dim); font-size: 18px; padding: 2px 0; line-height: 1; }
+
+  /* Pill comparison (vs) */
+  .vs-row { display: grid; grid-template-columns: 1fr 40px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .vs-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; color: var(--text-dim); }
+  .vs-left, .vs-right { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; font-size: 13px; }
+  .vs-left  { border-left: 3px solid var(--accent2); }
+  .vs-right { border-left: 3px solid var(--accent3); }
+  .vs-badge { background: var(--border); border-radius: 4px; padding: 4px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted); text-align: center; }
+
+  /* Source pills */
+  .source-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .source-pill { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border-accent); color: var(--text-muted); background: var(--tag-bg); }
+  .source-pill.v1 { border-color: rgba(79,142,247,0.4); color: var(--accent); background: var(--accent-glow); }
+  .source-pill.v2 { border-color: rgba(62,207,142,0.4); color: var(--accent3); background: var(--accent3-glow); }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * { animation: fadeUp 0.25s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Claude Trading<span> — Reference</span></div>
+    <div class="badge">BEGINNER FRIENDLY</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="finance101">Finance 101</button>
+  <button data-tab="setup">Setup</button>
+  <button data-tab="strategies">Strategies</button>
+  <button data-tab="tradingview">TradingView MCP</button>
+  <button data-tab="gotchas">Gotchas</button>
+</nav>
+
+<main>
+
+  <!-- ============================================================
+       OVERVIEW
+       ============================================================ -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Claude as Your Trading Engine</h2>
+      <p>Two videos, one toolkit: use Claude to <strong>automate stock and options trading</strong> through Alpaca, and to <strong>read live TradingView charts</strong> via MCP — all by simply talking to it in plain English.</p>
+      <p style="margin-top:8px">You don't need to be a coder or a finance expert. You set the rules once. Claude executes them at machine speed, around the clock, with no emotional second-guessing.</p>
+    </div>
+
+    <div class="source-pills">
+      <span class="source-pill v1">VIDEO 1 — Claude + Alpaca: Automated Stock Trading</span>
+      <span class="source-pill v2">VIDEO 2 — Claude + TradingView MCP: Live Chart Intelligence</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">The Three Gaps Claude Closes</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📊</div>
+            <div class="rule-text"><strong>Data</strong> — Wall Street sees whale moves, congressional trades, and options flow before you do. Claude can plug into live data feeds that aggregate all of this and act on it automatically.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Execution</strong> — Miss a trade at lunch? Go to sleep? Wall Street's systems don't. Claude places orders 24/7 based on the rules <em>you</em> define — no hesitation, no missed windows.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧠</div>
+            <div class="rule-text"><strong>Intelligence</strong> — Having data is nothing without a plan. Claude encodes your strategy, risk tolerance, and logic into code, then executes it with discipline you couldn't maintain manually.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">The Wall Street Advantage — Now Accessible</div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-val green">+34.8%</div>
+            <div class="stat-label">Return copying McCaul (1 yr simulation)</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">+15%</div>
+            <div class="stat-label">S&P 500 return same period</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted); line-height:1.6">
+          Congress members must disclose trades by law. Many consistently beat the market — they sit on committees, hear policy changes early, and know which companies get government contracts. That data is public and Claude can read it.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">What You'll Build Across Both Videos</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">①</div>
+          <div class="step-body">
+            <strong>Paper Trading Account (Alpaca)</strong> — A simulated brokerage with fake money in a real market. Same prices, same stocks, zero risk. This is where all bot activity runs.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">②</div>
+          <div class="step-body">
+            <strong>Trailing Stop Bot</strong> — Claude buys shares, sets a price floor, and automatically moves that floor up as the stock rises — locking in gains without you watching all day.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">③</div>
+          <div class="step-body">
+            <strong>Copy Trading Bot</strong> — Claude monitors Capitol Trades (free, public data) for politician trades and automatically copies their moves in your paper account.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">④</div>
+          <div class="step-body">
+            <strong>Wheel Strategy Bot</strong> — Claude runs a premium-collecting options strategy on autopilot: sell a put → get assigned → sell a covered call → repeat. Income at every stage.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">⑤</div>
+          <div class="step-body">
+            <strong>TradingView MCP</strong> — Claude reads live chart data (not screenshots), creates custom Pine Script indicators, and delivers a morning brief across your entire watch list.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">⚠️ Disclaimer — Read This First</div>
+      <p>Everything in both videos uses <em>paper trading (fake money)</em>. Neither creator is a financial adviser. This is educational content only. Past performance is not indicative of future results. Never risk money you can't afford to lose.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ============================================================
+       FINANCE 101
+       ============================================================ -->
+  <div class="section" id="tab-finance101">
+
+    <div class="hero">
+      <h2>Finance 101 — The Basics</h2>
+      <p>Never bought a stock? That's fine. Here's everything you need to understand the strategies in these videos, explained without jargon.</p>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">Core Vocabulary</div>
+      <div class="gloss-grid">
+        <div class="gloss-item">
+          <div class="gloss-term">Brokerage</div>
+          <div class="gloss-def">The middleman between you and the stock market. Old brokerages = calling a person on the phone. Modern ones = an app (Robinhood, Fidelity). <em>Alpaca</em> is a brokerage with an API, so Claude can connect and trade for you via code.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">API</div>
+          <div class="gloss-def">Application Programming Interface — a way for software to talk to other software. Alpaca's API lets Claude place buy/sell orders without any human clicking a button. Think of it as a drive-through window for code.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Paper Trading</div>
+          <div class="gloss-def">Simulated trading with fake money. <em>Same real prices, same real stocks</em>, but no real money changes hands. It's the safest way to test a strategy before going live.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Stock / Share</div>
+          <div class="gloss-def">Buying a share means you own a tiny piece of a company. If the company grows in value, your share does too. If it shrinks, so does your share. You can sell at any time (when markets are open).</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Market Price</div>
+          <div class="gloss-def">The current price a stock is selling for right now. It changes every second during market hours (9:30 AM – 4:00 PM EST, Mon–Fri).</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Stop Loss</div>
+          <div class="gloss-def">A rule: "If this stock drops to $X, sell it automatically." It <em>limits how much you can lose</em> on a trade. Without one, a dropping stock could wipe you out while you're not watching.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Trailing Stop</div>
+          <div class="gloss-def">A smarter stop loss. Instead of a fixed price, it <em>follows the stock upward</em>. If the stock rises, the stop rises with it. If the stock then falls back, the stop triggers — and you keep most of your gains.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Ladder Buy (DCA)</div>
+          <div class="gloss-def">Buying more shares as the price drops, in stages. If you buy at $100, $80, and $60, your average cost is $80. This is called Dollar Cost Averaging. <em>You're getting a better deal on each dip instead of just losing money.</em></div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Whales</div>
+          <div class="gloss-def">Institutional investors (hedge funds, banks, billionaires) who move <em>millions or billions</em> of dollars at once. When a whale buys a stock, the price often moves. Tracking whale activity is a real strategy called "smart money" following.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">S&P 500</div>
+          <div class="gloss-def">An index of the 500 largest US companies. Often used as a benchmark: "Did my strategy beat the S&P?" If it did, you outperformed most actively managed funds. +15% in a year is typical for the S&P; beating it consistently is rare.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">MCP (Model Context Protocol)</div>
+          <div class="gloss-def">A way to plug Claude into external services (data feeds, apps, brokerages) so it can both read and act on live information. Think of it as a power outlet: the electricity (data) is already in the walls — MCP is how Claude plugs in.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Cron Job / Schedule</div>
+          <div class="gloss-def">A recurring automated task. Claude can set itself a cron job: "Check Tesla's price every 5 minutes during market hours." You don't have to touch it — your computer runs it while you're doing other things.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">Options — Explained From Zero</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px; line-height:1.6">Options are contracts that give you the <em>right</em> — but not the obligation — to buy or sell a stock at a set price before a set date. Think of it exactly like insurance.</p>
+
+      <div class="vs-row">
+        <div class="vs-left">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size:11px; color:var(--accent); margin-bottom:6px">🚗 CAR INSURANCE</div>
+          <div style="font-size:12px; color:var(--text); line-height:1.55">
+            You pay $100/month → You get the <em>right</em> to file a claim if you crash<br><br>
+            If nothing happens → insurer keeps your $100<br>
+            If you crash → insurer covers the damage
+          </div>
+        </div>
+        <div class="vs-badge">≡</div>
+        <div class="vs-right">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size:11px; color:var(--accent3); margin-bottom:6px">📈 STOCK OPTION</div>
+          <div style="font-size:12px; color:var(--text); line-height:1.55">
+            You pay a <em>premium</em> → You get the right to buy/sell at a locked price<br><br>
+            If stock doesn't move → seller keeps your premium<br>
+            If stock moves your way → you profit
+          </div>
+        </div>
+      </div>
+
+      <div class="gloss-grid" style="margin-top:16px">
+        <div class="gloss-item">
+          <div class="gloss-term">Call Option (buying)</div>
+          <div class="gloss-def">Right to <em>buy</em> a stock at a locked price. Apple is at $200; you buy a call at $210 strike. If Apple hits $230, you can buy at $210 and pocket $20 difference. If it doesn't hit $210 — contract expires, you lose the premium.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Put Option (buying)</div>
+          <div class="gloss-def">Right to <em>sell</em> a stock at a locked price. You own Apple at $200; buy a put at $190. If Apple drops to $170, you can still sell at $190. The put is protection — insurance against a price drop.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Strike Price</div>
+          <div class="gloss-def">The <em>locked price</em> in the contract. If you buy a call with a $210 strike on Apple, you can buy at $210 regardless of where the stock actually trades. The further away the strike from the current price, the cheaper (and riskier) the option.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Premium</div>
+          <div class="gloss-def">The price you pay for the option contract. If you buy one contract (typically = 100 shares) at $5 per share, your premium is $500. This is your max loss as a buyer. As a seller, this is what you collect upfront.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Expiration Date</div>
+          <div class="gloss-def">Options don't last forever. After this date, the contract dies. If your conditions weren't met, the buyer loses the premium and the seller keeps it. The wheel strategy typically uses <em>2–4 week expirations</em>.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Selling Options (being the insurer)</div>
+          <div class="gloss-def">You flip the table: instead of paying a premium, you <em>collect</em> it. Someone pays you for the contract. If the stock doesn't hit the strike price by expiration, you keep the money and do it again. Insurance companies make billions this way.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Getting Assigned</div>
+          <div class="gloss-def">When you've sold a put and the stock falls below your strike price — the buyer exercises the contract and you're forced to <em>buy the shares</em> at that price. In the wheel strategy, this is expected and planned for, not a disaster.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Covered Call</div>
+          <div class="gloss-def">You sell someone the right to buy your shares at a higher price. "Covered" means you already own the shares, so if they're called away you just hand them over. You collect a premium either way.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Pine Script &amp; TradingView Terms</div>
+      <div class="gloss-grid">
+        <div class="gloss-item">
+          <div class="gloss-term">TradingView</div>
+          <div class="gloss-def">A popular charting platform used by millions of traders. Shows price action, indicators, volume, and more for stocks, crypto, and other assets. Has a desktop app and a browser version.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Indicator</div>
+          <div class="gloss-def">A mathematical calculation plotted on your chart to help identify patterns. Examples: moving averages (EMA, SMA), RSI (momentum), MACD (trend). They don't predict the future — they describe what's happening.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Pine Script</div>
+          <div class="gloss-def">TradingView's own coding language for creating custom indicators and strategy backtests. Claude can write Pine Script from your plain-English description and install it directly onto your chart.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">Backtesting</div>
+          <div class="gloss-def">Running a strategy against historical data to see how it would have performed in the past. Not a guarantee of future results, but a sanity check before trusting a strategy with real money.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">EMA (Exponential Moving Average)</div>
+          <div class="gloss-def">An average of a stock's price over N periods (e.g., 21-day, 50-day, 200-day), weighted to emphasize recent prices more. When price is above the 200 EMA, the trend is generally considered bullish.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">RSI (Relative Strength Index)</div>
+          <div class="gloss-def">A momentum indicator from 0–100. Above 70 = potentially overbought (might drop). Below 30 = potentially oversold (might bounce). In the example strategy: RSI 35–58 is the "buy zone."</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">MACD</div>
+          <div class="gloss-def">Moving Average Convergence Divergence — a trend-following indicator. Traders use it to spot potential reversals or confirm a trend is still in force. Used in the example Van Deop + Tone Vase strategy.</div>
+        </div>
+        <div class="gloss-item">
+          <div class="gloss-term">CDP (Chrome DevTools Protocol)</div>
+          <div class="gloss-def">A technical protocol that lets external programs read and control browser windows at the code level. The TradingView MCP uses CDP to let Claude read live chart data — not a screenshot, but actual code values.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">💡 The Poker Analogy</div>
+      <p>The stock market is a poker game where institutional players can see <em>every card on the table and in your hand</em>. Congressional disclosure laws crack that open slightly — you can now see what the best-informed players have been betting. That's the edge Claude is accessing.</p>
+    </div>
+
+  </div><!-- /finance101 -->
+
+
+  <!-- ============================================================
+       SETUP
+       ============================================================ -->
+  <div class="section" id="tab-setup">
+
+    <div class="hero">
+      <h2>Setup — Step by Step</h2>
+      <p>Two separate setups: one for automated stock trading (Alpaca + Claude Desktop), one for live chart analysis (TradingView MCP + Claude Code). Both use paper trading — no real money required.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Part A — Alpaca + Claude Desktop</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Download Claude Desktop App</strong><br>
+              Go to <code>claude.com/download</code>. Download the Mac or Windows version. Make sure your OS is up to date. Ideally, have Claude Pro or Max (paid tier).
+              <span class="tip">💡 The desktop app (not the browser) is required for the scheduling and file tools.</span>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Create an Alpaca Account</strong><br>
+              Search "Alpaca Trading Platform." Sign up (free). After setup, you'll see a dashboard. <em>Use the paper trading account</em> — not the individual (real money) account.
+              <span class="good">✓ Create a new paper account and give yourself a starting balance (e.g., $50,000).</span>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Generate API Keys</strong><br>
+              Inside your Alpaca paper trading account, scroll down to <strong>API Keys</strong> → click <strong>Generate New API Keys</strong>. You'll get three things:
+              <pre><span class="hd">Endpoint</span>  — the URL Claude will send orders to
+<span class="li">Key</span>       — your username for the API
+<span class="fn">Secret</span>    — your password for the API</pre>
+              <span class="note">⚠ Never share your secret key publicly. Anyone with it can trade your account.</span>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Connect Claude to Alpaca</strong><br>
+              Open Claude Desktop. Click <strong>Code</strong> mode → create a new folder called <code>trading</code>. Paste your Endpoint, Key, and Secret into the chat. Tell Claude to save the credentials to a file in that folder so you don't need to re-paste them.
+              <span class="tip">💡 Prompt: <em>"I just gave you the Alpaca documentation and my keys. Can you please buy one share of Apple to test the connection?"</em></span>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <strong>Verify the Trade</strong><br>
+              Go back to your Alpaca dashboard and refresh. You should see the Apple share appear. Connection confirmed. You can now instruct Claude to sell it and move on to building strategies.
+              <span class="good">✓ From here, Claude can trade by just talking to it in plain English.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">Part B — TradingView MCP + Claude Code</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Download TradingView Desktop</strong><br>
+              Go to <code>tradingview.com/desktop</code> and install the app for your OS. The browser version of TradingView will not work — you need the desktop app for CDP (live code access) to work.
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Get the TradingView MCP Repo</strong><br>
+              The original is by Trades Don't Lie on GitHub. The improved version (with one-shot setup, morning brief, and bug fixes) is by LewisWJackson: <code>github.com/LewisWJackson/tradingview-mcp-jackson</code>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Run the One-Shot Setup Prompt</strong><br>
+              Copy the "one-shot setup" prompt from the GitHub README. Paste it into Claude Code (terminal). Claude will ask a few confirmation questions — choose the option that allows it to automate. It handles all the file configuration itself.
+              <span class="tip">💡 When asked "create mcp.json?" say yes. When given a choice, pick the most automated option.</span>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Launch TradingView with CDP Enabled</strong><br>
+              After setup completes, Claude will give you a command to launch TradingView with CDP. Copy that command and paste it into your terminal. Then run <code>tv_health_check</code> to confirm the MCP server is live and connected.
+              <span class="good">✓ If it says "CDP is live" — you're ready.</span>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <strong>Set Your Watch List &amp; Rules</strong><br>
+              You don't need to edit JSON files manually. Just tell Claude in plain English: <em>"My watch list is Bitcoin, Ethereum, Solana, XRP, Chainlink."</em> Claude updates the <code>rules.json</code> file for you.
+              <span class="tip">💡 Optional: Use Whisper Flow (voice transcription) to speak commands directly instead of typing.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Keeping Multiple Accounts Organized</div>
+      <p>The videos use <em>separate paper trading accounts</em> for each strategy — one for the trailing stop bot, one for the copy trading bot. This keeps P&amp;L isolated so you can see which strategy is actually working. Give each account its own API keys and its own folder in Claude.</p>
+    </div>
+
+  </div><!-- /setup -->
+
+
+  <!-- ============================================================
+       STRATEGIES
+       ============================================================ -->
+  <div class="section" id="tab-strategies">
+
+    <div class="hero">
+      <h2>The Three Strategies</h2>
+      <p>Each strategy encodes a specific set of rules. Claude doesn't improvise — it executes what you define. The smarter the rules, the smarter the bot.</p>
+    </div>
+
+    <!-- Strategy 1: Trailing Stop -->
+    <div class="card blue">
+      <div class="card-title">Strategy 1 — Trailing Stop Bot</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px; line-height:1.6">Like a smart thermostat: set the rules once, and it manages temperature (price) automatically all day. The floor only goes up, never down.</p>
+
+      <div class="flow">
+        <div class="flow-node">
+          <div class="flow-icon">🛒</div>
+          <div class="flow-content">
+            <div class="flow-title">Buy Entry</div>
+            <div class="flow-desc">Claude buys N shares at market price. You specify the stock (e.g., Tesla) and quantity. All at once, or in stages.</div>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node">
+          <div class="flow-icon">🔒</div>
+          <div class="flow-content">
+            <div class="flow-title">Set Initial Floor (Stop Loss)</div>
+            <div class="flow-desc">Claude sets a stop loss at <code>-10%</code> below purchase price. If the stock drops that far, sell everything. Max loss is fixed.</div>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node">
+          <div class="flow-icon">📈</div>
+          <div class="flow-content">
+            <div class="flow-title">Stock Rises → Move the Floor Up</div>
+            <div class="flow-desc">Every time the stock gains <code>+10%</code>, Claude raises the stop loss floor to <code>5%</code> below the new high. The floor only moves up. You can never fall back to your original risk level.</div>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node">
+          <div class="flow-icon">🪜</div>
+          <div class="flow-content">
+            <div class="flow-title">Stock Drops → Ladder Buy</div>
+            <div class="flow-desc">If the stock dips <code>-20%</code> → buy 20 more shares. If <code>-30%</code> → buy 10 more. Buying the dip lowers your average cost, so a smaller recovery puts you back in profit.</div>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node">
+          <div class="flow-icon">🔄</div>
+          <div class="flow-content">
+            <div class="flow-title">Floor Is Hit → Sell + Reset</div>
+            <div class="flow-desc">If the stock falls to the trailing stop, Claude sells. You've limited your loss. Capital is freed up. Claude looks for the next opportunity — same stock at a better price, or something else entirely.</div>
+          </div>
+        </div>
+      </div>
+
+      <pre style="margin-top:16px"><span class="cm"># Example conversation with Claude to set this up:</span>
+<span class="hd">Buy 10 Tesla shares. Set a -10% stop loss. Move the floor up 5% below</span>
+<span class="hd">the current price every time it rises 10%. Ladder buy: if -20% drop, buy</span>
+<span class="hd">20 more shares. If -30%, buy 10 more. Schedule a check every 5 min,</span>
+<span class="li">Mon–Fri 9am–4pm. Show me a summary after each action.</span></pre>
+
+      <div style="margin-top:12px; font-size:12px; color:var(--text-muted)">Claude will set a cron job automatically using <code>/schedule</code>. In the Claude Desktop sidebar, click the clock icon → Scheduled to see active tasks.</div>
+    </div>
+
+    <!-- Strategy 2: Copy Trading -->
+    <div class="card yellow">
+      <div class="card-title yellow">Strategy 2 — Copy Trading Bot (Politicians / Whales)</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px; line-height:1.6">Congressional members must report stock trades within 45 days by law (STOCK Act). The data is public. Capitol Trades aggregates it for free. Claude picks the best performers and mirrors their moves.</p>
+
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Point Claude at Capitol Trades</strong><br>
+            Copy the URL <code>capitoltrades.com</code> and paste it into your Claude session along with your Alpaca credentials. Claude can scrape and read this site.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Ask Claude to Find the Best Performer</strong><br>
+            Prompt: <em>"Find a politician who has had really good stock market success recently and is actively trading. Then copy their trades."</em> Claude analyzes the data and picks autonomously — in the video it chose Michael McCaul because he was the most active and top-performing at that moment.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Set Up Automated Monitoring</strong><br>
+            Claude creates a scheduled task to check Capitol Trades regularly and copy new trades into your Alpaca paper account. It handles buy, sell, and options moves to match the politician's disclosures.
+            <span class="tip">💡 Disclosures can lag by up to 45 days — but politicians often trade months-long positions, so even late copies can capture most of the move.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Track Performance Over Time</strong><br>
+            The backtest showed: copying McCaul for 1 year from a $50k account would have returned $67,400 (+34.8%). The S&P 500 over the same period returned only +15%. These are simulation results, not guarantees.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Strategy 3: Wheel -->
+    <div class="card green">
+      <div class="card-title green">Strategy 3 — The Wheel (Options Income)</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px; line-height:1.6">You become the insurance company. You collect premiums at every stage. The stock can go up, down, or sideways — you're earning income regardless. This is why management is the hard part, and why Claude makes it accessible.</p>
+
+      <div class="flow">
+        <div class="flow-node">
+          <div class="flow-icon">💰</div>
+          <div class="flow-content">
+            <div class="flow-title">Stage 1 — Sell a Cash-Secured Put</div>
+            <div class="flow-desc">Pick a stock you <em>want</em> to own. Sell a put at <code>~10% below current price</code>, expiring 2–4 weeks out. Collect the premium immediately. You're promising: "I'll buy this stock at $X if it drops there."</div>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node">
+          <div class="flow-icon">⤷</div>
+          <div class="flow-content">
+            <div class="flow-title">Outcome A — Put Expires Worthless</div>
+            <div class="flow-desc">Stock stayed above your strike. You keep the premium. Nobody makes you buy anything. <em>Go back to Stage 1.</em> Sell another put. Collect another premium.</div>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node">
+          <div class="flow-icon">⤷</div>
+          <div class="flow-content">
+            <div class="flow-title">Outcome B — You Get Assigned (Stock Drops)</div>
+            <div class="flow-desc">Stock fell below your strike. You now own 100 shares — but at your strike price minus the premium you already collected. Your real cost basis is lower than anyone who bought it on the open market.</div>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node">
+          <div class="flow-icon">📤</div>
+          <div class="flow-content">
+            <div class="flow-title">Stage 2 — Sell a Covered Call</div>
+            <div class="flow-desc">Now you own the shares. Sell a call at <code>~10% above what you paid</code>, 2–4 weeks out. You collect another premium. If the stock rises above that strike, your shares get "called away" (sold) at a profit. If it doesn't, you keep the shares and the premium.</div>
+          </div>
+        </div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node">
+          <div class="flow-icon">🔄</div>
+          <div class="flow-content">
+            <div class="flow-title">Shares Called Away → Repeat</div>
+            <div class="flow-desc">Your shares were sold at a profit. You've collected: put premium + call premium + stock gain. Go back to Stage 1. The wheel keeps spinning.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-row" style="margin-top:16px">
+        <div class="stat">
+          <div class="stat-val green">$500</div>
+          <div class="stat-label">Put premium collected (example)</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val green">$500</div>
+          <div class="stat-label">Call premium collected</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val green">$3,500</div>
+          <div class="stat-label">Stock gain ($225 → $260)</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val blue">$4,500</div>
+          <div class="stat-label">Total profit on 100 shares</div>
+        </div>
+      </div>
+
+      <div class="callout green" style="margin-top:16px">
+        <div class="callout-label">✓ Wheel Strategy Rules (hardcoded into bot)</div>
+        <p><em>Never sell a put without enough cash to buy the shares if assigned. Never sell a covered call below your cost basis. Track premiums across all cycles. Close any contract early if it hits 50% profit before expiration. Daily summary at market close. Do nothing outside market hours.</em></p>
+      </div>
+    </div>
+
+  </div><!-- /strategies -->
+
+
+  <!-- ============================================================
+       TRADINGVIEW MCP
+       ============================================================ -->
+  <div class="section" id="tab-tradingview">
+
+    <div class="hero">
+      <h2>TradingView MCP — Live Chart Intelligence</h2>
+      <p>Claude isn't looking at a picture of your chart. It's reading the <strong>live code values behind TradingView</strong> — exact candle prices, every wick, every second. This is completely different from every AI chart tool you've seen before.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title red">The Old Way vs This Way</div>
+      <div class="grid-2" style="margin-top:4px">
+        <div style="background:var(--bg-code); border:1px solid var(--border); border-left:3px solid var(--accent2); border-radius:6px; padding:14px 16px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent2); margin-bottom:8px; letter-spacing:0.06em">❌ OLD: SCREENSHOT → AI</div>
+          <div class="rule-list">
+            <div class="rule-row" style="padding:7px 10px">
+              <div class="rule-icon">📸</div>
+              <div class="rule-text">Screenshot the chart</div>
+            </div>
+            <div class="rule-row" style="padding:7px 10px">
+              <div class="rule-icon">🖼️</div>
+              <div class="rule-text">AI interprets pixels — guessing at values from an image</div>
+            </div>
+            <div class="rule-row" style="padding:7px 10px">
+              <div class="rule-icon">⏱️</div>
+              <div class="rule-text">By the time AI responds, candles have moved. The reading is already stale</div>
+            </div>
+            <div class="rule-row" style="padding:7px 10px">
+              <div class="rule-icon">❓</div>
+              <div class="rule-text">Low-res or small differences in pixels can mean buy vs. sell — imprecise</div>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--bg-code); border:1px solid var(--border); border-left:3px solid var(--accent3); border-radius:6px; padding:14px 16px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent3); margin-bottom:8px; letter-spacing:0.06em">✓ NEW: MCP → LIVE CODE DATA</div>
+          <div class="rule-list">
+            <div class="rule-row" style="padding:7px 10px">
+              <div class="rule-icon">🔌</div>
+              <div class="rule-text">Claude reads the live DOM (page code) behind TradingView via CDP</div>
+            </div>
+            <div class="rule-row" style="padding:7px 10px">
+              <div class="rule-icon">📐</div>
+              <div class="rule-text">Exact price values for every candle — open, high, low, close — with full precision</div>
+            </div>
+            <div class="rule-row" style="padding:7px 10px">
+              <div class="rule-icon">⚡</div>
+              <div class="rule-text">Updates every second (or every 1-second candle if you're on that timeframe)</div>
+            </div>
+            <div class="rule-row" style="padding:7px 10px">
+              <div class="rule-icon">🗣️</div>
+              <div class="rule-text">You just talk to it in your terminal. Claude handles everything in the background</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">What Claude Can Do With TradingView MCP</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Command (plain English)</th>
+            <th>What Happens</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>"Show me the Bitcoin chart on the 1-week timeframe"</td>
+            <td>TradingView switches the chart and timeframe live — no clicking</td>
+          </tr>
+          <tr>
+            <td>"Remove the volume indicator from the bottom"</td>
+            <td>Indicator is deleted from the chart in seconds</td>
+          </tr>
+          <tr>
+            <td>"Research the best Bitcoin day traders and install their indicators"</td>
+            <td>Claude searches, picks a strategy, adds EMAs / RSI / MACD to the chart, updates rules.json</td>
+          </tr>
+          <tr>
+            <td>"Turn this strategy into a Pine Script and install it"</td>
+            <td>Claude writes the Pine Script code, installs it, auto-fixes any errors until it works</td>
+          </tr>
+          <tr>
+            <td>"My watch list is BTC, ETH, SOL, XRP, LINK, PEPE"</td>
+            <td>Claude applies the current indicator strategy to every asset on the list</td>
+          </tr>
+          <tr>
+            <td><code>morning_brief</code></td>
+            <td>Claude scans every watch list asset and delivers a report: bullish / bearish / neutral, setup quality, notes</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">The Morning Brief — Your Daily Market Snapshot</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px; line-height:1.6">One of the improvements the second video creator made over the original. Instead of asking Claude to analyze one chart, then another, then another — run <code>morning_brief</code> once and get a report on everything.</p>
+
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            Type <code>morning_brief</code> in your Claude Code terminal
+            <span class="tip">💡 You can also schedule this to run automatically every morning, or even every 10 minutes during the session.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            Claude loops through every asset in your watch list and evaluates each one against your rules.json strategy
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            Output: Per-asset signal (bullish / neutral / bearish), setup quality notes, and any specific action suggestions based on your defined entry/exit rules
+            <span class="good">✓ Example output: "No long setups on Bitcoin. Ethereum is closest to reversal. XRP still not a buy."</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">The rules.json File — Your Strategy Brain</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px; line-height:1.6">A file that Claude reads and writes to store your strategy rules. You never need to edit it directly — just talk to Claude and it updates the file for you.</p>
+
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>Watch list</strong> — Which assets Claude monitors (BTC, ETH, SOL, etc.)</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>Bullish conditions</strong> — What combination of indicators = a potential buy signal</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>Bearish conditions</strong> — What = a potential sell/short signal</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>Entry rules</strong> — Under what conditions do you enter a long or short?</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>Exit rules</strong> — When do you take profit or cut losses?</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>Risk parameters</strong> — Position sizing, max loss per trade, etc.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>Time frames</strong> — Are you a daily chart trader? Weekly? 1-hour?</div>
+        </div>
+      </div>
+
+      <div class="callout blue" style="margin-top:16px">
+        <div class="callout-label">💡 Supercharge Idea — Steal a Pro's Strategy</div>
+        <p>Download transcripts from a respected public trader (like Coinskid or Blockchain Backer on YouTube). Feed them to Claude: <em>"What is this person's trading strategy? What indicators do they use? Turn it into a Pine Script and install it."</em> You'll be looking at charts the same way they do.</p>
+      </div>
+    </div>
+
+  </div><!-- /tradingview -->
+
+
+  <!-- ============================================================
+       GOTCHAS
+       ============================================================ -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="hero">
+      <h2>Gotchas, Warnings &amp; Good-to-Knows</h2>
+      <p>Both videos contain important nuances that are easy to miss on a first watch. Read this before you start building anything real.</p>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Do This</div>
+        <div class="decision-item"><span class="di">✅</span>Start with paper trading — all strategies should be tested with fake money first, no exceptions.</div>
+        <div class="decision-item"><span class="di">✅</span>Set rules before you let Claude trade. Giving AI a pile of money and saying "figure it out" is the worst thing you can do.</div>
+        <div class="decision-item"><span class="di">✅</span>Use separate paper accounts for each strategy so you can track what's actually working.</div>
+        <div class="decision-item"><span class="di">✅</span>Roleplay scenarios with Claude — ask "what would you do if Tesla drops to $100?" before it happens.</div>
+        <div class="decision-item"><span class="di">✅</span>Save your API credentials to a file in the trading folder so Claude doesn't lose them between sessions.</div>
+        <div class="decision-item"><span class="di">✅</span>For the wheel strategy: always verify Claude has enough cash in the account to cover a put assignment before selling.</div>
+        <div class="decision-item"><span class="di">✅</span>For TradingView MCP: download the desktop app, not the browser version — the CDP connection requires it.</div>
+        <div class="decision-item"><span class="di">✅</span>Use the improved "one-shot setup" prompt (LewisWJackson's fork) rather than the manual install — it handles all edge cases.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Avoid This</div>
+        <div class="decision-item"><span class="di">❌</span>Don't treat this as financial advice. Neither creator is a financial advisor — they're showing you how to build cool things with AI.</div>
+        <div class="decision-item"><span class="di">❌</span>Don't use real money until you've run the strategy on paper for a sustained period and understand why every rule is there.</div>
+        <div class="decision-item"><span class="di">❌</span>Don't share your API secret key. Anyone with it can place trades on your account.</div>
+        <div class="decision-item"><span class="di">❌</span>Don't expect political trade data to be real-time. Congress has up to 45 days to report. The strategy still works because they tend to hold positions long-term.</div>
+        <div class="decision-item"><span class="di">❌</span>Don't skip the health check step (<code>tv_health_check</code>) for TradingView MCP — connecting without verifying leads to silent failures.</div>
+        <div class="decision-item"><span class="di">❌</span>Don't screenshot charts and paste them into AI — that approach is outdated and imprecise. Use the MCP for live data.</div>
+        <div class="decision-item"><span class="di">❌</span>Don't confuse backtesting results with guarantees. The McCaul +34.8% is a historical simulation — markets change.</div>
+        <div class="decision-item"><span class="di">❌</span>Don't sell a covered call below your cost basis — this would guarantee a loss if your shares get called away.</div>
+      </div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">Key Mechanics to Understand</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Cron jobs only run while your computer is on.</span> Claude's scheduled tasks use your local machine. If you shut down, the bot stops. For true 24/7 automation you'd need a cloud server.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Options require owning 100 shares per contract.</span> One options contract represents 100 shares. If you sell a put at $230 on Tesla, you must have enough cash to buy 100 shares ($23,000) if assigned.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">The wheel strategy fails without discipline.</span> Most people give up because managing positions week after week is tedious. That's exactly what Claude handles — but you still need to check in and verify it's running correctly.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Ladder buys increase risk on losing trades.</span> Buying more on the way down (DCA) lowers your average cost, but it also means you're putting more money into a losing position. Only do this with stocks you genuinely believe in long-term.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Pine Script errors will happen.</span> When Claude creates a Pine Script, TradingView may show errors. The MCP setup handles this — Claude can see the errors in the live code and will keep fixing them automatically until resolved.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Claude Code vs Claude Desktop.</span> The Alpaca trading bot uses Claude Desktop (with its file system and scheduling tools). The TradingView MCP uses Claude Code (terminal). These are different interfaces with different capabilities.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Quick Concepts Reference</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>One-Line Summary</th>
+            <th>Why It Matters</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Paper Trading</td>
+            <td>Fake money, real prices</td>
+            <td>Zero-risk strategy testing</td>
+          </tr>
+          <tr>
+            <td>API Keys</td>
+            <td>Username + password for code access</td>
+            <td>How Claude authenticates with Alpaca</td>
+          </tr>
+          <tr>
+            <td>Trailing Stop</td>
+            <td>A floor that only moves upward</td>
+            <td>Locks in gains, limits losses</td>
+          </tr>
+          <tr>
+            <td>Ladder Buy (DCA)</td>
+            <td>Buy more in stages as price drops</td>
+            <td>Lowers average cost on dips</td>
+          </tr>
+          <tr>
+            <td>Capitol Trades</td>
+            <td>Free site aggregating congressional trade disclosures</td>
+            <td>Source for the copy trading bot</td>
+          </tr>
+          <tr>
+            <td>Wheel Strategy</td>
+            <td>Sell puts → get assigned → sell calls → repeat</td>
+            <td>Generates income at every stage</td>
+          </tr>
+          <tr>
+            <td>Cash-Secured Put</td>
+            <td>Selling a put when you have cash to cover if assigned</td>
+            <td>Required rule for safe wheel execution</td>
+          </tr>
+          <tr>
+            <td>Cost Basis</td>
+            <td>What you actually paid per share (after premiums)</td>
+            <td>Never sell a covered call below this</td>
+          </tr>
+          <tr>
+            <td>MCP</td>
+            <td>Protocol that plugs Claude into external live data</td>
+            <td>How Claude reads TradingView live</td>
+          </tr>
+          <tr>
+            <td>CDP</td>
+            <td>Chrome DevTools Protocol — reads live page code</td>
+            <td>Enables live chart data (not screenshots)</td>
+          </tr>
+          <tr>
+            <td>Pine Script</td>
+            <td>TradingView's indicator coding language</td>
+            <td>Claude generates and installs these for you</td>
+          </tr>
+          <tr>
+            <td>morning_brief</td>
+            <td>Command that scans your full watch list at once</td>
+            <td>Replaces one-by-one chart analysis</td>
+          </tr>
+          <tr>
+            <td>rules.json</td>
+            <td>File storing your strategy configuration</td>
+            <td>Claude reads + writes this via conversation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✓ The Right Mindset</div>
+      <p>Claude isn't the decision-maker. <em>You are.</em> Claude encodes and executes your decisions at a speed and discipline no human can match. The rules aren't a limitation — they're the point. A well-defined strategy, running at machine speed with no emotion, is the edge.</p>
+    </div>
+
+  </div><!-- /gotchas -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skills — Claude Code Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .str { color: var(--accent3); }
+  .val { color: var(--accent4); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di        { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* skill type pills */
+  .skill-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .skill-type.workflow    { background: rgba(62,207,142,0.12); color: var(--accent3); border: 1px solid rgba(62,207,142,0.25); }
+  .skill-type.enhancement { background: rgba(79,142,247,0.12); color: var(--accent);  border: 1px solid rgba(79,142,247,0.25); }
+
+  /* context pill */
+  .trigger-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .trigger-pill.manual { background: rgba(224,95,122,0.12); color: var(--accent2); border: 1px solid rgba(224,95,122,0.25); }
+  .trigger-pill.auto   { background: rgba(62,207,142,0.12); color: var(--accent3); border: 1px solid rgba(62,207,142,0.25); }
+  .trigger-pill.both   { background: rgba(247,162,62,0.12); color: var(--accent4); border: 1px solid rgba(247,162,62,0.25); }
+
+  /* skill card for examples tab */
+  .skill-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .skill-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .skill-card-header:hover { background: var(--accent-glow); }
+  .skill-card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .skill-card-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .skill-card-chevron {
+    font-size: 12px;
+    color: var(--text-dim);
+    transition: transform 0.2s;
+  }
+  .skill-card-chevron.open { transform: rotate(180deg); }
+  .skill-card-body { display: none; padding: 16px 18px; }
+  .skill-card-body.open { display: block; }
+
+  /* storage location diagram */
+  .storage-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 800px) { .storage-grid { grid-template-columns: 1fr; } }
+  .storage-item {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+  }
+  .storage-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .storage-label.personal { color: var(--accent4); }
+  .storage-label.project  { color: var(--accent3); }
+  .storage-label.enterprise { color: var(--accent2); }
+  .storage-path {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--tag-bg);
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: block;
+    margin-bottom: 6px;
+    word-break: break-all;
+  }
+  .storage-note { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+  .priority-note {
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent2);
+    margin-top: 4px;
+    display: block;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Skills<span> — Claude Code Reference</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="how-it-works">How It Works</button>
+  <button data-tab="building">Building a Skill</button>
+  <button data-tab="frontmatter">Frontmatter</button>
+  <button data-tab="examples">5 Examples</button>
+  <button data-tab="gotchas">Gotchas</button>
+</nav>
+
+<main>
+
+  <!-- ===== OVERVIEW ===== -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Claude Code Skills</h2>
+      <p>Skills are <strong>saved prompts</strong> that tell Claude Code how to do a specific thing in a specific way — loaded on demand or automatically. They eliminate repetitive instructions and encode your best workflows permanently.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Two Types of Skills</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔄</div>
+            <div class="rule-text">
+              <span class="skill-type workflow">Workflow</span><br>
+              <strong style="color:var(--text)">Multi-step automation.</strong> "When I say <code>/content</code>, fetch recent articles, repurpose to blog, post to site." Bundles a sequence of actions into one command.
+            </div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text">
+              <span class="skill-type enhancement">Enhancement</span><br>
+              <strong style="color:var(--text)">Skill multiplier.</strong> Loads conventions and rules that improve Claude's output quality — e.g. the front-end design skill that avoids AI slop aesthetics.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Two Ways to Trigger</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⌨️</div>
+            <div class="rule-text">
+              <span class="trigger-pill manual">Manual</span><br>
+              Type <code>/skill-name</code> (with optional args). Guaranteed trigger — use this for anything with side effects (deploy, commit, send).
+            </div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🤖</div>
+            <div class="rule-text">
+              <span class="trigger-pill auto">Automatic</span><br>
+              Claude matches your request against skill descriptions. Use this for enhancement skills (code review, design conventions). Relies on good description quality.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Installing Built-in Skills</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">1️⃣</div>
+          <div class="rule-text">Run <code>/plugin</code> inside Claude Code — "plugin" and "skill" are used interchangeably.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">2️⃣</div>
+          <div class="rule-text">Choose <strong>Marketplace</strong> to browse and install community skills (e.g. front-end design, UI/UX Pro, skill creator).</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">3️⃣</div>
+          <div class="rule-text">Ask Claude Code <strong>"What skills are available?"</strong> to verify what's installed and discoverable in your project.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">⭐ Most Important Skill</div>
+      <p>Install the <em>Skill Creator</em> first. It creates new skills, optimizes descriptions for better trigger accuracy, runs A/B evals, and benchmarks performance — all things you can't do manually.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <div class="section" id="tab-how-it-works">
+
+    <div class="hero">
+      <h2>Context-Efficient Loading</h2>
+      <p>Skills don't clog your context window. Claude Code holds a <strong>short description of each skill</strong> (~100 tokens each), not the full content. The full prompt is loaded only when the skill is actually needed.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card green">
+        <div class="card-title green">How Lazy-Loading Works</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Skills sit in another "room"</strong><br>
+              Full skill prompts are not in the context window at startup — they're in a folder waiting.
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Claude holds a short index</strong><br>
+              ~100 tokens per skill: name + description. This is what's always loaded — very cheap.
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Match triggers full load</strong><br>
+              When your request matches a description (or you use <code>/skill-name</code>), the full skill prompt is loaded into context.
+              <span class="tip">💡 Result: ~100 skills can be "pre-loaded" with minimal cost.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">The Sweet Spot Problem</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text">
+              With <strong>5 skills</strong> it's easy to know which does what. With <strong>20+ skills</strong>, Claude may pick the wrong one or miss triggering entirely.
+            </div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔧</div>
+            <div class="rule-text">
+              <strong>Fix 1:</strong> Avoid overlap. Don't load "frontend design", "UX/UI Pro", and "hero page tool" simultaneously — consolidate.
+            </div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📝</div>
+            <div class="rule-text">
+              <strong>Fix 2:</strong> Write better descriptions. The <code>description</code> field is how Claude decides to auto-trigger — make it specific with clear trigger conditions.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Where Skills Live</div>
+      <div class="storage-grid">
+        <div class="storage-item">
+          <div class="storage-label personal">Personal</div>
+          <code class="storage-path">~/.claude/skills/</code>
+          <div class="storage-note">Available to you across all projects on this machine.</div>
+        </div>
+        <div class="storage-item">
+          <div class="storage-label project">Project</div>
+          <code class="storage-path">.claude/skills/</code>
+          <div class="storage-note">Available to anyone working on this project. Commit to version control.</div>
+        </div>
+        <div class="storage-item">
+          <div class="storage-label enterprise">Enterprise</div>
+          <code class="storage-path">admin-managed</code>
+          <div class="storage-note">Available to everyone in the org.
+            <span class="priority-note">⬆ Priority: Enterprise → Personal → Project</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">📁 Folder Structure</div>
+      <p>The folder name becomes the slash command. A skill named <em>review-code</em> needs to live at <em>.claude/skills/review-code/SKILL.md</em> — not <em>.claude/skills/review-code.md</em>.</p>
+    </div>
+
+  </div><!-- /how-it-works -->
+
+
+  <!-- ===== BUILDING ===== -->
+  <div class="section" id="tab-building">
+
+    <div class="card blue">
+      <div class="card-title">Step-by-Step: Your First Skill</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Create the skill folder</strong><br>
+            Project-level: <code>mkdir -p .claude/skills/review-code</code><br>
+            Personal (all projects): <code>mkdir -p ~/.claude/skills/review-code</code>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Write SKILL.md</strong><br>
+            Add YAML frontmatter between <code>---</code> markers at the top, then your instructions below.
+            <pre><span class="hd">---</span>
+<span class="kw">name</span>: <span class="str">review-code</span>
+<span class="kw">description</span>: <span class="str">Reviews code for bugs, performance, and style.
+  Use when the user asks to review, audit, or check code.</span>
+<span class="hd">---</span>
+
+<span class="cm"># Your instruction prompt goes here...</span>
+<span class="li">Format findings as CRITICAL / WARNING / SUGGESTION.</span>
+<span class="li">End with: "X critical, Y warnings, Z suggestions found."</span></pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Test both trigger modes</strong><br>
+            <em>Automatic:</em> "Review the auth middleware" — Claude sees the description match.<br>
+            <em>Manual:</em> <code>/review-code src/middleware/auth.ts</code> — guaranteed trigger.
+            <span class="note">⚠ Check: ask "What skills are available?" if your skill doesn't appear.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Iterate</strong><br>
+            Edit <code>SKILL.md</code> — Claude picks up changes immediately. Use the Skill Creator to run evals and compare with/without the skill.
+            <span class="tip">💡 Run A/B tests: "with skill" vs "without skill" to verify it actually improves output.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">Dynamic Data in Skills</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📨</div>
+          <div class="rule-text">
+            <strong>Arguments:</strong> Use <code>$ARGUMENTS</code> for all args, or <code>$ARGUMENTS[0]</code>, <code>$ARGUMENTS[1]</code> for positional.<br>
+            <code>/fix-issue 42 auth</code> → <code>$ARGUMENTS</code> = "42 auth", <code>$ARGUMENTS[0]</code> = "42"
+          </div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔁</div>
+          <div class="rule-text">
+            <strong>Live shell data:</strong> <code>!`command`</code> runs a shell command before the skill reaches Claude. Claude only sees the output, never the command itself.
+            <pre><span class="cm">## Current PR</span>
+<span class="li">Diff: </span><span class="fn">!`gh pr diff`</span>
+<span class="li">Files: </span><span class="fn">!`gh pr diff --name-only`</span></pre>
+          </div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔒</div>
+          <div class="rule-text">
+            <strong>Tool restrictions:</strong> <code>allowed-tools</code> limits what Claude can do while the skill runs.<br>
+            <code>allowed-tools: Read, Grep, Glob</code> — read-only, can't modify files.<br>
+            <code>allowed-tools: Bash(npm test *)</code> — only that specific command pattern.
+            <span style="color:var(--accent2);font-size:12px;display:block;margin-top:4px">⚠ If you forget to include Read, Claude can't read files — this catches people out.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /building -->
+
+
+  <!-- ===== FRONTMATTER ===== -->
+  <div class="section" id="tab-frontmatter">
+
+    <div class="hero">
+      <h2>Frontmatter Reference</h2>
+      <p>YAML settings at the top of every <code>SKILL.md</code>, between <code>---</code> markers. Controls naming, triggering, tool access, and isolation. Everything below the second <code>---</code> is your instruction prompt.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">All Fields</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>What It Does</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>name</td>
+            <td>The /slash-command name. Becomes how you call the skill.</td>
+            <td>Lowercase, hyphens only. No spaces.</td>
+          </tr>
+          <tr>
+            <td>description</td>
+            <td>Tells Claude when to auto-load this skill. This is the index entry.</td>
+            <td>Most important field. Be specific — list trigger phrases.</td>
+          </tr>
+          <tr>
+            <td>argument-hint</td>
+            <td>Shown during /autocomplete to guide usage.</td>
+            <td>Example: <code>[filename] [format]</code></td>
+          </tr>
+          <tr>
+            <td>disable-model-invocation</td>
+            <td>Set <code>true</code> → Claude can NEVER auto-load. Manual /name only.</td>
+            <td>Use for any skill with side effects: deploy, commit, send.</td>
+          </tr>
+          <tr>
+            <td>user-invocable</td>
+            <td>Set <code>false</code> → hidden from / menu. Only Claude can load it.</td>
+            <td>For background knowledge: legacy context, domain rules.</td>
+          </tr>
+          <tr>
+            <td>allowed-tools</td>
+            <td>Restricts which tools Claude may use while skill is active.</td>
+            <td><code>Bash(pattern)</code> for specific commands only.</td>
+          </tr>
+          <tr>
+            <td>context</td>
+            <td>Set <code>fork</code> to run in an isolated subagent with separate memory.</td>
+            <td>Make forked skills fully self-contained — no chat history access.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title green">Trigger Matrix</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text">
+              <span class="trigger-pill both">Both defaults</span><br>
+              You can <code>/skill-name</code> AND Claude auto-loads. Good for general-purpose skills like code review.
+            </div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔐</div>
+            <div class="rule-text">
+              <code>disable-model-invocation: true</code><br>
+              <span class="trigger-pill manual">Manual only</span> — Claude will never load it automatically. Use for anything with side effects.
+            </div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🤫</div>
+            <div class="rule-text">
+              <code>user-invocable: false</code><br>
+              <span class="trigger-pill auto">Claude only</span> — Won't appear in / menu. Use for passive background knowledge.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Full Frontmatter Example</div>
+        <pre><span class="hd">---</span>
+<span class="kw">name</span>: <span class="str">my-skill</span>
+<span class="kw">description</span>: <span class="str">What this does and when.
+  Use when user says "deploy", "ship it".</span>
+<span class="kw">argument-hint</span>: <span class="str">"[env: staging|production]"</span>
+<span class="kw">disable-model-invocation</span>: <span class="val">true</span>
+<span class="kw">allowed-tools</span>: <span class="li">Bash(git *), Bash(npm run*), Read</span>
+<span class="kw">context</span>: <span class="str">fork</span>
+<span class="hd">---</span>
+
+<span class="cm"># Instructions follow here...</span></pre>
+        <div style="margin-top:10px;font-size:12px;color:var(--accent2)">⚠ Strings with colons need quotes in YAML</div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠ Formatting Is Strict</div>
+      <p>The frontmatter must be between exactly two <em>---</em> markers at the very top. No whitespace before the first <em>---</em>. No tabs (use spaces). Missing closing <em>---</em> breaks the skill silently.</p>
+    </div>
+
+  </div><!-- /frontmatter -->
+
+
+  <!-- ===== EXAMPLES ===== -->
+  <div class="section" id="tab-examples">
+
+    <div class="callout blue">
+      <div class="callout-label">📋 5 Ready-to-Use Skills</div>
+      <p>Click any skill to expand the full <em>SKILL.md</em> frontmatter and key details. Copy-paste into your project to get started.</p>
+    </div>
+
+    <!-- Deploy -->
+    <div class="skill-card">
+      <div class="skill-card-header" onclick="toggleSkill(this)">
+        <div>
+          <div class="skill-card-title">
+            <span class="trigger-pill manual">Manual Only</span>
+            /deploy
+          </div>
+          <div class="skill-card-desc">Deploy to staging or production with pre-flight safety checks</div>
+        </div>
+        <div class="skill-card-chevron">▼</div>
+      </div>
+      <div class="skill-card-body">
+        <pre><span class="hd">---</span>
+<span class="kw">name</span>: <span class="str">deploy</span>
+<span class="kw">description</span>: <span class="str">Deploy the application to production or staging environments</span>
+<span class="kw">disable-model-invocation</span>: <span class="val">true</span>
+<span class="kw">argument-hint</span>: <span class="str">"[environment: staging|production]"</span>
+<span class="kw">allowed-tools</span>: <span class="li">Bash(git *), Bash(npm run*), Bash(npx *), Bash(curl*), Read, Grep</span>
+<span class="hd">---</span></pre>
+        <div class="rule-list" style="margin-top:12px">
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text">Runs 5 pre-flight checks before deploying: clean tree, correct branch, tests pass, lint passes, build succeeds.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🚀</div>
+            <div class="rule-text">Staging: <code>npx vercel --env preview</code> · Production: <code>npx vercel --prod</code></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔒</div>
+            <div class="rule-text"><code>disable-model-invocation: true</code> because you never want Claude auto-deploying.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review -->
+    <div class="skill-card">
+      <div class="skill-card-header" onclick="toggleSkill(this)">
+        <div>
+          <div class="skill-card-title">
+            <span class="trigger-pill both">Auto + Manual</span>
+            /review
+          </div>
+          <div class="skill-card-desc">Thorough code review: bugs, security, performance, style</div>
+        </div>
+        <div class="skill-card-chevron">▼</div>
+      </div>
+      <div class="skill-card-body">
+        <pre><span class="hd">---</span>
+<span class="kw">name</span>: <span class="str">review</span>
+<span class="kw">description</span>: <span class="str">Performs a thorough code review checking for bugs, security
+  vulnerabilities, performance issues, and style violations.
+  Use when user asks to review, audit, or check code quality.</span>
+<span class="kw">argument-hint</span>: <span class="str">"[file-or-directory]"</span>
+<span class="kw">allowed-tools</span>: <span class="li">Read, Grep, Glob</span>
+<span class="hd">---</span></pre>
+        <div class="rule-list" style="margin-top:12px">
+          <div class="rule-row">
+            <div class="rule-icon">🔍</div>
+            <div class="rule-text">Four severity tiers: CRITICAL (bugs, security) · WARNING (performance, error handling) · SUGGESTION (maintainability)</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📄</div>
+            <div class="rule-text"><code>allowed-tools: Read, Grep, Glob</code> — read-only, cannot modify any files.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Run Tests -->
+    <div class="skill-card">
+      <div class="skill-card-header" onclick="toggleSkill(this)">
+        <div>
+          <div class="skill-card-title">
+            <span class="trigger-pill both">Auto + Manual</span>
+            /run-tests
+          </div>
+          <div class="skill-card-desc">Run tests with coverage, watch mode, or CI mode</div>
+        </div>
+        <div class="skill-card-chevron">▼</div>
+      </div>
+      <div class="skill-card-body">
+        <pre><span class="hd">---</span>
+<span class="kw">name</span>: <span class="str">run-tests</span>
+<span class="kw">description</span>: <span class="str">Run tests — single file, coverage, watch mode, or CI mode.
+  Use when user asks to run tests, check coverage, or verify tests pass.</span>
+<span class="kw">argument-hint</span>: <span class="str">"[file-or-pattern] [--coverage] [--watch] [--ci]"</span>
+<span class="kw">allowed-tools</span>: <span class="li">Bash(npx jest *), Bash(npx vitest*), Bash(npm test *), Read, Grep, Glob</span>
+<span class="hd">---</span></pre>
+        <div class="rule-list" style="margin-top:12px">
+          <div class="rule-row">
+            <div class="rule-icon">🧪</div>
+            <div class="rule-text">Auto-detects jest vs vitest from package.json. Flags coverage below 80%. On failure, reads source and suggests fixes.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generate Docs -->
+    <div class="skill-card">
+      <div class="skill-card-header" onclick="toggleSkill(this)">
+        <div>
+          <div class="skill-card-title">
+            <span class="trigger-pill both">Auto + Manual</span>
+            /generate-docs
+          </div>
+          <div class="skill-card-desc">Generate API documentation from source code</div>
+        </div>
+        <div class="skill-card-chevron">▼</div>
+      </div>
+      <div class="skill-card-body">
+        <pre><span class="hd">---</span>
+<span class="kw">name</span>: <span class="str">generate-docs</span>
+<span class="kw">description</span>: <span class="str">Generates API docs from source code. Reads route handlers,
+  extracts endpoints and response shapes, produces structured markdown.
+  Use when user asks to document an API or generate docs.</span>
+<span class="kw">argument-hint</span>: <span class="str">"[source-directory] [output-file]"</span>
+<span class="kw">allowed-tools</span>: <span class="li">Read, Grep, Glob, Write, Edit</span>
+<span class="hd">---</span></pre>
+        <div class="rule-list" style="margin-top:12px">
+          <div class="rule-row">
+            <div class="rule-icon">📚</div>
+            <div class="rule-text">Searches <code>src/app/api/</code>, <code>src/pages/api/</code>, <code>routes/</code> by default. Outputs grouped markdown with TOC.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📌</div>
+            <div class="rule-text">Uses <code>$ARGUMENTS[0]</code> (source dir) and <code>$ARGUMENTS[1]</code> (output file) — positional arg example.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DB Migrate -->
+    <div class="skill-card">
+      <div class="skill-card-header" onclick="toggleSkill(this)">
+        <div>
+          <div class="skill-card-title">
+            <span class="trigger-pill manual">Manual Only</span>
+            /db-migrate
+          </div>
+          <div class="skill-card-desc">Create, validate, and apply Supabase database migrations safely</div>
+        </div>
+        <div class="skill-card-chevron">▼</div>
+      </div>
+      <div class="skill-card-body">
+        <pre><span class="hd">---</span>
+<span class="kw">name</span>: <span class="str">db-migrate</span>
+<span class="kw">description</span>: <span class="str">Create and manage Supabase database migrations.</span>
+<span class="kw">disable-model-invocation</span>: <span class="val">true</span>
+<span class="kw">argument-hint</span>: <span class="str">"[create|apply|status] [migration-name]"</span>
+<span class="kw">allowed-tools</span>: <span class="li">Bash(npx supabase *), Read, Write, Edit, Grep, Glob</span>
+<span class="hd">---</span></pre>
+        <div class="rule-list" style="margin-top:12px">
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text">NEVER applies without user confirmation. Flags all destructive operations (DROP TABLE, DROP COLUMN) with a warning.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🗃️</div>
+            <div class="rule-text">Subcommands: <code>create &lt;name&gt;</code> · <code>apply</code> · <code>status</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /examples -->
+
+
+  <!-- ===== GOTCHAS ===== -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Good Descriptions</div>
+        <div class="decision-item"><span class="di">✅</span>"Deploy the app to staging or production. Use when user says <em>deploy</em>, <em>ship it</em>, or <em>push to staging</em>."</div>
+        <div class="decision-item"><span class="di">✅</span>Specific action + explicit trigger phrases</div>
+        <div class="decision-item"><span class="di">✅</span>Include synonyms people actually type</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Bad Descriptions</div>
+        <div class="decision-item"><span class="di">❌</span>"Helps with deployment" — too vague, won't trigger reliably</div>
+        <div class="decision-item"><span class="di">❌</span>Generic phrasing with no trigger conditions</div>
+        <div class="decision-item"><span class="di">❌</span>Overlapping descriptions across multiple skills</div>
+      </div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">Gotchas</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">YAML is strict:</span> no whitespace before the first <code>---</code>, no tabs (use spaces), strings with colons must be quoted: <code>"Deploy: push to production"</code></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Wrong folder structure:</span> skill must be at <code>skill-name/SKILL.md</code>, NOT <code>skill-name.md</code> — Claude won't find a bare markdown file.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Forgot Read in allowed-tools:</span> when you set <code>allowed-tools</code>, Claude can ONLY use those tools. Omitting <code>Read</code> means it can't read files at all.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Forked skills have no memory:</span> <code>context: fork</code> runs in an isolated subagent with zero access to chat history. Make forked skills fully self-contained.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Side-effect skills without disable flag:</span> any skill that deploys, commits, sends messages, or modifies databases MUST have <code>disable-model-invocation: true</code>. Otherwise Claude may decide to run it unprompted.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Skill not discovered?</span> Ask: <em>"What skills are available?"</em>. Check: correct folder path, valid YAML frontmatter, correct working directory.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Quick Checks Before Shipping a Skill</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">Description specificity:</span> Does it list exact phrases that should trigger it?</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">Side effect check:</span> Does this deploy/commit/send anything? Add <code>disable-model-invocation: true</code>.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">Tool list complete:</span> If you set <code>allowed-tools</code>, confirm <code>Read</code> is included if the skill reads files.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">Run an eval:</span> Use Skill Creator to test with/without the skill. Confirm it actually improves output.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">Overlap audit:</span> Do you have multiple skills doing the same thing? Consolidate — don't load more than ~20 total.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">🔗 Resources</div>
+      <p>
+        <em>Official docs:</em> code.claude.com/docs/en/skills &nbsp;·&nbsp;
+        <em>Anthropic examples:</em> github.com/anthropics/skills &nbsp;·&nbsp;
+        <em>Community list:</em> github.com/travisvn/awesome-claude-skills &nbsp;·&nbsp;
+        <em>Open standard:</em> agentskills.io
+      </p>
+    </div>
+
+  </div><!-- /gotchas -->
+
+</main>
+
+<script>
+  // Tab navigation
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  // Theme toggle
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+
+  // Skill card accordion
+  function toggleSkill(header) {
+    const body    = header.nextElementSibling;
+    const chevron = header.querySelector('.skill-card-chevron');
+    const isOpen  = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    chevron.classList.toggle('open', !isOpen);
+  }
+</script>
+</body>
+</html>

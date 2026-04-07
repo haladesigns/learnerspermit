@@ -1,0 +1,62 @@
+{
+  "expectations": [
+    {
+      "text": "Runs yt-search script with a query related to Claude Code and Obsidian",
+      "passed": true,
+      "evidence": "Ran: python ~/.claude/skills/yt-search/scripts/search.py \"Claude Code Obsidian\" --count 10 --months 6"
+    },
+    {
+      "text": "Shows the full YouTube search results to the user with metadata",
+      "passed": true,
+      "evidence": "Final output includes a table with all 10 results showing title, channel, subs, views, duration, date, and URL"
+    },
+    {
+      "text": "Auto-selects videos without asking the user to pick",
+      "passed": true,
+      "evidence": "Transcript shows immediate auto-selection after search results with no user prompt. Selected 7 videos autonomously."
+    },
+    {
+      "text": "Explains which videos were selected and why",
+      "passed": true,
+      "evidence": "Detailed selection table with per-video reasoning: dropped #1 (own video), #8 (duplicate channel), #10 (off-topic + duplicate). Explained engagement ratios for selected videos."
+    },
+    {
+      "text": "Creates a NotebookLM notebook",
+      "passed": true,
+      "evidence": "Created 'YT Research: Claude Code + Obsidian Use Cases' with ID 28ca2904-b381-4fcb-a252-3c42b2ebb1b7"
+    },
+    {
+      "text": "Adds selected YouTube URLs as sources",
+      "passed": true,
+      "evidence": "All 7 selected YouTube URLs added as sources, all processed successfully with zero failures"
+    },
+    {
+      "text": "Runs notebooklm ask questions about key themes and takeaways",
+      "passed": true,
+      "evidence": "Ran 3 analysis questions: use cases with examples, areas of agreement/disagreement, and actionable takeaways. Used --new on first question."
+    },
+    {
+      "text": "Presents a summary with a Key Takeaways section",
+      "passed": true,
+      "evidence": "Final output has '## Key Takeaways' section with 6 bullet points, followed by ranked use cases, agreement/disagreement, and pain points"
+    },
+    {
+      "text": "Does NOT ask unnecessary confirmation questions mid-pipeline",
+      "passed": true,
+      "evidence": "Transcript shows continuous execution from Step 0 through Step 5 with no user interaction points. Only pause was for auth check (Step 0) which passed immediately."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  },
+  "bonus_observations": [
+    "Correctly identified and dropped the user's own video (Chase AI) — smart contextual awareness",
+    "Handled Windows Unicode encoding error gracefully (PYTHONIOENCODING=utf-8 fix)",
+    "Saved research note to /research/ following vault conventions with wiki links",
+    "Used --new flag on first notebooklm ask (improvement we added was followed)",
+    "Pre-flight auth check (Step 0 improvement) executed correctly"
+  ]
+}

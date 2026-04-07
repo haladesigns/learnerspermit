@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code × NotebookLM — Research Stack Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --accent5:       #c97ef7;
+    --accent5-glow:  rgba(201,126,247,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --accent5:       #7c3aed;
+    --accent5-glow:  rgba(124,58,237,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; color: var(--accent); letter-spacing: -0.02em; }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em; }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle { width: 44px; height: 24px; background: var(--toggle-bg); border: 1px solid var(--border-accent); border-radius: 12px; cursor: pointer; position: relative; appearance: none; outline: none; transition: background 0.3s; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: var(--accent); border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s; }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; overflow-x: auto; }
+  nav button { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.2s; letter-spacing: 0.04em; text-transform: uppercase; }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; box-shadow: var(--shadow); transition: background 0.3s, border 0.3s; }
+  .card.blue   { border-left: 3px solid var(--accent); }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+  .card.purple { border-left: 3px solid var(--accent5); }
+
+  .card-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+  .card-title.purple::before { background: var(--accent5); }
+
+  .hero { background: var(--bg-card); border: 1px solid var(--border-accent); border-left: 3px solid var(--accent); border-radius: 8px; padding: 24px; box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow); }
+  .hero h2 { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em; }
+  .hero p { color: var(--text); font-size: 15px; max-width: 720px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row { display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos { color: var(--accent3); font-weight: 600; }
+  .rule-text .purple { color: var(--accent5); font-weight: 600; }
+  .rule-text code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row { display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: flex-start; padding: 12px 16px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); text-align: center; margin-top: 1px; }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip  { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px;
+    padding: 16px; overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.7;
+    color: var(--text); margin-top: 10px;
+  }
+  .cm  { color: var(--text-muted); font-style: italic; }
+  .kw  { color: var(--accent); }
+  .hd  { color: var(--accent4); font-weight: 600; }
+  .li  { color: var(--accent3); }
+  .fn  { color: var(--accent2); }
+  .str { color: var(--accent3); }
+  .ky  { color: var(--accent5); }  /* yaml key */
+  .vl  { color: var(--accent4); }  /* yaml value / frontmatter value */
+  .fm  { color: var(--accent);  }  /* frontmatter punctuation */
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); text-align: left; padding: 8px 12px; background: var(--bg-code); border-bottom: 1px solid var(--border); }
+  .ref-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); white-space: nowrap; }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+  .ref-table td.purple-val { color: var(--accent5); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .ref-table td.green-val  { color: var(--accent3); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+
+  .callout { background: var(--bg-code); border: 1px solid var(--border-accent); border-radius: 6px; padding: 16px 20px; }
+  .callout.blue   { border-left: 3px solid var(--accent); }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout.purple { border-left: 3px solid var(--accent5); }
+  .callout-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .callout.blue   .callout-label { color: var(--accent); }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout.purple .callout-label { color: var(--accent5); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+  .callout.purple p em { color: var(--accent5); }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .stat { display: flex; flex-direction: column; align-items: center; background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px; flex: 1; min-width: 120px; }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent3); }
+  .stat-val.red    { color: var(--accent2); }
+  .stat-val.yellow { color: var(--accent4); }
+  .stat-val.purple { color: var(--accent5); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header { padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item { padding: 9px 16px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  /* pipeline flow diagram */
+  .pipeline { display: flex; flex-direction: column; gap: 0; }
+  .pipe-step { display: grid; grid-template-columns: 40px 1fr; gap: 0; }
+  .pipe-left { display: flex; flex-direction: column; align-items: center; }
+  .pipe-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent); background: var(--bg-card); flex-shrink: 0; margin-top: 12px; position: relative; z-index: 1; }
+  .pipe-dot.green  { border-color: var(--accent3); }
+  .pipe-dot.yellow { border-color: var(--accent4); }
+  .pipe-dot.purple { border-color: var(--accent5); }
+  .pipe-dot.red    { border-color: var(--accent2); }
+  .pipe-line { width: 2px; flex: 1; background: var(--border); margin: 0 auto; }
+  .pipe-content { padding: 10px 0 10px 16px; }
+  .pipe-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .pipe-label.blue   { color: var(--accent); }
+  .pipe-label.green  { color: var(--accent3); }
+  .pipe-label.yellow { color: var(--accent4); }
+  .pipe-label.purple { color: var(--accent5); }
+  .pipe-label.red    { color: var(--accent2); }
+  .pipe-desc { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .pipe-desc code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
+
+  /* skill anatomy highlight blocks */
+  .skill-anatomy { display: flex; flex-direction: column; gap: 8px; }
+  .skill-line { display: grid; grid-template-columns: 28px 1fr 200px; gap: 12px; padding: 9px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-code); align-items: center; transition: border-color 0.2s; }
+  .skill-line:hover { border-color: var(--border-accent); }
+  .skill-line.hl-blue   { border-left: 3px solid var(--accent);  }
+  .skill-line.hl-green  { border-left: 3px solid var(--accent3); }
+  .skill-line.hl-yellow { border-left: 3px solid var(--accent4); }
+  .skill-line.hl-purple { border-left: 3px solid var(--accent5); }
+  .skill-line.hl-red    { border-left: 3px solid var(--accent2); }
+  .sl-icon { font-size: 14px; text-align: center; }
+  .sl-code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text); }
+  .sl-ann  { font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * { animation: fadeUp 0.25s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* inline color tags */
+  .tag { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 7px; border-radius: 3px; letter-spacing: 0.05em; vertical-align: middle; margin-left: 4px; }
+  .tag.blue   { background: var(--accent-glow);  color: var(--accent);  border: 1px solid rgba(79,142,247,0.3); }
+  .tag.green  { background: var(--accent3-glow); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .tag.yellow { background: var(--accent4-glow); color: var(--accent4); border: 1px solid rgba(247,162,62,0.3); }
+  .tag.purple { background: var(--accent5-glow); color: var(--accent5); border: 1px solid rgba(201,126,247,0.3); }
+  .tag.red    { background: var(--accent2-glow); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Claude Code <span>×</span> NotebookLM<span> — Research Stack</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="pipeline">Pipeline</button>
+  <button data-tab="setup">Setup</button>
+  <button data-tab="notebooklm">NotebookLM API</button>
+  <button data-tab="skill">YT-Search Skill</button>
+  <button data-tab="gotchas">Gotchas</button>
+</nav>
+
+<main>
+
+  <!-- ===================== OVERVIEW ===================== -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Zero-token Research, Unlimited Scale</h2>
+      <p>Connect Claude Code to <strong>NotebookLM</strong> (Google's free source-grounded RAG system) via a custom YouTube scraper skill + an unofficial Python API. Result: search YouTube → ingest captions → run AI analysis → generate infographics, podcasts, decks — <strong>all from the terminal, essentially free</strong>.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">What This Stack Replaces</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🗄️</div>
+            <div class="rule-text"><strong>Vector DB</strong> — NotebookLM is your RAG system. No Pinecone, Weaviate, or Chroma needed.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📝</div>
+            <div class="rule-text"><strong>Embedding pipeline</strong> — Google ingests and indexes sources for free; zero embedding costs.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔍</div>
+            <div class="rule-text"><strong>YouTube data scraper</strong> — <code>yt-dlp</code> pulls captions, metadata, and engagement stats without any API key.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📊</div>
+            <div class="rule-text"><strong>Deliverable generator</strong> — infographics, slide decks, audio overviews, flashcards — all offloaded to NotebookLM.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">Cost Breakdown</div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-val">~$0</div>
+            <div class="stat-label">NotebookLM analysis &amp; deliverables</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val yellow">~5</div>
+            <div class="stat-label">Minutes to set up the full pipeline</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val purple">50</div>
+            <div class="stat-label">Max sources per NotebookLM notebook</div>
+          </div>
+        </div>
+        <div style="margin-top:14px; font-size:12px; color:var(--text-muted); line-height:1.6">
+          Claude Code only spends tokens to <em>dispatch</em> the request and <em>receive</em> results. All the heavy lifting — source ingestion, analysis, deliverable creation — runs on Google's infrastructure.
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="callout blue">
+        <div class="callout-label">🔧 Tool 1 — yt-search skill</div>
+        <p>Custom Claude Code skill backed by a Python script using <em>yt-dlp</em>. Searches YouTube and returns structured metadata: title, channel, views, duration, engagement ratio, URL.</p>
+      </div>
+      <div class="callout purple">
+        <div class="callout-label">🧠 Tool 2 — notebooklm-py</div>
+        <p>Unofficial Python CLI/API by <em>teng-lin</em> that gives full programmatic access to NotebookLM — including batch exports and quiz/flashcard downloads not available in the web UI.</p>
+      </div>
+      <div class="callout green">
+        <div class="callout-label">🚀 Combined Power</div>
+        <p>One prompt can search YouTube, push 20 sources to NotebookLM, run cross-video analysis, and produce a styled infographic — while Claude Code handles only orchestration.</p>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Core Insight</div>
+      <p><em>NotebookLM is a free, hosted RAG system.</em> Instead of building and paying for your own pipeline, you're using Google's infrastructure as a backend — and automating access to it via the unofficial API.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== PIPELINE ===================== -->
+  <div class="section" id="tab-pipeline">
+
+    <div class="hero">
+      <h2>End-to-End Flow</h2>
+      <p>One prompt triggers this entire chain. Each stage is handled by a different system — Claude Code is only the <strong>orchestrator</strong>.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pipeline Stages</div>
+      <div class="pipeline">
+
+        <div class="pipe-step">
+          <div class="pipe-left">
+            <div class="pipe-dot"></div>
+            <div class="pipe-line"></div>
+          </div>
+          <div class="pipe-content">
+            <div class="pipe-label blue">Stage 1 — Query</div>
+            <div class="pipe-desc">User writes a single natural-language prompt. Example: <em>"Search YouTube for claude code skills, push to NotebookLM, get analysis, produce a blueprint-style infographic."</em></div>
+          </div>
+        </div>
+
+        <div class="pipe-step">
+          <div class="pipe-left">
+            <div class="pipe-dot green"></div>
+            <div class="pipe-line"></div>
+          </div>
+          <div class="pipe-content">
+            <div class="pipe-label green">Stage 2 — YouTube Search (yt-search skill)</div>
+            <div class="pipe-desc">Claude Code invokes the <code>yt-search</code> skill which runs <code>search.py</code> via <code>yt-dlp</code>. Returns up to N video URLs with title, channel, views, duration, engagement ratio. No YouTube API key required.</div>
+          </div>
+        </div>
+
+        <div class="pipe-step">
+          <div class="pipe-left">
+            <div class="pipe-dot yellow"></div>
+            <div class="pipe-line"></div>
+          </div>
+          <div class="pipe-content">
+            <div class="pipe-label yellow">Stage 3 — Notebook Creation (notebooklm-py)</div>
+            <div class="pipe-desc">Claude Code calls the NotebookLM skill which uses <code>notebooklm-py</code> to create a new notebook and push all video URLs as sources. NotebookLM ingests captions automatically. Limit: <strong>50 sources per notebook</strong>.</div>
+          </div>
+        </div>
+
+        <div class="pipe-step">
+          <div class="pipe-left">
+            <div class="pipe-dot purple"></div>
+            <div class="pipe-line"></div>
+          </div>
+          <div class="pipe-content">
+            <div class="pipe-label purple">Stage 4 — Offloaded Analysis (Google / Gemini)</div>
+            <div class="pipe-desc">Claude Code sends a query to NotebookLM via the API. NotebookLM runs cross-source analysis grounded in the actual video captions — citations included. <strong>Zero Claude tokens spent here.</strong> Google's Gemini does the work.</div>
+          </div>
+        </div>
+
+        <div class="pipe-step">
+          <div class="pipe-left">
+            <div class="pipe-dot red"></div>
+            <div class="pipe-line" style="background:transparent"></div>
+          </div>
+          <div class="pipe-content">
+            <div class="pipe-label red">Stage 5 — Deliverable Generation</div>
+            <div class="pipe-desc">Claude Code requests a deliverable (infographic, slide deck, audio overview, flashcards, mind map). NotebookLM generates it. Claude Code retrieves the output and saves it to the project folder.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card yellow">
+        <div class="card-title yellow">What Claude Code Handles</div>
+        <div class="rule-list">
+          <div class="rule-row"><div class="rule-icon">🎯</div><div class="rule-text">Orchestrating the sequence of tool calls</div></div>
+          <div class="rule-row"><div class="rule-icon">📡</div><div class="rule-text">Dispatching the query to NotebookLM API</div></div>
+          <div class="rule-row"><div class="rule-icon">📥</div><div class="rule-text">Receiving and saving results back to your project</div></div>
+          <div class="rule-row"><div class="rule-icon">💬</div><div class="rule-text">Surfacing the analysis as readable output in the terminal</div></div>
+        </div>
+      </div>
+
+      <div class="card purple">
+        <div class="card-title purple">What Google / NotebookLM Handles</div>
+        <div class="rule-list">
+          <div class="rule-row"><div class="rule-icon">📺</div><div class="rule-text">Fetching and transcribing YouTube captions from each URL</div></div>
+          <div class="rule-row"><div class="rule-icon">🗂️</div><div class="rule-text">Indexing all sources into its internal RAG system</div></div>
+          <div class="rule-row"><div class="rule-icon">🔬</div><div class="rule-text">Cross-source analysis grounded with citations</div></div>
+          <div class="rule-row"><div class="rule-icon">🎨</div><div class="rule-text">Generating infographics, decks, audio, flashcards</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== SETUP ===================== -->
+  <div class="section" id="tab-setup">
+
+    <div class="hero">
+      <h2>5-Minute Setup</h2>
+      <p>Two components to install: the <strong>YouTube search skill</strong> and the <strong>notebooklm-py</strong> unofficial API. Both are independent — install in any order.</p>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">Part A — YouTube Search Skill</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Install the yt-dlp dependency</strong><br>
+            Open a terminal (not Claude Code) and run:
+            <pre><span class="fn">pip</span> <span class="li">install</span> yt-dlp</pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Get the skill — two options</strong><br>
+            Option A: Tell Claude Code to build it. Prompt: <em>"Build me a custom skill using yt-dlp that can search YouTube and return structured video metadata."</em><br>
+            Option B: Download the pre-built <code>YT-search-skill.md</code> setup file from Chase's free School community, then hand it directly to Claude Code.
+            <span class="tip">💡 Option B is faster and guaranteed to match the walkthrough exactly.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Install the skill inside Claude Code</strong><br>
+            Either run the install command in terminal or tell Claude Code:<br>
+            <em>"Install this skill from the MD file I'm providing."</em>
+            <span class="tip">💡 Skills are just plain-text prompt files — no compiled code, no dependencies of their own.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card purple">
+      <div class="card-title purple">Part B — NotebookLM API (notebooklm-py)</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Clone / install notebooklm-py</strong><br>
+            Open a <em>separate terminal</em> (not the Claude Code window) and paste the install commands from the GitHub README:
+            <pre><span class="cm"># from https://github.com/teng-lin/notebooklm-py</span>
+<span class="fn">pip</span> <span class="li">install</span> notebooklm-py   <span class="cm"># or follow repo instructions</span></pre>
+            <span class="note">⚠ Run this in a normal terminal, not inside Claude Code.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Authenticate with Google</strong><br>
+            Still in the separate terminal, run the one-time login command:
+            <pre><span class="fn">notebooklm</span> <span class="li">login</span></pre>
+            A Chrome window opens. Sign into your Google account. You only do this once — credentials are cached locally.
+            <span class="tip">💡 No API key required. Authentication is handled via browser OAuth flow.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Install the NotebookLM skill inside Claude Code</strong><br>
+            Run the skill install command from the repo (or tell Claude Code to install it). The <code>SKILL.md</code> file teaches Claude Code the correct CLI calls, notebook creation syntax, and how to request deliverables.
+            <span class="tip">💡 Remember: the skill is separate from the program. The program is the Python API; the skill is the prompt file that tells Claude Code how to use it.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">⚡ Quick Verify</div>
+      <p>Type <em>/yt-search claude code tutorial</em> in Claude Code. If you get back structured results (title, views, URL), the YouTube skill is working. Then ask Claude Code to create a test notebook in NotebookLM — if it appears in your NotebookLM dashboard, you're fully connected.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== NOTEBOOKLM API ===================== -->
+  <div class="section" id="tab-notebooklm">
+
+    <div class="hero">
+      <h2>notebooklm-py — What You Can Do</h2>
+      <p>The unofficial API by <strong>teng-lin</strong> gives programmatic access to everything in NotebookLM's web UI — plus batch features the UI doesn't expose.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card green">
+        <div class="card-title green">Capabilities (via Web UI)</div>
+        <div class="rule-list">
+          <div class="rule-row"><div class="rule-icon">📓</div><div class="rule-text">Create, list, delete notebooks</div></div>
+          <div class="rule-row"><div class="rule-icon">🔗</div><div class="rule-text">Add sources: YouTube URLs, PDFs, web pages, text</div></div>
+          <div class="rule-row"><div class="rule-icon">💬</div><div class="rule-text">Query notebooks — grounded answers with citations</div></div>
+          <div class="rule-row"><div class="rule-icon">🎙️</div><div class="rule-text">Generate audio overview (podcast-style)</div></div>
+          <div class="rule-row"><div class="rule-icon">🗺️</div><div class="rule-text">Generate mind maps</div></div>
+          <div class="rule-row"><div class="rule-icon">📊</div><div class="rule-text">Generate infographics / study guides</div></div>
+        </div>
+      </div>
+
+      <div class="card purple">
+        <div class="card-title purple">Extended Capabilities (API-only)</div>
+        <div class="rule-list">
+          <div class="rule-row"><div class="rule-icon">📦</div><div class="rule-text"><strong>Batch downloads</strong> — export all deliverables at once</div></div>
+          <div class="rule-row"><div class="rule-icon">🃏</div><div class="rule-text"><strong>Export flashcards</strong> — structured Q&amp;A from sources</div></div>
+          <div class="rule-row"><div class="rule-icon">📝</div><div class="rule-text"><strong>Export quiz</strong> — auto-generated quiz questions</div></div>
+          <div class="rule-row"><div class="rule-icon">🔄</div><div class="rule-text"><strong>Programmatic notebook management</strong> — no browser needed</div></div>
+          <div class="rule-row"><div class="rule-icon">🤖</div><div class="rule-text"><strong>Agent-friendly CLI</strong> — designed for Claude Code, Codex, OpenClaw integration</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Common Claude Code Prompts → NotebookLM Actions</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>What You Say to Claude Code</th><th>What notebooklm-py Does</th><th>Token Cost</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>"Create a notebook called X with these sources"</td>
+            <td>Creates notebook, pushes all URLs as sources</td>
+            <td class="green-val">~tiny</td>
+          </tr>
+          <tr>
+            <td>"What does NotebookLM think is the top skill?"</td>
+            <td>Queries notebook, returns grounded analysis</td>
+            <td class="green-val">~tiny</td>
+          </tr>
+          <tr>
+            <td>"Generate an infographic from the notebook"</td>
+            <td>Triggers NotebookLM infographic generation, downloads result</td>
+            <td class="green-val">~tiny</td>
+          </tr>
+          <tr>
+            <td>"Give me the audio overview"</td>
+            <td>Triggers podcast-style audio generation, downloads MP3</td>
+            <td class="green-val">~tiny</td>
+          </tr>
+          <tr>
+            <td>"Export flashcards from this notebook"</td>
+            <td>Exports structured flashcard data (API-only feature)</td>
+            <td class="green-val">~tiny</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout purple">
+      <div class="callout-label">🔑 Why This Is Powerful</div>
+      <p>NotebookLM's analysis is <em>grounded in your actual sources</em> — it cites specific captions and documents, not general training data. Combined with up to 50 YouTube videos as sources, you get a corpus-backed research system that would cost hundreds of dollars per month to replicate with embedding APIs and vector databases.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== YT-SEARCH SKILL ===================== -->
+  <div class="section" id="tab-skill">
+
+    <div class="hero">
+      <h2>YT-Search Skill — Anatomy &amp; Internals</h2>
+      <p>Skills are <strong>plain-text prompt files</strong> (Markdown). They teach Claude Code what a tool does, when to use it, and how to call it correctly. Here's every section of the <code>yt-search</code> skill explained.</p>
+    </div>
+
+    <!-- SECTION 1: FRONTMATTER -->
+    <div class="card blue">
+      <div class="card-title">① Frontmatter — The Routing Header</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">The YAML block at the top of the file. This is what Claude Code reads to decide <em>when to invoke this skill</em>. Think of it as the skill's "metadata manifest."</p>
+
+      <div class="skill-anatomy">
+        <div class="skill-line hl-yellow">
+          <div class="sl-icon">---</div>
+          <div class="sl-code"><span class="fm">---</span></div>
+          <div class="sl-ann">Frontmatter delimiter — opens the YAML block</div>
+        </div>
+        <div class="skill-line hl-blue">
+          <div class="sl-icon">🏷️</div>
+          <div class="sl-code"><span class="ky">name:</span> <span class="vl">yt-search</span></div>
+          <div class="sl-ann">The slash command name — type /yt-search in Claude Code</div>
+        </div>
+        <div class="skill-line hl-green">
+          <div class="sl-icon">📝</div>
+          <div class="sl-code"><span class="ky">description:</span> <span class="vl">Search YouTube and return structured...</span></div>
+          <div class="sl-ann">Natural-language trigger patterns — Claude reads this to auto-invoke the skill</div>
+        </div>
+        <div class="skill-line hl-yellow">
+          <div class="sl-icon">---</div>
+          <div class="sl-code"><span class="fm">---</span></div>
+          <div class="sl-ann">Frontmatter delimiter — closes the YAML block</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <div class="callout blue" style="margin-top:0">
+          <div class="callout-label">💡 How the Description Field Works</div>
+          <p>The description lists <em>exact trigger phrases</em> like "search YouTube for", "find videos about", "what's trending on YouTube". Claude Code's skill-routing logic matches your natural language against these patterns. More specific phrases = more accurate routing. This is the most important field in any skill.</p>
+        </div>
+      </div>
+
+      <pre style="margin-top:14px"><span class="fm">---</span>
+<span class="ky">name:</span> <span class="vl">yt-search</span>
+<span class="ky">description:</span> <span class="vl">Search YouTube and return structured video results with metadata.</span>
+  <span class="vl">Use this skill whenever the user wants to search YouTube, find videos</span>
+  <span class="vl">on a topic, research what's trending on YouTube, compare YouTube</span>
+  <span class="vl">videos, or look up YouTube creators/channels. Triggers on phrases</span>
+  <span class="vl">like "search YouTube for", "find videos about", "what videos are</span>
+  <span class="vl">there on", "YouTube results for", or any request involving YouTube</span>
+  <span class="vl">video discovery or research.</span>
+<span class="fm">---</span></pre>
+    </div>
+
+    <!-- SECTION 2: TITLE + DESCRIPTION -->
+    <div class="card green">
+      <div class="card-title green">② Human-Readable Title &amp; Summary</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">After the frontmatter, a plain Markdown heading and one-sentence summary. This is for <em>humans reading the skill file</em>, not for Claude's routing. Good documentation practice.</p>
+      <pre><span class="hd"># YouTube Search</span>
+
+<span class="li">Search YouTube using yt-dlp and return structured, formatted</span>
+<span class="li">results with engagement metrics.</span></pre>
+    </div>
+
+    <!-- SECTION 3: HOW TO USE -->
+    <div class="card yellow">
+      <div class="card-title yellow">③ How To Use — The Command Spec</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">This section tells Claude Code the <em>exact bash command</em> to run, with full path, required args, and optional flags. Claude treats this literally — it copies the structure when constructing the actual call.</p>
+      <pre><span class="hd">## How to use</span>
+
+<span class="li">Run the search script:</span>
+
+<span class="fn">python</span> <span class="str">"C:/Users/Chase/.claude/skills/yt-search/scripts/search.py"</span> <span class="kw">&lt;query&gt;</span> [<span class="kw">--count</span> N] [<span class="kw">--months</span> N] [<span class="kw">--no-date-filter</span>]
+
+<span class="hd">### Parameters</span>
+<span class="li">- &lt;query&gt;     — search terms (required)</span>
+<span class="li">- --count N   — number of results (default: 20)</span>
+<span class="li">- --months N  — only last N months (default: 6)</span>
+<span class="li">- --no-date-filter — include videos of any age</span></pre>
+
+      <div class="callout yellow" style="margin-top:14px">
+        <div class="callout-label">⚠ Hardcoded Path</div>
+        <p>The script path is absolute and user-specific: <em>C:/Users/Chase/...</em>. When adapting this skill, update the path to match your own system. On macOS/Linux this would be something like <em>/Users/yourname/.claude/skills/yt-search/scripts/search.py</em>.</p>
+      </div>
+    </div>
+
+    <!-- SECTION 4: EXAMPLES -->
+    <div class="card purple">
+      <div class="card-title purple">④ Examples — Few-Shot Prompting for Claude</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">The examples section is <em>few-shot prompting embedded in the skill file</em>. Claude Code uses these to understand the range of valid invocations — not just the basic case, but edge cases like filtering by recency or disabling date filters entirely.</p>
+      <pre><span class="hd">### Examples</span>
+
+<span class="cm"># Basic search (top 20, last 6 months)</span>
+<span class="fn">python</span> <span class="str">"...search.py"</span> <span class="li">claude code tutorial</span>
+
+<span class="cm"># Fewer results, shorter window</span>
+<span class="fn">python</span> <span class="str">"...search.py"</span> <span class="li">obsidian workflow</span> <span class="kw">--count</span> <span class="vl">5</span> <span class="kw">--months</span> <span class="vl">3</span>
+
+<span class="cm"># All time, no date filter</span>
+<span class="fn">python</span> <span class="str">"...search.py"</span> <span class="li">AI agents</span> <span class="kw">--count</span> <span class="vl">10</span> <span class="kw">--no-date-filter</span></pre>
+    </div>
+
+    <!-- SECTION 5: OUTPUT FORMAT -->
+    <div class="card red">
+      <div class="card-title red">⑤ Output Format — What Claude Expects Back</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">Describes the structure of the script's stdout. Claude Code reads this to know how to parse and present results — and which fields to pass downstream to NotebookLM.</p>
+      <div class="rule-list">
+        <div class="rule-row"><div class="rule-icon">📌</div><div class="rule-text"><strong>Title</strong> — video title</div></div>
+        <div class="rule-row"><div class="rule-icon">📺</div><div class="rule-text"><strong>Channel name + subscriber count</strong></div></div>
+        <div class="rule-row"><div class="rule-icon">👁️</div><div class="rule-text"><strong>View count</strong></div></div>
+        <div class="rule-row"><div class="rule-icon">⏱️</div><div class="rule-text"><strong>Duration</strong></div></div>
+        <div class="rule-row"><div class="rule-icon">📅</div><div class="rule-text"><strong>Upload date</strong></div></div>
+        <div class="rule-row"><div class="rule-icon">📈</div><div class="rule-text"><strong>Engagement ratio</strong> (views ÷ subscribers) — higher = outperformed the channel's baseline</div></div>
+        <div class="rule-row"><div class="rule-icon">🔗</div><div class="rule-text"><strong>Direct URL</strong> — this is what gets pushed to NotebookLM</div></div>
+      </div>
+    </div>
+
+    <!-- SECTION 6: NOTES -->
+    <div class="card">
+      <div class="card-title">⑥ Notes — Implementation Details</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📦</div>
+          <div class="rule-text"><strong>Dependency:</strong> <code>yt-dlp</code> must be installed (<code>pip install yt-dlp</code>). No YouTube API key needed.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">2×</div>
+          <div class="rule-text"><strong>Oversample buffer:</strong> The script fetches 2× the requested count to compensate for date-filter dropouts. If you ask for 20, it fetches 40 internally, then trims.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📡</div>
+          <div class="rule-text"><strong>Subscriber counts:</strong> Come from yt-dlp metadata — may occasionally return N/A if unavailable.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔀</div>
+          <div class="rule-text"><strong>stderr vs stdout:</strong> Status messages (searching, filtering) go to stderr; formatted results go to stdout. This keeps the result clean for Claude to parse.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RAW FILE -->
+    <div class="card">
+      <div class="card-title">Raw File — Complete yt-search-skill.md</div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">The full file exactly as Claude Code reads it:</p>
+      <pre><span class="fm">---</span>
+<span class="ky">name:</span> <span class="vl">yt-search</span>
+<span class="ky">description:</span> <span class="vl">Search YouTube and return structured video results with</span>
+  <span class="vl">metadata. Use this skill whenever the user wants to search YouTube,</span>
+  <span class="vl">find videos on a topic, research what's trending on YouTube, compare</span>
+  <span class="vl">YouTube videos, or look up YouTube creators/channels. Triggers on</span>
+  <span class="vl">phrases like "search YouTube for", "find videos about", "what videos</span>
+  <span class="vl">are there on", "YouTube results for", or any request involving</span>
+  <span class="vl">YouTube video discovery or research.</span>
+<span class="fm">---</span>
+
+<span class="hd"># YouTube Search</span>
+
+<span class="li">Search YouTube using yt-dlp and return structured, formatted results</span>
+<span class="li">with engagement metrics.</span>
+
+<span class="hd">## How to use</span>
+
+<span class="li">Run the search script:</span>
+
+<span class="fn">python</span> <span class="str">"C:/Users/Chase/.claude/skills/yt-search/scripts/search.py"</span> <span class="kw">&lt;query&gt;</span> [<span class="kw">--count</span> N] [<span class="kw">--months</span> N] [<span class="kw">--no-date-filter</span>]
+
+<span class="hd">### Parameters</span>
+<span class="li">- `&lt;query&gt;`        — search terms (required)</span>
+<span class="li">- `--count N`      — number of results to return (default: 20)</span>
+<span class="li">- `--months N`     — only show videos from the last N months (default: 6)</span>
+<span class="li">- `--no-date-filter` — include videos of any age</span>
+
+<span class="hd">### Examples</span>
+
+<span class="cm"># Basic search (top 20, last 6 months)</span>
+<span class="fn">python</span> <span class="str">"C:/Users/Chase/.claude/skills/yt-search/scripts/search.py"</span> <span class="li">claude code tutorial</span>
+
+<span class="cm"># Fewer results, shorter window</span>
+<span class="fn">python</span> <span class="str">"C:/Users/Chase/.claude/skills/yt-search/scripts/search.py"</span> <span class="li">obsidian workflow</span> <span class="kw">--count</span> <span class="vl">5</span> <span class="kw">--months</span> <span class="vl">3</span>
+
+<span class="cm"># All time, no date filter</span>
+<span class="fn">python</span> <span class="str">"C:/Users/Chase/.claude/skills/yt-search/scripts/search.py"</span> <span class="li">AI agents</span> <span class="kw">--count</span> <span class="vl">10</span> <span class="kw">--no-date-filter</span>
+
+<span class="hd">## Output format</span>
+
+<span class="li">Each result includes:</span>
+<span class="li">- Title</span>
+<span class="li">- Channel name and subscriber count</span>
+<span class="li">- View count</span>
+<span class="li">- Duration</span>
+<span class="li">- Upload date</span>
+<span class="li">- Engagement ratio (views / subscribers) — higher means the video</span>
+<span class="li">  outperformed the channel's base</span>
+<span class="li">- Direct URL</span>
+
+<span class="li">Results are separated by dividers for easy scanning. Status messages</span>
+<span class="li">(searching, filtering) go to stderr; the formatted results go to stdout.</span>
+
+<span class="hd">## Notes</span>
+
+<span class="li">- yt-dlp must be installed (`pip install yt-dlp`)</span>
+<span class="li">- The script fetches 2x the requested count to compensate for date</span>
+<span class="li">  filtering</span>
+<span class="li">- Subscriber counts come from yt-dlp metadata and may occasionally</span>
+<span class="li">  be unavailable (shown as N/A)</span></pre>
+    </div>
+
+    <div class="callout purple">
+      <div class="callout-label">🧠 Skill Design Takeaway</div>
+      <p>A skill file has five jobs: <em>(1) tell Claude when to fire via the description field, (2) give the exact command syntax, (3) show examples for edge cases, (4) describe expected output so Claude can parse it, (5) document gotchas in Notes.</em> Every great skill covers all five. The frontmatter description is the most critical — bad trigger phrases mean the skill never gets used.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ===================== GOTCHAS ===================== -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Do This</div>
+        <div class="decision-item"><span class="di">✅</span>Open a <strong>separate terminal</strong> for pip installs and notebooklm login — not inside Claude Code.</div>
+        <div class="decision-item"><span class="di">✅</span>Authenticate with <code>notebooklm login</code> <strong>before</strong> trying any API calls.</div>
+        <div class="decision-item"><span class="di">✅</span>Preview your sources first with <code>/yt-search</code> alone before pushing to NotebookLM.</div>
+        <div class="decision-item"><span class="di">✅</span>Update the hardcoded script path in the skill file to match <strong>your</strong> system.</div>
+        <div class="decision-item"><span class="di">✅</span>Use <code>--no-date-filter</code> for evergreen or historical topics.</div>
+        <div class="decision-item"><span class="di">✅</span>Keep source count under 50 — that's the NotebookLM hard limit per notebook.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Avoid This</div>
+        <div class="decision-item"><span class="di">❌</span>Don't run install commands inside Claude Code — use a real terminal.</div>
+        <div class="decision-item"><span class="di">❌</span>Don't confuse the <strong>skill</strong> (prompt file) with the <strong>program</strong> (Python API). Both are required.</div>
+        <div class="decision-item"><span class="di">❌</span>Don't push 50 sources at once without checking quality first — engagement ratio helps filter.</div>
+        <div class="decision-item"><span class="di">❌</span>Don't expect real-time data — yt-dlp metadata (especially subscriber counts) can be slightly stale.</div>
+        <div class="decision-item"><span class="di">❌</span>Don't rely on Claude Code to do the analysis — that defeats the purpose. Let NotebookLM handle it.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title red">Key Warnings</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Unofficial API:</span> notebooklm-py reverse-engineers NotebookLM's internal endpoints. Google could change these without notice and break the integration. Check the GitHub repo for updates if things stop working.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Path is user-specific:</span> The skill file hardcodes <code>C:/Users/Chase/...</code>. You must update this to your own path or the script call will always fail.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">50-source limit:</span> NotebookLM caps notebooks at 50 sources. The script fetches 2× your requested count internally to compensate for date filtering — keep final push count under 50.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Login is one-time but session-bound:</span> Credentials are cached locally after the first login. If your session expires, run <code>notebooklm login</code> again.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Quick Reference — Commands</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Command</th><th>Where to Run</th><th>What It Does</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>pip install yt-dlp</td>
+            <td>Separate terminal</td>
+            <td>Install YouTube scraper dependency</td>
+          </tr>
+          <tr>
+            <td>pip install notebooklm-py</td>
+            <td>Separate terminal</td>
+            <td>Install unofficial NotebookLM API</td>
+          </tr>
+          <tr>
+            <td>notebooklm login</td>
+            <td>Separate terminal</td>
+            <td>One-time Google OAuth authentication</td>
+          </tr>
+          <tr>
+            <td>/yt-search &lt;query&gt;</td>
+            <td>Claude Code</td>
+            <td>Search YouTube via skill slash command</td>
+          </tr>
+          <tr>
+            <td>/yt-search &lt;q&gt; --count 5 --months 3</td>
+            <td>Claude Code</td>
+            <td>Filtered search — last 3 months, 5 results</td>
+          </tr>
+          <tr>
+            <td>"Create notebook X with these sources"</td>
+            <td>Claude Code</td>
+            <td>Push URLs into new NotebookLM notebook</td>
+          </tr>
+          <tr>
+            <td>"Generate an infographic from the notebook"</td>
+            <td>Claude Code</td>
+            <td>Trigger NotebookLM deliverable generation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✅ The Mental Model</div>
+      <p>Think of Claude Code as a <em>general contractor</em> and NotebookLM as a <em>specialist subcontractor</em>. Claude handles orchestration and your requests. NotebookLM handles the heavy analytical and creative work. You only pay (in tokens) for the coordination, not the labor.</p>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+  const tabs = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

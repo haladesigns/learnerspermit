@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Engineering — Claude Code Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di        { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Prompt compare block */
+  .compare-block { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+  .compare-item { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .compare-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 5px 12px;
+    font-weight: 600;
+  }
+  .compare-label.weak  { background: rgba(224,95,122,0.12); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .compare-label.strong { background: rgba(62,207,142,0.1); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .compare-body {
+    padding: 10px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.6;
+    background: var(--bg-code);
+  }
+
+  /* Spectrum bar */
+  .spectrum {
+    display: flex;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .spectrum-item {
+    flex: 1;
+    padding: 12px 14px;
+    border-right: 1px solid var(--border);
+  }
+  .spectrum-item:last-child { border-right: none; }
+  .spectrum-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .spectrum-item:nth-child(1) .spectrum-label { color: var(--accent3); }
+  .spectrum-item:nth-child(2) .spectrum-label { color: var(--accent4); }
+  .spectrum-item:nth-child(3) .spectrum-label { color: var(--accent2); }
+  .spectrum-text { font-size: 12px; color: var(--text); line-height: 1.5; }
+  .spectrum-example { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted); margin-top: 6px; font-style: italic; }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Prompt Engineering<span> — Claude Code</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="steps">7 Steps</button>
+  <button data-tab="commands">Commands</button>
+  <button data-tab="examples">Examples</button>
+  <button data-tab="gotchas">Gotchas & Tips</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Prompting Claude Code</h2>
+      <p>Claude Code is an <strong>agent with real power</strong> — it reads files, runs commands, edits code. Vagueness doesn't get you a longer answer; it gets wrong assumptions baked into your codebase. This reference covers every pattern from the video and the full course module.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">The 3-Part Foundation</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🛡️</div>
+            <div class="rule-text"><strong>Plan Mode first</strong> — bumper rails for your prompt. Shift+Tab to enter. Claude asks clarifying questions before touching a single file.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">❓</div>
+            <div class="rule-text"><strong>Open-ended questions</strong> — fill the gaps Plan Mode leaves. Ask: <em>"What am I not thinking about?"</em> or <em>"What would an expert do here?"</em></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🖼️</div>
+            <div class="rule-text"><strong>Context + examples</strong> — screenshots, existing files, sample writing. If you know what good looks like, show it.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Chatbot vs. Code Agent</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">💬</div>
+            <div class="rule-text"><strong>Chatbot:</strong> vagueness → longer, more detailed answer. Fine.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚙️</div>
+            <div class="rule-text"><strong>Claude Code:</strong> vagueness → <span class="neg">wrong assumptions baked into your actual codebase.</span> You now have code to undo.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧠</div>
+            <div class="rule-text"><strong>Golden rule:</strong> Be as specific as explaining a task to a brilliant colleague who <em>just joined your team</em> — smart but doesn't know your norms.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Specificity Spectrum</div>
+      <div class="spectrum">
+        <div class="spectrum-item">
+          <div class="spectrum-label">Exploration</div>
+          <div class="spectrum-text">Intentionally open-ended. Invite Claude to surface things you haven't thought about.</div>
+          <div class="spectrum-example">"What would you improve in the hero section?"</div>
+        </div>
+        <div class="spectrum-item">
+          <div class="spectrum-label">Guidance</div>
+          <div class="spectrum-text">Set direction, leave room for Claude's judgment. Good for UI and structure.</div>
+          <div class="spectrum-example">"Create a services section with cards. Use the same animation as the hero."</div>
+        </div>
+        <div class="spectrum-item">
+          <div class="spectrum-label">Specification</div>
+          <div class="spectrum-text">Define exact behavior. Use whenever you'd be annoyed to see it done differently.</div>
+          <div class="spectrum-example">"Create RLS policies: anyone can SELECT where published=true…"</div>
+        </div>
+      </div>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted)">Rule of thumb: if you'd be frustrated by Claude choosing wrong, specify it. If you'd be delighted by a surprise, leave it open.</div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Key Takeaway from the Video</div>
+      <p>That 99% of prompting Claude Code correctly is just three things: <em>Plan Mode</em>, <em>open-ended questions</em> ("what am I not thinking about?"), and <em>providing examples</em>. Don't overthink it.</p>
+    </div>
+
+  </div>
+
+  <!-- 7 STEPS -->
+  <div class="section" id="tab-steps">
+
+    <div class="card">
+      <div class="card-title">7-Step Prompting Workflow</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Context before task (the WHY before the WHAT)</strong><br>
+            Tell Claude why the feature matters and what failure looks like, not just what to build.
+            <div class="compare-block">
+              <div class="compare-item">
+                <div class="compare-label weak">✗ Weak</div>
+                <div class="compare-body">"Add validation to the contact form."</div>
+              </div>
+              <div class="compare-item">
+                <div class="compare-label strong">✓ Strong</div>
+                <div class="compare-body">"Users submit with invalid emails — our Resend integration fails silently. Add client-side validation: check email format, require name field, show inline errors below each field."</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Reference existing code (don't re-describe, point)</strong><br>
+            Claude Code can read your files. Use that. Four ways to reference:
+            <span class="tip">💡 By path: <code>/app/api/apply/route.ts</code> · By name: "the hero section component" · By @ syntax: <code>@components/ServiceCard.tsx</code> · By concept: "our other API routes"</span>
+            <div class="compare-block" style="margin-top:8px">
+              <div class="compare-item">
+                <div class="compare-label strong">✓ Strong</div>
+                <div class="compare-body">"Create /api/subscribe. Follow the same pattern as /api/apply — same error handling, same response format, same Supabase client setup."</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Define what NOT to do (constraints)</strong><br>
+            Claude's latest models over-engineer. Telling it what to avoid is often more valuable than what to build.
+            <span class="tip">💡 "Keep it simple — don't add features beyond what I described." · "Don't create a separate utility file." · "Don't add comments explaining each line."</span>
+            <span class="note">⚠ Without constraints on UI work, Claude will add loading spinners, toast notifications, and error boundaries you never asked for.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Communicate design taste</strong><br>
+            Vague = generic. Use design vocabulary.
+            <span class="tip">💡 Density: "spacious" vs "compact" · Tone: "editorial" vs "brutalist" · Inspiration: "think Linear or Vercel" · Anti-ref: "not Bootstrap-looking" · Specifics: "dark bg #1a1a1a, generous whitespace"</span>
+            <div class="compare-block" style="margin-top:8px">
+              <div class="compare-item">
+                <div class="compare-label weak">✗ Weak</div>
+                <div class="compare-body">"Make it look good."</div>
+              </div>
+              <div class="compare-item">
+                <div class="compare-label strong">✓ Strong</div>
+                <div class="compare-body">"Keep the design minimal and premium-feeling — not generic SaaS template vibes."</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Iterate in conversation (the 80/20 loop)</strong><br>
+            No prompt nails it first try. First prompt → 80% → refinement → polish.
+            <span class="note">⚠ After 2+ corrections on the same issue, the conversation is polluted with failed approaches. Run <code>/clear</code> and write a better initial prompt. A clean session with a refined prompt beats a long session every time.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <strong>Plan Mode for complex features</strong><br>
+            Anything touching multiple files: separate thinking from doing. <code>Shift+Tab</code> → Claude reads and plans, no changes made.
+            <span class="tip">💡 In Plan Mode: "Read the existing /api/apply route. What files need to change? What's the data flow?" Then switch back and say: "Implement the email flow from your plan."</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">7</div>
+          <div class="step-body">
+            <strong>Give Claude a way to verify</strong><br>
+            Per Anthropic's own docs: "the single highest-leverage thing you can do." Claude performs dramatically better with a feedback loop.
+            <span class="tip">💡 For functions: include test cases in the prompt. For UI: paste screenshots or use Claude Chrome extension. For APIs: tell Claude to run <code>curl</code> or write a quick test.</span>
+            <div class="compare-block" style="margin-top:8px">
+              <div class="compare-item">
+                <div class="compare-label strong">✓ Strong</div>
+                <div class="compare-body">"Create validateEmail. Test: user@example.com → true, 'invalid' → false, user@.com → false. Run tests after implementing."</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COMMANDS -->
+  <div class="section" id="tab-commands">
+
+    <div class="card">
+      <div class="card-title">Session Management</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Command</th><th>What It Does</th><th>When to Use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>/clear</td><td>Wipes conversation memory entirely</td><td>Between unrelated tasks; after 2+ failed corrections on the same issue</td></tr>
+          <tr><td>/compact</td><td>Summarizes the conversation, freeing context</td><td>Long session you want to continue without losing thread</td></tr>
+          <tr><td>/compact [focus]</td><td>Targeted summary preserving specific info</td><td>e.g. <code>/compact Focus on the API changes</code></td></tr>
+          <tr><td>/rename [name]</td><td>Names the current session</td><td>Use descriptive names like <code>oauth-migration</code> so <code>--resume</code> is useful</td></tr>
+          <tr><td>Shift+Tab</td><td>Toggle Plan Mode (read-only, no edits)</td><td>Before any multi-file feature; exploring unfamiliar code</td></tr>
+          <tr><td>Esc</td><td>Stop Claude mid-action</td><td>You realize the approach is wrong; redirect immediately</td></tr>
+          <tr><td>Esc+Esc or /rewind</td><td>Undo to previous checkpoint</td><td>Claude went off the rails; roll back</td></tr>
+          <tr><td>claude --continue</td><td>Resume most recent conversation</td><td>Picking up exactly where you left off</td></tr>
+          <tr><td>claude --resume</td><td>Pick from recent sessions by name</td><td>Returning to a named session from days ago</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">File References</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Syntax</th><th>Example</th><th>Best For</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>@filename</td><td><code>@ServiceCard.tsx</code></td><td>Pattern replication, reading before editing</td></tr>
+          <tr><td>Direct path</td><td><code>/app/api/apply/route.ts</code></td><td>Precise targeting; forces a read before edit</td></tr>
+          <tr><td>Piping</td><td><code>cat error.log | claude</code></td><td>Sending build errors, logs, or file contents directly</td></tr>
+          <tr><td>By concept</td><td>"our other API routes"</td><td>When pattern exists in multiple places</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">Thinking Triggers</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Trigger</th><th>Reasoning Depth</th><th>Use For</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>think</td><td>Standard</td><td>Most tasks — default behavior</td></tr>
+          <tr><td>think hard / think step by step</td><td>Deeper</td><td>Architecture decisions, tricky bugs</td></tr>
+          <tr><td>ultrathink</td><td>Maximum</td><td>Complex bugs, major feature design, big decisions</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted)">Extended thinking is on by default — these triggers tell Claude to spend more compute on reasoning before acting.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title green">CLAUDE.md</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📄</div>
+          <div class="rule-text">Persistent context that loads automatically at the start of every conversation. Use for project conventions, tech stack, preferences Claude should always know.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✂️</div>
+          <div class="rule-text"><strong>Keep it under 60–100 lines.</strong> For each line, ask: "Would removing this cause Claude to make mistakes?" If not, cut it. Over-stuffed CLAUDE.md buries important rules in noise.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">👻</div>
+          <div class="rule-text"><strong>Ghost context fix:</strong> Claude has no memory between sessions unless you <code>--continue</code>. Put persistent rules in CLAUDE.md, not in your head.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- EXAMPLES -->
+  <div class="section" id="tab-examples">
+
+    <div class="callout blue">
+      <div class="callout-label">ℹ️ About These Examples</div>
+      <p>All five examples come directly from the course module. Each note explains <em>why the prompt works</em> — not just what it says.</p>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">Example 1 — Project Scaffolding</div>
+      <pre><span class="hd"># Basic</span>
+<span class="li">"Create a new Next.js project with TypeScript and Tailwind CSS.
+Use the app router. Set up /components, /lib, /types directories."</span>
+
+<span class="hd"># Even stronger — adds constraints</span>
+<span class="li">"Create a new Next.js 14+ project with TypeScript and Tailwind CSS.
+Use the app router. Set up /components, /lib, /types directories.
+Don't install extra packages beyond what's needed.
+Use the default Next.js config — no custom webpack or turbopack."</span></pre>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted); line-height:1.6">Names exact tech stack, specifies router type (a critical fork), defines folder structure upfront. Constraints stop Claude adding Prettier configs, ESLint rules, or other extras you didn't ask for.</div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Example 2 — UI Component with Design Direction</div>
+      <pre><span class="li">"Create a hero section for an AI consulting agency. It should have:
+- Large headline with gradient text effect
+- Subheadline explaining value prop (2 lines max)
+- Primary CTA button linking to booking calendar
+- Subtle animated background (grid or particles)
+- Fully responsive (mobile-first)
+
+Use Framer Motion for entrance animations (fade up, staggered).
+Keep the design minimal and premium-feeling —
+not generic SaaS template vibes."</span></pre>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted); line-height:1.6">Structured as a checklist (Claude parses these cleanly). Anti-reference ("not generic SaaS template vibes") eliminates an entire class of default output. Mix of specific requirements + open design judgment.</div>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Example 3 — Pattern Replication</div>
+      <pre><span class="li">"Create a testimonials section. Look at how the services cards
+are built in @components/ServicesSection.tsx and follow the same
+component structure, animation pattern, and spacing.
+Each testimonial: quote, author name, company."</span></pre>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted); line-height:1.6">Most efficient way to maintain consistency. Instead of re-describing conventions, point to an example. Claude reads the file, replicates the pattern.</div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">Example 4 — Debugging with Symptoms</div>
+      <pre><span class="li">"The mentorship form submits successfully but the confirmation
+email never arrives. The Resend dashboard shows no API calls
+after form submission.
+
+Check /api/apply — I think the email send is happening before
+the Supabase insert completes and failing silently.
+Look at the error handling."</span></pre>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted); line-height:1.6">Describes the symptom, provides external evidence (Resend dashboard), offers a hypothesis (timing issue), points to a specific file. Give Claude the same info you'd give a colleague.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Example 5 — Multi-Step Feature with Constraints</div>
+      <pre><span class="li">"Add a pre-qualification step to the application form.
+Before the user sees the full form:
+1. Show 3 qualifying questions (budget, timeline, AI usage)
+2. Based on answers: show full form OR 'not a fit' message
+   with alternative resources
+3. Store pre-qual answers alongside the application in Supabase
+
+Keep UI consistent with existing form styling.
+Don't add any new npm packages.
+Use the existing form validation pattern."</span></pre>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted); line-height:1.6">Breaks complex feature into numbered steps. Defines both branches of the flow. Three explicit constraints prevent over-engineering.</div>
+    </div>
+
+  </div>
+
+  <!-- GOTCHAS & TIPS -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="grid-2">
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ 7 Mistakes to Avoid</div>
+        <div class="decision-item"><span class="di">❌</span><div><strong>The Mega-Prompt</strong> — 5 features in one message. Quality drops across all of them. Fix: one feature per prompt, commit between.</div></div>
+        <div class="decision-item"><span class="di">❌</span><div><strong>Kitchen Sink Session</strong> — mixing unrelated tasks in one conversation. Fix: <code>/clear</code> between tasks.</div></div>
+        <div class="decision-item"><span class="di">❌</span><div><strong>Correcting over and over</strong> — each correction adds failed approaches to context. Fix: after 2 fails, <code>/clear</code> and write a better initial prompt.</div></div>
+        <div class="decision-item"><span class="di">❌</span><div><strong>Ghost context</strong> — assuming Claude remembers a previous session. Fix: put persistent context in CLAUDE.md.</div></div>
+        <div class="decision-item"><span class="di">❌</span><div><strong>Trust gap</strong> — accepting Claude's output without verifying. Fix: always test. Tests, linter, screenshots, curl. Don't ship unverified code.</div></div>
+        <div class="decision-item"><span class="di">❌</span><div><strong>Infinite exploration</strong> — "investigate this" without scope. Fills context with noise. Fix: scope it: "Look at the auth flow in /src/auth/, specifically token refresh."</div></div>
+        <div class="decision-item"><span class="di">❌</span><div><strong>Over-stuffed CLAUDE.md</strong> — 200 lines of noise buries what matters. Fix: keep under 60–100 lines. Cut anything Claude already knows.</div></div>
+      </div>
+
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ 7 Pro Tips</div>
+        <div class="decision-item"><span class="di">✅</span><div><strong>Read before edit</strong> — always let Claude read a file before changing it. Use <code>@filename</code> or "read the file first" to force a read.</div></div>
+        <div class="decision-item"><span class="di">✅</span><div><strong>Commit often</strong> — after each successful feature, tell Claude to commit. Clean git history + rollback checkpoints.</div></div>
+        <div class="decision-item"><span class="di">✅</span><div><strong>Use /clear aggressively</strong> — most people under-use it. Conversation memory pollution is the #1 cause of degrading output quality.</div></div>
+        <div class="decision-item"><span class="di">✅</span><div><strong>Pipe in data</strong> — <code>npm run build 2>&1 | claude -p "Fix these build errors"</code> sends logs directly.</div></div>
+        <div class="decision-item"><span class="di">✅</span><div><strong>Let Claude interview you</strong> — for complex features: "I want to build X. Interview me about implementation, edge cases, and tradeoffs before we start."</div></div>
+        <div class="decision-item"><span class="di">✅</span><div><strong>Name your sessions</strong> — <code>/rename oauth-migration</code> so <code>claude --resume</code> shows useful names, not timestamps.</div></div>
+        <div class="decision-item"><span class="di">✅</span><div><strong>Test the sad path</strong> — after Claude builds a feature: "Try submitting with invalid email, blank name, 10,000-char message. What breaks?"</div></div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">🌐 Open-Ended Questions (from the Video)</div>
+      <p>When you don't know what you don't know, ask Claude directly. These questions course-correct even after a bad starting prompt: <em>"What am I missing?"</em> · <em>"What am I not thinking about?"</em> · <em>"What would a top-tier [expert] be thinking about right now?"</em> · <em>"Can you search for current best practices on this?"</em> · <em>"Are there unintended consequences we aren't considering?"</em></p>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠️ The Two-Correction Rule</div>
+      <p>If you've corrected Claude <em>more than twice on the same issue</em>, stop. Run <code>/clear</code>. Write a new initial prompt that includes everything you learned from those corrections. The second attempt with a better prompt almost always beats the fifth correction in a polluted session.</p>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

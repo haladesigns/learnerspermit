@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Obsidian — Beginner Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+    --purple:        #c084fc;
+    --purple-glow:   rgba(192,132,252,0.12);
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+    --purple:        #7c3aed;
+    --purple-glow:   rgba(124,58,237,0.1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; color: var(--accent); letter-spacing: -0.02em; }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em; }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle { width: 44px; height: 24px; background: var(--toggle-bg); border: 1px solid var(--border-accent); border-radius: 12px; cursor: pointer; position: relative; appearance: none; outline: none; transition: background 0.3s; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: var(--accent); border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s; }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; overflow-x: auto; }
+  nav button { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.2s; letter-spacing: 0.04em; text-transform: uppercase; }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; box-shadow: var(--shadow); transition: background 0.3s, border 0.3s; }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+  .card.purple { border-left: 3px solid var(--purple); }
+
+  .card-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+  .card-title.purple::before { background: var(--purple); }
+
+  .hero { background: var(--bg-card); border: 1px solid var(--border-accent); border-left: 3px solid var(--accent); border-radius: 8px; padding: 24px; box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow); }
+  .hero h2 { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em; }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row { display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg   { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos   { color: var(--accent3); font-weight: 600; }
+  .rule-text code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row { display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: flex-start; padding: 12px 16px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); text-align: center; margin-top: 1px; }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip  { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .pos  { color: var(--accent3); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--text); margin-top: 10px; }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .wl { color: var(--purple); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); text-align: left; padding: 8px 12px; background: var(--bg-code); border-bottom: 1px solid var(--border); }
+  .ref-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); white-space: nowrap; }
+  .ref-table td:nth-child(2) { color: var(--text); }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .callout { background: var(--bg-code); border: 1px solid var(--border-accent); border-radius: 6px; padding: 16px 20px; }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout.purple { border-left: 3px solid var(--purple); }
+  .callout-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout.purple .callout-label { color: var(--purple); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+  .callout.purple p em { color: var(--purple); }
+
+  /* ── Key binding pill ── */
+  kbd {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 2px 7px;
+    border: 1px solid var(--border-accent);
+    border-radius: 4px;
+    background: var(--tag-bg);
+    color: var(--text);
+    box-shadow: 0 1px 0 var(--border-accent);
+    white-space: nowrap;
+  }
+
+  /* ── OS pill toggle ── */
+  .os-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 14px;
+  }
+  .os-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 4px 12px;
+    border: 1px solid var(--border-accent);
+    background: var(--bg-code);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .os-btn:first-child { border-radius: 4px 0 0 4px; border-right: none; }
+  .os-btn:last-child  { border-radius: 0 4px 4px 0; }
+  .os-btn.active { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); }
+
+  /* ── plugin pill ── */
+  .plugin-pill {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--purple-glow);
+    color: var(--purple);
+    border: 1px solid rgba(192,132,252,0.3);
+    margin-left: 4px;
+  }
+
+  /* ── concept grid ── */
+  .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 700px) { .concept-grid { grid-template-columns: 1fr; } }
+
+  .concept-card {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .concept-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .concept-desc { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .concept-example { font-size: 11px; color: var(--text-muted); margin-top: 5px; font-style: italic; }
+
+  /* ── Spectrum bar ── */
+  .spectrum-wrap { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .spectrum-bar { position: relative; height: 10px; border-radius: 5px; background: linear-gradient(to right, var(--accent2), var(--accent3), var(--accent)); margin: 8px 0 4px; }
+  .spectrum-marker { position: absolute; top: -6px; transform: translateX(-50%); width: 22px; height: 22px; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  .spectrum-labels { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .spectrum-labels .s-left  { color: var(--accent2); }
+  .spectrum-labels .s-mid   { color: var(--accent3); font-weight: 600; }
+  .spectrum-labels .s-right { color: var(--accent); }
+
+  /* ── Relationship cards ── */
+  .rel-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 4px; }
+  @media (max-width: 700px) { .rel-grid { grid-template-columns: 1fr; } }
+  .rel-card { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; text-align: center; }
+  .rel-icon { font-size: 28px; margin-bottom: 8px; }
+  .rel-name { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+  .rel-gets { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── CLAUDE.md highlight block ── */
+  .claudemd-block { background: var(--bg-code); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: 6px; padding: 14px 16px; margin-top: 8px; }
+  .claudemd-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--purple); margin-bottom: 6px; }
+  .claudemd-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * { animation: fadeUp 0.25s ease both; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Obsidian<span> — beginner guide</span></div>
+    <div class="badge">USER GUIDE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">What Is It</button>
+  <button data-tab="concepts">Key Concepts</button>
+  <button data-tab="interface">Interface</button>
+  <button data-tab="hotkeys">Hotkeys</button>
+  <button data-tab="plugins">Plugins</button>
+  <button data-tab="gotchas">Gotchas</button>
+  <button data-tab="claudecode">With Claude Code</button>
+</nav>
+
+<main>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       WHAT IS IT
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Obsidian — What It Is</h2>
+      <p>A <strong>local-first, markdown-based note-taking app</strong>. Your notes are plain <code>.md</code> files in a folder on your computer — no cloud lock-in, no account required, readable with any text editor forever. The superpower is <strong>bidirectional linking</strong> between notes.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">Core Properties</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">💾</div>
+            <div class="rule-text"><strong>Local-first.</strong> Notes are <code>.md</code> files on disk. No internet required. No vendor lock-in. Open with any editor.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔗</div>
+            <div class="rule-text"><strong>Bidirectional links.</strong> <code>[[wikilinks]]</code> connect notes. Backlinks show you everything that references a note.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🆓</div>
+            <div class="rule-text"><strong>Free for personal use.</strong> No feature limits. Optional paid add-ons: Sync ($4/user/month), Publish ($10/month), commercial license ($50/year).</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧩</div>
+            <div class="rule-text"><strong>1,000+ community plugins.</strong> Extend with calendar views, kanban boards, dataview queries, git sync, AI integrations, and more.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📱</div>
+            <div class="rule-text"><strong>Cross-platform.</strong> Mac, Windows, Linux, iOS, Android. Sync via Obsidian Sync, iCloud, Dropbox, Google Drive, or Git — your choice.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title yellow">Obsidian vs Alternatives</div>
+        <table class="ref-table">
+          <thead>
+            <tr><th>App</th><th>Key Difference</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Notion</td><td>Cloud-first, rich blocks, database-heavy — great for teams, not private</td></tr>
+            <tr><td>Roam</td><td>Block-based, daily note first, pricey — Obsidian is the free successor for most</td></tr>
+            <tr><td>Logseq</td><td>Open-source, outliner-first, also local — more opinionated structure</td></tr>
+            <tr><td>Bear</td><td>Mac/iOS only, clean UI, less extensible, cloud-synced</td></tr>
+            <tr><td>Apple Notes</td><td>iCloud only, no linking, no markdown — simple but limited</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Why Obsidian for RAG</div>
+      <p>Because it's a <em>folder of markdown files</em>. Claude Code can read, write, and organize them directly — no API, no database, no special integration needed. The vault IS the context window-friendly knowledge store.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       KEY CONCEPTS
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-concepts">
+
+    <div class="card blue">
+      <div class="card-title">Core Concepts</div>
+      <div class="concept-grid">
+
+        <div class="concept-card">
+          <div class="concept-name">Vault</div>
+          <div class="concept-desc">A folder on your computer containing all your notes. Obsidian's basic unit — you can have multiple vaults for different projects.</div>
+          <div class="concept-example">→ For the RAG project, your vault IS the knowledge base.</div>
+        </div>
+
+        <div class="concept-card">
+          <div class="concept-name">Note</div>
+          <div class="concept-desc">A single <code>.md</code> (Markdown) file. Supports headers, bullets, code blocks, images, tables, and math. Created with <kbd>Ctrl</kbd>+<kbd>N</kbd>.</div>
+          <div class="concept-example">→ Every file in your wiki/ folder is a note.</div>
+        </div>
+
+        <div class="concept-card">
+          <div class="concept-name">[[Wikilinks]]</div>
+          <div class="concept-desc">Type <code>[[note-name]]</code> to create a link to another note. If the note doesn't exist yet, Obsidian creates it when you click. The core of linking.</div>
+          <div class="concept-example">→ Example: <code class="concept-name">[[ai-agents/tool-use-patterns]]</code></div>
+        </div>
+
+        <div class="concept-card">
+          <div class="concept-name">Backlinks</div>
+          <div class="concept-desc">Automatically tracked reverse-links. If note A links to note B, note B's backlinks pane shows note A. Bidirectional by default.</div>
+          <div class="concept-example">→ Visible in right sidebar → Backlinks panel.</div>
+        </div>
+
+        <div class="concept-card">
+          <div class="concept-name">Graph View</div>
+          <div class="concept-desc">Visual map of all notes as nodes, links as edges. Local graph shows connections around one note; global graph shows the whole vault.</div>
+          <div class="concept-example">→ Open with <kbd>Ctrl</kbd>+<kbd>G</kbd>. More useful as your vault grows.</div>
+        </div>
+
+        <div class="concept-card">
+          <div class="concept-name">Frontmatter</div>
+          <div class="concept-desc">YAML metadata at the top of a note, between <code>---</code> delimiters. Used for tags, dates, properties. Queried by the Dataview plugin.</div>
+          <div class="concept-example">→ <code>tags: [ai, research]</code> in frontmatter lets you filter notes.</div>
+        </div>
+
+        <div class="concept-card">
+          <div class="concept-name">Tags</div>
+          <div class="concept-desc">Typed with <code>#tag-name</code> in note body, or in frontmatter. Let you organize by status or type. Nested tags work: <code>#status/in-progress</code>.</div>
+          <div class="concept-example">→ Different from wikilinks — tags are for categorization, not navigation.</div>
+        </div>
+
+        <div class="concept-card">
+          <div class="concept-name">Command Palette</div>
+          <div class="concept-desc">Access every Obsidian command by name. The fastest way to do anything — search, open settings, run plugins, toggle views.</div>
+          <div class="concept-example">→ Open with <kbd>Ctrl</kbd>+<kbd>P</kbd>. Type anything to find it.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout purple">
+      <div class="callout-label">🔗 The Linking Mental Model</div>
+      <p>Folders silo ideas. Links reveal relationships. When you type <em>[[some-concept]]</em> in a note, you're building a network — not just organizing a file. Over time, clusters emerge that you didn't consciously design. That emergent structure is the value.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       INTERFACE
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-interface">
+
+    <div class="card blue">
+      <div class="card-title">Interface Layout</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📁</div>
+          <div class="rule-text"><strong>Left sidebar — File Explorer.</strong> Your vault folder tree. Click to open notes. Drag to reorganize. Right-click for file options.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📝</div>
+          <div class="rule-text"><strong>Center — Editor.</strong> Where you write. Toggle between <em>source mode</em> (raw markdown) and <em>live preview</em> (rendered) via the top-right icon.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔗</div>
+          <div class="rule-text"><strong>Right sidebar — Backlinks + Outgoing Links.</strong> Shows all notes that link to the current note (backlinks) and all notes the current note links out to.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚙️</div>
+          <div class="rule-text"><strong>Bottom-left gear — Settings.</strong> Theme, hotkeys, plugins, appearance, file behavior. Most important settings for new users: Appearance and Community Plugins.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔍</div>
+          <div class="rule-text"><strong>Search bar.</strong> Full-text search across the entire vault. Supports operators like <code>file:</code>, <code>tag:</code>, <code>path:</code>, and regex.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">First Things to Do</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Change the theme</strong><br>
+              Settings → Appearance → Themes → Manage → pick "Minimal" to start.
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Enable Community Plugins</strong><br>
+              Settings → Community plugins → toggle off "Restricted mode" → Browse.
+              <span class="note">⚠ Required before installing any community plugin including Web Clipper and Local Images Plus.</span>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Create a home note</strong><br>
+              Press <kbd>Ctrl</kbd>+<kbd>N</kbd>, name it <code>Home</code>. Pin it. Link your important notes from here. This becomes your vault's entry point.
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>Try wiki-linking</strong><br>
+              In any note type <code>[[</code> — Obsidian opens a search through all your notes. Select one or type a new name to create a stub note.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title yellow">Editor Modes Explained</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">👁️</div>
+            <div class="rule-text"><strong>Live Preview (default).</strong> Markdown renders as you type — asterisks become bold, # becomes a heading. Most people use this.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📄</div>
+            <div class="rule-text"><strong>Source Mode.</strong> Raw markdown, no rendering. Useful when debugging formatting or pasting from external tools.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📖</div>
+            <div class="rule-text"><strong>Reading View.</strong> Fully rendered, read-only. Good for reviewing long notes or using embeds/iframes.</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted)">Switch modes via the icon in top-right of the editor pane, or via Command Palette.</div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       HOTKEYS
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-hotkeys">
+
+    <div class="card blue">
+      <div class="card-title">Essential Hotkeys</div>
+
+      <div class="os-toggle-wrap">
+        <button class="os-btn" id="btn-win" onclick="setOS('win')">Win/Linux</button>
+        <button class="os-btn active" id="btn-mac" onclick="setOS('mac')">macOS</button>
+      </div>
+
+      <table class="ref-table">
+        <thead>
+          <tr><th>Action</th><th>Shortcut</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>New note</td>
+            <td><kbd class="cycle-key mac">⌘N</kbd><kbd class="cycle-key win" style="display:none">Ctrl+N</kbd></td>
+            <td>Creates in root by default</td>
+          </tr>
+          <tr>
+            <td>Open file switcher</td>
+            <td><kbd class="cycle-key mac">⌘O</kbd><kbd class="cycle-key win" style="display:none">Ctrl+O</kbd></td>
+            <td>Fuzzy search across all notes</td>
+          </tr>
+          <tr>
+            <td>Command palette</td>
+            <td><kbd class="cycle-key mac">⌘P</kbd><kbd class="cycle-key win" style="display:none">Ctrl+P</kbd></td>
+            <td>Access everything by name</td>
+          </tr>
+          <tr>
+            <td>Search vault</td>
+            <td><kbd class="cycle-key mac">⌘⇧F</kbd><kbd class="cycle-key win" style="display:none">Ctrl+Shift+F</kbd></td>
+            <td>Full-text search with operators</td>
+          </tr>
+          <tr>
+            <td>Graph view</td>
+            <td><kbd class="cycle-key mac">⌘G</kbd><kbd class="cycle-key win" style="display:none">Ctrl+G</kbd></td>
+            <td>Global graph of all notes</td>
+          </tr>
+          <tr>
+            <td>Bold</td>
+            <td><kbd class="cycle-key mac">⌘B</kbd><kbd class="cycle-key win" style="display:none">Ctrl+B</kbd></td>
+            <td>Wraps selection in **</td>
+          </tr>
+          <tr>
+            <td>Italic</td>
+            <td><kbd class="cycle-key mac">⌘I</kbd><kbd class="cycle-key win" style="display:none">Ctrl+I</kbd></td>
+            <td>Wraps selection in *</td>
+          </tr>
+          <tr>
+            <td>Insert markdown link</td>
+            <td><kbd class="cycle-key mac">⌘K</kbd><kbd class="cycle-key win" style="display:none">Ctrl+K</kbd></td>
+            <td>Standard [text](url) link</td>
+          </tr>
+          <tr>
+            <td>Wiki-link (type manually)</td>
+            <td><kbd>[[</kbd></td>
+            <td>Opens note search popup</td>
+          </tr>
+          <tr>
+            <td>Toggle left sidebar</td>
+            <td><kbd class="cycle-key mac">⌘⌥←</kbd><kbd class="cycle-key win" style="display:none">Ctrl+Shift+←</kbd> or ribbon</td>
+            <td>Show/hide file explorer</td>
+          </tr>
+          <tr>
+            <td>Navigate back</td>
+            <td><kbd class="cycle-key mac">⌘⌥←</kbd><kbd class="cycle-key win" style="display:none">Ctrl+Alt+←</kbd></td>
+            <td>Browser-style back nav</td>
+          </tr>
+          <tr>
+            <td>Navigate forward</td>
+            <td><kbd class="cycle-key mac">⌘⌥→</kbd><kbd class="cycle-key win" style="display:none">Ctrl+Alt+→</kbd></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Split editor right</td>
+            <td><kbd class="cycle-key mac">⌘\</kbd><kbd class="cycle-key win" style="display:none">Ctrl+\</kbd> or Command Palette</td>
+            <td>View two notes side by side</td>
+          </tr>
+          <tr>
+            <td>Settings</td>
+            <td><kbd class="cycle-key mac">⌘,</kbd><kbd class="cycle-key win" style="display:none">Ctrl+,</kbd></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">💡 Customize Any Hotkey</div>
+      <p>Settings → Hotkeys → search for any command → click the <em>+</em> to assign or reassign. Obsidian has ~200 bindable commands.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PLUGINS
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-plugins">
+
+    <div class="callout red">
+      <div class="callout-label">⚠ Before Any Plugins</div>
+      <p>Settings → Community plugins → <em>toggle off "Restricted mode"</em>. Without this, you cannot install community plugins. This is a one-time step.</p>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">Core Plugins (Built-in, always available)</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Plugin</th><th>What It Does</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Backlinks</td><td>Shows all notes linking to the current note in sidebar</td><td>Essential — enable it</td></tr>
+          <tr><td>Outgoing links</td><td>Shows all notes the current note links out to</td><td>Pairs with backlinks</td></tr>
+          <tr><td>Graph view</td><td>Visual map of note connections</td><td>Open with Ctrl+G</td></tr>
+          <tr><td>Search</td><td>Full-text search with operators</td><td>Always enabled</td></tr>
+          <tr><td>Command palette</td><td>Access any command by name</td><td>Always enabled</td></tr>
+          <tr><td>Templates</td><td>Insert pre-defined content into notes</td><td>Useful for structured notes</td></tr>
+          <tr><td>Daily notes</td><td>Auto-creates a note for each day</td><td>For journaling workflows</td></tr>
+          <tr><td>Canvas</td><td>Infinite-scroll board for visual thinking</td><td>Optional — heavier than notes</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card purple">
+      <div class="card-title purple">Recommended Community Plugins</div>
+      <div class="rule-list">
+
+        <div class="rule-row">
+          <div class="rule-icon">📎</div>
+          <div class="rule-text">
+            <strong>Obsidian Web Clipper</strong> <span class="plugin-pill">Browser Ext</span><br>
+            Clips any webpage to your raw/ folder as markdown — one click. Configured in the browser extension, not Obsidian itself.
+            <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:3px">Required for the Karpathy RAG workflow.</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">🖼️</div>
+          <div class="rule-text">
+            <strong>Local Images Plus</strong> <span class="plugin-pill">Community</span><br>
+            When you open a clipped note, downloads all external images into the vault. Prevents broken images when offline.
+            <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:3px">Settings → Community Plugins → Browse → "Local Images Plus"</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">📊</div>
+          <div class="rule-text">
+            <strong>Dataview</strong> <span class="plugin-pill">Community</span><br>
+            Query your vault like a database. List all notes with a specific tag, sort by date, show tables. Uses SQL-like syntax in code blocks.
+            <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:3px">Advanced — useful once you have 50+ notes.</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">📅</div>
+          <div class="rule-text">
+            <strong>Calendar</strong> <span class="plugin-pill">Community</span><br>
+            Adds a calendar widget in the sidebar. Click any day to open/create that day's note. Good for daily note workflows.
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">🔀</div>
+          <div class="rule-text">
+            <strong>Obsidian Git</strong> <span class="plugin-pill">Community</span><br>
+            Auto-commits your vault to a Git repo on a schedule. Free sync + version history via GitHub. Alternative to Obsidian Sync.
+            <span style="font-size:11px;color:var(--text-muted);display:block;margin-top:3px">Requires Git installed. Best free sync option for developers.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Plugin Philosophy</div>
+      <p><em>Start with nothing.</em> Get comfortable with the core app for a week before adding plugins. Each plugin adds settings to learn. The best vault is the one you actually use.</p>
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       GOTCHAS
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="card red">
+      <div class="card-title red">Common New User Gotchas</div>
+      <div class="rule-list">
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text">
+            <span class="neg">Community plugins need Restricted Mode off.</span> Settings → Community plugins → toggle off "Restricted mode" before browsing. Easy to miss, confusing when you can't find the Browse button.
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text">
+            <span class="neg">[[Wikilinks]] are case-sensitive on some systems.</span> <code>[[My Note]]</code> and <code>[[my note]]</code> may resolve to different files on Linux/Windows. Use lowercase filenames consistently.
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text">
+            <span class="neg">No built-in sync (free tier).</span> Obsidian Sync is paid. Alternatives: iCloud (Mac/iOS), Dropbox, Google Drive, or Obsidian Git. Pick one before using on multiple devices.
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text">
+            <span class="neg">Renaming files breaks unupdated links.</span> Use Obsidian's rename (F2 or right-click) instead of renaming via Finder/Explorer — Obsidian auto-updates all wikilinks. Direct filesystem renames break links.
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text">
+            <span class="neg">The graph looks cool but isn't how you work.</span> Don't spend time trying to make the graph look good. Links are for navigation and discovery, not aesthetics. The graph is a byproduct, not a goal.
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text">
+            <span class="neg">Plugin overload is real.</span> Installing 20 plugins before you understand the basics leads to settings confusion and conflicts. Start minimal, add one plugin at a time when you have a specific need.
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text">
+            <span class="neg">Don't obsess over organization before you have content.</span> The most common trap: spending days perfecting folder structure with 5 notes. Write first. Organize later. Links matter more than folders.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card green">
+        <div class="card-title green">Good Habits to Build Early</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">Use lowercase-hyphenated filenames.</span> <code>ai-agent-overview.md</code> not <code>AI Agent Overview.md</code>. Avoids cross-platform link issues.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">Link generously.</span> Even to notes that don't exist yet. Stub notes mature into full articles over time. The connection matters now.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">Always rename via Obsidian.</span> Right-click → Rename, or press F2. Never through Finder or File Explorer.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">Set up backup/sync early.</span> Configure Git or Dropbox before you have important notes. Don't learn this lesson the hard way.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Markdown Cheat Sheet</div>
+        <pre><span class="hd"># Heading 1</span>
+<span class="hd">## Heading 2</span>
+<span class="hd">### Heading 3</span>
+
+<span class="li">**bold**</span>   <span class="li">*italic*</span>   <span class="fn">~~strikethrough~~</span>
+
+<span class="li">- bullet list</span>
+<span class="li">1. numbered list</span>
+
+<span class="wl">[[link to note]]</span>
+<span class="kw">[link text](https://url.com)</span>
+
+<span class="cm">> blockquote</span>
+
+`inline code`
+
+<span class="hd">```python</span>
+<span class="li">code block</span>
+<span class="hd">```</span>
+
+<span class="fn">- [ ] task (unchecked)</span>
+<span class="li">- [x] task (checked)</span></pre>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       WITH CLAUDE CODE
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-claudecode">
+
+    <div class="hero" style="border-left-color: var(--purple); box-shadow: var(--shadow), inset 0 0 60px var(--purple-glow);">
+      <h2 style="color:var(--purple)">Obsidian + Claude Code</h2>
+      <p>Obsidian solves Claude Code's biggest limitation: <strong>no memory between sessions</strong>. The vault becomes a persistent second brain. Claude Code writes and organizes it. You get insights. Everyone wins — for free.</p>
+    </div>
+
+    <!-- Three-way relationship -->
+    <div class="card blue">
+      <div class="card-title">The Symbiotic Relationship</div>
+      <div class="rel-grid">
+        <div class="rel-card">
+          <div class="rel-icon">🧠</div>
+          <div class="rel-name">You</div>
+          <div class="rel-gets">Visual insight into your notes and projects. Connections you couldn't see in a plain file system. A knowledge base you can actually browse and read.</div>
+        </div>
+        <div class="rel-card">
+          <div class="rel-icon">🗂️</div>
+          <div class="rel-name">Obsidian</div>
+          <div class="rel-gets">Supercharged by Claude Code — it writes, links, and organizes your markdown so the graph actually means something. Without Claude, you'd have to do all that manually.</div>
+        </div>
+        <div class="rel-card">
+          <div class="rel-icon">⚡</div>
+          <div class="rel-name">Claude Code</div>
+          <div class="rel-gets">Gains persistent memory and context. An organized, linked vault gives it better performance on every query. The organization rolls downhill into better answers for you.</div>
+        </div>
+      </div>
+      <div style="margin-top:14px; font-size:13px; color:var(--text-muted); line-height:1.6; border-top: 1px solid var(--border); padding-top:12px;">
+        The flywheel: <span style="color:var(--text)">better notes → better Claude context → better Claude output → better notes.</span> This whole thing isn't a black box. That's the value add.
+      </div>
+    </div>
+
+    <!-- Spectrum -->
+    <div class="card yellow">
+      <div class="card-title yellow">The Organization Spectrum</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px">Most people sit at one extreme. Obsidian is the happy medium that costs nothing to maintain.</p>
+      <div class="spectrum-wrap">
+        <div class="spectrum-bar">
+          <div class="spectrum-marker" style="left:10%">💀</div>
+          <div class="spectrum-marker" style="left:50%; border-color:var(--accent3)">✅</div>
+          <div class="spectrum-marker" style="left:90%; border-color:var(--accent2)">🚀</div>
+        </div>
+        <div class="spectrum-labels">
+          <span class="s-left">Papers on the floor<br><span style="font-weight:400;color:var(--text-dim)">Random files, no structure.<br>Claude manages but it's costly.<br>Black box to you.</span></span>
+          <span class="s-mid" style="text-align:center">Obsidian vault<br><span style="font-weight:400;color:var(--text-dim)">Filing cabinet, organized.<br>Free. No tokens. Claude-maintained.<br>Human-readable.</span></span>
+          <span class="s-right" style="text-align:right">Graph RAG system<br><span style="font-weight:400;color:var(--text-dim)">Embeddings + vector DB.<br>Too heavy for most.<br>Expensive to build & maintain.</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLAUDE.md as persistent memory -->
+    <div class="card purple">
+      <div class="card-title purple">CLAUDE.md as Persistent Memory</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🧠</div>
+          <div class="rule-text"><strong>CLAUDE.md is the "frontal cortex."</strong> The vault is the whole brain — all your notes and context. CLAUDE.md is the distilled thinking template: conventions, preferences, how you work. Claude always reads this first.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📈</div>
+          <div class="rule-text"><strong>It's a living document — update it over time.</strong> Periodically tell Claude: <em>"Take a look at all our notes. Compare to our CLAUDE.md. Make them match and improve the conventions."</em> Your assistant gets closer to Jarvis with every pass.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚡</div>
+          <div class="rule-text"><strong>Use <code>/init</code> to bootstrap it.</strong> Run <code>/init</code> inside your vault project and Claude Code reads the entire structure, figures out what you're doing and why, and writes the CLAUDE.md for you automatically.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📍</div>
+          <div class="rule-text"><strong>Put the vault where your Claude Code projects live.</strong> Easy to navigate to in the terminal. Co-location means less friction starting sessions.</div>
+        </div>
+      </div>
+
+      <div class="claudemd-block">
+        <div class="claudemd-label">What to put in CLAUDE.md for a personal assistant vault</div>
+        <div class="claudemd-text">
+          Tell Claude: your Obsidian conventions (all markdown files must follow Obsidian format, use <code>[[wikilinks]]</code>, lowercase-hyphenated filenames), your folder structure and what each folder is for, how you want daily notes formatted, your preferred writing style, and any recurring context about you and your projects that Claude should always have available.
+        </div>
+      </div>
+    </div>
+
+    <!-- The anti-CLAUDE.md study caveat -->
+    <div class="card red">
+      <div class="card-title red">The Anti-CLAUDE.md Study — And Why It Doesn't Apply Here</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📄</div>
+          <div class="rule-text"><strong>A published study found CLAUDE.md hurts coding agents.</strong> "Evaluating Agents: Are Repository-Level Context Files Helpful for Coding Agents?" concluded that convention files are often a net negative — they enforce rules that conflict with how real projects are structured across UI, backend, auth, etc.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">But this does NOT apply to personal assistant vaults.</span> The study is about code conventions clashing with project architecture. A personal assistant vault's conventions are about <em>how you think</em> and <em>how to write markdown files</em> — not code. Those conventions are always valid and always welcome context.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Avoid CLAUDE.md for coding projects.</span> If you're using Claude Code on an actual software codebase, the study's warning applies. CLAUDE.md conventions about auth patterns or file structure can actively hurt performance there. Keep coding projects separate from your knowledge vault.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compounding over time -->
+    <div class="callout green">
+      <div class="callout-label">📈 The Compounding Effect</div>
+      <p>Daily notes for two weeks: manageable. Daily notes for two years: a rich context map of how you think and what you've worked on. The personal assistant use case is where breadth compounds over time — wide topics, long time horizons. The vault gets more useful the longer you use it. <em>Start now, even if it's small.</em></p>
+    </div>
+
+    <!-- Quick start for Claude Code in vault -->
+    <div class="card">
+      <div class="card-title">Quick Start: Claude Code Inside Your Vault</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Put your vault where your projects live</strong><br>
+            Create or move the vault to wherever you normally <code>cd</code> in the terminal. Makes starting sessions frictionless.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Open terminal in vault root → run <code>claude</code></strong><br>
+            You're now inside a Claude Code project where every file is a markdown note. Claude can read, write, and link them all.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Run <code>/init</code> to auto-generate CLAUDE.md</strong><br>
+            Claude scans the vault, understands the structure, and writes the conventions file for you. Edit it to add personal context.
+            <span class="tip">💡 Or write it manually — see the CLAUDE.md tab in the RAG reference tool for a full template.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Tell Claude to follow Obsidian conventions</strong><br>
+            Add to CLAUDE.md: <em>"All markdown files must follow Obsidian conventions — use <code>[[wikilinks]]</code>, lowercase-hyphenated filenames, and update relevant index files after any changes."</em>
+            <span class="pos">✓ Claude Code already knows Obsidian conventions — you just need to activate them.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Start using it as a personal assistant</strong><br>
+            Brain-dump, ask questions, request research. Claude Code writes structured notes into the vault. You read them in Obsidian. The graph fills in. The flywheel starts.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /claudecode -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+
+  // OS toggle for hotkeys
+  function setOS(os) {
+    const wins = document.querySelectorAll('.cycle-key.win');
+    const macs = document.querySelectorAll('.cycle-key.mac');
+    const btnWin = document.getElementById('btn-win');
+    const btnMac = document.getElementById('btn-mac');
+    if (os === 'win') {
+      wins.forEach(el => el.style.display = '');
+      macs.forEach(el => el.style.display = 'none');
+      btnWin.classList.add('active');
+      btnMac.classList.remove('active');
+    } else {
+      wins.forEach(el => el.style.display = 'none');
+      macs.forEach(el => el.style.display = '');
+      btnWin.classList.remove('active');
+      btnMac.classList.add('active');
+    }
+  }
+  // Default: mac visible
+  document.querySelectorAll('.cycle-key.win').forEach(el => el.style.display = 'none');
+</script>
+</body>
+</html>

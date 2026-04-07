@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCPs & CLIs — Claude Code Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg   { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos   { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent); }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+  .ref-table td:nth-child(2) { color: var(--text); font-size: 13px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di        { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* OS pill toggle */
+  .os-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border-accent);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+  }
+  .os-pill {
+    padding: 3px 10px;
+    cursor: pointer;
+    color: var(--text-muted);
+    background: var(--bg-code);
+    border: none;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .os-pill.active {
+    background: var(--accent-glow);
+    color: var(--accent);
+    border-color: transparent;
+  }
+
+  .win-only, .mac-only { display: none !important; }
+  body.os-win .win-only { display: revert !important; }
+  body.os-mac .mac-only { display: revert !important; }
+  /* inline-only helpers (spans inside text) */
+  body.os-win span.win-only { display: inline !important; }
+  body.os-mac span.mac-only { display: inline !important; }
+  /* block-level helpers (pre, div) */
+  body.os-win pre.win-only  { display: block !important; }
+  body.os-mac pre.mac-only  { display: block !important; }
+  body.os-win .cycle-key-win { display: inline; }
+  body.os-mac .cycle-key-mac { display: inline; }
+
+  /* scope tag */
+  .scope-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .scope-local   { background: rgba(79,142,247,0.12); color: var(--accent); border: 1px solid rgba(79,142,247,0.25); }
+  .scope-project { background: rgba(62,207,142,0.12); color: var(--accent3); border: 1px solid rgba(62,207,142,0.25); }
+  .scope-user    { background: rgba(247,162,62,0.12); color: var(--accent4); border: 1px solid rgba(247,162,62,0.25); }
+
+  /* server catalog grid */
+  .server-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 700px) { .server-grid { grid-template-columns: 1fr; } }
+
+  .server-item {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+  .server-item:hover { border-color: var(--border-accent); }
+
+  .server-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .server-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .server-cmd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent3);
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    word-break: break-all;
+  }
+  .server-category {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin: 14px 0 8px;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body class="os-win">
+
+<header>
+  <div class="header-left">
+    <div class="logo">MCPs & CLIs<span> — Claude Code</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="setup">Setup</button>
+  <button data-tab="commands">Commands</button>
+  <button data-tab="catalog">Server Catalog</button>
+  <button data-tab="gotchas">Gotchas</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>MCPs &amp; CLIs</h2>
+      <p>MCP (Model Context Protocol) is an open standard — like <strong>USB-C for AI</strong> — that connects Claude Code to external tools: databases, APIs, version control, design tools, and more. All via plain English in your terminal.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">What MCPs Enable</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔌</div>
+            <div class="rule-text"><strong>One standard, any tool.</strong> Notion, GitHub, Figma, Supabase, Slack — add them all via a single command pattern.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📋</div>
+            <div class="rule-text"><strong>Team-shareable configs.</strong> Drop a <code>.mcp.json</code> in your project root and every teammate gets the same integrations on day one.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Lazy loading.</strong> Tools are no longer all pre-loaded — they're fetched on demand like skills, keeping your context window lean.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🌐</div>
+            <div class="rule-text"><strong>No app switching.</strong> "Find the top 5 Sentry errors and open a GitHub issue for the worst one" — all in one conversation.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title green">MCP vs CLI</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔧</div>
+            <div class="rule-text"><strong>MCP:</strong> Extra structure that lives <em>between</em> Claude Code and the program. Includes tool descriptions + auth overhead built-in. Good for cloud services.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💻</div>
+            <div class="rule-text"><strong>CLI:</strong> Everything happens in the terminal. No middleware overhead. Tailor-made for AI agents. Faster, leaner.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📖</div>
+            <div class="rule-text"><strong>CLI needs a skill.</strong> Unlike MCPs, CLIs don't carry self-description — create a companion skill file so Claude knows how to use the CLI.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">How It Works — The Three Pieces</div>
+      <div class="grid-3">
+        <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:14px 16px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);margin-bottom:6px;">MCP HOST</div>
+          <div style="font-size:13px;color:var(--text);">Claude Code — coordinates everything and decides which tools to call.</div>
+        </div>
+        <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:14px 16px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent3);margin-bottom:6px;">MCP CLIENT</div>
+          <div style="font-size:13px;color:var(--text);">Connector inside Claude Code — maintains a dedicated link to one MCP server.</div>
+        </div>
+        <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:14px 16px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent2);margin-bottom:6px;">MCP SERVER</div>
+          <div style="font-size:13px;color:var(--text);">Small program wrapping a tool or data source — exposes actions to Claude.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="callout blue">
+        <div class="callout-label">📡 Transport: stdio</div>
+        <p>Claude starts a <em>local program</em> on your machine. Best for local tools. No network setup needed.</p>
+      </div>
+      <div class="callout green">
+        <div class="callout-label">🌍 Transport: HTTP</div>
+        <p>Claude connects to a <em>remote service</em> over the internet. Best for cloud services. Supports full OAuth/login.</p>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">🚀 The Trend</div>
+      <p>The space is moving from MCPs → CLIs. <em>When a CLI exists with the same functionality, prefer it.</em> Pair every CLI with a companion skill file. Ask Claude Code if you're unsure which to use — it can research it for you.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- SETUP -->
+  <div class="section" id="tab-setup">
+
+    <div class="hero">
+      <h2>Supabase MCP Setup</h2>
+      <p>A practical walkthrough using Supabase — the capstone project database. The same pattern applies to any MCP server.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Step-by-Step: Add Your First MCP Server</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Add the Supabase MCP server (HTTP, recommended)</strong><br>
+            Run this in your terminal. Claude Code registers the server location.
+            <pre><span class="kw">claude</span> mcp add --transport http supabase https://mcp.supabase.com</pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Authenticate inside Claude Code</strong><br>
+            Type <code>/mcp</code> inside Claude Code, select Supabase → Authenticate. A browser window opens — log in and grant access.
+            <pre><span class="fn">/mcp</span></pre>
+            <span class="note">⚠ You need an existing Supabase account. Claude Code cannot create one for you.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Verify the connection</strong><br>
+            Check server status from the terminal or inside Claude Code:
+            <pre><span class="kw">claude</span> mcp list         <span class="cm"># terminal</span>
+<span class="fn">/mcp</span>                    <span class="cm"># inside Claude Code</span></pre>
+            <span class="tip">💡 Look for "supabase" with a healthy status indicator.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Use it in plain English</strong><br>
+            Claude calls MCP tools automatically behind the scenes:
+            <pre><span class="cm"># Try these prompts:</span>
+<span class="li">"List all tables in my Supabase project [name]"</span>
+<span class="li">"Show me the schema for the posts table"</span>
+<span class="li">"Create a migration that adds a 'views' column to posts"</span></pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Alternative: Local / Offline Setup</div>
+      <div style="margin-bottom:10px;">
+        <div class="os-toggle">
+          <button class="os-pill active" onclick="setOS('win')">Win/Linux</button>
+          <button class="os-pill" onclick="setOS('mac')">macOS</button>
+        </div>
+      </div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">—</div>
+          <div class="step-body">
+            <strong>stdio transport (runs locally on your machine)</strong>
+            <pre class="win-only"><span class="cm"># Windows — requires cmd /c wrapper for npx</span>
+<span class="kw">claude</span> mcp add --transport stdio supabase-local -- cmd /c npx -y @supabase/mcp-server-supabase@latest --read-only --project-ref=<span class="fn">YOUR_REF</span></pre>
+            <pre class="mac-only"><span class="cm"># macOS / Linux</span>
+<span class="kw">claude</span> mcp add --transport stdio supabase-local -- npx -y @supabase/mcp-server-supabase@latest --read-only --project-ref=<span class="fn">YOUR_REF</span></pre>
+            <span class="note win-only">⚠ Windows: The <code>cmd /c</code> wrapper is mandatory. Skipping it causes "Connection closed" errors.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title green">Adding a CLI Tool</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Install the CLI</strong><br>
+            Ask Claude Code in natural language, or point it at the install URL. Example: Playwright CLI for browser automation.
+            <pre><span class="cm"># Claude Code can install it — just ask:</span>
+<span class="li">"Install the Playwright CLI and show me how to use it"</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Create a companion skill file</strong><br>
+            CLIs don't self-describe like MCPs do. Add a skill markdown file that teaches Claude how to use the CLI.
+            <span class="tip">💡 Most well-known CLIs (like Playwright) already have community skill files — check their docs for a "Claude Skills" section.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Confirm with Claude Code</strong><br>
+            Ask Claude if a CLI exists before defaulting to an MCP:
+            <pre><span class="li">"Does Supabase have a CLI I can use instead of the MCP?"</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Team Sharing via .mcp.json</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Commit this file to your project root. Every developer gets the same MCP tools automatically.</p>
+      <pre>{
+  <span class="hd">"mcpServers"</span>: {
+    <span class="kw">"github"</span>: {
+      <span class="li">"type"</span>: <span class="fn">"http"</span>,
+      <span class="li">"url"</span>: <span class="fn">"https://api.githubcopilot.com/mcp/"</span>
+    },
+    <span class="kw">"sentry"</span>: {
+      <span class="li">"type"</span>: <span class="fn">"http"</span>,
+      <span class="li">"url"</span>: <span class="fn">"https://mcp.sentry.dev/mcp"</span>
+    },
+    <span class="kw">"database"</span>: {
+      <span class="li">"type"</span>: <span class="fn">"stdio"</span>,
+      <span class="li">"command"</span>: <span class="fn">"npx"</span>,
+      <span class="li">"args"</span>: [<span class="fn">"-y"</span>, <span class="fn">"@bytebase/dbhub"</span>, <span class="fn">"--dsn"</span>, <span class="fn">"${DATABASE_URL}"</span>],
+      <span class="li">"env"</span>: { <span class="fn">"DATABASE_URL"</span>: <span class="fn">"${DATABASE_URL}"</span> }
+    }
+  }
+}</pre>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">The <code>${VAR}</code> syntax pulls from environment variables — sensitive values like passwords stay out of your code.</div>
+    </div>
+
+  </div><!-- /setup -->
+
+
+  <!-- COMMANDS -->
+  <div class="section" id="tab-commands">
+
+    <div class="card">
+      <div class="card-title">Adding Servers</div>
+
+      <div style="margin-bottom:10px;">
+        <div class="os-toggle">
+          <button class="os-pill active" onclick="setOS('win')">Win/Linux</button>
+          <button class="os-pill" onclick="setOS('mac')">macOS</button>
+        </div>
+      </div>
+
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Use Case</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>claude mcp add --transport http &lt;name&gt; &lt;url&gt;</td>
+            <td>Remote HTTP server (cloud services)</td>
+            <td>Recommended for Supabase, GitHub, etc.</td>
+          </tr>
+          <tr>
+            <td>claude mcp add --transport http &lt;name&gt; &lt;url&gt; --header "Authorization: Bearer TOKEN"</td>
+            <td>HTTP with auth token</td>
+            <td>Use when OAuth isn't available</td>
+          </tr>
+          <tr>
+            <td><span class="win-only">claude mcp add --transport stdio &lt;name&gt; -- cmd /c npx -y @pkg</span><span class="mac-only">claude mcp add --transport stdio &lt;name&gt; -- npx -y @pkg</span></td>
+            <td>Local stdio server via npx</td>
+            <td><span class="win-only" style="color:var(--accent2);">Windows: cmd /c required</span><span class="mac-only">No wrapper needed</span></td>
+          </tr>
+          <tr>
+            <td>claude mcp add --transport stdio --env KEY=val &lt;name&gt; -- &lt;cmd&gt;</td>
+            <td>stdio with env vars</td>
+            <td>For API keys needed by the server</td>
+          </tr>
+          <tr>
+            <td>claude mcp add-json &lt;name&gt; '{...}'</td>
+            <td>Add from JSON definition</td>
+            <td>Useful for scripting / team setup</td>
+          </tr>
+          <tr>
+            <td>claude mcp add-from-claude-desktop</td>
+            <td>Import from Claude Desktop</td>
+            <td>Migrates existing MCP configs</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Managing Servers</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>What It Does</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>claude mcp list</td>
+            <td>List all configured servers</td>
+            <td>Run from terminal</td>
+          </tr>
+          <tr>
+            <td>claude mcp get &lt;name&gt;</td>
+            <td>Details for a specific server</td>
+            <td>Shows transport, URL, scope</td>
+          </tr>
+          <tr>
+            <td>claude mcp remove &lt;name&gt;</td>
+            <td>Remove a server</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>/mcp</td>
+            <td>View status, auth, manage — inside Claude Code</td>
+            <td>Also shows auth state</td>
+          </tr>
+          <tr>
+            <td>claude mcp serve</td>
+            <td>Run Claude Code <em>as</em> an MCP server</td>
+            <td>Lets other tools use Claude Code's file abilities</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Scope Flags</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Scope</th>
+            <th>Flag</th>
+            <th>Who Sees It</th>
+            <th>Stored In</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>local <span class="scope-tag scope-local">DEFAULT</span></td>
+            <td>(no flag needed)</td>
+            <td>Only you, this project only</td>
+            <td>Local config</td>
+          </tr>
+          <tr>
+            <td>project <span class="scope-tag scope-project">TEAM</span></td>
+            <td>--scope project</td>
+            <td>All teammates via .mcp.json</td>
+            <td>.mcp.json (commit it)</td>
+          </tr>
+          <tr>
+            <td>user <span class="scope-tag scope-user">GLOBAL</span></td>
+            <td>--scope user</td>
+            <td>You, across all your projects</td>
+            <td>User config</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Environment / Debug Flags</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>What It Does</th>
+            <th>Default</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>MAX_MCP_OUTPUT_TOKENS=50000 claude</td>
+            <td>Increase MCP output token limit</td>
+            <td>25,000</td>
+          </tr>
+          <tr>
+            <td>MCP_TIMEOUT=15000 claude</td>
+            <td>Increase server startup timeout (ms)</td>
+            <td>10,000</td>
+          </tr>
+          <tr>
+            <td>ENABLE_TOOL_SEARCH=auto:5</td>
+            <td>Control lazy tool search threshold</td>
+            <td>auto</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">⚠ Flag Order Rule</div>
+      <p>All flags (<code>--transport</code>, <code>--env</code>, <code>--scope</code>, <code>--header</code>) must come <em>before</em> the server name. The <code>--</code> double-dash separates Claude's options from the server launch command. Flags after the server name are silently ignored.</p>
+      <pre style="margin-top:8px;"><span class="pos">✓ correct:</span>  claude mcp add --transport stdio --env KEY=val myserver -- npx server
+<span class="fn">✗ wrong:</span>    claude mcp add myserver --env KEY=val -- npx server</pre>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">@ Mention Syntax</div>
+      <p>MCP servers can expose data you reference directly in prompts. Type <em>@</em> to see suggestions from connected servers:</p>
+      <pre style="margin-top:8px;"><span class="li">"Can you analyze @github:issue://123 and suggest a fix?"</span></pre>
+    </div>
+
+  </div><!-- /commands -->
+
+
+  <!-- CATALOG -->
+  <div class="section" id="tab-catalog">
+
+    <div class="callout blue">
+      <div class="callout-label">💡 Tip</div>
+      <p>Find hundreds more at the <em>MCP Servers repository</em> (github.com/modelcontextprotocol/servers) or community directories like mcp.so and Smithery.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Popular MCP Servers</div>
+
+      <div class="server-category">🛠 Development &amp; Version Control</div>
+      <div class="server-grid">
+        <div class="server-item">
+          <div class="server-name">GitHub</div>
+          <div class="server-desc">PRs, issues, code search, repo management</div>
+          <div class="server-cmd">claude mcp add --transport http github https://api.githubcopilot.com/mcp/</div>
+        </div>
+        <div class="server-item">
+          <div class="server-name">GitLab</div>
+          <div class="server-desc">Merge requests, pipelines, issues</div>
+          <div class="server-cmd">claude mcp add --transport http gitlab https://gitlab.com/-/mcp</div>
+        </div>
+        <div class="server-item">
+          <div class="server-name">Linear</div>
+          <div class="server-desc">Issue tracking, project management</div>
+          <div class="server-cmd">claude mcp add --transport http linear https://mcp.linear.app/sse</div>
+        </div>
+      </div>
+
+      <div class="server-category">🗄 Databases</div>
+      <div class="server-grid">
+        <div class="server-item">
+          <div class="server-name">Supabase</div>
+          <div class="server-desc">Auth, database, realtime, storage</div>
+          <div class="server-cmd">claude mcp add --transport http supabase https://mcp.supabase.com</div>
+        </div>
+        <div class="server-item">
+          <div class="server-name">PostgreSQL (dbhub)</div>
+          <div class="server-desc">Direct Postgres queries &amp; schema work</div>
+          <div class="server-cmd">claude mcp add --transport stdio db -- npx -y @bytebase/dbhub --dsn "postgresql://..."</div>
+        </div>
+        <div class="server-item">
+          <div class="server-name">Neon</div>
+          <div class="server-desc">Serverless Postgres</div>
+          <div class="server-cmd">claude mcp add --transport http neon https://mcp.neon.tech</div>
+        </div>
+      </div>
+
+      <div class="server-category">📊 Monitoring</div>
+      <div class="server-grid">
+        <div class="server-item">
+          <div class="server-name">Sentry</div>
+          <div class="server-desc">Error tracking, performance monitoring</div>
+          <div class="server-cmd">claude mcp add --transport http sentry https://mcp.sentry.dev/mcp</div>
+        </div>
+      </div>
+
+      <div class="server-category">💬 Communication &amp; Productivity</div>
+      <div class="server-grid">
+        <div class="server-item">
+          <div class="server-name">Notion</div>
+          <div class="server-desc">Pages, databases, workspace management</div>
+          <div class="server-cmd">claude mcp add --transport http notion https://mcp.notion.com/mcp</div>
+        </div>
+        <div class="server-item">
+          <div class="server-name">Slack</div>
+          <div class="server-desc">Messages, channels, search</div>
+          <div class="server-cmd">claude mcp add --transport stdio slack -- npx -y @anthropic/mcp-server-slack</div>
+        </div>
+      </div>
+
+      <div class="server-category">🎨 Design</div>
+      <div class="server-grid">
+        <div class="server-item">
+          <div class="server-name">Figma</div>
+          <div class="server-desc">Design files, components, assets</div>
+          <div class="server-cmd">claude mcp add --transport http figma https://mcp.figma.com</div>
+        </div>
+        <div class="server-item">
+          <div class="server-name">Canva</div>
+          <div class="server-desc">Design creation and templates</div>
+          <div class="server-cmd">claude mcp add --transport http canva &lt;canva-mcp-url&gt;</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /catalog -->
+
+
+  <!-- GOTCHAS -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Best Practices</div>
+        <div class="decision-item"><span class="di">✅</span>Use CLI over MCP when the CLI has equivalent functionality — it's lighter and faster.</div>
+        <div class="decision-item"><span class="di">✅</span>Always pair a CLI install with a companion skill file.</div>
+        <div class="decision-item"><span class="di">✅</span>Use <code>--scope project</code> + commit <code>.mcp.json</code> for team setups.</div>
+        <div class="decision-item"><span class="di">✅</span>Use <code>/mcp</code> inside Claude Code to check status, re-auth, and troubleshoot.</div>
+        <div class="decision-item"><span class="di">✅</span>Ask Claude Code to research whether a CLI or MCP is better for your use case.</div>
+        <div class="decision-item"><span class="di">✅</span>Use <code>${VAR}</code> in .mcp.json to keep secrets out of source control.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Common Mistakes</div>
+        <div class="decision-item"><span class="di">❌</span>Putting flags <em>after</em> the server name — they'll be silently ignored.</div>
+        <div class="decision-item"><span class="di">❌</span>Skipping <code>cmd /c</code> on Windows with npx-based servers.</div>
+        <div class="decision-item"><span class="di">❌</span>Connecting MCP to a production database.</div>
+        <div class="decision-item"><span class="di">❌</span>Using unverified third-party MCP servers without reviewing their source.</div>
+        <div class="decision-item"><span class="di">❌</span>Adding a CLI without a skill file — Claude won't know how to use it.</div>
+        <div class="decision-item"><span class="di">❌</span>Ignoring <code>MAX_MCP_OUTPUT_TOKENS</code> warnings — large outputs eat context fast.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title red">Gotchas Reference</div>
+      <div class="rule-list">
+
+        <div class="rule-row">
+          <div class="rule-icon">🪟</div>
+          <div class="rule-text"><span class="neg">Windows + npx = cmd /c:</span> On native Windows (not WSL), wrap <code>npx</code> with <code>cmd /c</code> or you'll get "Connection closed" errors every time.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">🚩</div>
+          <div class="rule-text"><span class="neg">Flag order matters:</span> All flags must come <em>before</em> the server name. The <code>--</code> separator divides Claude's options from the server's launch command. Wrong order = silently broken.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">🔒</div>
+          <div class="rule-text"><span class="neg">Never connect to production DBs:</span> Use dev or staging. MCP lets Claude run queries — you don't want experimental operations against real user data.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">🕵️</div>
+          <div class="rule-text"><span class="neg">Review third-party servers:</span> Not all community MCP servers are verified by Anthropic. Stick to the official repository or known publishers.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">📏</div>
+          <div class="rule-text"><span class="neg">MCP output eats context:</span> Tool responses count against your conversation window. If you see warnings, raise the limit: <code>MAX_MCP_OUTPUT_TOKENS=50000 claude</code> (default is 25k).</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⏱</div>
+          <div class="rule-text"><span class="neg">Slow server startup:</span> If a server times out on start, increase the timeout: <code>MCP_TIMEOUT=15000 claude</code>.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">🔑</div>
+          <div class="rule-text"><span class="neg">Re-authenticate after credential reset:</span> If you reset Supabase (or any service) credentials, the MCP shows as unauthenticated. Run <code>/mcp</code> → Authenticate to restore it.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">🛠</div>
+          <div class="rule-text"><span class="neg">Debugging deep issues:</span> Use the MCP Inspector tool (github.com/modelcontextprotocol/inspector) for interactive debugging when <code>/mcp</code> isn't enough.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✅ Quick Sanity Check</div>
+      <p>Before shipping: run <em>/mcp</em> to verify all servers are connected and authenticated. Run <em>claude mcp list</em> from the terminal to confirm scopes are set correctly for local vs team use.</p>
+    </div>
+
+  </div><!-- /gotchas -->
+
+</main>
+
+<script>
+  // Tab navigation
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  // Theme toggle
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+
+  // OS toggle
+  function setOS(os) {
+    document.body.classList.remove('os-win', 'os-mac');
+    document.body.classList.add('os-' + os);
+    document.querySelectorAll('.os-pill').forEach(p => {
+      p.classList.toggle('active', p.textContent.toLowerCase().includes(os === 'win' ? 'win' : 'mac'));
+    });
+  }
+</script>
+</body>
+</html>

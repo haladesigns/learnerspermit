@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hooks — Claude Code Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg   { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos   { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .st { color: var(--accent3); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+  .ref-table td.desc { color: var(--text); }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Hook event pill */
+  .event-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .event-pill {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .event-pill:hover { border-color: var(--border-accent); box-shadow: 0 0 0 1px var(--accent-glow); }
+
+  .event-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .event-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  .event-pill.stop  { border-top: 2px solid var(--accent3); }
+  .event-pill.pre   { border-top: 2px solid var(--accent);  }
+  .event-pill.post  { border-top: 2px solid var(--accent4); }
+  .event-pill.fail  { border-top: 2px solid var(--accent2); }
+  .event-pill.start { border-top: 2px solid #a78bfa; }
+
+  .event-pill.stop  .event-name { color: var(--accent3); }
+  .event-pill.pre   .event-name { color: var(--accent);  }
+  .event-pill.post  .event-name { color: var(--accent4); }
+  .event-pill.fail  .event-name { color: var(--accent2); }
+  .event-pill.start .event-name { color: #a78bfa; }
+
+  /* Hooks vs Skills comparison */
+  .compare-table { width: 100%; border-collapse: collapse; }
+  .compare-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding: 8px 14px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  .compare-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--accent-glow); }
+  .compare-table td:first-child { color: var(--text-muted); font-size: 12px; font-style: italic; width: 160px; }
+  .compare-table td:nth-child(2) { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .compare-table td:nth-child(3) { color: var(--accent4); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Hooks<span> — Claude Code</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="events">Hook Events</button>
+  <button data-tab="setup">Setup</button>
+  <button data-tab="gotchas">Gotchas</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Hooks — Event-Driven Automation</h2>
+      <p>Hooks fire automatically when specific <strong>events</strong> occur in Claude Code — not based on natural language. Think of them as triggers: "when X happens, always do Y." No prompting required, no skill description to match.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">What Hooks Do</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔔</div>
+            <div class="rule-text">Fire <strong>unconditionally</strong> when an event occurs — not based on intent or language matching.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚙️</div>
+            <div class="rule-text">Run shell commands, scripts, or external programs as side effects at key lifecycle points.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text">Attach to <strong>Stop, PreToolUse, PostToolUse, OnToolError,</strong> or <strong>SessionStart</strong> events.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text">Live in <code>settings.json</code> — not in a separate skill folder.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Hooks vs. Skills</div>
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Dimension</th>
+              <th>Hooks</th>
+              <th>Skills</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Trigger</td>
+              <td>System event</td>
+              <td>Language / /command</td>
+            </tr>
+            <tr>
+              <td>When</td>
+              <td>Always fires</td>
+              <td>When relevant</td>
+            </tr>
+            <tr>
+              <td>Lives in</td>
+              <td>settings.json</td>
+              <td>.claude/skills/</td>
+            </tr>
+            <tr>
+              <td>Best for</td>
+              <td>Notifications, logging, guards</td>
+              <td>Repeatable workflows</td>
+            </tr>
+            <tr>
+              <td>Control</td>
+              <td>Event-based, automatic</td>
+              <td>Prompt or slash-command</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">🔔 Primary Use Case (from video)</div>
+      <p><em>Audio/visual notifications when Claude finishes a task</em> — so you can tab away and get a heads-up when Claude needs your attention again. The most common hook is a Stop hook that plays a sound or sends a system notification.</p>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">💡 Easiest Way to Create Hooks</div>
+      <p>Just <em>ask Claude Code in plain English</em>: "Create a hook that plays an audio sound whenever you finish a task." Claude will research the docs and write the hook config for you. Restart the Claude Code session for changes to take effect.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- HOOK EVENTS -->
+  <div class="section" id="tab-events">
+
+    <div class="card">
+      <div class="card-title">The Five Hook Events</div>
+      <div class="event-grid">
+
+        <div class="event-pill stop">
+          <div class="event-name">Stop</div>
+          <div class="event-desc">Fires when Claude finishes responding and returns control to you. <br><br>Best for: audio chimes, desktop notifications, logging session end, auto-committing changes.</div>
+        </div>
+
+        <div class="event-pill pre">
+          <div class="event-name">PreToolUse</div>
+          <div class="event-desc">Fires <em>before</em> Claude executes any tool call (Bash, Read, Write, etc.).<br><br>Best for: safety checks, confirmation prompts before destructive ops, pre-flight validation.</div>
+        </div>
+
+        <div class="event-pill post">
+          <div class="event-name">PostToolUse</div>
+          <div class="event-desc">Fires <em>after</em> a tool call completes successfully.<br><br>Best for: logging what was run, formatting output, triggering follow-up scripts, auditing file writes.</div>
+        </div>
+
+        <div class="event-pill fail">
+          <div class="event-name">OnToolError</div>
+          <div class="event-desc">Fires when a tool call fails.<br><br>Best for: alerting on errors, fallback actions, error logging to external systems, Slack/email on failure.</div>
+        </div>
+
+        <div class="event-pill start">
+          <div class="event-name">SessionStart</div>
+          <div class="event-desc">Fires when a new Claude Code session begins.<br><br>Best for: loading env context, displaying project status, running `git status`, announcing active branch.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title green">Example: Stop Hook (Audio Notification)</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom: 10px;">This is the exact hook created in the video — plays an ascending 3-tone chime when Claude finishes responding.</p>
+      <pre><span class="cm">// ~/.claude/settings.json  (personal)  or  .claude/settings.json  (project)</span>
+{
+  <span class="kw">"hooks"</span>: {
+    <span class="kw">"Stop"</span>: [
+      {
+        <span class="kw">"command"</span>: <span class="st">"python3 -c \"</span>
+<span class="st">import subprocess, sys</span>
+<span class="st">notes = [523, 659, 784]</span>
+<span class="cm">  # C5, E5, G5</span>
+<span class="st">for freq in notes:</span>
+<span class="st">  subprocess.run(['play', '-n', 'synth', '0.15', 'sine', str(freq)], ...</span>
+<span class="st">\""</span>
+      }
+    ]
+  }
+}</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Example: SessionStart Hook (Git Status)</div>
+      <pre><span class="cm">// Show current branch and status at session start</span>
+{
+  <span class="kw">"hooks"</span>: {
+    <span class="kw">"SessionStart"</span>: [
+      {
+        <span class="kw">"command"</span>: <span class="st">"echo '=== Session Start ===' && git branch --show-current && git status --short"</span>
+      }
+    ]
+  }
+}</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Example: PreToolUse Hook (Guard Destructive Commands)</div>
+      <pre><span class="cm">// Warn before any rm command is run</span>
+{
+  <span class="kw">"hooks"</span>: {
+    <span class="kw">"PreToolUse"</span>: [
+      {
+        <span class="kw">"matcher"</span>: { <span class="kw">"tool"</span>: <span class="st">"Bash"</span>, <span class="kw">"command_pattern"</span>: <span class="st">"^rm "</span> },
+        <span class="kw">"command"</span>: <span class="st">"echo '⚠️  rm detected — confirm in chat'"</span>
+      }
+    ]
+  }
+}</pre>
+    </div>
+
+  </div><!-- /events -->
+
+
+  <!-- SETUP -->
+  <div class="section" id="tab-setup">
+
+    <div class="card">
+      <div class="card-title">Two Ways to Set Up Hooks</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">A</div>
+          <div class="step-body">
+            <strong>Ask Claude Code (easiest — shown in video)</strong><br>
+            Type exactly what you want in plain English. Claude researches the hooks documentation and writes the config.
+            <pre><span class="cm"># Just say:</span>
+<span class="li">"Create a hook that plays an audio sound whenever you finish a task."</span>
+<span class="li">"Add a hook that runs git status at the start of every session."</span>
+<span class="li">"Add a hook that logs all Bash commands to ~/claude-audit.log."</span></pre>
+            <span class="note">⚠ Restart your Claude Code session after creation for the hook to take effect.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">B</div>
+          <div class="step-body">
+            <strong>Edit settings.json manually</strong><br>
+            Open the settings file directly and add a <code>hooks</code> key.
+            <pre><span class="cm"># Personal (all projects):</span>
+<span class="fn">~/.claude/settings.json</span>
+
+<span class="cm"># Project-level (this project only):</span>
+<span class="fn">.claude/settings.json</span></pre>
+            <span class="tip">💡 Use personal for notification preferences, project-level for team-shared guards and audit hooks.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">settings.json Structure</div>
+      <pre><span class="cm">// Full structure — hooks key sits alongside other settings</span>
+{
+  <span class="kw">"hooks"</span>: {
+    <span class="kw">"Stop"</span>: [                         <span class="cm">// Array of hook objects</span>
+      {
+        <span class="kw">"command"</span>: <span class="st">"your-shell-command"</span>   <span class="cm">// Required: shell command to run</span>
+      }
+    ],
+    <span class="kw">"PreToolUse"</span>: [
+      {
+        <span class="kw">"matcher"</span>: {                     <span class="cm">// Optional: filter by tool/pattern</span>
+          <span class="kw">"tool"</span>: <span class="st">"Bash"</span>,
+          <span class="kw">"command_pattern"</span>: <span class="st">"^rm -rf"</span>   <span class="cm">// Regex pattern to match</span>
+        },
+        <span class="kw">"command"</span>: <span class="st">"notify-send 'Danger!' 'rm -rf detected'"</span>
+      }
+    ],
+    <span class="kw">"PostToolUse"</span>: [ ... ],
+    <span class="kw">"OnToolError"</span>: [ ... ],
+    <span class="kw">"SessionStart"</span>: [ ... ]
+  }
+}</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title green">Common Notification Patterns</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>OS / Method</th><th>Command</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>macOS — say</td>
+            <td class="desc"><code>say "Claude is done"</code></td>
+            <td>Built-in TTS, no install needed</td>
+          </tr>
+          <tr>
+            <td>macOS — afplay</td>
+            <td class="desc"><code>afplay /System/Library/Sounds/Glass.aiff</code></td>
+            <td>Built-in system sounds</td>
+          </tr>
+          <tr>
+            <td>macOS — osascript</td>
+            <td class="desc"><code>osascript -e 'display notification "Done" with title "Claude"'</code></td>
+            <td>Desktop notification popup</td>
+          </tr>
+          <tr>
+            <td>Linux — notify-send</td>
+            <td class="desc"><code>notify-send "Claude" "Task complete"</code></td>
+            <td>Requires libnotify</td>
+          </tr>
+          <tr>
+            <td>Linux — paplay</td>
+            <td class="desc"><code>paplay /usr/share/sounds/freedesktop/stereo/complete.oga</code></td>
+            <td>PulseAudio sound</td>
+          </tr>
+          <tr>
+            <td>Cross-platform — Python</td>
+            <td class="desc"><code>python3 -c "import subprocess; subprocess.run([...])"</code></td>
+            <td>Most flexible, generate tones</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /setup -->
+
+
+  <!-- GOTCHAS -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Good Uses for Hooks</div>
+        <div class="decision-item"><span class="di">✅</span>Audio/visual notifications when Claude finishes (Stop hook).</div>
+        <div class="decision-item"><span class="di">✅</span>Logging all tool calls to an audit file for compliance.</div>
+        <div class="decision-item"><span class="di">✅</span>Pre-flight guards before destructive Bash commands.</div>
+        <div class="decision-item"><span class="di">✅</span>Auto-format or lint after every file write (PostToolUse).</div>
+        <div class="decision-item"><span class="di">✅</span>Display git status or env info at session start.</div>
+        <div class="decision-item"><span class="di">✅</span>Send Slack/webhook alert on tool errors.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Use Skills Instead (not Hooks)</div>
+        <div class="decision-item"><span class="di">❌</span>Workflows you want to trigger with a command or description.</div>
+        <div class="decision-item"><span class="di">❌</span>Multi-step processes that need Claude's reasoning.</div>
+        <div class="decision-item"><span class="di">❌</span>Anything requiring arguments or dynamic inputs at call time.</div>
+        <div class="decision-item"><span class="di">❌</span>Code review, deployment, doc generation — use skills for these.</div>
+        <div class="decision-item"><span class="di">❌</span>Actions that should only run sometimes (hooks always fire).</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title red">Gotchas</div>
+      <div class="rule-list">
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Restart required:</span> After adding or editing a hook in settings.json, you <strong>must restart your Claude Code session</strong> for the hook to take effect. Edits are not hot-reloaded.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Hooks always fire:</span> Unlike skills, there is no "when to use" filter. A Stop hook fires on <em>every</em> response. Keep hook commands fast and non-blocking, or they'll delay every response.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Shell command context:</span> Hook commands run in the shell — they do not have access to Claude's conversation context. You cannot inject text into Claude's response from a hook.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Side effects on every event:</span> Use hooks for notifications and logging. <strong>Do not</strong> use hooks to auto-deploy, auto-commit, or auto-send messages — these are irreversible and hooks fire unconditionally.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Dependency availability:</span> Your hook command must be available in the shell PATH. If you use <code>say</code> (macOS) or <code>notify-send</code> (Linux), verify the binary exists first. Ask Claude to check with a simple <code>which say</code>.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">💡</div>
+          <div class="rule-text"><span class="pos">Tip:</span> Hooks and skills are <strong>complementary</strong> — a Stop hook can notify you that Claude finished, while the skill that ran the task handles all the logic. Layer them intentionally.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">🔗 Further Reading</div>
+      <p>Official docs: <em>Claude Code Hooks Documentation</em> at code.claude.com/docs/en/hooks — covers all hook event types, matcher syntax, and advanced patterns like lifecycle integration with skills.</p>
+    </div>
+
+  </div><!-- /gotchas -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

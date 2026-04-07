@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remote Control — Claude Code Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di        { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 120px;
+  }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent3); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Compare table for RC vs web */
+  .compare-table { width: 100%; border-collapse: collapse; }
+  .compare-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 14px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .compare-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--accent-glow); }
+  .compare-table td:first-child { color: var(--text-muted); font-size: 12px; width: 200px; }
+  .compare-table .yes { color: var(--accent3); font-weight: 600; }
+  .compare-table .no  { color: var(--accent2); font-weight: 600; }
+  .compare-table .col-rc  { color: var(--accent);  font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .compare-table .col-web { color: var(--accent4); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+
+  /* Prereq pills */
+  .prereq-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .prereq-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: var(--tag-bg);
+    border: 1px solid var(--border-accent);
+    color: var(--accent);
+    letter-spacing: 0.03em;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Remote Control<span> — Claude Code</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="setup">Setup</button>
+  <button data-tab="commands">Commands</button>
+  <button data-tab="patterns">Patterns</button>
+  <button data-tab="gotchas">Gotchas</button>
+  <button data-tab="compare">RC vs Web</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Control Claude Code from anywhere</h2>
+      <p>Remote Control bridges your local Claude Code terminal session with <strong>claude.ai/code</strong> and the Claude mobile apps. Start a task at your desk, pick it up from your phone — <strong>your code never leaves your machine.</strong></p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">What it does</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📱</div>
+            <div class="rule-text">Control your local Claude Code session from your phone, tablet, or any browser.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔒</div>
+            <div class="rule-text"><strong>Code stays local.</strong> Only the conversation syncs — your filesystem, MCP servers, tools, and project config stay on your machine.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text"><strong>Full two-way sync.</strong> Send messages from terminal, web, and phone interchangeably. Everything stays in sync.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔌</div>
+            <div class="rule-text"><strong>Auto-reconnects.</strong> If your laptop sleeps or network drops, the session reconnects automatically.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🛡️</div>
+            <div class="rule-text"><strong>Secure by design.</strong> Outbound HTTPS only — no inbound ports opened. Traffic goes through Anthropic API over TLS with short-lived, scoped credentials.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title red">Requirements</div>
+        <div class="prereq-row">
+          <span class="prereq-pill">Pro / Max / Team / Enterprise</span>
+          <span class="prereq-pill">v2.1.51+</span>
+          <span class="prereq-pill">claude.ai login</span>
+        </div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">💳</div>
+            <div class="rule-text"><span class="neg">API-only keys don't work.</span> You must be on a Pro, Max, Team, or Enterprise plan and authenticated through claude.ai.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📦</div>
+            <div class="rule-text">Claude Code <strong>v2.1.51 or later.</strong> Check with <code>claude --version</code>.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔑</div>
+            <div class="rule-text">Logged in via <code>/login</code> inside Claude Code (claude.ai auth, not API key).</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📂</div>
+            <div class="rule-text">Run <code>claude</code> in your project directory at least once to accept the workspace trust dialog.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Mental model</div>
+      <p>Think of it like a <em>shared screen for your Claude session</em> — but instead of streaming pixels, it's streaming the conversation. Your terminal is the actual engine. The phone or browser is just the remote control.</p>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-val">1</div>
+        <div class="stat-label">Remote connection per session at a time</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">~10m</div>
+        <div class="stat-label">Extended outage before session times out</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">0</div>
+        <div class="stat-label">Code bytes that leave your machine</div>
+      </div>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- SETUP -->
+  <div class="section" id="tab-setup">
+
+    <div class="card">
+      <div class="card-title">Step-by-Step Setup</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Check your requirements</strong><br>
+            Confirm you have a Pro/Max/Team/Enterprise plan (not API-only), Claude Code v2.1.51+, and are logged in via claude.ai auth.
+            <span class="tip">💡 Run <code>claude --version</code> to check version. Run <code>/login</code> inside Claude Code if not yet authenticated.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Accept workspace trust (first time)</strong><br>
+            Navigate to your project directory and run <code>claude</code> at least once. Accept the trust dialog that appears.
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Start a Remote Control session</strong><br>
+            From your project directory, run:
+            <pre><span class="kw">claude</span> remote-control
+
+<span class="cm"># Optional: give it a name for easy identification</span>
+<span class="kw">claude</span> remote-control <span class="fn">--name</span> <span class="li">"My Project"</span></pre>
+            The terminal shows a session URL and a QR code. Press <code>spacebar</code> to toggle the QR code on/off.
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Connect from another device</strong><br>
+            Three ways to connect once the session is running:
+            <pre><span class="hd">Option A:</span> <span class="li">Scan the QR code</span> with your phone camera → opens in Claude app
+<span class="hd">Option B:</span> <span class="li">Copy the session URL</span> → paste into any browser
+<span class="hd">Option C:</span> <span class="li">Visit claude.ai/code</span> → find session in list (green dot = online)</pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Enable from inside an existing session</strong><br>
+            Already in Claude Code and want to add remote access without restarting?
+            <pre><span class="kw">/remote-control</span>          <span class="cm"># enable remote control</span>
+<span class="kw">/rc</span>                      <span class="cm"># shortcut</span>
+<span class="kw">/remote-control</span> <span class="li">My Project</span>  <span class="cm"># with a custom name</span></pre>
+            <span class="tip">💡 This generates the session URL and QR code without interrupting your current work.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <strong>Enable for all sessions (optional)</strong><br>
+            Want every Claude Code session to be remotely accessible by default?
+            <pre><span class="kw">/config</span>   <span class="cm"># then set "Enable Remote Control for all sessions" → true</span></pre>
+            Now every time you run <code>claude</code>, it automatically registers as a remote session.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✅ You're set when...</div>
+      <p>You can see the session URL in your terminal <em>and</em> a green status dot next to your session name on claude.ai/code. Messages sent from your phone appear in the terminal.</p>
+    </div>
+
+  </div><!-- /setup -->
+
+
+  <!-- COMMANDS -->
+  <div class="section" id="tab-commands">
+
+    <div class="card">
+      <div class="card-title">Command Reference</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>What It Does</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>claude remote-control</td>
+            <td>Start a new Remote Control session from the CLI</td>
+            <td>Run from your project directory</td>
+          </tr>
+          <tr>
+            <td>--name "Label"</td>
+            <td>Give the session a custom name visible in the session list</td>
+            <td>Helps distinguish multiple sessions</td>
+          </tr>
+          <tr>
+            <td>--verbose</td>
+            <td>Show detailed connection and session logs</td>
+            <td>Useful for debugging connectivity</td>
+          </tr>
+          <tr>
+            <td>--sandbox / --no-sandbox</td>
+            <td>Enable or disable sandboxing for filesystem and network isolation</td>
+            <td>Optional security layer</td>
+          </tr>
+          <tr>
+            <td>/remote-control</td>
+            <td>Enable Remote Control from inside an active Claude Code session</td>
+            <td>Does not interrupt current work</td>
+          </tr>
+          <tr>
+            <td>/rc</td>
+            <td>Shortcut for /remote-control</td>
+            <td>Fastest way to enable from within a session</td>
+          </tr>
+          <tr>
+            <td>/remote-control Name</td>
+            <td>Enable with a custom session name</td>
+            <td>e.g. /remote-control Chase AI Website</td>
+          </tr>
+          <tr>
+            <td>/config</td>
+            <td>Open settings to enable RC for all sessions by default</td>
+            <td>Toggle: "Enable Remote Control for all sessions"</td>
+          </tr>
+          <tr>
+            <td>spacebar</td>
+            <td>Toggle the QR code display on/off in the terminal</td>
+            <td>While session is running</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Connection Methods</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📷</div>
+          <div class="rule-text"><strong>QR code scan</strong> — Open phone camera → scan QR in terminal → opens directly in Claude app (iOS or Android).</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔗</div>
+          <div class="rule-text"><strong>Session URL</strong> — Copy the URL displayed in the terminal → paste into any browser tab.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🌐</div>
+          <div class="rule-text"><strong>claude.ai/code session list</strong> — Your session appears with a green status dot when online. Click to connect.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /commands -->
+
+
+  <!-- PATTERNS -->
+  <div class="section" id="tab-patterns">
+
+    <div class="card blue">
+      <div class="card-title">Pattern 1: Desk to Couch</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            <strong>The scenario:</strong> Working at your desk, need to step away but want to keep an eye on things or send follow-up prompts from your phone.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            <strong>How:</strong>
+            <pre><span class="kw">claude</span> remote-control <span class="fn">--name</span> <span class="li">"Feature Build"</span></pre>
+            Scan the QR code with your phone. Walk away. Send messages, review diffs, and approve actions from the Claude app while Claude keeps working on your machine.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Pattern 2: Long-Running Tasks</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            <strong>The scenario:</strong> Big refactor, test suite run, database migration — something that takes a while and you want to monitor from your phone.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            <strong>How:</strong>
+            <pre><span class="kw">claude</span> remote-control <span class="fn">--name</span> <span class="li">"Database Migration"</span></pre>
+            Give Claude the instructions, then check in from your phone periodically. You'll see the full conversation history, tool outputs, and can approve any permission requests that come up.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Pattern 3: Quick Mobile Check-In</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            <strong>The scenario:</strong> Already in a session, suddenly need to leave — meeting, errand, etc.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            <strong>How:</strong>
+            <pre><span class="kw">/rc</span>   <span class="cm"># type this in your existing Claude Code session</span></pre>
+            Scan the QR, pocket your phone, walk to your meeting. If Claude needs approval or finishes a task, you'll see it on your phone.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">💡 Permission modes + Remote Control</div>
+      <p>In <em>Auto-Accept Edits mode</em>, Claude keeps working without waiting for you. In <em>Normal mode</em>, permission prompts show up on your phone for approval. Pick the mode that matches your comfort level with the task.</p>
+    </div>
+
+  </div><!-- /patterns -->
+
+
+  <!-- GOTCHAS -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="card">
+      <div class="card-title red">Gotchas & Limitations</div>
+      <div class="rule-list">
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">One remote connection at a time.</span> Each Claude Code session supports only one remote connection. Opening the session URL on a second device takes over from the first.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Your terminal must stay open.</span> Remote Control is a local process. Closing the terminal or killing the <code>claude</code> process ends the session. Your laptop can sleep briefly (it auto-reconnects), but shutting down the terminal kills it entirely.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Extended outages time out.</span> Network outages lasting ~10+ minutes will cause the session to time out. Restart with <code>claude remote-control</code> if that happens.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">API keys don't work.</span> Remote Control requires authentication through claude.ai (Pro/Max/Team/Enterprise). If you're using an API key, switch to <code>claude auth login</code> authentication first.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text">
+            <span class="neg">Long-lived tokens don't work either — even with the right plan.</span>
+            Tokens created via <code>claude setup-token</code> or set through the <code>CLAUDE_CODE_OAUTH_TOKEN</code> environment variable are <strong>inference-only</strong> — they only carry the <code>user:inference</code> OAuth scope, which lets you make AI requests but nothing else. Remote Control needs a <strong>full-scope</strong> token: one that includes both <code>user:inference</code> <em>and</em> <code>user:profile</code>. That second scope is what allows Claude Code to register the session, identify your account, and broker the remote connection through Anthropic's servers.
+            <br><br>
+            For example: if you set up auth using <code>claude setup-token</code> (common for CI pipelines or sharing tokens across machines), you'll hit this exact error when you run <code>/remote-control</code>:
+            <pre style="margin-top:8px"><span class="fn">Remote Control requires a full-scope login token.</span>
+<span class="cm">Long-lived tokens (from claude setup-token or CLAUDE_CODE_OAUTH_TOKEN)
+are limited to inference-only for security reasons.</span>
+<span class="li">Run claude auth login to use Remote Control.</span></pre>
+            The fix is to run <code>claude auth login</code>, which opens a browser OAuth flow and grants both scopes. This is the only auth path that works with Remote Control.
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">💡</div>
+          <div class="rule-text"><span class="pos">Everything still runs locally.</span> Your phone isn't running code — it's just sending messages. Your machine does all actual work. Local MCP servers, custom skills, file access, and tools all work exactly as they do in the terminal.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">💡</div>
+          <div class="rule-text"><span class="pos">Session names help you find things.</span> If you run multiple Remote Control sessions (different projects, terminals), use <code>--name</code> so you can tell them apart in the session list on claude.ai/code.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">🚫 Common Mistake</div>
+      <p>Confusing Remote Control with <em>Claude Code on the Web</em>. They look similar but are fundamentally different — Remote Control routes to YOUR machine; the web version runs on Anthropic's cloud. Only Remote Control gives you access to your local files, MCP servers, and tools.</p>
+    </div>
+
+  </div><!-- /gotchas -->
+
+
+  <!-- COMPARE: RC vs Web -->
+  <div class="section" id="tab-compare">
+
+    <div class="hero">
+      <h2>Remote Control vs Claude Code on the Web</h2>
+      <p>These are two different things and people frequently mix them up. The key question: <strong>do you need your local environment?</strong></p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Feature Comparison</div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th class="col-rc">Remote Control</th>
+            <th class="col-web">Claude Code on the Web</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Where code runs</td>
+            <td>Your local machine</td>
+            <td>Anthropic's cloud infrastructure</td>
+          </tr>
+          <tr>
+            <td>Local file access</td>
+            <td class="yes">✓ Yes</td>
+            <td class="no">✗ No</td>
+          </tr>
+          <tr>
+            <td>Local MCP servers</td>
+            <td class="yes">✓ Yes</td>
+            <td class="no">✗ No</td>
+          </tr>
+          <tr>
+            <td>Custom skills / tools</td>
+            <td class="yes">✓ Yes — full local env</td>
+            <td class="no">✗ No</td>
+          </tr>
+          <tr>
+            <td>Terminal must be open</td>
+            <td class="no">✗ Yes (limitation)</td>
+            <td class="yes">✓ No — cloud manages it</td>
+          </tr>
+          <tr>
+            <td>Zero local setup required</td>
+            <td class="no">✗ No</td>
+            <td class="yes">✓ Yes</td>
+          </tr>
+          <tr>
+            <td>Run multiple tasks in parallel</td>
+            <td class="no">✗ One session at a time</td>
+            <td class="yes">✓ Yes — cloud compute</td>
+          </tr>
+          <tr>
+            <td>Code leaves your machine</td>
+            <td class="yes">✓ No (only conversation syncs)</td>
+            <td class="no">✗ Yes — runs on cloud</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Use Remote Control when...</div>
+        <div class="decision-item"><span class="di">✅</span>You need access to your local files, database, or services.</div>
+        <div class="decision-item"><span class="di">✅</span>You have MCP servers or custom Claude Code skills configured locally.</div>
+        <div class="decision-item"><span class="di">✅</span>You started a task at your desk and need to monitor or continue it from your phone.</div>
+        <div class="decision-item"><span class="di">✅</span>You want your code to stay on your machine for security or compliance reasons.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Use Claude Code on the Web when...</div>
+        <div class="decision-item"><span class="di">✅</span>The task doesn't depend on your local machine at all.</div>
+        <div class="decision-item"><span class="di">✅</span>You want to spin up multiple tasks in parallel using cloud compute.</div>
+        <div class="decision-item"><span class="di">✅</span>You're on a device with no Claude Code installed and need to get something done quickly.</div>
+        <div class="decision-item"><span class="di">✅</span>You don't want to worry about keeping a terminal open.</div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">📌 Rule of thumb</div>
+      <p>If you need your <em>local environment</em>, use Remote Control. If you just need Claude to do something that doesn't depend on your machine, use Claude Code on the web.</p>
+    </div>
+
+  </div><!-- /compare -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

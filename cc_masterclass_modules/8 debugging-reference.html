@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debugging — Claude Code Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .st { color: var(--accent3); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+  .ref-table td:nth-child(2) { color: var(--text); }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Prompt comparison */
+  .prompt-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 4px; }
+  @media (max-width: 700px) { .prompt-compare { grid-template-columns: 1fr; } }
+
+  .prompt-box { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .prompt-box-header {
+    padding: 7px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .prompt-box-header.bad  { background: var(--accent2-glow); color: var(--accent2); }
+  .prompt-box-header.good { background: var(--accent3-glow); color: var(--accent3); }
+  .prompt-box-body {
+    padding: 12px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg-code);
+    line-height: 1.6;
+  }
+
+  /* OS toggle pill */
+  .os-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border-accent);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .os-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .os-btn.active { background: var(--accent); color: #fff; }
+
+  .cycle-key { display: none; }
+  .cycle-key.visible { display: inline; }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+
+  /* Scenario cards */
+  .scenario-list { display: flex; flex-direction: column; gap: 14px; }
+  .scenario-card {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .scenario-card:hover { border-color: var(--border-accent); }
+  .scenario-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--tag-bg);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  .scenario-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent4);
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .scenario-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+  }
+  .scenario-chevron {
+    font-size: 10px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+  }
+  .scenario-card.open .scenario-chevron { transform: rotate(180deg); }
+  .scenario-body {
+    display: none;
+    padding: 14px 16px;
+  }
+  .scenario-card.open .scenario-body { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Debugging<span> — Claude Code</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="loop">Debug Loop</button>
+  <button data-tab="scenarios">Scenarios</button>
+  <button data-tab="commands">Commands</button>
+  <button data-tab="patterns">Patterns</button>
+  <button data-tab="gotchas">Gotchas</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Debugging with Claude Code</h2>
+      <p>When things break, Claude Code is your best debugging partner — but it has one requirement: <strong>it needs to see what went wrong.</strong> Vague prompts get vague answers. Full context gets precise fixes on the first try.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">Core Principle</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📋</div>
+            <div class="rule-text"><strong>Context is everything.</strong> Always give Claude the full error output, the file in question, and what you expected to happen.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔄</div>
+            <div class="rule-text"><strong>Most bugs fix in ≤ 3 exchanges</strong> when you provide full context from the very first message.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🖼️</div>
+            <div class="rule-text"><strong>No error message?</strong> Use text descriptions or screenshots for UI bugs that don't produce explicit errors.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text"><strong>Claude is good at its own loop</strong> — errors it encounters in-session it can see, recognize, and fix automatically.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Prompt Quality</div>
+        <div style="margin-bottom: 10px; font-size: 12px; color: var(--text-muted);">The difference a good prompt makes:</div>
+        <div class="prompt-compare">
+          <div class="prompt-box">
+            <div class="prompt-box-header bad">❌ Bad</div>
+            <div class="prompt-box-body">"The API route is broken, can you fix it?"</div>
+          </div>
+          <div class="prompt-box">
+            <div class="prompt-box-header good">✅ Good</div>
+            <div class="prompt-box-body">"POST /api/apply returns 500. Full terminal output: [paste]. Worked yesterday. Added Resend in last commit. .env.local has RESEND_API_KEY set."</div>
+          </div>
+        </div>
+        <div style="margin-top: 10px; font-size: 12px; color: var(--text-muted); line-height: 1.6">
+          Good prompts tell Claude what <em style="color:var(--accent4)">changed</em>, what you <em style="color:var(--accent4)">expected</em>, and give it everything to find the root cause.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Key Takeaway</div>
+      <p>Debugging isn't about typing the right magic words — it's about <em>showing Claude exactly what broke.</em> The more real output you paste, the faster you get a fix.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- DEBUG LOOP -->
+  <div class="section" id="tab-loop">
+
+    <div class="card">
+      <div class="card-title">The 4-Step Debugging Loop</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Reproduce</strong><br>
+            Can you trigger the bug reliably? Run the failing command, visit the broken page, or run the test. Copy the <em>exact</em> output — not a summary, not a screenshot of half the terminal.
+            <span class="tip">💡 Pipe output directly: <code>npm run build 2>&1 | claude -p "Fix these errors"</code></span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Isolate</strong><br>
+            Give Claude the full error output and let it trace through your code. It will read files, follow imports, and find the root cause. For multi-file bugs, use Plan Mode first.
+            <span class="tip">💡 Plan Mode: press <span id="plan-key-display"><span class="cycle-key mac">Shift+Tab (×2)</span><span class="cycle-key winlin visible">Shift+Tab (×2)</span></span>, or say "Let's plan first — don't make any changes yet."</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Fix</strong><br>
+            Claude proposes a change. You review it. If it looks right, let it apply the edit. Claude creates automatic checkpoints before changes — you can always rewind.
+            <span class="note">⚠ If the fix looks wrong, press Esc to interrupt and clarify the correct behavior before proceeding.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Validate</strong><br>
+            Run the command again. If the error is gone, you're done. If a new error appears, go back to Step 1 — Claude already has context from this round and can fix faster.
+            <span class="tip">💡 Ask Claude to re-run the command explicitly: "Run npm run build again and confirm it passes."</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">When to Use Plan Mode</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🗂️</div>
+          <div class="rule-text">Bug could be in <strong>multiple files</strong> (frontend, API route, database query)</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">👥</div>
+          <div class="rule-text">You're debugging <strong>someone else's code</strong></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔗</div>
+          <div class="rule-text">A fix in one file <strong>might break another file</strong></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔍</div>
+          <div class="rule-text">You want to <strong>understand root cause</strong> before patching the symptom</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠ When to Reset</div>
+      <p>If you've been going back and forth for more than <em>2–3 correction cycles</em>, stop. Type <em>/clear</em> and write a single comprehensive prompt with everything you've learned. A clean session with a precise prompt almost always outperforms a long session with accumulated failed attempts.</p>
+    </div>
+
+  </div><!-- /loop -->
+
+
+  <!-- SCENARIOS -->
+  <div class="section" id="tab-scenarios">
+
+    <div class="callout blue">
+      <div class="callout-label">📖 Walkthroughs</div>
+      <p>Three real debugging scenarios, from simple to complex. Click each to expand.</p>
+    </div>
+
+    <div class="scenario-list">
+
+      <div class="scenario-card open" id="sc1">
+        <div class="scenario-header" onclick="toggleScenario('sc1')">
+          <div class="scenario-num">SCENARIO 1</div>
+          <div class="scenario-title">Build Error After Adding Supabase</div>
+          <div class="scenario-chevron">▼</div>
+        </div>
+        <div class="scenario-body">
+          <div class="step-list">
+            <div class="step-row">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <strong>Capture &amp; pipe the error</strong><br>
+                Send all output (including errors) directly to Claude:
+                <pre><span class="fn">npm run build</span> <span class="kw">2>&1</span> | <span class="fn">claude</span> <span class="li">-p "Fix these TypeScript build errors"</span></pre>
+                Or from inside a Claude Code session: <em>"Run npm run build and fix any errors you find."</em>
+              </div>
+            </div>
+            <div class="step-row">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <strong>Common causes after adding Supabase</strong><br>
+                <ul style="margin-top:6px; padding-left:16px; color:var(--text-muted); font-size:12px; line-height:1.8">
+                  <li><strong style="color:var(--text)">Missing env vars at build time</strong> — Claude will suggest adding variables or handling missing values gracefully</li>
+                  <li><strong style="color:var(--text)">Type mismatches</strong> — Supabase data may not match component expectations; Claude will add types or suggest the Supabase CLI</li>
+                </ul>
+              </div>
+            </div>
+            <div class="step-row">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <strong>Validate</strong><br>
+                <em>"Run npm run build again and confirm it passes."</em>
+                <span class="tip">💡 If new errors appear, Claude already has context and can fix them faster.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scenario-card" id="sc2">
+        <div class="scenario-header" onclick="toggleScenario('sc2')">
+          <div class="scenario-num">SCENARIO 2</div>
+          <div class="scenario-title">API Route Returns 500 With No Useful Error</div>
+          <div class="scenario-chevron">▼</div>
+        </div>
+        <div class="scenario-body">
+          <div class="step-list">
+            <div class="step-row">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <strong>Add visibility first</strong><br>
+                Terminal shows only <code>POST /api/apply 500 in 234ms</code> — no details. Tell Claude:
+                <pre><span class="st">"POST /api/apply returns 500 with no stack trace. Read</span>
+<span class="st">app/api/apply/route.ts and check for issues. I suspect</span>
+<span class="st">the try/catch is swallowing the error."</span></pre>
+              </div>
+            </div>
+            <div class="step-row">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <strong>Claude fixes error swallowing</strong><br>
+                It will find the catch block returning a generic message without logging the real error. Claude adds <code>console.error</code> to surface the actual exception.
+                <span class="note">⚠ This is a common Next.js pattern — errors in API routes get swallowed by default.</span>
+              </div>
+            </div>
+            <div class="step-row">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <strong>Debug the real error now visible</strong><br>
+                Hit the endpoint again. Example: <code>Error: Resend API key is missing</code> — could be a wrong env var name, or you need to restart the dev server after adding new env vars.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scenario-card" id="sc3">
+        <div class="scenario-header" onclick="toggleScenario('sc3')">
+          <div class="scenario-num">SCENARIO 3</div>
+          <div class="scenario-title">Intermittent Failure (JSON Parse Error)</div>
+          <div class="scenario-chevron">▼</div>
+        </div>
+        <div class="scenario-body">
+          <div class="step-list">
+            <div class="step-row">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <strong>Reproduce and capture the raw response</strong><br>
+                <em>"Run the carousel generation and show me the full response from the Anthropic API. I need to see what it returns when it fails."</em>
+                <span class="tip">💡 You may discover the API sometimes wraps JSON in markdown code fences, breaking the parser.</span>
+              </div>
+            </div>
+            <div class="step-row">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <strong>Isolate the parsing code</strong><br>
+                <em>"Read the route file and find where we parse the response. Is there handling for code fences?"</em>
+              </div>
+            </div>
+            <div class="step-row">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <strong>Fix and stress-test</strong><br>
+                Claude applies a robust parsing function that strips code fences before parsing. Then validate:
+                <pre><span class="st">"Run the carousel generation 3 times and confirm</span>
+<span class="st">it succeeds each time."</span></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /scenarios -->
+
+
+  <!-- COMMANDS -->
+  <div class="section" id="tab-commands">
+
+    <div class="card blue">
+      <div class="card-title">Piping Errors to Claude Code</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🔧</div>
+          <div class="rule-text"><strong>Build errors:</strong> <code>npm run build 2>&1 | claude -p "Fix these build errors"</code></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🧪</div>
+          <div class="rule-text"><strong>Test failures:</strong> <code>npm run test 2>&1 | claude -p "Fix these failing tests"</code></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✂️</div>
+          <div class="rule-text"><strong>Last 100 lines:</strong> <code>npm run dev 2>&1 | tail -100 | claude -p "What is causing the error?"</code></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚡</div>
+          <div class="rule-text"><strong>Reusable shortcut</strong> — add to your shell config:
+            <pre><span class="fn">ask</span>() { <span class="st">"$@"</span> <span class="kw">2>&1</span> | <span class="fn">claude</span> <span class="li">-p "Analyze this output and suggest fixes."</span>; }
+<span class="cm"># Then use:</span>
+<span class="fn">ask</span> npm run build
+<span class="fn">ask</span> npx tsc --noEmit</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Conversation Memory Commands</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Command</th><th>What It Does</th><th>When to Use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>/clear</td><td>Wipes conversation history. Claude re-reads project files but forgets all back-and-forth.</td><td>Stuck after 2–3 failed cycles</td></tr>
+          <tr><td>/compact</td><td>Summarizes conversation to free memory while keeping key info.</td><td>Around 70% memory capacity</td></tr>
+          <tr><td>/compact [focus]</td><td>Summarizes but prioritizes a specific topic (e.g. <code>/compact focus on the API bug</code>).</td><td>Long session, specific active bug</td></tr>
+          <tr><td>/cost</td><td>Shows current usage so you know how full conversation memory is.</td><td>Check periodically in long sessions</td></tr>
+          <tr><td>/doctor</td><td>Runs diagnostics on Claude Code installation and settings.</td><td>Claude Code itself is misbehaving</td></tr>
+          <tr><td>/rewind</td><td>Opens menu to restore conversation, code, or both to a previous checkpoint.</td><td>Fix made things worse</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Session &amp; Debug Flags</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Command</th><th>What It Does</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Esc</td><td>Stops Claude mid-action. Conversation is preserved so you can redirect.</td><td>Press once</td></tr>
+          <tr><td>Esc + Esc</td><td>Opens the rewind menu (same as /rewind).</td><td>Quick checkpoint restore</td></tr>
+          <tr><td>CLAUDE_DEBUG=1 claude</td><td>Enables debug mode for Claude Code itself.</td><td>When Claude Code is the problem</td></tr>
+          <tr><td>claude --verbose</td><td>Verbose output for detailed logging.</td><td>When Claude Code is the problem</td></tr>
+          <tr><td>claude --continue</td><td>Resumes the most recent conversation.</td><td>Coming back to an in-progress session</td></tr>
+          <tr><td>claude --resume</td><td>Choose from recent sessions.</td><td>Multiple active sessions</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /commands -->
+
+
+  <!-- PATTERNS -->
+  <div class="section" id="tab-patterns">
+
+    <div class="card">
+      <div class="card-title">5 Reusable Debugging Patterns</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>The Step-by-Step Logger</strong><br>
+            Can't figure out where a bug starts? Ask Claude to add logging at each key point:
+            <pre><span class="st">"The Supabase query returns an empty array but I have published posts.</span>
+<span class="st">Add console.log statements to app/blog/page.tsx to show:</span>
+<span class="st">1. The exact query being executed</span>
+<span class="st">2. The raw response from Supabase</span>
+<span class="st">3. Any error object."</span></pre>
+            <span class="tip">💡 Very effective at surfacing RLS (Row Level Security) policy blocks — a common Supabase issue.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>The Before/After Comparison</strong><br>
+            Something worked before a change and broke after:
+            <pre><span class="st">"The blog page worked before my last commit. I added tag filtering</span>
+<span class="st">and now clicking a tag shows no posts. Compare current</span>
+<span class="st">app/blog/page.tsx with the previous version</span>
+<span class="st">(use git diff HEAD~1 app/blog/page.tsx) and find what broke."</span></pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>The Environment Check</strong><br>
+            Works locally, fails in production:
+            <pre><span class="st">"Everything works in dev but Vercel returns 'Failed to fetch'.</span>
+<span class="st">Check: 1. Are env vars correct for production?</span>
+<span class="st">2. Are Supabase URL/key set in Vercel's env vars?</span>
+<span class="st">Read Supabase client files and .env.local to diagnose."</span></pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>The Subagent Investigator</strong><br>
+            For bugs that require reading many files, delegate to a subagent:
+            <pre><span class="st">"Use a subagent to investigate why the carousel PDF generation</span>
+<span class="st">times out after 30 seconds. Have it trace the full path from</span>
+<span class="st">the API route through the Google Docs integration and report back."</span></pre>
+            <span class="tip">💡 Subagent runs in its own conversation memory. Your main session stays clean.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>The Fresh Start</strong><br>
+            After 2–3 failed correction cycles:
+            <pre><span class="fn">/clear</span>
+<span class="cm"># Then write ONE comprehensive prompt with:</span>
+<span class="cm"># - What you're trying to do</span>
+<span class="cm"># - What you've tried</span>
+<span class="cm"># - All relevant error output</span>
+<span class="cm"># - What changed before the bug appeared</span></pre>
+            <span class="note">⚠ Don't carry failed attempts forward — context pollution makes Claude less effective, not more.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /patterns -->
+
+
+  <!-- GOTCHAS -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Do This</div>
+        <div class="decision-item"><span class="di">✅</span>Include the <strong>complete</strong> error + stack trace, not a summary.</div>
+        <div class="decision-item"><span class="di">✅</span>Use <code>/clear</code> after 2–3 failed cycles and restart with a clean prompt.</div>
+        <div class="decision-item"><span class="di">✅</span>Run <code>/cost</code> periodically and <code>/compact</code> at ~70% capacity.</div>
+        <div class="decision-item"><span class="di">✅</span>Restart <code>npm run dev</code> after any <code>.env.local</code> change.</div>
+        <div class="decision-item"><span class="di">✅</span>Use Plan Mode before letting Claude touch multi-file bugs.</div>
+        <div class="decision-item"><span class="di">✅</span>Add a <code># Debugging</code> section to <code>CLAUDE.md</code> for persistent rules.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Avoid This</div>
+        <div class="decision-item"><span class="di">❌</span>Vague prompts like <em>"it's broken"</em> or <em>"fix the API."</em></div>
+        <div class="decision-item"><span class="di">❌</span>Continuing a long broken session instead of using <code>/clear</code>.</div>
+        <div class="decision-item"><span class="di">❌</span>Letting Claude fix test files to match broken implementation (fix the code, not the test).</div>
+        <div class="decision-item"><span class="di">❌</span>Assuming env vars are live without restarting the dev server.</div>
+        <div class="decision-item"><span class="di">❌</span>Debugging without first ensuring errors are properly logged.</div>
+        <div class="decision-item"><span class="di">❌</span>Spending hours on the same problem — know when to change approach.</div>
+      </div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">Known Gotchas</div>
+      <div class="rule-list">
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">The Fix Loop:</span> Claude fixes file A → breaks file B → fixes file B → breaks file A. Press <code>Esc</code> to interrupt and clarify: <em>"Stop. The correct behavior is X. Fix the implementation to match the test, not the other way around."</em></div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Swallowed Errors in Next.js:</span> Before debugging the real issue, always ensure errors are being logged. Prompt: <em>"Check all API routes in app/api/ and make sure every catch block logs the error with console.error."</em></div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Full Conversation Memory:</span> Long debugging sessions fill up memory. Claude starts "forgetting" earlier instructions. Run <code>/cost</code> to check, <code>/compact</code> at 70%, and <code>/clear</code> between unrelated tasks.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Env Vars After Changes:</span> After adding, renaming, or changing any value in <code>.env.local</code>, you <strong>must</strong> restart <code>npm run dev</code>. Next.js does not hot-reload env var changes. This catches everyone at least once.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Supabase Empty Results:</span> If Supabase queries return empty arrays despite having data, check Row Level Security (RLS) policies first — they silently block reads rather than throwing errors.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">CLAUDE.md Debugging Template</div>
+      <pre><span class="hd"># Debugging</span>
+<span class="li">- Always log the full error, not just the message.</span>
+<span class="li">  Use console.error(error) not console.error(error.message).</span>
+<span class="li">- When Supabase queries return empty results,</span>
+<span class="li">  check RLS policies first.</span>
+<span class="li">- After modifying .env.local,</span>
+<span class="li">  remind me to restart the dev server.</span></pre>
+    </div>
+
+  </div><!-- /gotchas -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+
+  // Scenario accordion
+  function toggleScenario(id) {
+    const card = document.getElementById(id);
+    card.classList.toggle('open');
+  }
+</script>
+</body>
+</html>

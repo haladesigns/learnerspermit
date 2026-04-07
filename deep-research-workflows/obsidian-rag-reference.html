@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Obsidian RAG — Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+    --raw-color:     #f7a23e;
+    --wiki-color:    #c084fc;
+    --output-color:  #3ecf8e;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+    --raw-color:     #c47400;
+    --wiki-color:    #7c3aed;
+    --output-color:  #0d7c4e;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+  .card.purple { border-left: 3px solid var(--wiki-color); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+  .card-title.purple::before { background: var(--wiki-color); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .pos   { color: var(--accent3); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .wl { color: var(--wiki-color); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout.purple { border-left: 3px solid var(--wiki-color); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout.purple .callout-label { color: var(--wiki-color); }
+
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+  .callout.purple p em { color: var(--wiki-color); }
+
+  /* ── Vault diagram ── */
+  .vault-diagram {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 2;
+  }
+  .vd-root  { color: var(--accent); font-weight: 600; }
+  .vd-raw   { color: var(--raw-color); font-weight: 600; }
+  .vd-wiki  { color: var(--wiki-color); font-weight: 600; }
+  .vd-out   { color: var(--output-color); font-weight: 600; }
+  .vd-file  { color: var(--text-muted); }
+  .vd-note  { color: var(--text-dim); font-size: 11px; font-style: italic; }
+
+  /* ── Navigation hops ── */
+  .hop-chain {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .hop {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    text-align: center;
+  }
+  .hop .hop-num {
+    display: block;
+    font-size: 9px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .hop .hop-file { color: var(--wiki-color); }
+  .hop-arrow {
+    font-size: 18px;
+    color: var(--text-dim);
+    padding: 0 6px;
+  }
+
+  /* ── Four verbs ── */
+  .verb-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 700px) { .verb-grid { grid-template-columns: 1fr 1fr; } }
+
+  .verb-card {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .verb-icon { font-size: 24px; margin-bottom: 8px; }
+  .verb-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .verb-desc { font-size: 12px; color: var(--text-muted); }
+
+  /* ── Stat row ── */
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 120px;
+  }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent2); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  /* ── Query examples ── */
+  .query-block {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--wiki-color);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-top: 8px;
+  }
+  .query-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--wiki-color);
+    margin-bottom: 6px;
+  }
+  .query-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Obsidian RAG<span> — Karpathy method</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="setup">Setup (7 Steps)</button>
+  <button data-tab="claudemd">CLAUDE.md</button>
+  <button data-tab="queries">Queries</button>
+  <button data-tab="truerag">True RAG?</button>
+</nav>
+
+<main>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       OVERVIEW
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Karpathy's Obsidian "RAG"</h2>
+      <p>A personal knowledge base using <strong>Obsidian + Claude Code</strong> — no vector database, no embeddings, no code. The LLM navigates a structured markdown wiki via hierarchical index files, answering questions with 3–4 targeted reads instead of semantic search.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">Core Insight</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🗂️</div>
+            <div class="rule-text"><strong>Hierarchy replaces vectors.</strong> An <code>_master-index.md</code> and per-topic <code>_index.md</code> files let the LLM navigate to any answer in 3–4 reads.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📥</div>
+            <div class="rule-text"><strong>raw/ is the inbox.</strong> Dump anything — articles, PDFs, tweets. Claude Code processes ("compiles") them into structured wiki articles.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📚</div>
+            <div class="rule-text"><strong>wiki/ is the LLM's domain.</strong> You rarely touch it directly. Claude writes and maintains all articles, links, and indexes.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text"><strong>Queries compound.</strong> Every answer can be saved back into the wiki — the knowledge base gets smarter over time.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title yellow">The Four Verbs</div>
+        <div class="verb-grid">
+          <div class="verb-card">
+            <div class="verb-icon">📎</div>
+            <div class="verb-name">Clip</div>
+            <div class="verb-desc">Web Clipper → lands in raw/</div>
+          </div>
+          <div class="verb-card">
+            <div class="verb-icon">⚙️</div>
+            <div class="verb-name">Compile</div>
+            <div class="verb-desc">Claude processes raw/ → wiki/</div>
+          </div>
+          <div class="verb-card">
+            <div class="verb-icon">❓</div>
+            <div class="verb-name">Query</div>
+            <div class="verb-desc">Ask against your knowledge base</div>
+          </div>
+          <div class="verb-card">
+            <div class="verb-icon">🔍</div>
+            <div class="verb-name">Audit</div>
+            <div class="verb-desc">LLM finds gaps + inconsistencies</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">Vault Structure</div>
+      <div class="vault-diagram">
+        <span class="vd-root">vault/</span><br>
+        &nbsp;&nbsp;├── <span class="vd-raw">raw/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vd-note">← YOUR inbox — dump anything here</span><br>
+        &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="vd-file">2024-01-15-article.md</span><br>
+        &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="vd-file">karpathy-tweet.md</span><br>
+        &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="vd-file">random-paper.pdf</span><br>
+        &nbsp;&nbsp;├── <span class="vd-wiki">wiki/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vd-note">← LLM's domain — auto-maintained</span><br>
+        &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="vd-file">_master-index.md</span>&nbsp;&nbsp;<span class="vd-note">← LLM's table of contents</span><br>
+        &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="vd-wiki">ai-agents/</span><br>
+        &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="vd-file">_index.md</span><br>
+        &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="vd-file">autonomous-coding.md</span><br>
+        &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="vd-file">tool-use-patterns.md</span><br>
+        &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="vd-wiki">rag-systems/</span><br>
+        &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="vd-file">_index.md</span><br>
+        &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="vd-file">vector-databases.md</span><br>
+        &nbsp;&nbsp;└── <span class="vd-out">output/</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="vd-note">← Query results and reports</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">How the LLM Navigates (No Vector DB)</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">When you ask a question, Claude Code does 3–4 targeted reads — not a full scan:</p>
+      <div class="hop-chain">
+        <div class="hop">
+          <span class="hop-num">Read 1</span>
+          <span class="hop-file">_master-index.md</span>
+          <span style="font-size:11px;color:var(--text-muted);display:block">"What topics exist?"</span>
+        </div>
+        <div class="hop-arrow">→</div>
+        <div class="hop">
+          <span class="hop-num">Read 2</span>
+          <span class="hop-file">topic/_index.md</span>
+          <span style="font-size:11px;color:var(--text-muted);display:block">"What articles exist?"</span>
+        </div>
+        <div class="hop-arrow">→</div>
+        <div class="hop">
+          <span class="hop-num">Reads 3–4</span>
+          <span class="hop-file">specific articles</span>
+          <span style="font-size:11px;color:var(--text-muted);display:block">1–3 targeted docs</span>
+        </div>
+        <div class="hop-arrow">→</div>
+        <div class="hop">
+          <span class="hop-num">Output</span>
+          <span class="hop-file">synthesized answer</span>
+          <span style="font-size:11px;color:var(--text-muted);display:block">optionally saved to wiki</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Key Takeaway</div>
+      <p><em>Scalability comes from the index structure, not embeddings.</em> Each read is cheap. This works reliably for hundreds or low thousands of documents.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SETUP
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-setup">
+
+    <div class="card blue">
+      <div class="card-title">7-Step Setup</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Install Obsidian</strong><br>
+            Download from <code>obsidian.md</code> (free, Mac/Windows/Linux). Open → "Create new vault" → name it → pick a save location.
+            <span class="tip">💡 A vault is just a folder of markdown files on your computer — nothing proprietary.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Create the folder structure via Claude Code</strong><br>
+            Open a terminal in your vault folder, run <code>claude</code>, and send this prompt:
+            <pre><span class="cm"># Tell Claude Code to scaffold the vault</span>
+Create this folder structure for my knowledge base:
+
+- <span class="fn">raw/</span>       — inbox where I'll dump source material
+- <span class="wl">wiki/</span>      — your domain, you'll maintain everything here
+  - Create <span class="wl">wiki/_master-index.md</span> with heading "Knowledge Base Index"
+    and note "Topics will be listed here as they are created."
+- <span class="li">output/</span>    — query results and reports
+
+Just create the folders and that one file. Nothing else yet.</pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Create CLAUDE.md in vault root</strong> — the most important step<br>
+            This file is read every Claude Code session. It makes Claude your permanent librarian. See the <strong>CLAUDE.md tab</strong> for the full template.
+            <span class="note">⚠ Without CLAUDE.md, Claude won't know the conventions. Do this before compiling anything.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Install Obsidian Web Clipper (browser extension)</strong><br>
+            Extension store → search "Obsidian Web Clipper" → install → gear icon → General → add vault.<br>
+            Then: Templates → edit Default template:
+            <pre><span class="hd">Vault:</span>         <span class="li">your-vault-name</span>
+<span class="hd">Note location:</span> <span class="fn">raw</span>
+<span class="hd">Note name:</span>     <span class="wl">{{date|date:"YYYY-MM-DD"}}-{{title|safe_name}}</span></pre>
+            <span class="pos">✓ Any article on the web — one click — markdown file in raw/.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Install Local Images Plus (optional, recommended)</strong><br>
+            Obsidian: Settings → Community Plugins → Browse → search "Local Images Plus" → Install → Enable.<br>
+            <span class="tip">💡 When you open a clipped note, this plugin auto-downloads all images into your vault so nothing breaks when offline.</span>
+            <span class="note">⚠ Community Plugins must be enabled first: Settings → Community plugins → toggle off "Restricted mode".</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <strong>Your first compile</strong><br>
+            Clip 3–5 articles into raw/, then tell Claude Code:
+            <pre>Compile everything in raw/ into the wiki. For each file:
+<span class="li">1.</span> Read it and identify the core topic
+<span class="li">2.</span> Create or find the right topic folder in wiki/
+<span class="li">3.</span> Write a wiki article with summary, key takeaways, and <span class="wl">[[wiki links]]</span>
+<span class="li">4.</span> Update the topic's _index.md
+<span class="li">5.</span> Update wiki/_master-index.md
+
+Cross-link between topics wherever relevant.</pre>
+            <span class="pos">✓ Open Obsidian — you'll see a structured wiki appear.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">7</div>
+          <div class="step-body">
+            <strong>Audit / health check (run periodically)</strong><br>
+            <pre>Audit the wiki. Review every topic for:
+- Inconsistent or contradictory information across articles
+- Missing cross-links between related concepts
+- Gaps in coverage — topics mentioned but no articles yet
+- Suggest 3–5 new articles that would strengthen the knowledge base
+
+Don't make changes yet — just give me the report.</pre>
+            <span class="tip">💡 The audit prompt is the maintenance step that keeps quality compounding over time.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✓ Setup Complete When</div>
+      <p>You have <em>raw/</em>, <em>wiki/</em> with <em>_master-index.md</em>, <em>output/</em>, a <em>CLAUDE.md</em> in vault root, and Web Clipper configured to drop into raw/.</p>
+    </div>
+
+  </div><!-- /setup -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       CLAUDE.md
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-claudemd">
+
+    <div class="hero" style="border-left-color: var(--wiki-color); box-shadow: var(--shadow), inset 0 0 60px rgba(192,132,252,0.08);">
+      <h2 style="color:var(--wiki-color)">CLAUDE.md</h2>
+      <p>Place this file in your <strong>vault root</strong>. Claude Code reads it at the start of every session — it's how you set the rules once and have them followed forever. This is the most important file in the system.</p>
+    </div>
+
+    <div class="card purple">
+      <div class="card-title purple">Full Template (copy-paste ready)</div>
+      <pre><span class="hd"># Knowledge Base — Vault Conventions</span>
+
+<span class="hd">## Vault Structure</span>
+<span class="fn">- /raw</span>    — source material, clipped articles, research (input zone)
+<span class="wl">- /wiki</span>   — LLM-compiled knowledge base (see Wiki System below)
+<span class="li">- /output</span> — query results and generated reports
+
+<span class="hd">## Wiki System</span>
+<span class="cm">You are the librarian of the wiki/ folder. You write and maintain everything in it.</span>
+
+<span class="hd">### Structure</span>
+<span class="li">- wiki/_master-index.md</span> is the entry point — lists every topic with a one-line description.
+<span class="li">- Each topic</span> gets its own subfolder with its own _index.md listing all articles.
+
+<span class="hd">### Compiling</span>
+When I say <span class="fn">"compile"</span> or dump new material in raw/:
+<span class="li">1.</span> Read each raw file
+<span class="li">2.</span> Decide which topic it belongs to (or create a new topic folder)
+<span class="li">3.</span> Write a wiki article with key takeaways and <span class="wl">[[wiki links]]</span> to related concepts
+<span class="li">4.</span> Update that topic's _index.md
+<span class="li">5.</span> Update wiki/_master-index.md
+<span class="li">6.</span> If a raw file spans multiple topics, create articles in both and cross-link
+
+<span class="hd">### Querying</span>
+When answering questions against the knowledge base:
+<span class="li">1.</span> Read wiki/_master-index.md first to find the right topic
+<span class="li">2.</span> Read that topic's _index.md to find relevant articles
+<span class="li">3.</span> Read the specific articles
+<span class="li">4.</span> Synthesize the answer
+
+<span class="hd">### Auditing</span>
+When I say <span class="fn">"audit"</span> or <span class="fn">"lint"</span>, review the wiki for:
+<span class="li">-</span> Inconsistent or contradictory information
+<span class="li">-</span> Missing cross-links between related concepts
+<span class="li">-</span> Gaps in coverage
+<span class="li">-</span> Suggest improvements, but don't make changes without confirmation
+
+<span class="hd">## Conventions</span>
+<span class="li">-</span> Always use <span class="wl">[[wiki links]]</span> when referencing other notes
+<span class="li">-</span> File names: lowercase with hyphens (e.g., ai-agent-overview.md)
+<span class="li">-</span> Keep articles concise — bullet points over paragraphs
+<span class="li">-</span> Always include a <span class="hd">## Key Takeaways</span> section in every wiki article</pre>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">What Each Section Does</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🗺️</div>
+            <div class="rule-text"><strong>Vault Structure</strong> — tells Claude which folder does what. Without this, it may write to the wrong place.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📚</div>
+            <div class="rule-text"><strong>Compiling section</strong> — the 6-step algorithm Claude follows every time you say "compile." Ensures consistent article format.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔍</div>
+            <div class="rule-text"><strong>Querying section</strong> — enforces the 4-read navigation pattern so Claude doesn't try to read everything at once.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔎</div>
+            <div class="rule-text"><strong>Auditing section</strong> — keeps Claude from making unsanctioned edits during an audit. Report-only mode.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📝</div>
+            <div class="rule-text"><strong>Conventions</strong> — ensures <code>[[wiki links]]</code> are used (enables Obsidian graph view), consistent filenames, and article structure.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">Gotchas</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">CLAUDE.md must be in vault root,</span> not inside raw/ or wiki/. Claude Code looks for it at the project root.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Don't skip the Querying section.</span> Without it Claude may scan every file for each question, which is slow and expensive.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Audit ≠ edit.</span> The audit prompt says "don't make changes without confirmation" — include that line or Claude will start editing.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">_master-index.md freshness.</span> If Claude skips updating it, later queries will miss new topics. Check it after compiles.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /claudemd -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       QUERIES
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-queries">
+
+    <div class="card">
+      <div class="card-title">Query Patterns</div>
+
+      <div class="query-block">
+        <div class="query-label">Simple Lookup</div>
+        <div class="query-text">What are the key findings from [specific article you clipped]?</div>
+      </div>
+
+      <div class="query-block">
+        <div class="query-label">Cross-Reference</div>
+        <div class="query-text">How does [concept A] relate to [concept B] based on everything in the wiki?</div>
+      </div>
+
+      <div class="query-block">
+        <div class="query-label">Synthesis — saves back to wiki ⭐</div>
+        <div class="query-text">Based on everything in the wiki, what are the main approaches to [topic]
+and how do they compare? Save your answer as a new wiki article
+and link it to the sources you referenced.</div>
+      </div>
+
+      <div class="query-block">
+        <div class="query-label">Compile Trigger</div>
+        <div class="query-text">compile</div>
+      </div>
+
+      <div class="query-block">
+        <div class="query-label">Audit Trigger</div>
+        <div class="query-text">Audit the wiki. Review every topic for inconsistent information, missing
+cross-links, gaps in coverage, and suggest 3–5 new articles.
+Don't make changes yet — just give me the report.</div>
+      </div>
+    </div>
+
+    <div class="callout purple">
+      <div class="callout-label">⭐ The Magic Query</div>
+      <p>The synthesis query — where you ask Claude to compare approaches and save the answer as a new wiki article — is the compounding mechanism. <em>Every question makes the system smarter.</em> The output becomes input for future queries.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Article Structure Claude Produces</div>
+      <pre><span class="hd"># Article Title</span>
+
+<span class="cm">(1–2 sentence summary of the core idea)</span>
+
+<span class="hd">## Key Points</span>
+<span class="li">- Point one</span>
+<span class="li">- Point two (with [[wiki link]] to related concept)</span>
+<span class="li">- Point three</span>
+
+<span class="hd">## Key Takeaways</span>  <span class="cm">← required in every article</span>
+<span class="li">- Most important insight</span>
+<span class="li">- Second insight</span>
+
+<span class="hd">## Related</span>
+<span class="li">- [[related-topic/article-name]]</span>
+<span class="li">- [[another-topic/concept]]</span></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Index File Structures</div>
+      <div class="grid-2">
+        <div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px"><code>wiki/_master-index.md</code></p>
+          <pre><span class="hd"># Knowledge Base Index</span>
+
+<span class="hd">## Topics</span>
+
+<span class="li">- [[ai-agents/]]</span> — autonomous LLM agents,
+  tool use, coding agents
+<span class="li">- [[rag-systems/]]</span> — retrieval-augmented
+  generation approaches
+<span class="li">- [[content-creation/]]</span> — frameworks for
+  writing and publishing</pre>
+        </div>
+        <div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px"><code>wiki/ai-agents/_index.md</code></p>
+          <pre><span class="hd"># AI Agents</span>
+
+<span class="hd">## Articles</span>
+
+<span class="li">- [[autonomous-coding]]</span> — how Claude Code
+  plans and executes tasks
+<span class="li">- [[tool-use-patterns]]</span> — common MCP
+  patterns and when to use them</pre>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /queries -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TRUE RAG
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-truerag">
+
+    <div class="hero">
+      <h2>Obsidian RAG vs True RAG</h2>
+      <p>Obsidian RAG is a personal knowledge base for solo operators. True RAG (vector DB + embeddings) is infrastructure for teams and production apps. Pick based on scale and use case.</p>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Obsidian RAG Wins</div>
+        <div class="decision-item"><span class="di">✅</span><strong>Zero infrastructure</strong> — markdown files in a folder. No vector DB, no embeddings, no hosting.</div>
+        <div class="decision-item"><span class="di">✅</span><strong>Setup in 15 minutes</strong> — you just did it.</div>
+        <div class="decision-item"><span class="di">✅</span><strong>Human-readable</strong> — you can browse and read your own wiki. A vector store is a black box.</div>
+        <div class="decision-item"><span class="di">✅</span><strong>Self-improving</strong> — audit step means quality gets better over time.</div>
+        <div class="decision-item"><span class="di">✅</span><strong>Outputs compound</strong> — every query adds to the knowledge base.</div>
+        <div class="decision-item"><span class="di">✅</span><strong>You get smarter</strong> — you actually read and learn from the wiki, not just get chunks back from a database.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ When It Breaks Down</div>
+        <div class="decision-item"><span class="di">❌</span><strong>5,000+ documents</strong> — cross-document discovery needs semantic search that indexes can't provide.</div>
+        <div class="decision-item"><span class="di">❌</span><strong>Bulk ingestion</strong> — compiling 500 new docs takes hours of LLM processing. True RAG chunks and embeds fast.</div>
+        <div class="decision-item"><span class="di">❌</span><strong>No semantic fallback</strong> — if the index missed it, your query misses it too.</div>
+        <div class="decision-item"><span class="di">❌</span><strong>Multi-user / production</strong> — this is a personal system. Teams and production apps need real infrastructure.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Comparison Table</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Obsidian RAG</th>
+            <th>True RAG (vector DB)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Setup time</td>
+            <td>15 minutes</td>
+            <td>Hours to days</td>
+          </tr>
+          <tr>
+            <td>Infrastructure</td>
+            <td>Markdown folder</td>
+            <td>Vector DB + embedding pipeline + hosting</td>
+          </tr>
+          <tr>
+            <td>Doc scale sweet spot</td>
+            <td>0–2,000 docs</td>
+            <td>Thousands to millions</td>
+          </tr>
+          <tr>
+            <td>Ingestion speed</td>
+            <td>Slow (LLM per doc)</td>
+            <td>Fast (chunk + embed)</td>
+          </tr>
+          <tr>
+            <td>Search type</td>
+            <td>Hierarchical index nav</td>
+            <td>Semantic similarity</td>
+          </tr>
+          <tr>
+            <td>Human-readable?</td>
+            <td style="color:var(--accent3)">Yes — it's markdown</td>
+            <td style="color:var(--accent2)">No — vector embeddings</td>
+          </tr>
+          <tr>
+            <td>Self-improving?</td>
+            <td style="color:var(--accent3)">Yes — audit + compile</td>
+            <td style="color:var(--accent2)">Requires re-indexing</td>
+          </tr>
+          <tr>
+            <td>Multi-user</td>
+            <td style="color:var(--accent2)">Personal only</td>
+            <td style="color:var(--accent3)">Designed for teams</td>
+          </tr>
+          <tr>
+            <td>Cost</td>
+            <td style="color:var(--accent3)">LLM tokens only</td>
+            <td style="color:var(--accent2)">Tokens + DB hosting + embeddings</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">Bottom Line</div>
+      <p><em>For solo operators, creators, researchers, and small teams — Obsidian RAG is the move.</em> If you ever outgrow it (5,000+ docs, multi-user, production), that's a good problem to have. Start here.</p>
+    </div>
+
+  </div><!-- /truerag -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

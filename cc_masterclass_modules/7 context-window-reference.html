@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Context Window Management — Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg   { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos   { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip  { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .cm  { color: var(--text-muted); font-style: italic; }
+  .cmt { color: #7a9ec2; font-style: italic; }   /* script comments — slate blue, distinct from dim text */
+  .kw  { color: var(--accent);  }
+  .hd  { color: var(--accent4); font-weight: 600; }
+  .li  { color: var(--accent3); }
+  .fn  { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 120px;
+  }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent2); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Memory meter widget */
+  .meter-container {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .meter-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+  .meter-bar-wrap {
+    height: 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+  }
+  .meter-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s ease, background 0.3s;
+  }
+  .meter-zones {
+    display: flex;
+    margin-top: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    position: relative;
+  }
+  .zone-label {
+    position: absolute;
+    transform: translateX(-50%);
+  }
+  .meter-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .meter-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .meter-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 6px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+  .meter-btn:hover { color: var(--text); border-color: var(--accent); }
+  .meter-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-glow); }
+  .meter-output {
+    margin-top: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent3);
+    line-height: 1.7;
+    min-height: 20px;
+  }
+
+  /* Pattern cards */
+  .pattern-card {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .pattern-header {
+    background: var(--bg-card);
+    padding: 10px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pattern-header .pnum {
+    font-size: 10px;
+    background: var(--accent-glow);
+    border: 1px solid rgba(79,142,247,0.3);
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: var(--accent);
+  }
+  .pattern-body {
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .pattern-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .ps {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    align-items: flex-start;
+  }
+  .ps-num {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-dim);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .ps-text { color: var(--text); }
+  .ps-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  /* Token breakdown bars */
+  .token-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .tb-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 70px;
+    gap: 10px;
+    align-items: center;
+    font-size: 12px;
+  }
+  .tb-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tb-bar-bg {
+    height: 8px;
+    background: var(--bg);
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .tb-bar { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  .tb-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: right;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Context Window<span> — Management</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="commands">Commands</button>
+  <button data-tab="steps">Steps</button>
+  <button data-tab="patterns">Patterns</button>
+  <button data-tab="gotchas">Gotchas</button>
+</nav>
+
+<main>
+
+  <!-- ===== OVERVIEW ===== -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Conversation Memory Management</h2>
+      <p>Your context window is a <strong>finite resource</strong> — the single most important thing to manage in Claude Code. Every file read, command output, and back-and-forth fills it up. The 99% solution: keep your eye on usage and <strong>/clear aggressively</strong>. <strong>Update:</strong> Opus 4.6 and Sonnet 4.6 on the 1M token window show only ~2% drop per 100K tokens — the old "cliff at 50%" no longer applies to these models. Clear early and often still wins, but you now have real wiggle room when you need it.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">What Fills the Window</div>
+        <div class="token-breakdown">
+          <div class="tb-row">
+            <div class="tb-label">System instructions</div>
+            <div class="tb-bar-bg"><div class="tb-bar" style="width:6%; background:var(--text-dim)"></div></div>
+            <div class="tb-val">3–8.5K</div>
+          </div>
+          <div class="tb-row">
+            <div class="tb-label">Tool definitions</div>
+            <div class="tb-bar-bg"><div class="tb-bar" style="width:8%; background:var(--text-dim)"></div></div>
+            <div class="tb-val">~11.6K</div>
+          </div>
+          <div class="tb-row">
+            <div class="tb-label">CLAUDE.md files</div>
+            <div class="tb-bar-bg"><div class="tb-bar" style="width:4%; background:var(--accent)"></div></div>
+            <div class="tb-val">variable</div>
+          </div>
+          <div class="tb-row">
+            <div class="tb-label">MCP server tools</div>
+            <div class="tb-bar-bg"><div class="tb-bar" style="width:10%; background:var(--accent4)"></div></div>
+            <div class="tb-val">variable</div>
+          </div>
+          <div class="tb-row">
+            <div class="tb-label">Your conversation</div>
+            <div class="tb-bar-bg"><div class="tb-bar" style="width:55%; background:var(--accent2)"></div></div>
+            <div class="tb-val">biggest ↑</div>
+          </div>
+          <div class="tb-row">
+            <div class="tb-label">Response buffer</div>
+            <div class="tb-bar-bg"><div class="tb-bar" style="width:20%; background:var(--accent3)"></div></div>
+            <div class="tb-val">~40K reserved</div>
+          </div>
+        </div>
+        <div style="margin-top: 10px; font-size: 12px; color: var(--text-muted);">Default window: <span style="color:var(--accent); font-family:'IBM Plex Mono',monospace;">200,000 tokens</span> · Opus 4.6 / Sonnet 4.6: <span style="color:var(--accent3); font-family:'IBM Plex Mono',monospace;">1,000,000 tokens</span></div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Context Degradation — Model Matters</div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-val">~50%</div>
+            <div class="stat-label">Old cliff (older models / Sonnet 4.5)</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">~2%</div>
+            <div class="stat-label">Drop per 100K tokens (Opus/Sonnet 4.6)</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">95%</div>
+            <div class="stat-label">Auto-compact triggers (all models)</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted); line-height:1.6">
+          <strong style="color:var(--accent4)">Older models / Sonnet 4.5:</strong> Performance cliff at ~50-60%. Clear aggressively.<br>
+          <strong style="color:var(--accent3)">Opus 4.6 / Sonnet 4.6 on 1M window:</strong> ~2% drop per 100K tokens — gradual slope, not a cliff. 91% at 256K → 78% at 1M on MRCR v2 8-needle. Sonnet 4.5 scored 10.8 on the same test; Sonnet 4.6 scored 90.6 — a 9× improvement. Wiggle room now exists, but operating at 92% still beats 78%, so clear when you can.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Interactive meter -->
+    <div class="card blue">
+      <div class="card-title">Interactive: Context Zone Simulator</div>
+      <div class="meter-container">
+        <div class="meter-title">Context Window Usage</div>
+        <div class="meter-bar-wrap">
+          <div class="meter-fill" id="meterFill" style="width:9%; background:var(--accent3)"></div>
+        </div>
+        <div style="position:relative; height:20px; margin-top:4px;">
+          <span class="zone-label" style="left:25%; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent3); transform:translateX(-50%); position:absolute;">25%</span>
+          <span class="zone-label" style="left:50%; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent4); transform:translateX(-50%); position:absolute;">50%</span>
+          <span class="zone-label" style="left:60%; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent2); transform:translateX(-50%); position:absolute;">60%</span>
+          <span class="zone-label" style="left:95%; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent2); transform:translateX(-50%); position:absolute;">95%</span>
+        </div>
+        <div class="meter-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent3)"></div>Safe — clear if convenient</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent4)"></div>Compact zone (older models: clear now)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent2)"></div>High usage — 4.6 models hold, others degrade</div>
+        </div>
+        <div class="meter-controls">
+          <button class="meter-btn" onclick="setMeter(9)">9% — Fresh session</button>
+          <button class="meter-btn" onclick="setMeter(25)">25% — Light use</button>
+          <button class="meter-btn" onclick="setMeter(43)">43% — Typical working</button>
+          <button class="meter-btn" onclick="setMeter(57)">57% — Compact zone</button>
+          <button class="meter-btn" onclick="setMeter(72)">72% — Context rot</button>
+          <button class="meter-btn" onclick="setMeter(95)">95% — Auto-compact!</button>
+        </div>
+        <div class="meter-output" id="meterOutput">▸ 9% — You're in good shape. Keep going.</div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">📊 Status Line — Always-Visible Context Meter</div>
+      <p>A one-time shell script + config setting adds a live bar below the Claude Code prompt: <em>myproject | claude-opus-4-6 | ctx: 43% used [!]</em>. Warning markers appear at 50%, 75%, and 90%. Setup is in the <strong>Commands</strong> tab → "Status Line Setup."</p>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 The 50% Rule — Updated</div>
+      <p>When memory hits 50%, ask: <em>"Do I need this context for the next task?"</em> If no → <em>/clear</em>. If yes and you're on Opus/Sonnet 4.6 with 1M window → you can keep going with confidence. If you're on an older model → <em>/compact</em> with focus now. <strong>Clear early and often still wins — but it's no longer a cliff if you don't.</strong></p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ===== COMMANDS ===== -->
+  <div class="section" id="tab-commands">
+
+    <div class="card blue">
+      <div class="card-title">Core Memory Commands</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Command</th><th>What it does</th><th>When to use</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>/context</td>
+            <td>Show current memory usage breakdown by category</td>
+            <td>Constantly — make it reflexive</td>
+          </tr>
+          <tr>
+            <td>/compact</td>
+            <td>Compress entire conversation into a summary, continue</td>
+            <td>At ~50% when you want to preserve progress</td>
+          </tr>
+          <tr>
+            <td>/compact focus on X</td>
+            <td>Compact with guided focus — you control what's kept</td>
+            <td>Power move — always prefer this over bare /compact</td>
+          </tr>
+          <tr>
+            <td>/clear</td>
+            <td>Wipe the conversation entirely — fresh start</td>
+            <td>Between tasks, when Claude is confused, 9 times out of 10</td>
+          </tr>
+          <tr>
+            <td>/rewind</td>
+            <td>Open checkpoint menu — compress from a selected point</td>
+            <td>Partial compaction, trim a debugging detour</td>
+          </tr>
+          <tr>
+            <td>/mcp</td>
+            <td>Check per-MCP-server memory costs</td>
+            <td>Diagnose silent memory hogs; disconnect unused servers</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Session Management Commands</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Command / Flag</th><th>What it does</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>claude --continue</td>
+            <td>Resume most recent session</td>
+            <td>Also: <code>claude -c</code></td>
+          </tr>
+          <tr>
+            <td>claude --resume</td>
+            <td>Pick from recent sessions interactively</td>
+            <td>Also: <code>claude -r</code></td>
+          </tr>
+          <tr>
+            <td>--fork-session</td>
+            <td>Resume and branch without affecting original</td>
+            <td>Combine with <code>--continue</code></td>
+          </tr>
+          <tr>
+            <td>/rename &lt;name&gt;</td>
+            <td>Name the current session for easy retrieval</td>
+            <td>e.g. <code>/rename oauth-migration</code></td>
+          </tr>
+          <tr>
+            <td>claude --model opus</td>
+            <td>Start session with a specific model</td>
+            <td>Switch mid-session with <code>/model sonnet</code></td>
+          </tr>
+          <tr>
+            <td>Esc Esc (double-tap)</td>
+            <td>Open rewind / checkpoint menu</td>
+            <td>Same as <code>/rewind</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">/compact Focus Examples</div>
+      <pre><span class="cm"># Preserve specific context during compaction</span>
+<span class="fn">/compact</span> <span class="li">focus on the API changes</span>
+<span class="fn">/compact</span> <span class="li">keep the database schema and modified endpoints</span>
+<span class="fn">/compact</span> <span class="li">only preserve the test results and the list of files changed</span>
+<span class="fn">/compact</span> <span class="li">preserve: schema is done, tables are users_preferences and preference_types</span>
+<span class="fn">/compact</span> <span class="li">preserve only the API modifications and test results</span></pre>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Status Line Setup — Live Context Bar</div>
+      <div style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:12px;">
+        Add a persistent context meter to the Claude Code prompt bar showing <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">dir | model | ctx: X% used</code> with warning markers at 50%, 75%, and 90%. One-time setup — three steps.
+      </div>
+
+      <div class="step-list" style="margin-bottom:14px;">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Create the script at <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">~/.claude/statusline-command.sh</code></strong>
+            <pre><span class="fn">cat</span> <span class="li">> ~/.claude/statusline-command.sh</span> <span class="kw">&lt;&lt; 'EOF'</span>
+<span class="hd">#!/usr/bin/env bash</span>
+<span class="cmt"># Claude Code pipes a JSON blob to this script on stdin every message.</span>
+<span class="cmt"># We slurp it all into $input so we can query it multiple times without re-reading stdin.</span>
+input=$(cat)
+
+<span class="cmt"># Extract a quoted string value by key name from the JSON.</span>
+<span class="cmt"># grep -o isolates the "key": "value" pair; sed strips the key and both quotes.</span>
+<span class="cmt"># head -1 ensures we only get the first match (no duplicates).</span>
+<span class="cmt"># Used for string fields like "current_dir" and "display_name".</span>
+get_val() {
+  echo "$input" | grep -o "\"$1\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" \
+    | head -1 | sed 's/.*:[[:space:]]*"//;s/"$//'
+}
+
+<span class="cmt"># Extract an unquoted numeric value by key name.</span>
+<span class="cmt"># Identical approach but the regex matches bare digits/decimals (no surrounding quotes).</span>
+<span class="cmt"># Used for "used_percentage", which arrives as a float like 43.7.</span>
+get_num() {
+  echo "$input" | grep -o "\"$1\"[[:space:]]*:[[:space:]]*[0-9.]*" \
+    | head -1 | sed 's/.*:[[:space:]]*//'
+}
+
+<span class="cmt"># Try "current_dir" first; fall back to legacy key "cwd"; default to "unknown".</span>
+<span class="cmt"># Claude Code has used both key names across versions — this handles either.</span>
+cwd=$(get_val "current_dir")
+[ -z "$cwd" ] && cwd=$(get_val "cwd")
+[ -z "$cwd" ] && cwd="unknown"
+
+<span class="cmt"># "display_name" is the human-readable model label, e.g. "claude-opus-4-6".</span>
+model=$(get_val "display_name")
+[ -z "$model" ] && model="unknown"
+
+<span class="cmt"># "used_percentage" is a float (e.g. 43.7) representing context window fill level.</span>
+used=$(get_num "used_percentage")
+
+<span class="cmt"># basename strips the full path to just the last directory component.</span>
+<span class="cmt"># e.g. /Users/you/projects/myapp → myapp</span>
+dir=$(basename "$cwd")
+
+if [ -n "$used" ]; then
+  <span class="cmt"># Bash's [ -ge ] only handles integers, not floats.</span>
+  <span class="cmt"># ${used%.*} is parameter expansion that drops everything from the decimal point onward.</span>
+  <span class="cmt"># e.g. "43.7" → "43". Safe and dependency-free (no awk/bc needed).</span>
+  used_int=${used%.*}
+
+  <span class="cmt"># Threshold ladder: highest first so the most severe match wins.</span>
+  <span class="cmt"># 2>/dev/null suppresses the arithmetic error if $used_int is somehow empty/non-numeric.</span>
+  <span class="cmt"># [!] = heads-up at 50% · [!!] = act now at 75% · [!!!] = critical at 90%</span>
+  if   [ "$used_int" -ge 90 ] 2>/dev/null; then ctx_display="ctx: ${used}% used [!!!]"
+  elif [ "$used_int" -ge 75 ] 2>/dev/null; then ctx_display="ctx: ${used}% used [!!]"
+  elif [ "$used_int" -ge 50 ] 2>/dev/null; then ctx_display="ctx: ${used}% used [!]"
+  else                                           ctx_display="ctx: ${used}% used"
+  fi
+
+  <span class="cmt"># printf (not echo) produces no trailing newline — correct for a status line widget.</span>
+  <span class="cmt"># Output format: "myapp | claude-opus-4-6 | ctx: 43.7% used"</span>
+  printf "%s | %s | %s" "$dir" "$model" "$ctx_display"
+else
+  <span class="cmt"># used_percentage was absent from the JSON (e.g. during session startup).</span>
+  <span class="cmt"># Show "--" so the bar still renders rather than going blank.</span>
+  printf "%s | %s | ctx: --" "$dir" "$model"
+fi
+EOF</pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Make it executable</strong>
+            <pre><span class="fn">chmod</span> <span class="li">+x ~/.claude/statusline-command.sh</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Register it with Claude Code</strong>
+            <pre><span class="fn">claude config set</span> <span class="li">statusLine '{"type":"command","command":"bash ~/.claude/statusline-command.sh"}'</span></pre>
+            <span class="tip">💡 After this the status bar appears below the prompt input, e.g.: <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent3)">myproject | claude-opus-4-6 | ctx: 43% used</code></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-title yellow" style="margin-top:4px; margin-bottom:10px;">Warning Thresholds</div>
+      <table class="ref-table">
+        <thead><tr><th>Usage</th><th>Status bar shows</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>&lt; 50%</td><td>ctx: X% used</td><td>No action needed</td></tr>
+          <tr><td>≥ 50%</td><td>ctx: X% used <span style="color:var(--accent4)">[!]</span></td><td>Consider /compact with focus</td></tr>
+          <tr><td>≥ 75%</td><td>ctx: X% used <span style="color:var(--accent2)">[!!]</span></td><td>Compact or clear now</td></tr>
+          <tr><td>≥ 90%</td><td>ctx: X% used <span style="color:var(--accent2); font-weight:600">[!!!]</span></td><td>Auto-compact is imminent — act immediately</td></tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top:12px; font-size:12px; color:var(--text-muted); line-height:1.6;">
+        <strong style="color:var(--accent4)">Customizable:</strong> The script output is plain text — you can prompt Claude Code to change the format, add colored blocks, emoji indicators, or switch to a progress bar style. The bar updates on every message.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">.claudeignore — Block Irrelevant Files</div>
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Create a <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">.claudeignore</code> file (works like .gitignore) to cut file-reading memory usage by ~25%.</div>
+      <pre><span class="cm"># .claudeignore — add to project root</span>
+<span class="li">node_modules/</span>
+<span class="li">dist/</span>
+<span class="li">build/</span>
+<span class="li">coverage/</span>
+<span class="li">*.min.js</span>
+<span class="li">*.map</span>
+<span class="li">*.lock</span></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">CLAUDE.md Compact Instructions</div>
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Add this section to your project-level <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">CLAUDE.md</code> — it survives every compaction and session.</div>
+      <pre><span class="hd"># Compact Instructions</span>
+<span class="kw">When compacting, always preserve:</span>
+<span class="li">- The full list of modified files and their paths</span>
+<span class="li">- Any test commands used and their pass/fail results</span>
+<span class="li">- The current task description and acceptance criteria</span>
+<span class="li">- Key decisions made during this session</span>
+<span class="li">- Any TODO items or next steps identified</span>
+
+<span class="hd"># Code Style</span>
+<span class="li">- Use TypeScript strict mode</span>
+<span class="li">- Prefer named exports over default exports</span>
+
+<span class="hd"># Testing</span>
+<span class="li">- Run tests with: npm test -- --testPathPattern=&lt;file&gt;</span>
+<span class="li">- Always run relevant tests after making changes</span></pre>
+    </div>
+
+  </div><!-- /commands -->
+
+
+  <!-- ===== STEPS ===== -->
+  <div class="section" id="tab-steps">
+
+    <div class="callout blue">
+      <div class="callout-label">📋 9 Steps to Master Memory Management</div>
+      <p>Follow these in order. Steps 1-4 are the core habit loop. Steps 5-9 are the level-up moves.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Core Habit Loop</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Build the habit of checking</strong><br>
+            Run <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">/context</code> regularly — before a sub-task, after heavy file exploration, and whenever Claude's responses feel "off."
+            <span class="tip">💡 Think of it like checking your rearview mirror. Make it reflexive.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Learn the three memory commands</strong><br>
+            <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">/compact</code> to summarize and continue · <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">/compact focus on X</code> for guided summarization (power move) · <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">/clear</code> for a completely fresh start.
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Compact at strategic moments</strong><br>
+            After completing a task · after heavy file exploration · every 30-45 min in long sessions · after a successful test run. At ~50% on older models, compact immediately. On Opus/Sonnet 4.6 with 1M window, 50% is ~500K tokens — you have real room but peak quality is still at lower usage.
+            <span class="note">⚠ Don't compact mid-implementation or when Claude is already confused — clear instead.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Use /clear decisively</strong><br>
+            If you've corrected Claude more than twice on the same issue, the memory is polluted. Don't try to fix it — clear and rewrite a better prompt. Also: always clear between unrelated tasks.
+            <span class="tip">💡 A clean session with a precise prompt outperforms a long session with corrections every time.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title green">Level-Up Moves</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Structure sessions as focused units</strong><br>
+            One session per task. Kitchen-sink sessions load Claude with irrelevant memory from three different tasks and cause drift. Finish a task → /clear → new task.
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <strong>Be deliberate about what Claude reads</strong><br>
+            Name exact files in your prompts. Use <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">.claudeignore</code> to block irrelevant directories (~25% savings). Specific prompts prevent "explore everything" spirals.
+            <span class="note">⚠ "Improve this codebase" triggers broad scanning. "Add input validation to src/auth/login.ts" does not.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">7</div>
+          <div class="step-body">
+            <strong>Use CLAUDE.md for persistent instructions</strong><br>
+            Anything in your conversation gets summarized or lost during compaction. Anything in <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">CLAUDE.md</code> survives every compaction and every new session. Keep it under 150-200 lines — ruthlessly pruned.
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">8</div>
+          <div class="step-body">
+            <strong>Use subagents to protect your memory</strong><br>
+            Delegate exploration to subagents. They run in their own memory and return only a summary to your main context. Ideal for codebase research, code review, edge case checking, and understanding unfamiliar code.
+            <span class="tip">💡 "Use a subagent to investigate how our auth system handles token refresh. Report back with a summary."</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">9</div>
+          <div class="step-body">
+            <strong>Use /rewind for partial compaction</strong><br>
+            Press Esc twice (or run <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">/rewind</code>) to open a checkpoint menu. Select a message, choose "Summarize from here." Compresses a detour while keeping earlier setup intact.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /steps -->
+
+
+  <!-- ===== PATTERNS ===== -->
+  <div class="section" id="tab-patterns">
+
+    <div class="callout green">
+      <div class="callout-label">🔄 5 Reusable Patterns</div>
+      <p>These are the most common <em>session architectures</em> for memory-efficient Claude Code usage. Pick the one that matches your task type.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="pattern-card">
+        <div class="pattern-header"><span class="pnum">P1</span> The Task Sandwich</div>
+        <div class="pattern-body">
+          Bookend every task with memory hygiene. The simplest and most universal pattern.
+          <div class="pattern-steps">
+            <div class="ps"><span class="ps-num">1.</span><span class="ps-text"><code>/clear</code> — clean slate before starting</span></div>
+            <div class="ps"><span class="ps-num">2.</span><span class="ps-text">Give your specific, scoped task prompt</span></div>
+            <div class="ps"><span class="ps-num">3.</span><span class="ps-text">Claude works → task complete → tests pass</span></div>
+            <div class="ps"><span class="ps-num">4.</span><span class="ps-text"><code>/compact keep only summary of what changed</code> or <code>/clear</code> if done</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pattern-card">
+        <div class="pattern-header"><span class="pnum">P2</span> Research → Implement Split</div>
+        <div class="pattern-body">
+          Separate exploration from execution. Implementation starts clean, not loaded with 50 files of research.
+          <div class="pattern-steps">
+            <div class="ps"><span class="ps-num">S1.</span><span class="ps-text">Enter Plan Mode → explore → create <code>PLAN.md</code></span></div>
+            <div class="ps"><span class="ps-num">&nbsp;</span><span class="ps-text"><code>/clear</code></span></div>
+            <div class="ps"><span class="ps-num">S2.</span><span class="ps-text">"Implement the OAuth flow from PLAN.md." → write tests → run them</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pattern-card">
+        <div class="pattern-header"><span class="pnum">P3</span> Checkpoint Compact</div>
+        <div class="pattern-body">
+          Compact at achievement milestones. Each compaction is a "save point" that preserves exactly what the next phase needs.
+          <div class="pattern-steps">
+            <div class="ps"><span class="ps-num">1.</span><span class="ps-text">"Set up database schema" → tests pass</span></div>
+            <div class="ps"><span class="ps-num">&nbsp;</span><span class="ps-text"><code>/compact preserve: schema done, tables are X and Y</code></span></div>
+            <div class="ps"><span class="ps-num">2.</span><span class="ps-text">"Build API endpoints" → tests pass</span></div>
+            <div class="ps"><span class="ps-num">&nbsp;</span><span class="ps-text"><code>/compact preserve: GET/POST/PUT/DELETE all passing</code></span></div>
+            <div class="ps"><span class="ps-num">3.</span><span class="ps-text">"Build frontend components"</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pattern-card">
+        <div class="pattern-header"><span class="pnum">P4</span> The Subagent Shield</div>
+        <div class="pattern-body">
+          Delegate exploration to protect main memory. Subagent explores 30+ files; your main memory only grows by the summary size.
+          <div class="pattern-steps">
+            <div class="ps"><span class="ps-num">1.</span><span class="ps-text">"Use a subagent to: 1) map files in src/payments/, 2) identify external services, 3) list tests. Report back with a summary."</span></div>
+            <div class="ps"><span class="ps-num">2.</span><span class="ps-text">"Based on that report, refactor src/payments/processor.ts to…"</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="pattern-card">
+      <div class="pattern-header"><span class="pnum">P5</span> Multi-Session Pipeline — Large Features</div>
+      <div class="pattern-body">
+        Break large features into focused sessions. Each starts fresh, reads only what it needs.
+        <div class="pattern-steps" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px;">
+          <div>
+            <div class="ps"><span class="ps-num">S1.</span><span class="ps-text"><strong>Planning</strong> — analyze requirements, write plan to <code>docs/plan.md</code></span></div>
+            <div class="ps"><span class="ps-num">S2.</span><span class="ps-text"><strong>Backend</strong> — implement per plan, commit when tests pass</span></div>
+          </div>
+          <div>
+            <div class="ps"><span class="ps-num">S3.</span><span class="ps-text"><strong>Frontend</strong> — implement per plan, commit when tests pass</span></div>
+            <div class="ps"><span class="ps-num">S4.</span><span class="ps-text"><strong>Integration</strong> — run full tests, fix issues, create PR</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /patterns -->
+
+
+  <!-- ===== GOTCHAS ===== -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="card red">
+      <div class="card-title red">Gotchas — Common Traps</div>
+      <div class="rule-list">
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Auto-compact at worst time:</span> Triggers at ~95% when you're mid-task. Claude chooses what to keep — you don't. <strong>Fix:</strong> compact manually before hitting 95%. On older models, 50-60% is the target. On Opus/Sonnet 4.6 with 1M window, you have more runway — but manual compaction at a good save point always beats forced compaction mid-task.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">MCP servers silently eat memory:</span> Each server adds tool definitions to <em>every</em> message. 3-4 servers = 10-20K tokens gone before you type anything. <strong>Fix:</strong> run <code>/mcp</code> to check costs; disconnect unused servers.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">"Explore everything" trap:</span> Asking Claude to "look through the codebase" without constraints reads dozens of files. <strong>Fix:</strong> be specific. Use subagents for broad exploration.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Compacting doesn't fix confusion:</span> If Claude is going in circles, /compact compresses the confusion but doesn't resolve it. <strong>Fix:</strong> use <code>/clear</code> and start fresh with a better prompt.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Bloated CLAUDE.md backfires:</span> Over 150-200 lines and Claude can't hold it all in active focus — important rules get lost. <strong>Fix:</strong> ruthlessly prune. Ask "would removing this cause mistakes?" If not, cut it.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Resuming a bloated session:</span> <code>claude --continue</code> brings back the full history, including bloat. <strong>Fix:</strong> run <code>/compact</code> immediately after resuming.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Good Prompts (Specific)</div>
+        <div class="decision-item"><span class="di">✅</span>"Fix the validation bug in <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">src/payments/checkout.ts</code>"</div>
+        <div class="decision-item"><span class="di">✅</span>"Add input validation to the login function in <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">src/auth/login.ts</code>"</div>
+        <div class="decision-item"><span class="di">✅</span>"The checkout flow fails for expired cards. Check <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">src/payments/</code>, especially token refresh."</div>
+        <div class="decision-item"><span class="di">✅</span>"Read <code style="font-family:'IBM Plex Mono',monospace; font-size:11px; background:var(--tag-bg); padding:1px 5px; border-radius:3px; color:var(--accent)">src/auth/session.ts</code> and explain the token refresh flow."</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Bad Prompts (Vague)</div>
+        <div class="decision-item"><span class="di">❌</span>"Improve this codebase" — triggers broad file scanning</div>
+        <div class="decision-item"><span class="di">❌</span>"What's wrong with the app?" — reads everything</div>
+        <div class="decision-item"><span class="di">❌</span>"Understand the auth system" — reads auth + everything it imports</div>
+        <div class="decision-item"><span class="di">❌</span>"Explore the codebase" — worst possible trigger for memory overflow</div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">🆕 4.6 Update — The Cliff Is Gone (For These Models)</div>
+      <p>MRCR v2 8-needle benchmark (long context retrieval): <em>Opus 4.6 scores 91.9 at 256K tokens and 78.3 at 1M tokens</em> — a gradual ~2% drop per 100K, not a cliff. Sonnet 4.6 holds similarly (90.6 → 65.1). Compare: GPT-5.4 drops from 79.3 to 36.6, Gemini 3.1 Pro from 59.1 to 25.9, Sonnet 4.5 from 10.8 (barely registers). The mantra stays the same — <em>clear early, clear often</em> — but on Opus/Sonnet 4.6 with the 1M window, not clearing isn't a disaster if you genuinely need the full context.</p>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">💡 Prompt Caching vs. Memory</div>
+      <p>Claude Code caches repeated content to reduce costs. But <em>cached tokens still count against memory space.</em> Don't confuse cost savings with memory savings — they are different things.</p>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">💡 Plan Mode Is Free Memory</div>
+      <p>Plan Mode (<em>Shift+Tab twice</em>) lets Claude read files and think without committing to implementation. This prevents wasting memory on failed approaches before you've agreed on a direction.</p>
+    </div>
+
+  </div><!-- /gotchas -->
+
+</main>
+
+<script>
+  // Tab navigation
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  // Theme toggle
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+
+  // Meter simulator
+  function setMeter(pct) {
+    const fill   = document.getElementById('meterFill');
+    const output = document.getElementById('meterOutput');
+    let color, msg;
+
+    if (pct < 25) {
+      color = 'var(--accent3)';
+      msg   = `▸ ${pct}% — Clean. Keep going. Clear when done if switching tasks.`;
+    } else if (pct < 50) {
+      color = 'var(--accent3)';
+      msg   = `▸ ${pct}% — Still good. Start thinking about your next move. Clear if switching tasks.`;
+    } else if (pct < 60) {
+      color = 'var(--accent4)';
+      msg   = `▸ ${pct}% — Older models: compact now. Opus/Sonnet 4.6 on 1M: you have runway, but clear if you don't need the context.`;
+    } else if (pct < 80) {
+      color = 'var(--accent4)';
+      msg   = `▸ ${pct}% — Older models: degrading, clear immediately. Opus/Sonnet 4.6 on 1M: ~2% drop per 100K — still functional, but you're leaving quality on the table.`;
+    } else if (pct < 95) {
+      color = 'var(--accent2)';
+      msg   = `▸ ${pct}% — All models: /compact with focus or /clear now. Don't let auto-compact choose what to keep.`;
+    } else {
+      color = 'var(--accent2)';
+      msg   = `▸ ${pct}% — 🚨 Auto-compact imminent on all models. Run /compact focus on [X] immediately or you lose control of what survives.`;
+    }
+
+    fill.style.width      = pct + '%';
+    fill.style.background = color;
+    output.style.color    = color;
+    output.textContent    = msg;
+  }
+</script>
+</body>
+</html>

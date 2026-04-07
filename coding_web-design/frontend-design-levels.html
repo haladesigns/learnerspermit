@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Frontend Design — 7 Levels</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; color: var(--accent); letter-spacing: -0.02em; }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em; }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle { width: 44px; height: 24px; background: var(--toggle-bg); border: 1px solid var(--border-accent); border-radius: 12px; cursor: pointer; position: relative; appearance: none; outline: none; transition: background 0.3s; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: var(--accent); border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s; }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; overflow-x: auto; }
+  nav button { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.2s; letter-spacing: 0.04em; text-transform: uppercase; }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; box-shadow: var(--shadow); transition: background 0.3s, border 0.3s; }
+  .card.blue  { border-left: 3px solid var(--accent); }
+  .card.red   { border-left: 3px solid var(--accent2); }
+  .card.green { border-left: 3px solid var(--accent3); }
+  .card.yellow{ border-left: 3px solid var(--accent4); }
+
+  .card-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero { background: var(--bg-card); border: 1px solid var(--border-accent); border-left: 3px solid var(--accent); border-radius: 8px; padding: 24px; box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow); }
+  .hero h2 { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em; }
+  .hero p { color: var(--text); font-size: 15px; max-width: 760px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row { display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos { color: var(--accent3); font-weight: 600; }
+  .rule-text code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row { display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: flex-start; padding: 12px 16px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); text-align: center; margin-top: 1px; }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip  { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .pos  { color: var(--accent3); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--text); margin-top: 10px; }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent); }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); text-align: left; padding: 8px 12px; background: var(--bg-code); border-bottom: 1px solid var(--border); }
+  .ref-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); white-space: nowrap; }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header { padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item { padding: 9px 16px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout { background: var(--bg-code); border: 1px solid var(--border-accent); border-radius: 6px; padding: 16px 20px; }
+  .callout.blue   { border-left: 3px solid var(--accent); }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .callout.blue   .callout-label { color: var(--accent); }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent); }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Level ladder — overview tab */
+  .level-ladder { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .level-row { display: grid; grid-template-columns: 56px 130px 1fr 120px; gap: 12px; align-items: center; padding: 11px 16px; border-bottom: 1px solid var(--border); transition: background 0.15s; cursor: default; }
+  .level-row:last-child { border-bottom: none; }
+  .level-row:hover { background: var(--accent-glow); }
+  .level-row.header { background: var(--bg-code); font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+  .lv-num  { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600; color: var(--text-dim); text-align: center; }
+  .lv-name { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); font-weight: 600; }
+  .lv-desc { font-size: 13px; color: var(--text); }
+  .lv-trap { font-size: 11px; color: var(--accent2); font-family: 'IBM Plex Mono', monospace; text-align: right; }
+  .lv-row-7 .lv-num  { color: var(--accent4); }
+  .lv-row-7 .lv-name { color: var(--accent4); }
+
+  /* skill tag pills */
+  .tag { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 7px; border-radius: 3px; margin: 2px 3px 2px 0; letter-spacing: 0.04em; }
+  .tag-b { background: var(--accent-glow);  color: var(--accent);  border: 1px solid rgba(79,142,247,0.25); }
+  .tag-r { background: var(--accent2-glow); color: var(--accent2); border: 1px solid rgba(224,95,122,0.25); }
+  .tag-g { background: var(--accent3-glow); color: var(--accent3); border: 1px solid rgba(62,207,142,0.25); }
+  .tag-y { background: rgba(247,162,62,0.1); color: var(--accent4); border: 1px solid rgba(247,162,62,0.25); }
+
+  /* resource table tweak */
+  .ref-table td.res-url { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent3); }
+  .ref-table td.res-url a { color: var(--accent3); text-decoration: none; }
+  .ref-table td.res-url a:hover { text-decoration: underline; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * { animation: fadeUp 0.25s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">CC Frontend Design<span> — 7 Levels</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="levels">7 Levels</button>
+  <button data-tab="skills">Skills to Master</button>
+  <button data-tab="resources">Resources</button>
+  <button data-tab="gotchas">Traps &amp; Gotchas</button>
+</nav>
+
+<main>
+
+  <!-- ===================== OVERVIEW ===================== -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>7 Levels of Claude Code Frontend Design</h2>
+      <p>Claude Code produces generic AI slop by default — not because the tool is broken, but because <strong>design output quality is entirely determined by the quality of input you give it.</strong> This roadmap breaks the ceiling at each level so you progress from prompt-and-pray to genuine creative direction.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Level Ladder — Quick Reference</div>
+      <div class="level-ladder">
+        <div class="level-row header">
+          <div>Level</div>
+          <div>Name</div>
+          <div>What You Do</div>
+          <div style="text-align:right">Ceiling / Trap</div>
+        </div>
+        <div class="level-row">
+          <div class="lv-num">1</div>
+          <div class="lv-name">Prompt &amp; Pray</div>
+          <div class="lv-desc">Single vague text prompt. Plan mode fills gaps. Purple gradients appear.</div>
+          <div class="lv-trap">No design vocab</div>
+        </div>
+        <div class="level-row">
+          <div class="lv-num">2</div>
+          <div class="lv-name">Skill Loader</div>
+          <div class="lv-desc">Inject design skills (UIUX Pro Max). Better layout, still clearly AI template.</div>
+          <div class="lv-trap">Still text-only</div>
+        </div>
+        <div class="level-row">
+          <div class="lv-num">3</div>
+          <div class="lv-name">Visual Director</div>
+          <div class="lv-desc">Add inspiration screenshots from Dribbble / Pinterest / Godly. Text + skills + images.</div>
+          <div class="lv-trap">Vibe gap ~50%</div>
+        </div>
+        <div class="level-row">
+          <div class="lv-num">4</div>
+          <div class="lv-name">Cloner</div>
+          <div class="lv-desc">Pull HTML + CSS + JS from sites you love. Claude reads actual source code, not images.</div>
+          <div class="lv-trap">Clone ceiling: copy not create</div>
+        </div>
+        <div class="level-row">
+          <div class="lv-num">5</div>
+          <div class="lv-name">Customizer</div>
+          <div class="lv-desc">Swap in original assets (AI art, video backgrounds, custom components from 21st.dev).</div>
+          <div class="lv-trap">Needs creative vision</div>
+        </div>
+        <div class="level-row">
+          <div class="lv-num">6</div>
+          <div class="lv-name">Tinkerer</div>
+          <div class="lv-desc">Use Stitch / Figma / Pencil.dev for visual canvas ideation; bring designs back to Claude.</div>
+          <div class="lv-trap">Purely iterative — no shortcut</div>
+        </div>
+        <div class="level-row lv-row-7">
+          <div class="lv-num">7</div>
+          <div class="lv-name">Architect</div>
+          <div class="lv-desc">Custom WebGL, shaders, 3D experiences. Team-of-designers territory. Aspirational only (2026).</div>
+          <div class="lv-trap">Not realistic yet</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">The Core Insight</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🧠</div>
+            <div class="rule-text"><strong>Taste problem, not a tool problem.</strong> AI has no taste — but most people can't articulate theirs either. If you can't describe what "good" looks like, Claude can't build it.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📐</div>
+            <div class="rule-text"><strong>Visual medium, text interface.</strong> Every level is about closing the gap between what you see in your head and what Claude can interpret from your words.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⬆️</div>
+            <div class="rule-text"><strong>Show, don't just tell.</strong> Each level adds a new channel of information: words → skills → screenshots → source code → original assets → visual tools.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎨</div>
+            <div class="rule-text"><strong>Cloning is how designers learn.</strong> Pros emulate, then originate. The clone process exposes you to techniques you didn't know existed.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Input Channels by Level</div>
+        <div class="rule-list">
+          <div class="rule-row"><div class="rule-icon">1</div><div class="rule-text"><span class="tag tag-b">Text</span> prompt only</div></div>
+          <div class="rule-row"><div class="rule-icon">2</div><div class="rule-text"><span class="tag tag-b">Text</span> <span class="tag tag-g">Skills</span></div></div>
+          <div class="rule-row"><div class="rule-icon">3</div><div class="rule-text"><span class="tag tag-b">Text</span> <span class="tag tag-g">Skills</span> <span class="tag tag-y">Screenshots</span></div></div>
+          <div class="rule-row"><div class="rule-icon">4</div><div class="rule-text"><span class="tag tag-b">Text</span> <span class="tag tag-g">Skills</span> <span class="tag tag-y">Screenshots</span> <span class="tag tag-r">Source Code</span></div></div>
+          <div class="rule-row"><div class="rule-icon">5</div><div class="rule-text">+ <span class="tag tag-r">Original Assets</span> (AI art, video)</div></div>
+          <div class="rule-row"><div class="rule-icon">6</div><div class="rule-text">+ <span class="tag tag-g">Visual Canvas Tools</span> (Stitch, Figma)</div></div>
+          <div class="rule-row"><div class="rule-icon">7</div><div class="rule-text"><span class="tag tag-r">Custom WebGL / shaders</span> — team territory</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Central Thesis</div>
+      <p>The bottleneck is always <em>your ability to articulate what you want</em>, not Claude's ability to build it. Every level in this framework is a new method to communicate more precisely across the text-to-visual gap.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ===================== 7 LEVELS DEEP DIVE ===================== -->
+  <div class="section" id="tab-levels">
+
+    <!-- L1 -->
+    <div class="card blue">
+      <div class="card-title">Level 1 — Prompt &amp; Pray</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>What you do:</strong> Write a single natural-language prompt. Use Plan Mode to get questions about stack, goals, and style.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Plan Mode value:</strong> Forces you to articulate the goal (waitlist signup + product showcase, not just "landing page") and asks about style — but the style options it offers are themselves generic (dark and techy, clean and minimal).
+            <span class="tip">💡 Plan Mode is where you build your first vocabulary. Ask Claude what frameworks mean when you don't know.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">⚠</div>
+          <div class="step-body">
+            <span class="neg">Output:</span> Purple gradients. Generic SaaS template. AI slop by default.
+            <span class="note">⚠ This is where most people stay. Everything looks the same because everyone uses the same vague prompts.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Escape:</strong> Inject specialized design skills into Claude's context.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- L2 -->
+    <div class="card blue">
+      <div class="card-title">Level 2 — Skill Loader</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>What you do:</strong> Install and invoke skills like <code>UIUX Pro Max</code> (52k ⭐ GitHub repo). Load with <code>/skill-name</code> or natural language: <em>"use the UIUX Promax skill."</em>
+            <span class="tip">💡 Install: <code>/plugin marketplace add [skill]</code> in Claude Code terminal, OR paste the GitHub URL and say "install this skill."</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>What skills do:</strong> Inject a checklist of design anti-patterns to avoid. Color theory, typography, spacing, layout principles — all baked in. Supercharges even poor prompts.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">⚠</div>
+          <div class="step-body">
+            <span class="neg">Still clearly AI template.</span> Better window dressing, same underlying structure. Still loves purple.
+            <span class="note">⚠ Trap: staying here feels safe. Skill alone has a hard ceiling — you're still text-only.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Escape:</strong> Stop telling Claude what you want. Start <em>showing</em> it.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- L3 -->
+    <div class="card blue">
+      <div class="card-title">Level 3 — Visual Director</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>What you do:</strong> Find inspiration sites, take screenshots, drop them into Claude with a prompt like: <em>"I want our website to match the style of [site]. Here are screenshots for reference."</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Inspiration sources:</strong>
+            <span class="tag tag-b">awwwards.com</span>
+            <span class="tag tag-b">godly.website</span>
+            <span class="tag tag-b">pinterest.com</span>
+            <span class="tag tag-b">dribbble.com</span>
+            <span class="tip">💡 Combine: pull the hero from one site, cards from another, color from a third. You're the art director.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Double benefit:</strong> Seeing many examples trains your eye. You begin to recognize what you like and dislike — and can name it.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">⚠</div>
+          <div class="step-body">
+            <span class="neg">Vibe gap: ~50% there.</span> Screenshots are a lossy channel. Claude translates image → code with imperfect fidelity. Endless iteration on hero screenshots yields diminishing returns.
+            <span class="note">⚠ Trap: screenshot → tweak → screenshot loop forever. This is where most "advanced" users get stuck.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Escape:</strong> Go below the surface. Get the actual code.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- L4 -->
+    <div class="card blue">
+      <div class="card-title">Level 4 — The Cloner</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>View source:</strong> Go to a site you love → <code>Ctrl+U</code> (or right-click → View Page Source) → copy all HTML. Paste into Claude Code.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>Get CSS + JS too:</strong> At the bottom of the HTML you'll find <code>&lt;link&gt;</code> and <code>&lt;script&gt;</code> tags pointing to external files. Tell Claude to examine those as well.
+            <span class="note">⚠ Don't rely on vanilla web fetch — it uses a smaller model that summarizes, losing the fine-grained detail. Use the Site Teardown Skill instead.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>Site Teardown Skill:</strong> Enhanced prompt that grabs as much CSS/JS as needed. Available in the free school community (link in video description). Load it: <em>"use the site teardown skill."</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body"><strong>Now ask Claude to teach you:</strong> "How does this background work? How did they do the scroll animation? What's a GAF?" Claude can explain exactly because it read the real code.
+            <span class="pos">✅ Every site you clone = new techniques in your toolkit.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">⚠</div>
+          <div class="step-body">
+            <span class="neg">Clone ceiling:</span> You can copy but can't create. You don't know the <em>why</em> behind techniques. Anyone can follow steps 1–3.
+            <span class="note">⚠ Trap: Plagiarizing not learning. Build on clones as a baseline — always add your own spin.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Escape:</strong> Bring in original assets. Stop looking like someone else's site.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- L5 -->
+    <div class="card blue">
+      <div class="card-title">Level 5 — The Customizer</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Components:</strong> Source quality UI pieces from <code>21st.dev</code> (buttons, carousels, scroll areas, menus). Copy the prompt, bring to Claude: <em>"integrate this button design."</em> Also: CodePen, Monaé, and others.
+            <span class="tip">💡 21st.dev gives you the actual code — just prompt Claude to tweak it to your exact spec.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Visual storytelling:</strong> Create a tagline + image that are thematically tied to what your app actually does. (Example: Argus = mythological figure with 10,000 eyes → "See What's Next" → surveillance/discovery imagery.)</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>AI art for hero:</strong> Use MidJourney (v7+), Nano Banana, Cadream, etc. Even a vague prompt produces options — pick what resonates visually with your concept. Give the image to Claude: <em>"use this as the hero background, text on left, negative space on right."</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Add motion:</strong> Convert your still hero image to a subtle 15s looping video via Kling 3.0 or VO3.1 (start frame + end frame for cleaner loop). Tell Claude: load video on desktop, fall back to still image on mobile.
+            <span class="tip">💡 Keep motion subtle — cloud drift, water ripple. Subtle motion gives character without distraction.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Premium micro-details that matter:</strong> loading animation (text staggered reveal), custom fonts (Google Fonts), scroll progress bar, counter zoom-up, subtle text shimmer, ticker/marquee as section borders. These are individually small — combined they signal you cared.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Let Claude web search:</strong> <em>"Do a web search for best web design practices for glass morphism cards that feel premium and subtle — then come up with ideas for our site."</em> Review all suggestions, discard weak ones, keep the winners.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- L6 -->
+    <div class="card blue">
+      <div class="card-title">Level 6 — The Tinkerer</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Why outside tools:</strong> Sitting in a terminal tweaking a visual medium is inherently constrained. Visual canvas tools let you see results instantly and iterate faster.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Stitch (Google, free):</strong> Give it screenshots of your current site → ask for redesign → get variants → right-click for color/layout/image changes → copy result image back to Claude Code.
+            <span class="tip">💡 Stitch is great for ideation, not final output — use it to generate design directions, not ship-ready code.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Other tools:</strong> <code>paper.design</code>, <code>pencil.dev</code> (works live inside Cursor/VS Code canvas), Figma. New tools entering the market constantly.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>The loop:</strong> Visual tool → design direction image → Claude Code → screenshot → visual tool → repeat. No shortcut. This is the stage of pure iterative refinement.
+            <span class="pos">✅ This is where you stop using AI as a crutch and start using it as a tool you direct.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- L7 -->
+    <div class="card yellow">
+      <div class="card-title yellow">Level 7 — The Architect (Aspirational)</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>What this is:</strong> Custom WebGL, GLSL shaders, 3D experiences, fully interactive art-like websites. Think: websites that look like video games.</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Reality check (late 2026):</strong> Not realistic for solo developers using Claude Code yet. These are team projects by specialized web artists. <code>Ctrl+U</code> won't help — there's no inspectable HTML/CSS pattern.
+            <span class="note">⚠ Reference: awwwards.com → Sites of the Day/Month to see what's possible.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body"><strong>Why it's included:</strong> To show the frontier. When you see this work after months at L1–L2, your mind is blown — and it recalibrates your standards permanently.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /levels -->
+
+
+  <!-- ===================== SKILLS TO MASTER ===================== -->
+  <div class="section" id="tab-skills">
+
+    <div class="hero">
+      <h2>Skills to Build at Each Level</h2>
+      <p>Design output quality tracks directly to your ability to <strong>see, articulate, and direct.</strong> These are the compounding skills that move you up the ladder — and the specific traps that keep you stuck.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card green">
+        <div class="card-title green">Core Skills (All Levels)</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">→</div>
+            <div class="step-body"><strong>Design vocabulary.</strong> Learn the names of things: glass morphism, parallax, scroll-triggered animation, typography pairing, negative space, GAF. Without vocabulary you can't prompt it.</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">→</div>
+            <div class="step-body"><strong>Evaluate with a designer's eye.</strong> Look at Claude's output and identify specific problems — not just "this looks bad" but "the card hierarchy is flat" or "the hero lacks visual weight."</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">→</div>
+            <div class="step-body"><strong>Convert critique to prompt.</strong> The gap between what you see and what Claude builds is closed by precision. "Make it pop" → "add drop shadow, increase border radius, add subtle background blur on the card."</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">→</div>
+            <div class="step-body"><strong>Exposure volume.</strong> See many sites. Godly, Awwwards, Dribbble, Pinterest. The more you see, the faster you recognize generic vs. crafted. This is not passive — it requires intentional study.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">Level-Specific Skills</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">L1–2</div>
+            <div class="step-body">Learn frameworks (Next.js, Astro, plain HTML). Build design vocabulary. Use Plan Mode to think through goals, not just aesthetics.</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">L3</div>
+            <div class="step-body">Curate visual references intentionally. Begin mixing sources. Recognize what you're drawn to before dumping into Claude.</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">L4</div>
+            <div class="step-body">Read and understand source code. Identify which CSS/JS technique produces which visual effect. Adapt clone patterns — never copy wholesale.</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">L5</div>
+            <div class="step-body">Visual storytelling. Connect app concept → tagline → imagery. Understand video loops, mobile fallbacks, micro-animation timing.</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">L6</div>
+            <div class="step-body">Use visual canvas tools as ideation accelerators, not code generators. Develop fluency in the tinker loop.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Typography &amp; Font Selection</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📝</div>
+          <div class="rule-text"><strong>Fonts matter enormously.</strong> Font choice is one of the fastest ways to signal craft. Claude Code defaults to safe, generic fonts — override it.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔤</div>
+          <div class="rule-text"><strong>Google Fonts</strong> — free, exhaustive, fully supported by Claude Code. Browse by type (display, serif, monospace) to find character-forward choices. Avoid Inter, Roboto, Arial for display use.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚡</div>
+          <div class="rule-text"><strong>Pairing principle:</strong> Distinctive display font (headlines) + refined body font (copy). Contrast in personality, harmony in weight.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">🔑 The Meta-Skill</div>
+      <p>Every level is really about <em>narrowing the translation gap between your visual intent and Claude's code output.</em> The skills compound — vocabulary from L1 makes L3 screenshots more precise; cloning at L4 teaches you what to ask for at L5. Don't skip levels.</p>
+    </div>
+
+  </div><!-- /skills -->
+
+
+  <!-- ===================== RESOURCES ===================== -->
+  <div class="section" id="tab-resources">
+
+    <div class="card">
+      <div class="card-title">Inspiration Sources</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Site</th><th>What It's For</th><th>Best Use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>awwwards.com</td><td>Judged/awarded frontend work — creative, art-forward</td><td>Sites of Day/Month for frontier reference (L3, L7 eye-opening)</td></tr>
+          <tr><td>godly.website</td><td>Infinite scroll of curated designs</td><td>Fast-scrolling inspiration sessions</td></tr>
+          <tr><td>dribbble.com</td><td>Designer portfolio shots; search "SaaS landing page"</td><td>Component-level and hero inspiration</td></tr>
+          <tr><td>pinterest.com</td><td>Surprisingly useful for landing page styles</td><td>Finding stylized / art-forward hero concepts</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Skills &amp; Plugins</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Skill</th><th>What It Does</th><th>How to Install</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>UIUX Pro Max</td><td>52k ⭐ GitHub repo; injects design anti-pattern checklist, color/typography/spacing guidance</td><td><code>/plugin marketplace add [skill]</code> or paste GitHub URL → "install this skill"</td></tr>
+          <tr><td>Site Teardown Skill</td><td>Enhanced web fetch — grabs full CSS/JS files rather than summarized versions</td><td>Available free in Chase AI community (link in video description)</td></tr>
+          <tr><td>Frontend Design Skill</td><td>Guides production-grade, non-generic UI creation</td><td>Load before any design task</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Component Libraries</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Site</th><th>What You Get</th><th>How to Use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>21st.dev</td><td>Curated UI components with copy-able prompts: buttons, carousels, scroll areas, navigation, menus, hooks</td><td>Find component → copy prompt → paste in Claude: "integrate this design"</td></tr>
+          <tr><td>CodePen</td><td>Interactive code snippets, animations, creative effects</td><td>Find effect → share code with Claude → adapt</td></tr>
+          <tr><td>Monaé</td><td>Additional component inspiration</td><td>Same as above</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Visual Canvas / Ideation Tools</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Tool</th><th>Key Feature</th><th>Best For</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Stitch (Google)</td><td>Free; AI canvas; right-click variants; color/layout/image swaps; redesign from screenshots</td><td>Section redesigns, glass morphism ideation, direction generation</td></tr>
+          <tr><td>Pencil.dev</td><td>Live canvas inside Cursor / VS Code</td><td>Real-time visual tweaking alongside code</td></tr>
+          <tr><td>paper.design</td><td>Design canvas tool</td><td>Mockup-level iteration</td></tr>
+          <tr><td>Figma</td><td>Full design tool</td><td>High-fidelity mockups before Claude implementation</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Asset Creation Tools</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Tool</th><th>Type</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>MidJourney v7+</td><td>AI image gen</td><td>Strong for concept art / stylized hero images. Even vague prompts yield good results.</td></tr>
+          <tr><td>Nano Banana / Cadream</td><td>AI image gen</td><td>Alternatives to MidJourney</td></tr>
+          <tr><td>Kling 3.0 / VO3.1</td><td>AI video gen</td><td>Image-to-video with start+end frame for clean loops. Aim for 15s, subtle motion.</td></tr>
+          <tr><td>Google Fonts</td><td>Typography</td><td>Free, exhaustive, all supported by Claude Code. Go beyond the defaults.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /resources -->
+
+
+  <!-- ===================== TRAPS & GOTCHAS ===================== -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="hero">
+      <h2>Traps &amp; Gotchas</h2>
+      <p>Most people stall at level 1, 3, or 4. These are the specific failure modes — and how to recognize you're in them before you waste days of iteration.</p>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Do This</div>
+        <div class="decision-item"><span class="di">✅</span>Use Plan Mode to clarify <em>goal</em> first (waitlist? showcase?), then aesthetics.</div>
+        <div class="decision-item"><span class="di">✅</span>Combine screenshots from multiple inspiration sources — art direct the mix.</div>
+        <div class="decision-item"><span class="di">✅</span>Use Site Teardown Skill to get full CSS/JS, not a summarized version.</div>
+        <div class="decision-item"><span class="di">✅</span>Clone to learn, then always add your own original spin.</div>
+        <div class="decision-item"><span class="di">✅</span>Ask Claude to explain techniques it finds in source code — it's free education.</div>
+        <div class="decision-item"><span class="di">✅</span>Keep video backgrounds subtle, 15s, and add a still-image mobile fallback.</div>
+        <div class="decision-item"><span class="di">✅</span>Let Claude web search best practices for specific effects (glass morphism, etc.).</div>
+        <div class="decision-item"><span class="di">✅</span>Iterate micro-details — they don't each matter, but cumulatively they signal craft.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Avoid This</div>
+        <div class="decision-item"><span class="di">❌</span>Accepting the first generic output without knowing what to fix.</div>
+        <div class="decision-item"><span class="di">❌</span>Relying on skills alone — text has a ceiling when describing a visual medium.</div>
+        <div class="decision-item"><span class="di">❌</span>Screenshot → tweak → screenshot loop forever. That's the L3 trap.</div>
+        <div class="decision-item"><span class="di">❌</span>Using vanilla web fetch to analyze CSS/JS — it summarizes and loses detail.</div>
+        <div class="decision-item"><span class="di">❌</span>Copying a site wholesale. Cloning is a learning tool, not a delivery strategy.</div>
+        <div class="decision-item"><span class="di">❌</span>Skipping levels — vocabulary from earlier levels is needed to direct later ones.</div>
+        <div class="decision-item"><span class="di">❌</span>Vague style requests: "clean and minimal" tells Claude nothing specific.</div>
+        <div class="decision-item"><span class="di">❌</span>Dramatic looping video backgrounds — jarring, kills performance, and usually looks cheap.</div>
+      </div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">The Three Stall Points — Detailed</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">1️⃣</div>
+          <div class="rule-text">
+            <span class="neg">Level 1 Stall — Design Blindness:</span> You can't critique what Claude builds because you've never looked at enough design to know what "good" is. <strong>Fix:</strong> Spend deliberate time on Awwwards, Godly, Dribbble. Build a swipe file. Volume of exposure is the only cure.
+          </div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">3️⃣</div>
+          <div class="rule-text">
+            <span class="neg">Level 3 Stall — The Vibe Gap:</span> You have inspiration screenshots but Claude only gets ~50% there. You enter an endless screenshot-tweak loop. <strong>Fix:</strong> Go to L4. Screenshots are lossy. Real source code is not.
+          </div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">4️⃣</div>
+          <div class="rule-text">
+            <span class="neg">Level 4 Stall — Clone Ceiling:</span> You can copy but can't create. You follow steps without understanding the why. <strong>Fix:</strong> Use the clone as an opportunity to have Claude teach you. Ask "how does X work?" every time. Build a mental catalog of techniques.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Common Prompt Mistakes</div>
+      <table class="ref-table">
+        <thead><tr><th>Weak Prompt</th><th>Problem</th><th>Stronger Version</th></tr></thead>
+        <tbody>
+          <tr><td>"Make a landing page"</td><td>No goal, no audience, no style signal</td><td>"Landing page with waitlist CTA + product showcase, minimal dark, IBM Plex Mono"</td></tr>
+          <tr><td>"Dark and techy"</td><td>Claude's default — generic result guaranteed</td><td>Screenshot of site you like + "match this aesthetic"</td></tr>
+          <tr><td>"Make it pop"</td><td>Unparseable — Claude will guess wrong</td><td>"Add box-shadow on cards, increase border-radius to 12px, subtle backdrop blur"</td></tr>
+          <tr><td>"Use a cool font"</td><td>Cool is subjective; Claude defaults to Inter</td><td>"Use [specific Google Font] for display, [specific] for body"</td></tr>
+          <tr><td>"Look at [site] for reference"</td><td>URL alone → summarized web fetch, low fidelity</td><td>Paste HTML + "use site teardown skill" + screenshots</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠ The Real Problem</div>
+      <p>The bottleneck is never Claude — it's always <em>your ability to specify what you want.</em> If you can't explain it in text, use a screenshot. If screenshots aren't enough, use source code. If source code isn't enough, use a visual canvas tool. Each level is just a better communication channel.</p>
+    </div>
+
+  </div><!-- /gotchas -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DREAM — Memory Consolidation Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent); }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 120px;
+  }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent2); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Memory file format block */
+  .mem-type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  @media (max-width: 700px) { .mem-type-grid { grid-template-columns: 1fr; } }
+
+  .mem-type-card {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+  .mem-type-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .mem-type-label.user    { color: var(--accent);  }
+  .mem-type-label.feedback{ color: var(--accent2); }
+  .mem-type-label.project { color: var(--accent3); }
+  .mem-type-label.reference{ color: var(--accent4); }
+  .mem-type-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── Skill file syntax colours ── */
+  .sk-punct  { color: var(--text-muted); }
+  .sk-key    { color: var(--accent4); font-weight: 600; }
+  .sk-str    { color: var(--accent3); }
+  .sk-trigger{ color: var(--accent);  font-style: italic; }
+  .sk-h1     { color: var(--accent);  font-weight: 600; font-size: 14px; }
+  .sk-h2     { color: var(--accent4); font-weight: 600; }
+  .sk-h3     { color: var(--accent3); font-weight: 600; }
+  .sk-body   { color: var(--text); }
+  .sk-bold   { color: var(--text); font-weight: 600; }
+  .sk-inline { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 4px; border-radius: 3px; }
+  .sk-path   { color: var(--accent3); font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+  .sk-num    { color: var(--accent2); font-weight: 600; }
+
+  /* Visual tab SVG adapts to light mode */
+  [data-theme="light"] #tab-visual svg text[fill="#c8d0e8"] {
+    fill: #1a1f35;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">DREAM<span> — memory consolidation</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="howmemory">How Memory Works</button>
+  <button data-tab="phases">4 Phases</button>
+  <button data-tab="memformat">Memory Format</button>
+  <button data-tab="commands">Commands & Setup</button>
+  <button data-tab="visual">Before / After</button>
+  <button data-tab="skillfile">Skill File</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>/dream — Memory Consolidation</h2>
+      <p>Dream is Anthropic's (currently limited-access) reflective pass over Claude Code's auto-memory files. It merges duplicates, resolves contradictions, converts relative dates to absolute, and keeps the memory index under 200 lines — so Claude gets <strong>smarter the longer you use it</strong>, not bloated.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">Problems Dream Solves</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🪞</div>
+            <div class="rule-text"><strong>Duplicates</strong> — multiple files saying the same thing pile up over time.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Contradictions</strong> — "always use React" vs "never use React" both live in memory.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🗓️</div>
+            <div class="rule-text"><strong>Relative dates</strong> — "next Friday" becomes meaningless as time passes; Dream rewrites to absolute dates.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📦</div>
+            <div class="rule-text"><strong>Stale info</strong> — outdated facts that no longer reflect real usage get pruned.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📄</div>
+            <div class="rule-text"><strong>Bloated index</strong> — <code>MEMORY.md</code> is loaded every session; Dream keeps it tight (≤200 lines).</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">Why This Matters</div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-val">200</div>
+            <div class="stat-label">Max lines in MEMORY.md index</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">∞</div>
+            <div class="stat-label">Sessions accumulating without Dream</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted); line-height:1.6">
+          The master memory file is loaded at the start of every Claude Code session. Context bloat from an uncleaned memory has the same compounding cost as a bloated <code>CLAUDE.md</code> — less room for actual work.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Key Takeaway</div>
+      <p><em>Dream is available as a public skill even if Anthropic hasn't given you native access.</em> Copy the prompt into a skill called <code>dream</code> and invoke it manually whenever memory feels noisy. Less is more — a tight index beats a comprehensive one.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- HOW MEMORY WORKS -->
+  <div class="section" id="tab-howmemory">
+
+    <div class="card blue">
+      <div class="card-title">Auto-Memory System</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🧠</div>
+          <div class="rule-text"><strong>Auto-memory</strong> lets Claude Code accumulate knowledge across sessions without any manual effort — you just talk, and Claude flags what's worth remembering.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📁</div>
+          <div class="rule-text">Memory files live in <code>~/.claude/projects/&lt;project-slug&gt;/memory/</code> — <strong>not</strong> inside your actual project directory.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><code>MEMORY.md</code> is the <strong>master index</strong> — it references all individual topic files. Loaded at the start of every session.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📂</div>
+          <div class="rule-text">Individual topic files (e.g. <code>testing-approach.md</code>, <code>user-preferences.md</code>) hold the actual detail. The index links to them.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🎯</div>
+          <div class="rule-text">Session transcripts (<strong>JSONL files</strong>) live in the parent of the memory folder — Dream reads these to see how memory maps to real usage.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">Memory Scope: Project</div>
+        <div style="font-size:13px; color:var(--text); line-height:1.7; margin-bottom:10px;">
+          Each project has its own memory folder. Claude knows which project you're in and matches it to the correct slug.
+        </div>
+        <pre><span class="hd">~/.claude/projects/</span>
+<span class="li">C--Users-Chase-the-vault/</span>
+  <span class="kw">memory/</span>
+    MEMORY.md           <span class="cm"># master index</span>
+    testing-approach.md
+    user-preferences.md
+    *.jsonl             <span class="cm"># session transcripts</span></pre>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Memory Scope: User</div>
+        <div style="font-size:13px; color:var(--text); line-height:1.7; margin-bottom:10px;">
+          A user-level memory folder applies across <em>every</em> project — good for persistent personal preferences.
+        </div>
+        <pre><span class="hd">~/.claude/projects/</span>
+<span class="li">C--Users-Chase/</span>
+  <span class="kw">memory/</span>
+    MEMORY.md           <span class="cm"># applies globally</span>
+    coding-style.md
+    ...</pre>
+      </div>
+
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">🔗 Relationship to CLAUDE.md</div>
+      <p>Auto-memory and <code>CLAUDE.md</code> are <em>complementary but separate</em>. CLAUDE.md is hand-authored and lives in your repo. Auto-memory is Claude-authored and lives in <code>~/.claude</code>. Both are loaded each session — both can bloat. Dream only touches auto-memory.</p>
+    </div>
+
+  </div><!-- /howmemory -->
+
+
+  <!-- 4 PHASES -->
+  <div class="section" id="tab-phases">
+
+    <div class="card">
+      <div class="card-title">Dream Runs in 4 Phases</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Orient — read what exists</strong><br>
+            <code>ls</code> the memory directory, read <code>MEMORY.md</code>, skim all existing topic files. If <code>logs/</code> or <code>sessions/</code> subdirectories exist, review recent entries there too.
+            <span class="tip">💡 Goal: understand what's already there before creating duplicates.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Gather Recent Signal — sources in priority order</strong><br>
+            <span class="tip">💡 Priority 1: Daily logs (<code>logs/YYYY/MM/YYYY-MM-DD.md</code>) if present — these are the append-only stream of ground truth.</span>
+            <span class="tip">💡 Priority 2: Existing memories that have drifted — facts that contradict what you now see in the codebase.</span>
+            <span class="tip">💡 Priority 3: Transcript search — grep JSONL only for specific context you already suspect matters.</span>
+            <pre><span class="fn">grep</span> <span class="li">-rn "&lt;narrow term&gt;"</span> ~/.claude/projects/&lt;project&gt;/ <span class="kw">--include="*.jsonl"</span> | tail -50</pre>
+            <span class="note">⚠ Don't exhaustively read all transcripts — narrow grep only.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Consolidate — write / update memory files</strong><br>
+            For each thing worth remembering, write or update a topic file. Three rules from the skill:
+            <span class="tip">💡 Merge into existing files first — don't create near-duplicate files.</span>
+            <span class="tip">💡 Convert all relative dates to absolute — "last week" → "2026-03-24".</span>
+            <span class="tip">💡 Delete contradicted facts at the source — if new info disproves an old memory, fix it there, don't add a new file.</span>
+            Follow the memory file format (see Memory Format tab).
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Prune &amp; Index — keep MEMORY.md under 200 lines</strong><br>
+            Remove stale pointers. <strong>Demote verbose entries</strong> — keep the gist in the index, move the detail into the topic file. Add pointers to new memories. Resolve any remaining contradictions between files.
+            <span class="note">⚠ MEMORY.md is an <em>index</em>, not a dump. Never write memory content directly into it.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✅ Expected Output Format</div>
+      <p>Dream always returns a structured summary:</p>
+      <pre><span class="hd">## Dream Complete — [scope: project / user / all]</span>
+
+<span class="kw">### Consolidated</span>
+<span class="li">- what was merged/created</span>
+
+<span class="kw">### Updated</span>
+<span class="li">- what was modified</span>
+
+<span class="kw">### Pruned</span>
+<span class="li">- what was removed or cleaned up</span>
+
+<span class="kw">### No Change</span>
+<span class="li">- memories already tight (if nothing needed fixing)</span></pre>
+    </div>
+
+  </div><!-- /phases -->
+
+
+  <!-- MEMORY FORMAT -->
+  <div class="section" id="tab-memformat">
+
+    <div class="card">
+      <div class="card-title">Memory File Format</div>
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Every individual memory file follows this frontmatter + body structure:</div>
+      <pre><span class="hd">---</span>
+<span class="kw">name:</span> <span class="li">testing-approach</span>
+<span class="kw">description:</span> <span class="li">Chase's preferences for test strategy — use real integrations, no mocks</span>
+<span class="kw">type:</span> <span class="li">feedback</span>   <span class="cm"># user | feedback | project | reference</span>
+<span class="hd">---</span>
+
+<span class="cm"># Memory content goes here</span>
+<span class="li">Rule: never use mock tests; always use real integrations.</span>
+<span class="kw">Why:</span> mocks hide real failure modes and slow down debugging.
+<span class="kw">How to apply:</span> when writing tests, connect to actual APIs/DBs in the test environment.</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Memory Types</div>
+      <div class="mem-type-grid">
+        <div class="mem-type-card">
+          <div class="mem-type-label user">user</div>
+          <div class="mem-type-desc">Role, goals, preferences, domain knowledge. Who this person is and how they work.</div>
+        </div>
+        <div class="mem-type-card">
+          <div class="mem-type-label feedback">feedback</div>
+          <div class="mem-type-desc">Approach guidance — what to avoid, what to keep doing. Structure: rule → <strong>Why:</strong> → <strong>How to apply:</strong></div>
+        </div>
+        <div class="mem-type-card">
+          <div class="mem-type-label project">project</div>
+          <div class="mem-type-desc">Ongoing work, goals, initiatives, known bugs. Structure: fact/decision → <strong>Why:</strong> → <strong>How to apply:</strong></div>
+        </div>
+        <div class="mem-type-card">
+          <div class="mem-type-label reference">reference</div>
+          <div class="mem-type-desc">Pointers to external resources, docs, or links that Claude should know exist.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Save to Memory</div>
+        <div class="decision-item"><span class="di">✅</span>User preferences and working style</div>
+        <div class="decision-item"><span class="di">✅</span>Persistent project goals and decisions</div>
+        <div class="decision-item"><span class="di">✅</span>Approach rules with clear "why" and "how"</div>
+        <div class="decision-item"><span class="di">✅</span>Absolute dates for any time-bound facts</div>
+        <div class="decision-item"><span class="di">✅</span>Known bugs or ongoing initiatives</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Do NOT Save to Memory</div>
+        <div class="decision-item"><span class="di">❌</span>Code patterns / architecture (derivable from code)</div>
+        <div class="decision-item"><span class="di">❌</span>File paths (grep the repo)</div>
+        <div class="decision-item"><span class="di">❌</span>Git history (use <code>git log</code>)</div>
+        <div class="decision-item"><span class="di">❌</span>Debugging solutions (fix is in the code)</div>
+        <div class="decision-item"><span class="di">❌</span>Anything already in CLAUDE.md</div>
+        <div class="decision-item"><span class="di">❌</span>Ephemeral task details</div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠ Description Field Is Critical</div>
+      <p>The <code>description</code> field in each memory file is used by Claude to decide whether that file is <em>relevant to the current conversation</em>. Make it specific and actionable — vague descriptions mean the memory gets loaded unnecessarily or missed entirely.</p>
+    </div>
+
+  </div><!-- /memformat -->
+
+
+  <!-- COMMANDS & SETUP -->
+  <div class="section" id="tab-commands">
+
+    <div class="card">
+      <div class="card-title">Skill Trigger Phrases</div>
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
+        Once installed, Dream activates on any of these phrases — not just <code>/dream</code>:
+      </div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🗣️</div>
+          <div class="rule-text"><code>dream</code> &nbsp;·&nbsp; <code>consolidate memory</code> &nbsp;·&nbsp; <code>clean up memory</code></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🗣️</div>
+          <div class="rule-text"><code>organize memories</code> &nbsp;·&nbsp; <code>memory maintenance</code></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🗣️</div>
+          <div class="rule-text">Any request to <code>tidy</code> / <code>consolidate</code> / <code>optimize</code> Claude's memory files.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Expected Output Format</div>
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">Dream always returns exactly this structure — four sections, no more:</div>
+      <pre><span class="hd">## Dream Complete — [scope: project / user / all]</span>
+
+<span class="kw">### Consolidated</span>
+<span class="li">- [what was merged/created]</span>
+
+<span class="kw">### Updated</span>
+<span class="li">- [what was modified]</span>
+
+<span class="kw">### Pruned</span>
+<span class="li">- [what was removed or cleaned up]</span>
+
+<span class="kw">### No Change</span>
+<span class="li">- [if memories are already tight, say so]</span></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Command Reference</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Scope</th>
+            <th>Target Path</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>/dream</td>
+            <td>Current project only</td>
+            <td><code>~/.claude/projects/&lt;matched-project&gt;/memory/</code></td>
+          </tr>
+          <tr>
+            <td>/dream user</td>
+            <td>User-level only</td>
+            <td><code>~/.claude/projects/C--Users-Chase/memory/</code></td>
+          </tr>
+          <tr>
+            <td>/dream all</td>
+            <td>Both scopes</td>
+            <td>Runs phases on each separately, combined report</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Finding Your Project Slug</div>
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">
+        Project folder names replace path separators with dashes. Match your working directory to find the right slug:
+      </div>
+      <pre><span class="cm"># List all project folders</span>
+<span class="fn">ls</span> ~/.claude/projects/
+
+<span class="cm"># Example mapping:</span>
+<span class="cm"># C:\Users\Chase\the vault  →  C--Users-Chase-The-Vault</span>
+<span class="cm"># /home/chase/myapp        →  home-chase-myapp</span>
+
+<span class="cm"># Memory lives at:</span>
+~/.claude/projects/<span class="li">&lt;matched-slug&gt;</span>/memory/
+
+<span class="cm"># Transcripts (JSONL) live at:</span>
+~/.claude/projects/<span class="li">&lt;matched-slug&gt;</span>/*.jsonl</pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title green">Installing the Skill</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Get the Dream prompt</strong><br>
+            The prompt is public — courtesy of Pyball-AI. Copy the full skill markdown (see the <code>Dream-Skill.md</code> file).
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Create the skill in Claude Code</strong><br>
+            Tell Claude Code: <em>"I want to create a new skill called dream. Use this prompt to build it."</em> Paste the skill content. Claude Code creates the skill file automatically.
+            <span class="tip">💡 Claude Code will generate the skill in your <code>.claude/skills/</code> directory.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Invoke whenever memory feels noisy</strong><br>
+            Run <code>/dream</code>, <code>/dream user</code>, or <code>/dream all</code> from within Claude Code. Dream will ask permission before editing its own <code>.claude</code> folder — even with bypass-permissions enabled.
+            <span class="note">⚠ Always approve the permission prompt — Dream needs to write to the memory directory.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">Gotchas</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Permission prompt always appears:</span> Dream edits files in <code>~/.claude</code>. Claude Code will ask for permission to edit its own settings even if bypass-permissions is on. You must approve.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Don't over-run Dream:</span> It's a maintenance pass, not a real-time tool. Run it when memory feels large or contradictory — not every session.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">MEMORY.md hard limit is 200 lines</span> — but less is always better. Dream targets the tightest possible index, not the longest allowed one.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Dream does NOT touch CLAUDE.md</span> — only auto-memory files. If you have redundancy between CLAUDE.md and memory, resolve that manually.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /commands -->
+
+  <!-- VISUAL — Before / After -->
+  <div class="section" id="tab-visual">
+
+    <div class="card">
+      <div class="card-title">/dream — Before, During, After</div>
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+        Five problems go in, four phases run, five clean outcomes come out.
+      </div>
+
+      <svg width="100%" viewBox="0 0 680 430" style="display:block;">
+        <defs>
+          <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- ── Column headers ── -->
+        <text font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="600" fill="#e05f7a" x="110" y="28" text-anchor="middle" letter-spacing="1">WITHOUT /dream</text>
+        <text font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="600" fill="#4f8ef7" x="340" y="28" text-anchor="middle" letter-spacing="1">/dream PROCESS</text>
+        <text font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="600" fill="#3ecf8e" x="574" y="28" text-anchor="middle" letter-spacing="1">WITH /dream</text>
+
+        <!-- ── Left column — Problems ── -->
+        <!-- card bg -->
+        <rect x="12" y="38" width="196" height="370" rx="10" fill="none" stroke="#e05f7a" stroke-width="1" stroke-opacity="0.35"/>
+
+        <!-- row 1 -->
+        <rect x="22" y="52" width="176" height="52" rx="6" fill="#e05f7a" fill-opacity="0.1" stroke="#e05f7a" stroke-width="0.5" stroke-opacity="0.4"/>
+        <text font-family="'DM Sans',sans-serif" font-size="12" font-weight="600" fill="#e05f7a" x="110" y="73" text-anchor="middle">Duplicates</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="110" y="91" text-anchor="middle" opacity="0.7">Two files saying the same thing</text>
+
+        <!-- row 2 -->
+        <rect x="22" y="114" width="176" height="52" rx="6" fill="#e05f7a" fill-opacity="0.1" stroke="#e05f7a" stroke-width="0.5" stroke-opacity="0.4"/>
+        <text font-family="'DM Sans',sans-serif" font-size="12" font-weight="600" fill="#e05f7a" x="110" y="135" text-anchor="middle">Contradictions</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="110" y="153" text-anchor="middle" opacity="0.7">React vs Next.js — which is true?</text>
+
+        <!-- row 3 -->
+        <rect x="22" y="176" width="176" height="52" rx="6" fill="#e05f7a" fill-opacity="0.1" stroke="#e05f7a" stroke-width="0.5" stroke-opacity="0.4"/>
+        <text font-family="'DM Sans',sans-serif" font-size="12" font-weight="600" fill="#e05f7a" x="110" y="197" text-anchor="middle">Stale Info</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="110" y="215" text-anchor="middle" opacity="0.7">Old deadlines, wrong prices</text>
+
+        <!-- row 4 -->
+        <rect x="22" y="238" width="176" height="52" rx="6" fill="#e05f7a" fill-opacity="0.1" stroke="#e05f7a" stroke-width="0.5" stroke-opacity="0.4"/>
+        <text font-family="'DM Sans',sans-serif" font-size="12" font-weight="600" fill="#e05f7a" x="110" y="259" text-anchor="middle">Relative Dates</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="110" y="277" text-anchor="middle" opacity="0.7">"next Friday" = ???</text>
+
+        <!-- row 5 -->
+        <rect x="22" y="300" width="176" height="52" rx="6" fill="#e05f7a" fill-opacity="0.1" stroke="#e05f7a" stroke-width="0.5" stroke-opacity="0.4"/>
+        <text font-family="'DM Sans',sans-serif" font-size="12" font-weight="600" fill="#e05f7a" x="110" y="321" text-anchor="middle">Bloated Index</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="110" y="339" text-anchor="middle" opacity="0.7">Verbose entries eating context</text>
+
+        <!-- ── Left → Center arrow ── -->
+        <line x1="208" y1="223" x2="230" y2="223" stroke="#4f8ef7" stroke-width="1.5" stroke-opacity="0.6" marker-end="url(#arr2)"/>
+
+        <!-- ── Center column — Phases ── -->
+        <rect x="234" y="38" width="212" height="370" rx="10" fill="none" stroke="#4f8ef7" stroke-width="1" stroke-opacity="0.35"/>
+
+        <!-- phase 1 -->
+        <rect x="244" y="58" width="192" height="62" rx="7" fill="#4f8ef7" fill-opacity="0.12" stroke="#4f8ef7" stroke-width="0.5" stroke-opacity="0.5"/>
+        <text font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="600" fill="#4f8ef7" x="340" y="78" text-anchor="middle">1. Orient</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="340" y="97" text-anchor="middle" opacity="0.75">Read existing memory</text>
+        <!-- connector -->
+        <line x1="340" y1="120" x2="340" y2="135" stroke="#4f8ef7" stroke-width="1" stroke-opacity="0.5" marker-end="url(#arr2)"/>
+
+        <!-- phase 2 -->
+        <rect x="244" y="138" width="192" height="62" rx="7" fill="#4f8ef7" fill-opacity="0.12" stroke="#4f8ef7" stroke-width="0.5" stroke-opacity="0.5"/>
+        <text font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="600" fill="#4f8ef7" x="340" y="158" text-anchor="middle">2. Gather Signal</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="340" y="177" text-anchor="middle" opacity="0.75">Grep session transcripts</text>
+        <!-- connector -->
+        <line x1="340" y1="200" x2="340" y2="215" stroke="#4f8ef7" stroke-width="1" stroke-opacity="0.5" marker-end="url(#arr2)"/>
+
+        <!-- phase 3 -->
+        <rect x="244" y="218" width="192" height="62" rx="7" fill="#4f8ef7" fill-opacity="0.12" stroke="#4f8ef7" stroke-width="0.5" stroke-opacity="0.5"/>
+        <text font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="600" fill="#4f8ef7" x="340" y="238" text-anchor="middle">3. Consolidate</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="340" y="257" text-anchor="middle" opacity="0.75">Merge, fix dates, resolve</text>
+        <!-- connector -->
+        <line x1="340" y1="280" x2="340" y2="295" stroke="#4f8ef7" stroke-width="1" stroke-opacity="0.5" marker-end="url(#arr2)"/>
+
+        <!-- phase 4 -->
+        <rect x="244" y="298" width="192" height="62" rx="7" fill="#4f8ef7" fill-opacity="0.12" stroke="#4f8ef7" stroke-width="0.5" stroke-opacity="0.5"/>
+        <text font-family="'IBM Plex Mono',monospace" font-size="11" font-weight="600" fill="#4f8ef7" x="340" y="318" text-anchor="middle">4. Prune &amp; Index</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="340" y="337" text-anchor="middle" opacity="0.75">Trim to 200 lines, clean up</text>
+
+        <!-- ── Center → Right arrow ── -->
+        <line x1="446" y1="223" x2="464" y2="223" stroke="#3ecf8e" stroke-width="1.5" stroke-opacity="0.6" marker-end="url(#arr2)"/>
+
+        <!-- ── Right column — Outcomes ── -->
+        <rect x="468" y="38" width="200" height="370" rx="10" fill="none" stroke="#3ecf8e" stroke-width="1" stroke-opacity="0.35"/>
+
+        <!-- outcome 1 -->
+        <rect x="478" y="52" width="180" height="52" rx="6" fill="#3ecf8e" fill-opacity="0.09" stroke="#3ecf8e" stroke-width="0.5" stroke-opacity="0.4"/>
+        <text font-family="'DM Sans',sans-serif" font-size="12" font-weight="600" fill="#3ecf8e" x="568" y="73" text-anchor="middle">Merged</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="568" y="91" text-anchor="middle" opacity="0.7">Single consolidated file</text>
+
+        <!-- outcome 2 -->
+        <rect x="478" y="114" width="180" height="52" rx="6" fill="#3ecf8e" fill-opacity="0.09" stroke="#3ecf8e" stroke-width="0.5" stroke-opacity="0.4"/>
+        <text font-family="'DM Sans',sans-serif" font-size="12" font-weight="600" fill="#3ecf8e" x="568" y="135" text-anchor="middle">Resolved</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="568" y="153" text-anchor="middle" opacity="0.7">Current truth only</text>
+
+        <!-- outcome 3 -->
+        <rect x="478" y="176" width="180" height="52" rx="6" fill="#3ecf8e" fill-opacity="0.09" stroke="#3ecf8e" stroke-width="0.5" stroke-opacity="0.4"/>
+        <text font-family="'DM Sans',sans-serif" font-size="12" font-weight="600" fill="#3ecf8e" x="568" y="197" text-anchor="middle">Updated</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="568" y="215" text-anchor="middle" opacity="0.7">Stale files deleted or fixed</text>
+
+        <!-- outcome 4 -->
+        <rect x="478" y="238" width="180" height="52" rx="6" fill="#3ecf8e" fill-opacity="0.09" stroke="#3ecf8e" stroke-width="0.5" stroke-opacity="0.4"/>
+        <text font-family="'DM Sans',sans-serif" font-size="12" font-weight="600" fill="#3ecf8e" x="568" y="259" text-anchor="middle">Absolute Dates</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="568" y="277" text-anchor="middle" opacity="0.7">2026-03-24, not "next Friday"</text>
+
+        <!-- outcome 5 -->
+        <rect x="478" y="300" width="180" height="52" rx="6" fill="#3ecf8e" fill-opacity="0.09" stroke="#3ecf8e" stroke-width="0.5" stroke-opacity="0.4"/>
+        <text font-family="'DM Sans',sans-serif" font-size="12" font-weight="600" fill="#3ecf8e" x="568" y="321" text-anchor="middle">Clean Index</text>
+        <text font-family="'DM Sans',sans-serif" font-size="11" fill="#c8d0e8" x="568" y="339" text-anchor="middle" opacity="0.7">Concise one-liners, under 200</text>
+      </svg>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">💡 One-to-one mapping</div>
+      <p>Each problem in the left column maps directly to an outcome in the right column. The four phases are the transformation engine in between — orient first, then gather new signal from transcripts, consolidate into clean files, and prune the index last.</p>
+    </div>
+
+  </div><!-- /visual -->
+
+  <!-- SKILL FILE TAB -->
+  <div class="section" id="tab-skillfile">
+
+    <!-- Frontmatter block -->
+    <div class="card">
+      <div class="card-title yellow">Frontmatter — Skill Descriptor</div>
+      <pre><span class="sk-punct">---</span>
+<span class="sk-key">name</span><span class="sk-punct">:</span> <span class="sk-str">dream</span>
+<span class="sk-key">description</span><span class="sk-punct">:</span> <span class="sk-str">"Memory consolidation — performs a reflective pass over Claude's memory
+files, synthesizing recent session learnings into organized, deduplicated
+memories with line-limit enforcement. Mirrors Anthropic's unreleased /dream
+command. Use when the user says <span class="sk-trigger">'dream'</span>, <span class="sk-trigger">'consolidate memory'</span>,
+<span class="sk-trigger">'clean up memory'</span>, <span class="sk-trigger">'organize memories'</span>, <span class="sk-trigger">'memory maintenance'</span>, or
+any request to tidy/consolidate/optimize Claude's memory files."</span>
+<span class="sk-punct">---</span></pre>
+    </div>
+
+    <!-- H1 + intro -->
+    <div class="card blue">
+      <div class="card-title">Title &amp; Purpose</div>
+      <pre><span class="sk-h1"># Dream: Memory Consolidation</span>
+
+<span class="sk-body">You are performing a dream — a reflective pass over your memory files.
+Synthesize what you've learned recently into durable, well-organized
+memories so that future sessions can orient quickly.</span></pre>
+    </div>
+
+    <!-- Targeting section -->
+    <div class="card">
+      <div class="card-title">## Targeting</div>
+      <pre><span class="sk-body">The user can specify a scope. Parse the argument after</span> <span class="sk-inline">`/dream`</span><span class="sk-body">:</span></pre>
+      <table class="ref-table" style="margin-top:10px;">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Target</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>/dream <span style="color:var(--text-muted);font-size:11px">(no args)</span></td>
+            <td>Current project memory only</td>
+          </tr>
+          <tr>
+            <td>/dream user</td>
+            <td>User-level memory only (<code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">~/.claude/projects/C--Users-Chase/memory/</code>)</td>
+          </tr>
+          <tr>
+            <td>/dream all</td>
+            <td>Both user-level AND current project memory (run phases on each separately, report combined results)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Locating Memory Directory -->
+    <div class="card">
+      <div class="card-title">## Locating the Memory Directory</div>
+      <pre><span class="sk-bold">User-level memory</span> <span class="sk-body">is always at:</span>
+<span class="sk-path">~/.claude/projects/C--Users-Chase/memory/</span>
+
+<span class="sk-bold">Project-level memory</span> <span class="sk-body">— find it by running:</span>
+<span class="fn">ls</span> <span class="li">~/.claude/projects/</span>
+
+<span class="sk-body">Match the current working directory to the project folder name
+(dashes replace path separators, e.g.</span>
+<span class="sk-inline">`C:\Users\Chase\the vault`</span> <span class="sk-body">→</span> <span class="sk-inline">`C--Users-Chase-The-Vault`</span><span class="sk-body">).
+The memory directory is at:</span>
+<span class="sk-path">~/.claude/projects/&lt;matched-project&gt;/memory/</span>
+
+<span class="sk-body">Session transcripts (JSONL files) are in the <span class="sk-bold">parent directory</span> of the memory folder.
+If the user specifies a different project or path, use that instead.</span>
+
+<span class="sk-bold">Index max lines:</span> <span class="sk-num">200</span></pre>
+    </div>
+
+    <!-- Phase 1 -->
+    <div class="card blue">
+      <div class="card-title">## Phase 1 — Orient</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">·</div>
+          <div class="rule-text"><code>ls</code> the memory directory to see what already exists</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">·</div>
+          <div class="rule-text">Read <code>MEMORY.md</code> to understand the current index</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">·</div>
+          <div class="rule-text">Skim existing topic files so you improve them rather than creating duplicates</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">·</div>
+          <div class="rule-text">If <code>logs/</code> or <code>sessions/</code> subdirectories exist, review recent entries there</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="card blue">
+      <div class="card-title">## Phase 2 — Gather Recent Signal</div>
+      <pre><span class="sk-body">Look for new information worth persisting. Sources in rough priority order:</span>
+
+<span class="sk-num">1.</span> <span class="sk-bold">Daily logs</span> <span class="sk-inline">(`logs/YYYY/MM/YYYY-MM-DD.md`)</span> <span class="sk-body">if present — these are the append-only stream</span>
+<span class="sk-num">2.</span> <span class="sk-bold">Existing memories that drifted</span> <span class="sk-body">— facts that contradict something you see in the codebase now</span>
+<span class="sk-num">3.</span> <span class="sk-bold">Transcript search</span> <span class="sk-body">— grep the JSONL transcripts for narrow terms:</span>
+
+<span class="fn">grep</span> <span class="li">-rn "&lt;narrow term&gt;"</span> ~/.claude/projects/&lt;project&gt;/ <span class="kw">--include="*.jsonl"</span> | tail -50
+
+<span class="sk-body">Don't exhaustively read transcripts. Look only for things you already suspect matter.</span></pre>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="card blue">
+      <div class="card-title">## Phase 3 — Consolidate</div>
+      <pre><span class="sk-body">For each thing worth remembering, write or update a memory file at the
+top level of the memory directory. Follow the memory file format:</span>
+
+<span class="sk-punct">---</span>
+<span class="sk-key">name</span><span class="sk-punct">:</span> <span class="sk-str">{{memory name}}</span>
+<span class="sk-key">description</span><span class="sk-punct">:</span> <span class="sk-str">{{one-line description — used to decide relevance in future
+             conversations, so be specific}}</span>
+<span class="sk-key">type</span><span class="sk-punct">:</span> <span class="sk-str">{{user, feedback, project, reference}}</span>
+<span class="sk-punct">---</span>
+
+<span class="sk-body">{{memory content}}</span></pre>
+
+      <div style="margin-top:16px;">
+        <div class="card-title green">### Memory types</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text"><span class="pos">user</span> — role, goals, preferences, knowledge</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text"><span class="pos">feedback</span> — guidance on approach (what to avoid, what to keep doing). Structure: rule, then <strong>Why:</strong> and <strong>How to apply:</strong></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text"><span class="pos">project</span> — ongoing work, goals, initiatives, bugs. Structure: fact/decision, then <strong>Why:</strong> and <strong>How to apply:</strong></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text"><span class="pos">reference</span> — pointers to external resources</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="card-title red">### What NOT to save</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text"><span class="neg">Code patterns, architecture, file paths</span> (derivable from code)</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text"><span class="neg">Git history</span> (use git log)</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text"><span class="neg">Debugging solutions</span> (fix is in the code)</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text"><span class="neg">Anything in CLAUDE.md files</span></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text"><span class="neg">Ephemeral task details</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="card-title yellow">### Focus on</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text">Merging new signal into existing topic files rather than creating near-duplicates</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text">Converting relative dates (<code>"yesterday"</code>, <code>"last week"</code>) to absolute dates so they remain interpretable after time passes</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">·</div>
+            <div class="rule-text">Deleting contradicted facts — if today's investigation disproves an old memory, fix it at the source</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 4 -->
+    <div class="card blue">
+      <div class="card-title">## Phase 4 — Prune and Index</div>
+      <pre><span class="sk-body">Update</span> <span class="sk-inline">`MEMORY.md`</span> <span class="sk-body">so it stays under</span> <span class="sk-num">200</span> <span class="sk-body">lines. It's an</span> <span class="sk-bold">index</span><span class="sk-body">, not a dump —
+link to memory files with one-line descriptions. Never write memory
+content directly into it.</span></pre>
+      <div class="rule-list" style="margin-top:10px;">
+        <div class="rule-row">
+          <div class="rule-icon">·</div>
+          <div class="rule-text">Remove pointers to memories that are now stale, wrong, or superseded</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">·</div>
+          <div class="rule-text">Demote verbose entries: keep the gist in the index, move the detail into the topic file</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">·</div>
+          <div class="rule-text">Add pointers to newly important memories</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">·</div>
+          <div class="rule-text">Resolve contradictions — if two files disagree, fix the wrong one</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div class="card green">
+      <div class="card-title green">## Output</div>
+      <pre><span class="sk-body">Return a brief summary of what you consolidated, updated, or pruned.
+Format it as:</span>
+
+<span class="sk-h2">## Dream Complete — [scope: project / user / all]</span>
+
+<span class="sk-h3">### Consolidated</span>
+<span class="li">- [what was merged/created]</span>
+
+<span class="sk-h3">### Updated</span>
+<span class="li">- [what was modified]</span>
+
+<span class="sk-h3">### Pruned</span>
+<span class="li">- [what was removed or cleaned up]</span>
+
+<span class="sk-h3">### No Change</span>
+<span class="li">- [if memories are already tight, say so]</span></pre>
+    </div>
+
+  </div><!-- /skillfile -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

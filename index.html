@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>THE VOID | Directory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        borderRadius: { DEFAULT: "0px", lg: "0px", xl: "0px", full: "0px" },
+        fontFamily: { sans: ["Inter"] }
+      }
+    }
+  }
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; transition: background 0.25s, color 0.25s; }
+
+  /* Light tokens */
+  :root {
+    --bg:           #f9f9f8;
+    --on-surface:   #2d3433;
+    --on-variant:   #5a6060;
+    --outline:      rgba(173,179,178,0.35);
+    --outline-focus:#5f5e5e;
+    --divider:      rgba(45,52,51,0.1);
+  }
+
+  /* Dark tokens */
+  html.dark {
+    --bg:           #0f1110;
+    --on-surface:   #dde4e3;
+    --on-variant:   #8a9291;
+    --outline:      rgba(58,65,64,0.65);
+    --outline-focus:#adb3b2;
+    --divider:      rgba(221,228,227,0.08);
+  }
+
+  body { background: var(--bg); color: var(--on-surface); min-height: 100vh; }
+
+  /* Search */
+  #search {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    outline: none;
+    color: var(--on-surface);
+    font-family: 'Inter', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 300;
+    padding: 0.75rem 2.5rem 0.75rem 0;
+    width: 100%;
+    transition: none;
+  }
+  #search::placeholder { color: var(--on-variant); opacity: 0.5; }
+  #search:focus { border-bottom-color: var(--outline-focus); }
+
+  /* Directory links */
+  .dir-link {
+    color: var(--on-variant);
+    display: inline-block;
+    font-size: 1rem;
+    line-height: 1.6;
+    text-decoration: none;
+    transition: color 0.15s, transform 0.15s;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    padding: 0;
+    text-align: left;
+  }
+  .dir-link:hover {
+    color: var(--on-surface);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transform: translateX(2px);
+  }
+
+  /* Nested folders */
+  .subfolder-list { display: none; padding-left: 1rem; margin-top: 0.3rem; list-style: none; }
+  .subfolder-list.open { display: flex; flex-direction: column; gap: 0.3rem; }
+  .folder-toggle {
+    color: var(--on-surface) !important;
+  }
+  .folder-toggle::before {
+    content: '▸';
+    font-size: 0.55rem;
+    vertical-align: middle;
+    margin-right: 0.45rem;
+    display: inline-block;
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+    color: var(--on-surface);
+    opacity: 0.7;
+  }
+  .folder-toggle.open::before {
+    content: '▸';
+    transform: rotate(90deg);
+  }
+  .folder-toggle .folder-label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .folder-toggle.open {
+    font-weight: 700;
+    font-style: italic;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    color: var(--on-surface);
+  }
+
+  /* Theme toggle */
+  #theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: var(--on-variant);
+    font-size: 0.65rem;
+    font-family: 'Inter', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  #theme-toggle:hover { color: var(--on-surface); }
+  .toggle-pip {
+    width: 28px;
+    height: 14px;
+    border: 1px solid currentColor;
+    position: relative;
+    flex-shrink: 0;
+    transition: border-color 0.2s;
+  }
+  .toggle-pip::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 8px;
+    height: 8px;
+    background: currentColor;
+    transition: transform 0.2s;
+  }
+  html.dark .toggle-pip::after { transform: translateX(14px); }
+
+  /* Search state */
+  .category.no-match { opacity: 0.1; pointer-events: none; }
+  .item-row.hidden-item { display: none; }
+
+  #result-count {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--on-variant);
+    min-height: 1rem;
+    margin-top: 0.75rem;
+  }
+  #loading {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--on-variant);
+    padding: 3rem 0;
+    grid-column: 1 / -1;
+  }
+
+  /* ── Directory grid ── */
+  #directory {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0 4rem;
+    align-items: start;
+  }
+
+  /* Column scroll when items overflow */
+  .category {
+    display: flex;
+    flex-direction: column;
+    max-height: 70vh;
+  }
+  .category-scroll {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--divider) transparent;
+    padding-right: 0.5rem;
+  }
+  .category-scroll::-webkit-scrollbar { width: 2px; }
+  .category-scroll::-webkit-scrollbar-track { background: transparent; }
+  .category-scroll::-webkit-scrollbar-thumb { background: var(--divider); }
+
+  /* Fade out at bottom when scrollable */
+  .category.overflows .category-scroll {
+    -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  }
+
+  /* ── Media queries ── */
+  @media (max-width: 1100px) {
+    #directory { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 760px) {
+    #directory { grid-template-columns: repeat(2, 1fr); gap: 0 2.5rem; }
+    main { padding: 2.5rem 1.5rem 6rem; }
+    #search { font-size: 1rem; }
+  }
+  @media (max-width: 480px) {
+    #directory { grid-template-columns: 1fr; gap: 3rem 0; }
+    .category { max-height: none; }
+  }
+
+  /* ── Entrance animations ── */
+
+  /* Search: starts invisible, border-bottom collapsed to 0-width, fades + expands */
+  @keyframes search-in {
+    0%   { opacity: 0; clip-path: inset(0 100% 0 0); }
+    60%  { opacity: 1; clip-path: inset(0 0% 0 0); }
+    100% { opacity: 1; clip-path: inset(0 0% 0 0); }
+  }
+  @keyframes search-line-in {
+    0%   { transform: scaleX(0); transform-origin: left; }
+    100% { transform: scaleX(1); transform-origin: left; }
+  }
+  @keyframes fade-up {
+    0%   { opacity: 0; transform: translateY(18px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes col-in {
+    0%   { opacity: 0; transform: translateY(22px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Search section: hidden by default, JS adds .search-ready */
+  #search-section {
+    opacity: 0;
+  }
+  #search-section.search-ready {
+    animation: fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+  }
+  /* The underline wipe */
+  .search-line {
+    display: block;
+    height: 1px;
+    background: var(--outline);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  #search-section.search-ready .search-line {
+    animation: search-line-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+  }
+  /* Input text materializes after line */
+  #search-section.search-ready #search {
+    animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+    opacity: 0;
+  }
+  /* Result count subtle fade */
+  #result-count { transition: opacity 0.2s; }
+
+  /* Directory columns: staggered col-in */
+  .category {
+    opacity: 0;
+  }
+  .category.col-visible {
+    animation: col-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    #search-section, #search-section #search, .search-line, .category { animation: none !important; opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<main style="max-width:1440px; margin:0 auto; padding:3rem 3rem 8rem; width:100%;">
+
+  <!-- Toggle only -->
+  <div style="display:flex; justify-content:flex-end; margin-bottom:3.5rem;">
+    <button id="theme-toggle" title="Toggle dark / light">
+      <span class="toggle-pip"></span>
+      <span id="toggle-label">Light</span>
+    </button>
+  </div>
+
+  <!-- Search -->
+  <section id="search-section" style="max-width:56rem; margin-bottom:4rem;">
+    <span class="search-line"></span>
+    <div style="position:relative;">
+      <input id="search" placeholder="Search files and folders…" type="text" autocomplete="off"/>
+      <span style="position:absolute; right:0; bottom:1.25rem; color:var(--on-variant); opacity:0.45; pointer-events:none; font-size:0.9rem;">&#x2315;</span>
+    </div>
+    <div id="result-count"></div>
+  </section>
+
+  <!-- Directory grid -->
+  <section id="directory">
+    <div id="loading">Loading…</div>
+    <div id="no-results" style="display:none; grid-column:1/-1; font-size:0.85rem; color:var(--on-variant); padding:3rem 0;">Nothing found.</div>
+  </section>
+
+</main>
+
+<script>
+// ── Theme ──────────────────────────────────────────────────────────────────
+const html  = document.documentElement;
+const btn   = document.getElementById('theme-toggle');
+const lbl   = document.getElementById('toggle-label');
+
+const saved = localStorage.getItem('void-theme');
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+if (saved === 'dark' || (!saved && prefersDark)) {
+  html.classList.replace('light', 'dark');
+}
+
+function syncTheme() {
+  lbl.textContent = html.classList.contains('dark') ? 'Dark' : 'Light';
+}
+syncTheme();
+
+btn.addEventListener('click', () => {
+  const going = html.classList.contains('dark') ? 'light' : 'dark';
+  html.classList.replace(html.classList.contains('dark') ? 'dark' : 'light', going);
+  localStorage.setItem('void-theme', going);
+  syncTheme();
+});
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fileIcon(name) {
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  return { md:'↳', html:'◇', css:'◇', js:'◇', ts:'◇', jsx:'◇', tsx:'◇',
+           json:'⊟', pdf:'⊞', png:'□', jpg:'□', jpeg:'□', svg:'□', gif:'□',
+           txt:'–', sh:'⌘', py:'⌘', lua:'⌘', lisp:'⌘' }[ext] || '–';
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function renderManifest(entries) {
+  document.getElementById('loading')?.remove();
+  const dir     = document.getElementById('directory');
+  const folders = entries.filter(e => e.type === 'folder');
+  const files   = entries.filter(e => e.type === 'file');
+  if (files.length) appendColumn('Root Files', files, dir);
+  folders.forEach(f => appendColumn(f.label, f.children, dir));
+  // Kick off entrance sequence
+  triggerSearchEntrance();
+  triggerColumnEntrance();
+}
+
+function appendColumn(label, children, container) {
+  if (!children?.length) return;
+  const col = document.createElement('div');
+  col.className = 'category';
+  col.dataset.label = label.toLowerCase();
+
+  const h2 = document.createElement('h2');
+  h2.style.cssText = [
+    'font-size:0.75rem', 'font-weight:700', 'text-transform:uppercase',
+    'letter-spacing:0.15em', 'color:var(--on-surface)',
+    'border-bottom:1px solid var(--divider)',
+    'padding-bottom:0.75rem', 'margin-bottom:1.25rem',
+    'flex-shrink:0'
+  ].join(';');
+  h2.textContent = label;
+
+  const scroll = document.createElement('div');
+  scroll.className = 'category-scroll';
+
+  const ul = document.createElement('ul');
+  ul.style.cssText = 'list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.45rem;';
+  renderEntries(children, ul);
+
+  scroll.appendChild(ul);
+  col.appendChild(h2);
+  col.appendChild(scroll);
+  container.appendChild(col);
+
+  // Mark column as overflowing so CSS fade applies
+  requestAnimationFrame(() => {
+    if (scroll.scrollHeight > scroll.clientHeight + 4) {
+      col.classList.add('overflows');
+      scroll.addEventListener('scroll', () => {
+        const atBottom = scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 8;
+        col.classList.toggle('overflows', !atBottom);
+      });
+    }
+  });
+}
+
+function renderEntries(entries, ul) {
+  entries.forEach(entry => {
+    const li = document.createElement('li');
+    li.className = 'item-row';
+    li.dataset.label = entry.label.toLowerCase();
+
+    if (entry.type === 'file') {
+      const a = document.createElement('a');
+      a.href = entry.path;
+      a.className = 'dir-link';
+      a.innerHTML = `<span style="font-size:10px;line-height:1;margin-right:0.4rem;opacity:0.28;vertical-align:middle;display:inline-block;">${fileIcon(entry.name)}</span><span>${entry.label}</span>`;
+      li.appendChild(a);
+    } else {
+      const wrap = document.createElement('div');
+      const toggle = document.createElement('button');
+      toggle.className = 'dir-link folder-toggle';
+      toggle.innerHTML = `<span class="folder-label">${entry.label}</span>`;
+      const sub = document.createElement('ul');
+      sub.className = 'subfolder-list';
+      sub.style.cssText = 'list-style:none; padding:0; margin:0;';
+      if (entry.children?.length) renderEntries(entry.children, sub);
+      toggle.addEventListener('click', () => {
+        sub.classList.toggle('open');
+        toggle.classList.toggle('open');
+      });
+      wrap.appendChild(toggle);
+      wrap.appendChild(sub);
+      li.appendChild(wrap);
+    }
+    ul.appendChild(li);
+  });
+}
+
+// ── Search ─────────────────────────────────────────────────────────────────
+function initSearch() {
+  const input = document.getElementById('search');
+  const count = document.getElementById('result-count');
+  const noRes = document.getElementById('no-results');
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    let total = 0, cats = 0;
+
+    document.querySelectorAll('.category').forEach(cat => {
+      const rows = cat.querySelectorAll('.item-row');
+      if (!q) {
+        rows.forEach(r => r.classList.remove('hidden-item'));
+        cat.classList.remove('no-match');
+        return;
+      }
+      const catHit = cat.dataset.label.includes(q);
+      let hits = 0;
+      rows.forEach(r => {
+        const match = r.dataset.label.includes(q) || catHit;
+        r.classList.toggle('hidden-item', !match);
+        if (match) hits++;
+      });
+      if (hits || catHit) {
+        cat.classList.remove('no-match');
+        cats++;
+        total += hits || rows.length;
+      } else {
+        cat.classList.add('no-match');
+      }
+    });
+
+    if (q) {
+      count.textContent = total
+        ? `${total} result${total !== 1 ? 's' : ''} across ${cats} categor${cats !== 1 ? 'ies' : 'y'}`
+        : '';
+      noRes.style.display = total === 0 ? 'block' : 'none';
+    } else {
+      count.textContent = '';
+      noRes.style.display = 'none';
+    }
+  });
+}
+
+// ── Mock data ─────────────────────────────────────────────────────────────
+const MOCK = [
+  { type:'folder', name:'docs', label:'Docs', children:[
+    { type:'file', name:'README.md', label:'Readme', path:'docs/README.md' },
+    { type:'file', name:'CONTRIBUTING.md', label:'Contributing', path:'docs/CONTRIBUTING.md' },
+    { type:'file', name:'architecture.md', label:'Architecture', path:'docs/architecture.md' },
+    { type:'file', name:'api-reference.md', label:'Api Reference', path:'docs/api-reference.md' },
+    { type:'file', name:'changelog.md', label:'Changelog', path:'docs/changelog.md' },
+    { type:'folder', name:'guides', label:'Guides', children:[
+      { type:'file', name:'quickstart.md', label:'Quickstart', path:'docs/guides/quickstart.md' },
+      { type:'file', name:'deployment.md', label:'Deployment', path:'docs/guides/deployment.md' },
+      { type:'file', name:'troubleshooting.md', label:'Troubleshooting', path:'docs/guides/troubleshooting.md' },
+    ]},
+    { type:'folder', name:'adr', label:'Adr', children:[
+      { type:'file', name:'001-use-supabase.md', label:'001 Use Supabase', path:'docs/adr/001-use-supabase.md' },
+      { type:'file', name:'002-auth-strategy.md', label:'002 Auth Strategy', path:'docs/adr/002-auth-strategy.md' },
+    ]},
+  ]},
+  { type:'folder', name:'src', label:'Src', children:[
+    { type:'folder', name:'components', label:'Components', children:[
+      { type:'file', name:'Button.tsx', label:'Button', path:'src/components/Button.tsx' },
+      { type:'file', name:'Card.tsx', label:'Card', path:'src/components/Card.tsx' },
+      { type:'file', name:'Input.tsx', label:'Input', path:'src/components/Input.tsx' },
+      { type:'file', name:'Modal.tsx', label:'Modal', path:'src/components/Modal.tsx' },
+      { type:'file', name:'Table.tsx', label:'Table', path:'src/components/Table.tsx' },
+      { type:'file', name:'Toast.tsx', label:'Toast', path:'src/components/Toast.tsx' },
+    ]},
+    { type:'folder', name:'hooks', label:'Hooks', children:[
+      { type:'file', name:'useAuth.ts', label:'Use Auth', path:'src/hooks/useAuth.ts' },
+      { type:'file', name:'useSearch.ts', label:'Use Search', path:'src/hooks/useSearch.ts' },
+      { type:'file', name:'useTheme.ts', label:'Use Theme', path:'src/hooks/useTheme.ts' },
+    ]},
+    { type:'folder', name:'utils', label:'Utils', children:[
+      { type:'file', name:'format.ts', label:'Format', path:'src/utils/format.ts' },
+      { type:'file', name:'sanitize.ts', label:'Sanitize', path:'src/utils/sanitize.ts' },
+      { type:'file', name:'manifest.py', label:'Manifest', path:'src/utils/manifest.py' },
+    ]},
+    { type:'file', name:'main.ts', label:'Main', path:'src/main.ts' },
+    { type:'file', name:'index.html', label:'Index', path:'src/index.html' },
+  ]},
+  { type:'folder', name:'design-system', label:'Design System', children:[
+    { type:'file', name:'DESIGN.md', label:'Design', path:'design-system/DESIGN.md' },
+    { type:'file', name:'tokens.json', label:'Tokens', path:'design-system/tokens.json' },
+    { type:'file', name:'palette.svg', label:'Palette', path:'design-system/palette.svg' },
+    { type:'folder', name:'components', label:'Components', children:[
+      { type:'file', name:'buttons.md', label:'Buttons', path:'design-system/components/buttons.md' },
+      { type:'file', name:'typography.md', label:'Typography', path:'design-system/components/typography.md' },
+      { type:'file', name:'grid.md', label:'Grid', path:'design-system/components/grid.md' },
+      { type:'file', name:'elevation.md', label:'Elevation', path:'design-system/components/elevation.md' },
+    ]},
+  ]},
+  { type:'folder', name:'scripts', label:'Scripts', children:[
+    { type:'file', name:'generate_manifest.py', label:'Generate Manifest', path:'scripts/generate_manifest.py' },
+    { type:'file', name:'deploy.sh', label:'Deploy', path:'scripts/deploy.sh' },
+    { type:'file', name:'seed.py', label:'Seed', path:'scripts/seed.py' },
+    { type:'file', name:'lint.sh', label:'Lint', path:'scripts/lint.sh' },
+  ]},
+  { type:'folder', name:'tests', label:'Tests', children:[
+    { type:'folder', name:'unit', label:'Unit', children:[
+      { type:'file', name:'format.test.ts', label:'Format Test', path:'tests/unit/format.test.ts' },
+      { type:'file', name:'sanitize.test.ts', label:'Sanitize Test', path:'tests/unit/sanitize.test.ts' },
+      { type:'file', name:'manifest.test.py', label:'Manifest Test', path:'tests/unit/manifest.test.py' },
+    ]},
+    { type:'folder', name:'e2e', label:'E2E', children:[
+      { type:'file', name:'search.spec.ts', label:'Search Spec', path:'tests/e2e/search.spec.ts' },
+      { type:'file', name:'theme.spec.ts', label:'Theme Spec', path:'tests/e2e/theme.spec.ts' },
+      { type:'file', name:'directory.spec.ts', label:'Directory Spec', path:'tests/e2e/directory.spec.ts' },
+    ]},
+  ]},
+  { type:'folder', name:'.github', label:'Github', children:[
+    { type:'folder', name:'workflows', label:'Workflows', children:[
+      { type:'file', name:'generate-manifest.yml', label:'Generate Manifest', path:'.github/workflows/generate-manifest.yml' },
+      { type:'file', name:'deploy.yml', label:'Deploy', path:'.github/workflows/deploy.yml' },
+      { type:'file', name:'lint.yml', label:'Lint', path:'.github/workflows/lint.yml' },
+    ]},
+  ]},
+  { type:'file', name:'package.json', label:'Package', path:'package.json' },
+  { type:'file', name:'.gitignore', label:'Gitignore', path:'.gitignore' },
+  { type:'file', name:'tsconfig.json', label:'Tsconfig', path:'tsconfig.json' },
+];
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+async function boot() {
+  try {
+    const res = await fetch('./manifest.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    renderManifest(await res.json());
+  } catch {
+    // Fall back to mock data for local/demo use
+    renderManifest(MOCK);
+  }
+  initSearch();
+}
+
+// ── Entrance animations ────────────────────────────────────────────────────
+function triggerSearchEntrance() {
+  const section = document.getElementById('search-section');
+  if (!section) return;
+  // Small rAF delay so browser has painted the initial state
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      section.classList.add('search-ready');
+    });
+  });
+}
+
+function triggerColumnEntrance() {
+  const cols = document.querySelectorAll('.category');
+  cols.forEach((col, i) => {
+    // Stagger: each column delayed by 60ms after the search finishes (~700ms base)
+    const delay = 700 + i * 60;
+    setTimeout(() => {
+      col.classList.add('col-visible');
+    }, delay);
+  });
+}
+
+boot();
+</script>
+</body>
+</html>

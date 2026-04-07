@@ -1,0 +1,78 @@
+{
+  "tool_calls_by_type": {
+    "Read": 1,
+    "Bash": 18,
+    "Write": 3,
+    "Glob": 0,
+    "Grep": 0,
+    "Edit": 0,
+    "WebFetch": 0,
+    "WebSearch": 0
+  },
+  "bash_commands_breakdown": {
+    "notebooklm_status": 1,
+    "yt_search": 1,
+    "notebooklm_create": 1,
+    "notebooklm_use": 1,
+    "notebooklm_source_add": 7,
+    "notebooklm_source_wait": 8,
+    "notebooklm_ask": 3,
+    "ls": 1,
+    "mkdir": 1
+  },
+  "total_tool_calls": 22,
+  "pipeline_steps_executed": 5,
+  "pipeline_steps_skipped": 1,
+  "pipeline_steps_skipped_reason": "Step 6 (Generate Deliverable) -- no deliverable requested by user",
+  "youtube_search": {
+    "queries_run": 1,
+    "query_text": "Claude Code Obsidian",
+    "results_returned": 10,
+    "videos_selected": 7,
+    "videos_dropped": 3,
+    "drop_reasons": [
+      "#1: User's own video",
+      "#8: Duplicate channel (Nick Milo -- kept newer #6)",
+      "#10: Off-topic (diagrams) + duplicate channel (Cole Medin -- kept #5)"
+    ]
+  },
+  "notebooklm": {
+    "notebook_created": true,
+    "notebook_id": "28ca2904-b381-4fcb-a252-3c42b2ebb1b7",
+    "sources_added": 7,
+    "sources_processed": 7,
+    "sources_failed": 0,
+    "analysis_questions_asked": 3
+  },
+  "errors_encountered": [
+    {
+      "step": "Step 4 -- source wait",
+      "error": "UnicodeEncodeError: 'charmap' codec can't encode character '\\u2713' (Windows cp1252 encoding issue with Rich library checkmark)",
+      "resolution": "Added PYTHONIOENCODING=utf-8 environment variable to all subsequent notebooklm commands",
+      "impact": "No data loss -- source had already processed, error was in display output only"
+    }
+  ],
+  "files_created": [
+    {
+      "path": "C:\\Users\\Chase\\The Vault\\research\\claude-code-obsidian-use-cases.md",
+      "type": "research_note",
+      "purpose": "Vault research note with findings following Obsidian conventions"
+    },
+    {
+      "path": "C:\\Users\\Chase\\.claude\\skills\\yt-pipeline-workspace\\iteration-1\\eval-1-basic-research\\with_skill\\outputs\\final_output.md",
+      "type": "final_output",
+      "purpose": "User-facing research summary"
+    },
+    {
+      "path": "C:\\Users\\Chase\\.claude\\skills\\yt-pipeline-workspace\\iteration-1\\eval-1-basic-research\\with_skill\\outputs\\transcript.md",
+      "type": "transcript",
+      "purpose": "Full execution transcript"
+    },
+    {
+      "path": "C:\\Users\\Chase\\.claude\\skills\\yt-pipeline-workspace\\iteration-1\\eval-1-basic-research\\with_skill\\outputs\\metrics.json",
+      "type": "metrics",
+      "purpose": "Quantitative execution metrics"
+    }
+  ],
+  "total_files_created": 4
+}

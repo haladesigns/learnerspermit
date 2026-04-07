@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post-Vibe Baseline — Operating in the New World</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .pos   { color: var(--accent3); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di        { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+  .decision-item small      { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 120px;
+  }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent2); }
+  .stat-val.green { color: var(--accent3); }
+  .stat-val.amber { color: var(--accent4); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Quote block */
+  .quote-block {
+    border-left: 3px solid var(--accent4);
+    background: var(--bg-code);
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    margin: 10px 0 4px;
+  }
+  .quote-block p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent4);
+    line-height: 1.6;
+    font-style: italic;
+  }
+  .quote-block cite {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-style: normal;
+  }
+
+  /* Multiplier diagram */
+  .multiplier {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    flex-wrap: wrap;
+  }
+  .mult-box {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 4px;
+    text-align: center;
+    min-width: 80px;
+  }
+  .mult-box.base-zero  { background: rgba(224,95,122,0.15); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+  .mult-box.base-pos   { background: rgba(62,207,142,0.12); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .mult-box.operator   { color: var(--text-muted); font-size: 16px; padding: 8px 4px; }
+  .mult-box.ai         { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); }
+  .mult-box.result-zero{ background: rgba(224,95,122,0.15); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+  .mult-box.result-pos { background: rgba(62,207,142,0.12); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .mult-label { font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 3px; font-family: 'IBM Plex Mono', monospace; }
+  .mult-col   { display: flex; flex-direction: column; align-items: center; }
+
+  /* Ownership tag */
+  .own-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+  }
+  .own-tag.human  { background: rgba(62,207,142,0.15); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .own-tag.ai     { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); }
+  .own-tag.both   { background: rgba(247,162,62,0.12); color: var(--accent4); border: 1px solid rgba(247,162,62,0.3); }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">POST-VIBE<span> — operating baseline</span></div>
+    <div class="badge">2026 EDITION</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">The Diagnosis</button>
+  <button data-tab="mindset">Mindset Shift</button>
+  <button data-tab="workflow">New Workflow</button>
+  <button data-tab="traps">Traps to Avoid</button>
+  <button data-tab="ownership">Ownership Map</button>
+</nav>
+
+<main>
+
+  <!-- TAB 1: OVERVIEW / DIAGNOSIS -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>The era of effortless shipping is over.</h2>
+      <p>Malewicz's core argument isn't about AI — it's about <strong>effort and craft</strong>. Vibe coding didn't fail because the tools are bad. It failed because most people using it had <strong>zero base to multiply</strong>. The tool is just a multiplier. If your base is zero, multiplying it by any number still gives you zero.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card red">
+        <div class="card-title red">What Failed &amp; Why</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🌊</div>
+            <div class="rule-text"><span class="neg">Overabundance:</span> Everyone can build → nothing stands out. Markets saturate. Consumers are desensitized.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🪑</div>
+            <div class="rule-text"><span class="neg">Soulless output:</span> AI defaults to generic patterns. Every site looks like Ikea LACK furniture — functional, forgettable.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text"><span class="neg">Effort disconnect:</span> Speed without understanding = mounting debt. Code churn is up 41%, refactoring collapsed from 25% to under 10%.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔐</div>
+            <div class="rule-text"><span class="neg">Security blind spots:</span> 170 of 1,645 Lovable-built apps had critical DB security flaws. CVE-2025-48757. Unreviewed code ships unreviewed vulnerabilities.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧩</div>
+            <div class="rule-text"><span class="neg">Agent misalignment:</span> An agent's only goal is task completion. Your goal is great software. Those are different goals.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title red">The Uncomfortable Numbers</div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-val">46%</div>
+            <div class="stat-label">of new commits are AI-generated (GitHub)</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">+41%</div>
+            <div class="stat-label">code churn since AI-first workflows</div>
+          </div>
+        </div>
+        <div class="stat-row" style="margin-top:12px">
+          <div class="stat">
+            <div class="stat-val">4×</div>
+            <div class="stat-label">increase in code duplication</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">10%</div>
+            <div class="stat-label">refactoring rate (down from 25% in 2021)</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted); line-height:1.6">
+          Speed gains are real. But they compound debt just as fast as they compound output. Without intentional review, the math turns negative.
+        </div>
+      </div>
+    </div>
+
+    <div class="quote-block">
+      <p>"When the craft is gone, alongside curiosity, passion and heuristics, we're left with generism."</p>
+      <cite>— Michal Malewicz, Vibe Coding is OVER</cite>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">📌 The Thesis</div>
+      <p>The problem was never AI. <em>People lacking foundational knowledge trying to do things "the fast way" were around way before AI.</em> AI just made the gap between those with craft and those without visible at scale. The answer isn't less AI — it's more foundation.</p>
+    </div>
+
+  </div><!-- /tab-overview -->
+
+
+  <!-- TAB 2: MINDSET SHIFT -->
+  <div class="section" id="tab-mindset">
+
+    <div class="card">
+      <div class="card-title">The Multiplier Model</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">AI amplifies what you already bring. If your base is low, the output is low — regardless of how powerful the tool.</p>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div class="multiplier">
+          <div class="mult-col">
+            <div class="mult-box base-zero">0 craft</div>
+            <div class="mult-label">no foundation</div>
+          </div>
+          <div class="mult-col"><div class="mult-box operator">×</div></div>
+          <div class="mult-col">
+            <div class="mult-box ai">AI tool</div>
+            <div class="mult-label">any model</div>
+          </div>
+          <div class="mult-col"><div class="mult-box operator">=</div></div>
+          <div class="mult-col">
+            <div class="mult-box result-zero">0 value</div>
+            <div class="mult-label">fast LACK table</div>
+          </div>
+        </div>
+
+        <div class="multiplier">
+          <div class="mult-col">
+            <div class="mult-box base-pos">strong base</div>
+            <div class="mult-label">craft + taste</div>
+          </div>
+          <div class="mult-col"><div class="mult-box operator">×</div></div>
+          <div class="mult-col">
+            <div class="mult-box ai">AI tool</div>
+            <div class="mult-label">same model</div>
+          </div>
+          <div class="mult-col"><div class="mult-box operator">=</div></div>
+          <div class="mult-col">
+            <div class="mult-box result-pos">10× output</div>
+            <div class="mult-label">memorable work</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="quote-block" style="margin-top:14px">
+        <p>"Stop optimizing your stack and start optimizing your taste."</p>
+        <cite>— Malewicz</cite>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title green">The New Mindset</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🧭</div>
+            <div class="rule-text"><span class="pos">You are the director.</span> AI is the crew. Vision, intent, and decisions stay human-led at all times.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text"><span class="pos">Task completion ≠ goal achieved.</span> The agent cares about finishing. You care about the long-term result. Keep those two things separate in your head.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📐</div>
+            <div class="rule-text"><span class="pos">Architecture is yours.</span> Let AI implement; never let AI decide fundamental structure. High-level design stays human.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">👁️</div>
+            <div class="rule-text"><span class="pos">Intentionality over speed.</span> A thing made with purpose at half the speed beats a fast generic blob every time.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">The Old (Broken) Mindset</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">❌</div>
+            <div class="rule-text"><span class="neg">"Ship it, it works."</span> Working ≠ good. Unreviewed code carries unreviewed risk — bugs, security holes, unmaintainable debt.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">❌</div>
+            <div class="rule-text"><span class="neg">"Stack optimization = edge."</span> Better models don't fix a zero base. Switching from Claude to GPT-5 changes nothing if you don't have craft.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">❌</div>
+            <div class="rule-text"><span class="neg">"Anyone can build anything."</span> Anyone can produce something that looks like a product. Far fewer can produce something that matters, lasts, or solves a real problem.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">❌</div>
+            <div class="rule-text"><span class="neg">"AI will handle the architecture."</span> Agents suggest absurd ideas and double down. They see the current task. You see the whole system.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✅ The Shift in One Sentence</div>
+      <p>Move from <em>vibe maintainer</em> (accepting output) to <em>intentional director</em> (reviewing, owning, and shaping every decision).</p>
+    </div>
+
+  </div><!-- /tab-mindset -->
+
+
+  <!-- TAB 3: NEW WORKFLOW -->
+  <div class="section" id="tab-workflow">
+
+    <div class="card">
+      <div class="card-title">The Agentic Engineering Loop</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">Replacing pure vibe coding. You run the loop — the AI serves it.</p>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Define intent clearly before prompting</strong><br>
+            Write down what you want to build, why, and what "done" looks like. Break work into discrete tasks a junior dev could understand. Vague prompts → verbose over-engineered output.
+            <span class="tip">💡 If you can't explain the task in 2 sentences, you don't understand it well enough to delegate it.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>You own the architecture — then delegate implementation</strong><br>
+            Design the structure, data model, and core decisions yourself (with AI as thinking partner). Then hand off implementation of well-defined chunks. Never ask the AI to "design a scalable architecture" and follow it blindly.
+            <span class="note">⚠ High-level design is not a prompt job. It requires your judgment.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Generate → Review → Understand → Commit</strong><br>
+            Every line that ships must be understood by you. If another developer could tell which lines came from an LLM, it's not ready. Internalize the code as if you wrote it.
+            <span class="note">⚠ Reviewers shouldn't be working harder than authors. If you didn't understand what you merged, you didn't review it.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Force the AI to review its own work (Rule of Five)</strong><br>
+            Before accepting any non-trivial output, prompt the model to review its own plan or code 5 times. AI performance converges on quality through recursive review, not a single perfect prompt.
+            <span class="tip">💡 Ask: "Review this for security issues." "Review this for maintainability." "Is there a simpler approach?" — separately.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Write tests as survival mechanism, not afterthought</strong><br>
+            You can't manually review 12,000 AI-generated lines. Tests are your tripwires. Automated tests catch what confident hallucinations miss. Check behavior and side effects, not just whether it runs.
+            <span class="note">⚠ An agent that checks off "tests written" without actually writing tests is not a safety net — it's a liability.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <strong>Actively refactor, don't let patches accumulate</strong><br>
+            The LLM doesn't care how messy the code is. It will apply patches on patches indefinitely. Refactoring must be a deliberate human choice. Code smells don't clean themselves.
+            <span class="tip">💡 If a PR is net-negative on lines (removing more than adding), that's often a sign of real health.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">7</div>
+          <div class="step-body">
+            <strong>Document intent, not just implementation</strong><br>
+            AI-generated code needs more documentation, not less. Future maintainers (including you) need to know why a solution was chosen, not just what it does. Document the reasoning.
+            <span class="pos">✅ Treat AI-generated code as you would a new hire's PR: understand it, document it, own it.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">8</div>
+          <div class="step-body">
+            <strong>Know when to take back the wheel</strong><br>
+            If the AI keeps producing convoluted solutions to a simple problem — stop and write it yourself. Sometimes manual is faster, cleaner, and better understood. Critical security modules, custom optimizations, and nuanced algorithms may need human-only authorship.
+            <span class="tip">💡 "AI did it" is not an explanation. It's an admission of abdication.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">🔁 The Feedback Loop That Works</div>
+      <p><em>Prompt clearly → Generate → Review for behavior/side effects → Interrogate AI reasoning → Refine or rewrite → Document why → Commit with understanding.</em> Speed lives in the generate step. Quality lives in every other step.</p>
+    </div>
+
+  </div><!-- /tab-workflow -->
+
+
+  <!-- TAB 4: TRAPS -->
+  <div class="section" id="tab-traps">
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ What Actually Works</div>
+        <div class="decision-item"><span class="di">✅</span><div>Build foundational skills first — they're what makes AI output legible and improvable.<small>Understanding systems, patterns, and when something feels wrong is the actual edge.</small></div></div>
+        <div class="decision-item"><span class="di">✅</span><div>Use AI for grunt work and tedium — not for creative decisions or architecture.<small>Repetitive code, boilerplate, known patterns, documentation drafts.</small></div></div>
+        <div class="decision-item"><span class="di">✅</span><div>Develop taste and intentionality — your differentiator is judgment, not access to tools.<small>Everyone has access to the same models. Not everyone can direct them well.</small></div></div>
+        <div class="decision-item"><span class="di">✅</span><div>Race AI only on trivial changes — use manual when it's clearly faster.<small>Autocomplete and search are still faster than LLMs for locating one-line fixes.</small></div></div>
+        <div class="decision-item"><span class="di">✅</span><div>Validate against behavior, not just syntax — test side effects and edge cases.<small>LLMs generate plausible-looking wrong code. The run succeeding isn't proof.</small></div></div>
+      </div>
+
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ The Traps</div>
+        <div class="decision-item"><span class="di">❌</span><div>Optimizing your stack instead of your skill.<small>Better tool + same base = same output. Stop chasing model releases.</small></div></div>
+        <div class="decision-item"><span class="di">❌</span><div>Accepting output without understanding it.<small>Code you can't explain is code you can't maintain, debug, or defend.</small></div></div>
+        <div class="decision-item"><span class="di">❌</span><div>Letting the AI make structural decisions.<small>Agents complete tasks. They don't see the codebase's future. You do.</small></div></div>
+        <div class="decision-item"><span class="di">❌</span><div>Building the 193rd version of the same idea.<small>If there are already 192 competitors and you've added no differentiation, speed-to-market is not your advantage.</small></div></div>
+        <div class="decision-item"><span class="di">❌</span><div>Equating "it runs" with "it's done."<small>Production users do unexpected things. AI scaffolding that worked locally often doesn't hold.</small></div></div>
+      </div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">The Hidden Traps (Details)</div>
+      <div class="rule-list">
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><strong>The Productivity Tax trap:</strong> 66% of developers report AI tools generate code that is "almost but not quite right," requiring cleanup. The time saved generating is often spent cleaning. Budget for this explicitly.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><strong>The over-engineering trap:</strong> LLMs are trained on verbose codebases and tend to produce defensive, over-commented, helper-function-heavy output. Where an expert uses 10 lines, the model may use 100. Push back on verbosity.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><strong>The "ambient competence" trap:</strong> Feeling capable of a task because the AI can do it is not the same as being capable. When the AI fails, your actual skill level is what catches it. Build real skills, not just prompting confidence.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><strong>The PR asymmetry trap:</strong> It now takes less effort to produce a PR than to review one. If authors aren't internalizing the code, reviewers are doing more work than authors — and will start missing things. Authors must understand what they ship.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><strong>The "nuke from orbit" trap:</strong> AI directed to "fix the setup" may choose a factory reset. Agents optimize for task completion — not physical/business consequences. Always review drastic actions. Never delegate irreversible operations blindly.</div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><strong>The security invisibility trap:</strong> Security quality in LLM-generated code has not improved with model size. Larger models are not safer. Security-critical code must be reviewed by someone who understands security — not assumed safe because the model is smart.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">🚨 The Deletion Test</div>
+      <p>Before shipping, ask: <em>if this code disappeared tomorrow, would I be able to recreate it?</em> If the answer is no — you don't own it. You're just hosting it. Own your code.</p>
+    </div>
+
+  </div><!-- /tab-traps -->
+
+
+  <!-- TAB 5: OWNERSHIP MAP -->
+  <div class="section" id="tab-ownership">
+
+    <div class="card">
+      <div class="card-title">Who Owns What — The Responsibility Split</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">In the post-vibe world, every part of the stack has a clear owner. The split isn't about distrust of AI — it's about knowing who's accountable for what.</p>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Owner</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Product vision &amp; intent</td>
+            <td><span class="own-tag human">HUMAN</span></td>
+            <td>AI can't know what your users actually need or what makes you different</td>
+          </tr>
+          <tr>
+            <td>System architecture</td>
+            <td><span class="own-tag human">HUMAN</span></td>
+            <td>Structural decisions compound; agents only see the current task</td>
+          </tr>
+          <tr>
+            <td>Security-critical code</td>
+            <td><span class="own-tag human">HUMAN</span></td>
+            <td>LLM security quality flat across model sizes. Don't trust it here.</td>
+          </tr>
+          <tr>
+            <td>Code review &amp; merge decision</td>
+            <td><span class="own-tag human">HUMAN</span></td>
+            <td>Ownership transfers at merge. You signed it.</td>
+          </tr>
+          <tr>
+            <td>Refactoring decisions</td>
+            <td><span class="own-tag human">HUMAN</span></td>
+            <td>The model won't clean up smells it created. Only you will.</td>
+          </tr>
+          <tr>
+            <td>Test strategy &amp; edge cases</td>
+            <td><span class="own-tag human">HUMAN</span></td>
+            <td>AI writes tests that pass, not tests that catch real failure modes</td>
+          </tr>
+          <tr>
+            <td>Boilerplate &amp; repetitive code</td>
+            <td><span class="own-tag ai">AI</span></td>
+            <td>High-volume, low-judgment work — exactly where models shine</td>
+          </tr>
+          <tr>
+            <td>Known pattern implementation</td>
+            <td><span class="own-tag ai">AI</span></td>
+            <td>CRUD, standard API shapes, well-defined schemas</td>
+          </tr>
+          <tr>
+            <td>Documentation drafts</td>
+            <td><span class="own-tag ai">AI</span></td>
+            <td>Generate then verify; human edits for accuracy and intent</td>
+          </tr>
+          <tr>
+            <td>Bug hypothesis generation</td>
+            <td><span class="own-tag both">BOTH</span></td>
+            <td>AI surfaces candidates; human validates against system knowledge</td>
+          </tr>
+          <tr>
+            <td>Code explanation &amp; learning</td>
+            <td><span class="own-tag both">BOTH</span></td>
+            <td>AI explains; human confirms understanding by paraphrasing back</td>
+          </tr>
+          <tr>
+            <td>Research &amp; exploration</td>
+            <td><span class="own-tag both">BOTH</span></td>
+            <td>Effective when human steers exploration with domain knowledge</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card green">
+        <div class="card-title green">Build the Foundation</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📚</div>
+            <div class="rule-text">Learn systems thinking — how parts interact, not just how to write syntax. This is what makes AI output legible.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔍</div>
+            <div class="rule-text">Debug manually sometimes. The discipline of finding bugs without AI builds the pattern-recognition that catches AI mistakes.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎨</div>
+            <div class="rule-text">Develop taste through exposure. Study what works and why. Foundational taste is the edge that can't be prompted into existence.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✍️</div>
+            <div class="rule-text">Write some code by hand. Students who don't struggle through concepts don't build the heuristics needed to evaluate AI output.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">The Differentiation Stack</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">💡</div>
+            <div class="rule-text"><strong>Taste</strong> — knowing what good looks like before you see the output</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧠</div>
+            <div class="rule-text"><strong>Judgment</strong> — knowing which AI-generated path to pursue</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text"><strong>Intent</strong> — knowing what you're building and why it matters</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔧</div>
+            <div class="rule-text"><strong>Craft</strong> — knowing when output is good enough vs. when it needs rework</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧭</div>
+            <div class="rule-text"><strong>Heuristics</strong> — pattern recognition built through real experience</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted)">None of these can be prompted. All of them compound.</div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">🏁 The Baseline Principle</div>
+      <p>In the new world, <em>AI is table stakes</em> — everyone has it. What separates work that matters from work that disappears into the noise is everything the AI can't generate: your vision, your taste, your judgment, and your willingness to actually put in the effort.</p>
+    </div>
+
+  </div><!-- /tab-ownership -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

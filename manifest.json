@@ -1,0 +1,534 @@
+[
+  {
+    "type": "folder",
+    "name": "cc_masterclass_modules",
+    "label": "Cc Masterclass Modules",
+    "children": [
+      {
+        "type": "file",
+        "name": "1 claudemd-reference.html",
+        "label": "1 Claudemd Reference",
+        "path": "cc_masterclass_modules/1 claudemd-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "10 skill-creator-reference.html",
+        "label": "10 Skill Creator Reference",
+        "path": "cc_masterclass_modules/10 skill-creator-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "11 hooks-reference.html",
+        "label": "11 Hooks Reference",
+        "path": "cc_masterclass_modules/11 hooks-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "12 mcp-reference.html",
+        "label": "12 Mcp Reference",
+        "path": "cc_masterclass_modules/12 mcp-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "13 worktrees-reference.html",
+        "label": "13 Worktrees Reference",
+        "path": "cc_masterclass_modules/13 worktrees-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "14 sub-agents-reference.html",
+        "label": "14 Sub Agents Reference",
+        "path": "cc_masterclass_modules/14 sub-agents-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "15 agent-teams-reference.html",
+        "label": "15 Agent Teams Reference",
+        "path": "cc_masterclass_modules/15 agent-teams-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "16 btw-reference.html",
+        "label": "16 Btw Reference",
+        "path": "cc_masterclass_modules/16 btw-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "17 loop-reference.html",
+        "label": "17 Loop Reference",
+        "path": "cc_masterclass_modules/17 loop-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "18 remote-access-reference.html",
+        "label": "18 Remote Access Reference",
+        "path": "cc_masterclass_modules/18 remote-access-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "19 dream-reference_1.html",
+        "label": "19 Dream Reference 1",
+        "path": "cc_masterclass_modules/19 dream-reference_1.html"
+      },
+      {
+        "type": "file",
+        "name": "2 claude-code-permissions.html",
+        "label": "2 Claude Code Permissions",
+        "path": "cc_masterclass_modules/2 claude-code-permissions.html"
+      },
+      {
+        "type": "file",
+        "name": "3 claude-memory-reference.html",
+        "label": "3 Claude Memory Reference",
+        "path": "cc_masterclass_modules/3 claude-memory-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "4 remote-control-reference.html",
+        "label": "4 Remote Control Reference",
+        "path": "cc_masterclass_modules/4 remote-control-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "5 claude-code-prompting.html",
+        "label": "5 Claude Code Prompting",
+        "path": "cc_masterclass_modules/5 claude-code-prompting.html"
+      },
+      {
+        "type": "file",
+        "name": "6 git-workflows.html",
+        "label": "6 Git Workflows",
+        "path": "cc_masterclass_modules/6 git-workflows.html"
+      },
+      {
+        "type": "file",
+        "name": "7 context-window-reference.html",
+        "label": "7 Context Window Reference",
+        "path": "cc_masterclass_modules/7 context-window-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "8 debugging-reference.html",
+        "label": "8 Debugging Reference",
+        "path": "cc_masterclass_modules/8 debugging-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "9 skills-reference.html",
+        "label": "9 Skills Reference",
+        "path": "cc_masterclass_modules/9 skills-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "CC Masterclass Modules.md",
+        "label": "Cc Masterclass Modules",
+        "path": "cc_masterclass_modules/CC Masterclass Modules.md"
+      },
+      {
+        "type": "file",
+        "name": "Dream-Skill.md",
+        "label": "Dream Skill",
+        "path": "cc_masterclass_modules/Dream-Skill.md"
+      }
+    ]
+  },
+  {
+    "type": "folder",
+    "name": "claude-code-tips",
+    "label": "Claude Code Tips",
+    "children": [
+      {
+        "type": "file",
+        "name": "claude-code-9tips.html",
+        "label": "Claude Code 9tips",
+        "path": "claude-code-tips/claude-code-9tips.html"
+      },
+      {
+        "type": "file",
+        "name": "claude-code-great-repos.html",
+        "label": "Claude Code Great Repos",
+        "path": "claude-code-tips/claude-code-great-repos.html"
+      }
+    ]
+  },
+  {
+    "type": "folder",
+    "name": "coding_web-design",
+    "label": "Coding Web Design",
+    "children": [
+      {
+        "type": "folder",
+        "name": "chase-ai-content-skills",
+        "label": "Chase Ai Content Skills",
+        "children": [
+          {
+            "type": "folder",
+            "name": "content-cascade",
+            "label": "Content Cascade",
+            "children": [
+              {
+                "type": "folder",
+                "name": "scripts",
+                "label": "Scripts",
+                "children": [
+                  {
+                    "type": "file",
+                    "name": "fetch-transcript-apify.js",
+                    "label": "Fetch Transcript Apify",
+                    "path": "coding_web-design/chase-ai-content-skills/content-cascade/scripts/fetch-transcript-apify.js"
+                  },
+                  {
+                    "type": "file",
+                    "name": "fetch-transcript.js",
+                    "label": "Fetch Transcript",
+                    "path": "coding_web-design/chase-ai-content-skills/content-cascade/scripts/fetch-transcript.js"
+                  },
+                  {
+                    "type": "file",
+                    "name": "generate-flyer-hook.js",
+                    "label": "Generate Flyer Hook",
+                    "path": "coding_web-design/chase-ai-content-skills/content-cascade/scripts/generate-flyer-hook.js"
+                  },
+                  {
+                    "type": "file",
+                    "name": "generate-flyer.js",
+                    "label": "Generate Flyer",
+                    "path": "coding_web-design/chase-ai-content-skills/content-cascade/scripts/generate-flyer.js"
+                  },
+                  {
+                    "type": "file",
+                    "name": "post-thread.js",
+                    "label": "Post Thread",
+                    "path": "coding_web-design/chase-ai-content-skills/content-cascade/scripts/post-thread.js"
+                  }
+                ]
+              },
+              {
+                "type": "file",
+                "name": "SKILL.md",
+                "label": "Skill",
+                "path": "coding_web-design/chase-ai-content-skills/content-cascade/SKILL.md"
+              }
+            ]
+          },
+          {
+            "type": "folder",
+            "name": "hooks",
+            "label": "Hooks",
+            "children": [
+              {
+                "type": "file",
+                "name": "SKILL.md",
+                "label": "Skill",
+                "path": "coding_web-design/chase-ai-content-skills/hooks/SKILL.md"
+              }
+            ]
+          },
+          {
+            "type": "folder",
+            "name": "ideation",
+            "label": "Ideation",
+            "children": [
+              {
+                "type": "file",
+                "name": "SKILL.md",
+                "label": "Skill",
+                "path": "coding_web-design/chase-ai-content-skills/ideation/SKILL.md"
+              }
+            ]
+          },
+          {
+            "type": "folder",
+            "name": "outlines",
+            "label": "Outlines",
+            "children": [
+              {
+                "type": "file",
+                "name": "SKILL.md",
+                "label": "Skill",
+                "path": "coding_web-design/chase-ai-content-skills/outlines/SKILL.md"
+              }
+            ]
+          },
+          {
+            "type": "folder",
+            "name": "short-form",
+            "label": "Short Form",
+            "children": [
+              {
+                "type": "file",
+                "name": "SKILL.md",
+                "label": "Skill",
+                "path": "coding_web-design/chase-ai-content-skills/short-form/SKILL.md"
+              }
+            ]
+          },
+          {
+            "type": "folder",
+            "name": "yt-pipeline",
+            "label": "Yt Pipeline",
+            "children": [
+              {
+                "type": "folder",
+                "name": "evals",
+                "label": "Evals",
+                "children": [
+                  {
+                    "type": "file",
+                    "name": "evals.json",
+                    "label": "Evals",
+                    "path": "coding_web-design/chase-ai-content-skills/yt-pipeline/evals/evals.json"
+                  }
+                ]
+              },
+              {
+                "type": "file",
+                "name": "SKILL.md",
+                "label": "Skill",
+                "path": "coding_web-design/chase-ai-content-skills/yt-pipeline/SKILL.md"
+              }
+            ]
+          },
+          {
+            "type": "folder",
+            "name": "yt-pipeline-workspace",
+            "label": "Yt Pipeline Workspace",
+            "children": [
+              {
+                "type": "folder",
+                "name": "iteration-1",
+                "label": "Iteration 1",
+                "children": [
+                  {
+                    "type": "folder",
+                    "name": "eval-1-basic-research",
+                    "label": "Eval 1 Basic Research",
+                    "children": [
+                      {
+                        "type": "folder",
+                        "name": "with_skill",
+                        "label": "With Skill",
+                        "children": [
+                          {
+                            "type": "folder",
+                            "name": "outputs",
+                            "label": "Outputs",
+                            "children": [
+                              {
+                                "type": "file",
+                                "name": "final_output.md",
+                                "label": "Final Output",
+                                "path": "coding_web-design/chase-ai-content-skills/yt-pipeline-workspace/iteration-1/eval-1-basic-research/with_skill/outputs/final_output.md"
+                              },
+                              {
+                                "type": "file",
+                                "name": "metrics.json",
+                                "label": "Metrics",
+                                "path": "coding_web-design/chase-ai-content-skills/yt-pipeline-workspace/iteration-1/eval-1-basic-research/with_skill/outputs/metrics.json"
+                              },
+                              {
+                                "type": "file",
+                                "name": "transcript.md",
+                                "label": "Transcript",
+                                "path": "coding_web-design/chase-ai-content-skills/yt-pipeline-workspace/iteration-1/eval-1-basic-research/with_skill/outputs/transcript.md"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "file",
+                            "name": "grading.json",
+                            "label": "Grading",
+                            "path": "coding_web-design/chase-ai-content-skills/yt-pipeline-workspace/iteration-1/eval-1-basic-research/with_skill/grading.json"
+                          },
+                          {
+                            "type": "file",
+                            "name": "timing.json",
+                            "label": "Timing",
+                            "path": "coding_web-design/chase-ai-content-skills/yt-pipeline-workspace/iteration-1/eval-1-basic-research/with_skill/timing.json"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "file",
+                        "name": "eval_metadata.json",
+                        "label": "Eval Metadata",
+                        "path": "coding_web-design/chase-ai-content-skills/yt-pipeline-workspace/iteration-1/eval-1-basic-research/eval_metadata.json"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "folder",
+            "name": "yt-search",
+            "label": "Yt Search",
+            "children": [
+              {
+                "type": "folder",
+                "name": "scripts",
+                "label": "Scripts",
+                "children": []
+              },
+              {
+                "type": "file",
+                "name": "SKILL.md",
+                "label": "Skill",
+                "path": "coding_web-design/chase-ai-content-skills/yt-search/SKILL.md"
+              }
+            ]
+          },
+          {
+            "type": "folder",
+            "name": "yt-titles",
+            "label": "Yt Titles",
+            "children": [
+              {
+                "type": "folder",
+                "name": "evals",
+                "label": "Evals",
+                "children": [
+                  {
+                    "type": "file",
+                    "name": "evals.json",
+                    "label": "Evals",
+                    "path": "coding_web-design/chase-ai-content-skills/yt-titles/evals/evals.json"
+                  }
+                ]
+              },
+              {
+                "type": "folder",
+                "name": "scripts",
+                "label": "Scripts",
+                "children": []
+              },
+              {
+                "type": "file",
+                "name": "SKILL.md",
+                "label": "Skill",
+                "path": "coding_web-design/chase-ai-content-skills/yt-titles/SKILL.md"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "file",
+        "name": "animated-websites-reference.html",
+        "label": "Animated Websites Reference",
+        "path": "coding_web-design/animated-websites-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "cc-github-repos.html",
+        "label": "Cc Github Repos",
+        "path": "coding_web-design/cc-github-repos.html"
+      },
+      {
+        "type": "file",
+        "name": "cli-anything-reference.html",
+        "label": "Cli Anything Reference",
+        "path": "coding_web-design/cli-anything-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "clone-any-site.html",
+        "label": "Clone Any Site",
+        "path": "coding_web-design/clone-any-site.html"
+      },
+      {
+        "type": "file",
+        "name": "frontend-design-levels.html",
+        "label": "Frontend Design Levels",
+        "path": "coding_web-design/frontend-design-levels.html"
+      },
+      {
+        "type": "file",
+        "name": "playwright-cli-reference.html",
+        "label": "Playwright Cli Reference",
+        "path": "coding_web-design/playwright-cli-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "post-vibe-baseline.html",
+        "label": "Post Vibe Baseline",
+        "path": "coding_web-design/post-vibe-baseline.html"
+      },
+      {
+        "type": "file",
+        "name": "siteteardown-skill.md",
+        "label": "Siteteardown Skill",
+        "path": "coding_web-design/siteteardown-skill.md"
+      },
+      {
+        "type": "file",
+        "name": "Web Design.md",
+        "label": "Web Design",
+        "path": "coding_web-design/Web Design.md"
+      }
+    ]
+  },
+  {
+    "type": "folder",
+    "name": "deep-research-workflows",
+    "label": "Deep Research Workflows",
+    "children": [
+      {
+        "type": "file",
+        "name": "claude-code-research-agent.html",
+        "label": "Claude Code Research Agent",
+        "path": "deep-research-workflows/claude-code-research-agent.html"
+      },
+      {
+        "type": "file",
+        "name": "notebooklm-research-stack.html",
+        "label": "Notebooklm Research Stack",
+        "path": "deep-research-workflows/notebooklm-research-stack.html"
+      },
+      {
+        "type": "file",
+        "name": "obsidian-beginner-guide.html",
+        "label": "Obsidian Beginner Guide",
+        "path": "deep-research-workflows/obsidian-beginner-guide.html"
+      },
+      {
+        "type": "file",
+        "name": "obsidian-rag-reference.html",
+        "label": "Obsidian Rag Reference",
+        "path": "deep-research-workflows/obsidian-rag-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "YT-pipeline-skill.md",
+        "label": "Yt Pipeline Skill",
+        "path": "deep-research-workflows/YT-pipeline-skill.md"
+      },
+      {
+        "type": "file",
+        "name": "YT-search-skill.md",
+        "label": "Yt Search Skill",
+        "path": "deep-research-workflows/YT-search-skill.md"
+      }
+    ]
+  },
+  {
+    "type": "folder",
+    "name": "finance",
+    "label": "Finance",
+    "children": [
+      {
+        "type": "file",
+        "name": "claude-trading-reference.html",
+        "label": "Claude Trading Reference",
+        "path": "finance/claude-trading-reference.html"
+      }
+    ]
+  },
+  {
+    "type": "file",
+    "name": "index.html",
+    "label": "Index",
+    "path": "index.html"
+  }
+]

@@ -526,6 +526,19 @@
     ]
   },
   {
+    "type": "folder",
+    "name": "Yara",
+    "label": "Yara",
+    "children": [
+      {
+        "type": "file",
+        "name": "ref.txt",
+        "label": "Ref",
+        "path": "Yara/ref.txt"
+      }
+    ]
+  },
+  {
     "type": "file",
     "name": "index.html",
     "label": "Index",

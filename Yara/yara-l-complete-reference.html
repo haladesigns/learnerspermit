@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YARA-L 2.0 — Chronicle Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .st { color: #a8d9a3; }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Mode comparison boxes */
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .mode-grid { grid-template-columns: 1fr; } }
+  .mode-box {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .mode-box-header {
+    padding: 12px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .mode-box-header.search { background: rgba(62,207,142,0.1); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .mode-box-header.detect { background: rgba(79,142,247,0.1); color: var(--accent); border-bottom: 1px solid rgba(79,142,247,0.2); }
+  .mode-box-body { padding: 14px 16px; font-size: 13px; }
+  .mode-row { display: flex; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .mode-row:last-child { border-bottom: none; }
+  .mode-label { color: var(--text-muted); font-size: 12px; min-width: 80px; }
+  .mode-val { color: var(--text); font-size: 12px; }
+
+  /* Section skeleton table */
+  .section-order {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .section-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+  .section-pill.required { background: rgba(79,142,247,0.12); color: var(--accent); border-color: rgba(79,142,247,0.3); }
+  .section-pill.optional { background: rgba(247,162,62,0.10); color: var(--accent4); border-color: rgba(247,162,62,0.25); }
+  .pill-arrow { color: var(--text-dim); font-size: 14px; }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">YARA-L 2.0<span> — Chronicle SIEM Reference</span></div>
+    <div class="badge">GOOGLE SECOPS</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="structure">Rule Structure</button>
+  <button data-tab="events">Events &amp; Filtering</button>
+  <button data-tab="logic">Logic &amp; Quantifiers</button>
+  <button data-tab="moc">Match / Outcome / Condition</button>
+  <button data-tab="functions">Functions &amp; UDM</button>
+  <button data-tab="ops">Operations</button>
+</nav>
+
+<main>
+
+<!-- ================================================================
+     OVERVIEW TAB
+     ================================================================ -->
+<div class="section active" id="tab-overview">
+
+  <div class="hero">
+    <h2>YARA-L 2.0</h2>
+    <p>A rule language for <strong>Google Chronicle / SecOps</strong> that detects threats in UDM-normalised security telemetry. Write once, run against petabytes of ingested logs — either interactively (UDM Search) or as persistent automated detection rules.</p>
+  </div>
+
+  <!-- Two modes -->
+  <div class="card">
+    <div class="card-title">The Two Modes — Know Before You Write</div>
+    <div class="mode-grid">
+      <div class="mode-box">
+        <div class="mode-box-header search">UDM Search — Interactive</div>
+        <div class="mode-box-body">
+          <div class="mode-row"><span class="mode-label">Syntax</span><span class="mode-val">Bare <code style="font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">events:</code> block — no wrapper</span></div>
+          <div class="mode-row"><span class="mode-label">Runs</span><span class="mode-val">Once, on demand</span></div>
+          <div class="mode-row"><span class="mode-label">Output</span><span class="mode-val">Results in search UI</span></div>
+          <div class="mode-row"><span class="mode-label">Use for</span><span class="mode-val">Triage, investigation, hunting</span></div>
+          <div class="mode-row"><span class="mode-label">Has <code style="font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent3)">condition:</code></span><span class="mode-val" style="color:var(--accent2)">No — throws an error</span></div>
+        </div>
+      </div>
+      <div class="mode-box">
+        <div class="mode-box-header detect">Detection Engine — Persistent</div>
+        <div class="mode-box-body">
+          <div class="mode-row"><span class="mode-label">Syntax</span><span class="mode-val">Full <code style="font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">rule name { }</code> block</span></div>
+          <div class="mode-row"><span class="mode-label">Runs</span><span class="mode-val">Continuously, 24/7</span></div>
+          <div class="mode-row"><span class="mode-label">Output</span><span class="mode-val">Alerts in findings queue</span></div>
+          <div class="mode-row"><span class="mode-label">Use for</span><span class="mode-val">Automated alerting, SOAR triggers</span></div>
+          <div class="mode-row"><span class="mode-label">Has <code style="font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent3)">condition:</code></span><span class="mode-val" style="color:var(--accent3)">Yes — required</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <div class="callout red">
+        <div class="callout-label">⚠ Most Common Beginner Mistake</div>
+        <p>Pasting a Detection Engine rule into the UDM Search bar (or vice versa). The parsers are completely different — <em>a <code style="font-size:11px;background:rgba(224,95,122,0.1);padding:1px 4px;border-radius:3px;color:var(--accent2)">condition:</code> in UDM Search throws a compilation error.</em></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card blue">
+      <div class="card-title">Core Concepts</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📌</div>
+          <div class="rule-text"><strong>UDM</strong> — Unified Data Model. Chronicle normalises all ingested logs into a common schema. YARA-L queries this normalised form.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">$</div>
+          <div class="rule-text"><strong>Placeholders</strong> — Variables prefixed with <code>$</code> bind field values. <code>$e</code> binds an event, <code>$host = $e.principal.asset.hostname</code> extracts a value.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">#</div>
+          <div class="rule-text"><strong>Count shorthand</strong> — <code>#e</code> means "count of events matching <code>$e</code>". Use in <code>condition:</code> as <code>#e &gt; 5</code>.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">%</div>
+          <div class="rule-text"><strong>Reference lists</strong> — Named IOC/allowlists managed in Chronicle UI. Referenced with <code>%list_name</code>. Updates auto-propagate to all rules.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Rule Naming Rules</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">Allowed:</span> letters <code>a-z A-Z</code>, digits <code>0-9</code>, underscores <code>_</code></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">❌</div>
+          <div class="rule-text"><span class="neg">Not allowed:</span> spaces, hyphens <code>-</code>, dots <code>.</code>, any special characters</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">❌</div>
+          <div class="rule-text"><span class="neg">Cannot start with a digit</span> — <code>1_bad_name</code> fails; <code>bad_name_1</code> is fine</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📐</div>
+          <div class="rule-text"><strong>Convention:</strong> <code>tactic_behaviour_specificity</code> e.g. <code>lateral_movement_smb_new_host</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout yellow">
+    <div class="callout-label">💡 Golden Rule</div>
+    <p><em>Investigating right now?</em> → UDM Search. <em>Want to be alerted automatically going forward?</em> → Detection Engine rule. These are not interchangeable.</p>
+  </div>
+
+</div><!-- /tab-overview -->
+
+
+<!-- ================================================================
+     RULE STRUCTURE TAB
+     ================================================================ -->
+<div class="section" id="tab-structure">
+
+  <div class="card blue">
+    <div class="card-title">Section Order — Parser-Enforced</div>
+    <div class="section-order">
+      <span class="section-pill optional">meta:</span>
+      <span class="pill-arrow">→</span>
+      <span class="section-pill required">events:</span>
+      <span class="pill-arrow">→</span>
+      <span class="section-pill optional">match:</span>
+      <span class="pill-arrow">→</span>
+      <span class="section-pill optional">outcome:</span>
+      <span class="pill-arrow">→</span>
+      <span class="section-pill required">condition:</span>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:20px;font-size:12px;">
+      <span style="color:var(--accent)">■ Required</span>
+      <span style="color:var(--accent4)">■ Optional</span>
+      <span style="color:var(--text-muted)">Sections cannot be reordered. Omit optional sections freely; do not swap them.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Fully Annotated Skeleton</div>
+    <pre><span class="kw">rule</span> <span class="hd">rule_name_here</span> {              <span class="cm">// required — opens the rule block</span>
+
+  <span class="kw">meta:</span>                            <span class="cm">// optional — always include severity</span>
+    author      = <span class="st">"your_name"</span>
+    severity    = <span class="st">"HIGH"</span>           <span class="cm">// LOW | MEDIUM | HIGH | CRITICAL</span>
+    priority    = <span class="st">"HIGH"</span>
+    description = <span class="st">"What this rule detects and why"</span>
+    assumption  = <span class="st">"Assumes EDR on all endpoints"</span>
+    confidence  = <span class="st">"HIGH"</span>
+    tactic      = <span class="st">"TA0002"</span>         <span class="cm">// MITRE ATT&amp;CK tactic ID</span>
+    technique   = <span class="st">"T1059.001"</span>      <span class="cm">// MITRE ATT&amp;CK technique ID</span>
+
+  <span class="kw">events:</span>                          <span class="cm">// required — all filter conditions</span>
+    $e.metadata.log_type = <span class="st">"PROCESS_LAUNCH"</span>
+    $host = $e.principal.asset.hostname
+
+  <span class="kw">match:</span>                           <span class="cm">// optional — grouping + time window</span>
+    $host <span class="kw">over</span> <span class="li">1h</span>
+
+  <span class="kw">outcome:</span>                         <span class="cm">// optional — computed values for alert</span>
+    $hits = <span class="fn">count</span>($e.metadata.id)
+
+  <span class="kw">condition:</span>                       <span class="cm">// required — the firing threshold</span>
+    #e > <span class="li">5</span>
+
+}                                  <span class="cm">// required — closes the rule block</span></pre>
+  </div>
+
+  <div class="grid-2">
+    <div class="card green">
+      <div class="card-title green">Minimal Valid Rule</div>
+      <pre><span class="kw">rule</span> <span class="hd">minimal_rule</span> {
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="st">"NETWORK_HTTP"</span>
+  <span class="kw">condition:</span>
+    $e
+}</pre>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">Only <code style="font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">events:</code> and <code style="font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">condition:</code> are strictly required. Omitting <code style="font-size:11px;background:var(--tag-bg);padding:1px 4px;border-radius:3px;color:var(--accent)">meta:</code> severity means alerts have no triage priority.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">meta: Fields Reference</div>
+      <table class="ref-table">
+        <thead><tr><th>Field</th><th>Values / Notes</th></tr></thead>
+        <tbody>
+          <tr><td>severity</td><td>LOW | MEDIUM | HIGH | CRITICAL</td></tr>
+          <tr><td>priority</td><td>LOW | MEDIUM | HIGH | CRITICAL</td></tr>
+          <tr><td>author</td><td>Free text string</td></tr>
+          <tr><td>description</td><td>What the rule detects and why</td></tr>
+          <tr><td>assumption</td><td>What must be true for the rule to work</td></tr>
+          <tr><td>confidence</td><td>LOW | MEDIUM | HIGH</td></tr>
+          <tr><td>tactic</td><td>MITRE ATT&amp;CK tactic ID e.g. TA0002</td></tr>
+          <tr><td>technique</td><td>MITRE technique ID e.g. T1059.001</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="callout yellow">
+    <div class="callout-label">⚠ Parser Strictness</div>
+    <p>Section order is <em>not a style preference</em> — it is enforced at compile time. <code style="font-size:11px;background:rgba(247,162,62,0.1);padding:1px 4px;border-radius:3px;color:var(--accent4)">outcome:</code> before <code style="font-size:11px;background:rgba(247,162,62,0.1);padding:1px 4px;border-radius:3px;color:var(--accent4)">match:</code> throws a compilation error.</p>
+  </div>
+
+</div><!-- /tab-structure -->
+
+
+<!-- ================================================================
+     EVENTS & FILTERING TAB
+     ================================================================ -->
+<div class="section" id="tab-events">
+
+  <div class="card blue">
+    <div class="card-title">events: — How It Works</div>
+    <div class="rule-list">
+      <div class="rule-row">
+        <div class="rule-icon">∧</div>
+        <div class="rule-text"><strong>Every line is an implicit AND.</strong> All conditions must be true simultaneously for an event to match. There is no explicit <code>and</code> keyword between lines.</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-icon">$</div>
+        <div class="rule-text"><strong>Placeholder binding.</strong> <code>$e.metadata.log_type = "USER_LOGIN"</code> — left side is the UDM field path, right side is the value. The <code>$e</code> prefix binds the event variable.</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-icon">↔</div>
+        <div class="rule-text"><strong>Cross-event join.</strong> Assigning the same placeholder in two events (<code>$ip = $e1.principal.ip</code> and <code>$ip = $e2.principal.ip</code>) forces Chronicle to match only events sharing that value.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Comparison Operators</div>
+    <table class="ref-table">
+      <thead><tr><th>Operator</th><th>Meaning</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>=</td><td>Equals (also used for binding)</td><td>$e.metadata.log_type = "USER_LOGIN"</td></tr>
+        <tr><td>!=</td><td>Not equal</td><td>$e.principal.ip != ""</td></tr>
+        <tr><td>&gt;</td><td>Greater than</td><td>$e.network.sent_bytes &gt; 1000000</td></tr>
+        <tr><td>&gt;=</td><td>Greater than or equal</td><td>$e.security_result.risk_score &gt;= 80</td></tr>
+        <tr><td>&lt;</td><td>Less than</td><td>$e.network.sent_bytes &lt; 512</td></tr>
+        <tr><td>&lt;=</td><td>Less than or equal</td><td>$e.target.port &lt;= 1024</td></tr>
+        <tr><td>in</td><td>Set membership (inline or reference list)</td><td>$e.target.port in (80, 443, 8080)</td></tr>
+        <tr><td>not in</td><td>Not in set</td><td>$e.target.process.file.name not in %approved_bins</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">event_type vs log_type</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🔖</div>
+          <div class="rule-text"><strong>log_type</strong> — identifies the <em>parser/vendor</em>: <code>"CROWDSTRIKE_EDR"</code>, <code>"OKTA"</code>, <code>"AWS_CLOUDTRAIL"</code>. Vendor-specific. One EDR's process launch ≠ another's.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔀</div>
+          <div class="rule-text"><strong>event_type</strong> — Chronicle's <em>normalised action taxonomy</em>: <code>"PROCESS_LAUNCH"</code>, <code>"USER_LOGIN"</code>, <code>"FILE_CREATION"</code>. Vendor-agnostic — works across all sources.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🎯</div>
+          <div class="rule-text"><strong>Use both</strong> for maximum precision: <code>log_type</code> scopes to a vendor, <code>event_type</code> scopes to an action. Use only <code>event_type</code> for cross-vendor detections.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Common event_type Values</div>
+      <pre style="margin-top:0"><span class="cm">// Auth</span>
+<span class="li">USER_LOGIN  USER_LOGOUT  USER_CHANGE_PASSWORD</span>
+
+<span class="cm">// Process</span>
+<span class="li">PROCESS_LAUNCH  PROCESS_TERMINATION  PROCESS_OPEN</span>
+
+<span class="cm">// File</span>
+<span class="li">FILE_CREATION  FILE_DELETION  FILE_MODIFICATION
+FILE_READ  FILE_COPY  FILE_MOVE</span>
+
+<span class="cm">// Network</span>
+<span class="li">NETWORK_CONNECTION  NETWORK_DNS
+NETWORK_HTTP  NETWORK_FLOW</span>
+
+<span class="cm">// Registry (Windows)</span>
+<span class="li">REGISTRY_CREATION  REGISTRY_MODIFICATION
+REGISTRY_DELETION</span>
+
+<span class="cm">// Cloud / Resource</span>
+<span class="li">USER_RESOURCE_ACCESS  USER_RESOURCE_CREATION
+USER_RESOURCE_DELETION  EMAIL_TRANSACTION</span></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Multi-Event Correlation Example</div>
+    <pre><span class="cm">// Recon scan followed by successful login from same IP</span>
+<span class="kw">rule</span> <span class="hd">recon_then_lateral_movement</span> {
+  <span class="kw">meta:</span>
+    severity = <span class="st">"CRITICAL"</span>
+    tactic   = <span class="st">"TA0008"</span>
+  <span class="kw">events:</span>
+    $scan.metadata.log_type = <span class="st">"NETWORK_SCAN"</span>
+    $ip = $scan.principal.ip            <span class="cm">// bind $ip to scan source</span>
+
+    $login.metadata.log_type = <span class="st">"USER_LOGIN"</span>
+    $login.security_result.action = <span class="st">"ALLOW"</span>
+    $ip = $login.principal.ip           <span class="cm">// join: same IP in both events</span>
+
+    <span class="cm">// Enforce ordering — login MUST happen after scan</span>
+    $login.metadata.event_timestamp.seconds >
+      $scan.metadata.event_timestamp.seconds
+
+  <span class="kw">match:</span>
+    $ip <span class="kw">over</span> <span class="li">2h</span> <span class="kw">after</span> $scan
+
+  <span class="kw">condition:</span>
+    $scan <span class="kw">and</span> $login
+}</pre>
+  </div>
+
+</div><!-- /tab-events -->
+
+
+<!-- ================================================================
+     LOGIC & QUANTIFIERS TAB
+     ================================================================ -->
+<div class="section" id="tab-logic">
+
+  <div class="grid-2">
+    <div class="card blue">
+      <div class="card-title">OR in events:</div>
+      <pre><span class="cm">// OR on single field — inline</span>
+<span class="kw">events:</span>
+  $e.security_result.action = <span class="st">"BLOCK"</span> <span class="kw">or</span>
+  $e.security_result.action = <span class="st">"UNKNOWN"</span>
+
+<span class="cm">// OR across fields — use parentheses</span>
+<span class="kw">events:</span>
+  $e.metadata.log_type = <span class="st">"PROCESS_LAUNCH"</span>
+  (
+    $e.target.process.file.full_path = <span class="st">"C:\\...\\powershell.exe"</span> <span class="kw">or</span>
+    <span class="fn">re.regex</span>($e.target.process.command_line, `-enc`) <span class="kw">nocase</span>
+  )</pre>
+    </div>
+    <div class="card red">
+      <div class="card-title red">NOT in events:</div>
+      <pre><span class="cm">// NOT on field value</span>
+<span class="kw">NOT</span> $e.principal.ip = <span class="st">"10.0.0.1"</span>
+
+<span class="cm">// NOT on function</span>
+<span class="kw">NOT</span> <span class="fn">net.ip_in_range_cidr</span>($e.target.ip, <span class="st">"10.0.0.0/8"</span>)
+
+<span class="cm">// NOT on grouped OR</span>
+<span class="kw">NOT</span> (
+  $e.target.process.file.full_path = <span class="st">"C:\\Windows\\...\\svchost.exe"</span> <span class="kw">or</span>
+  $e.target.process.file.full_path = <span class="st">"C:\\Windows\\...\\lsass.exe"</span>
+)</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">OR in condition:</div>
+    <pre><span class="kw">condition:</span>
+  $scan <span class="kw">or</span>  $login          <span class="cm">// either event found</span>
+  $scan <span class="kw">and</span> $login           <span class="cm">// both must be present</span>
+  $scan <span class="kw">and not</span> $exfil       <span class="cm">// scan seen but no exfil (incomplete attack chain)</span>
+  #e > <span class="li">5</span> <span class="kw">or</span> $total_bytes > <span class="li">1000000</span></pre>
+  </div>
+
+  <div class="card green">
+    <div class="card-title green">any / all Quantifiers</div>
+    <pre><span class="cm">// any — field matches AT LEAST ONE value (clean multi-value OR)</span>
+<span class="kw">any</span> $e.network.http.method = (<span class="st">"PUT"</span>, <span class="st">"DELETE"</span>, <span class="st">"PATCH"</span>)
+
+<span class="cm">// inline set with in operator (equivalent)</span>
+$e.target.process.file.name <span class="kw">in</span> (<span class="st">"certutil.exe"</span>, <span class="st">"regsvr32.exe"</span>, <span class="st">"mshta.exe"</span>)
+
+<span class="cm">// Reference list version</span>
+$e.target.hostname <span class="kw">in</span> %threat_intel_domains
+
+<span class="cm">// all — EVERY element in a repeated field must satisfy the condition</span>
+<span class="cm">// (detect all DNS answers returning private IPs)</span>
+<span class="kw">all</span> $e.network.dns.answers.data <span class="kw">in</span> %internal_ip_ranges
+
+<span class="cm">// not in — field value absent from set</span>
+$e.target.process.file.sha256 <span class="kw">not in</span> %approved_software_hashes
+$e.network.http.method <span class="kw">not in</span> (<span class="st">"GET"</span>, <span class="st">"POST"</span>, <span class="st">"HEAD"</span>, <span class="st">"OPTIONS"</span>)</pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Reference Lists — %list_name</div>
+    <div class="rule-list">
+      <div class="rule-row">
+        <div class="rule-icon">📋</div>
+        <div class="rule-text"><strong>What they are:</strong> Named, managed value collections stored in Chronicle. Reference with <code>%list_name</code>. Updates auto-propagate — zero rule edits, zero redeploy.</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-icon">🏗</div>
+        <div class="rule-text"><strong>Create:</strong> Chronicle UI → Rules → Reference Lists → New List. Or via API: <code>POST /v2/lists</code> with <code>"syntax_type": "PLAIN_TEXT"</code> | <code>"CIDR"</code> | <code>"REGEX"</code>.</div>
+      </div>
+    </div>
+    <table class="ref-table" style="margin-top:12px">
+      <thead><tr><th>Type</th><th>Use For</th><th>Usage Syntax</th></tr></thead>
+      <tbody>
+        <tr><td>PLAIN_TEXT</td><td>Domains, usernames, hashes — exact match</td><td>$e.field in %list</td></tr>
+        <tr><td>CIDR</td><td>IP range matching</td><td>net.ip_in_range_cidr($e.ip, %list)</td></tr>
+        <tr><td>REGEX</td><td>Multiple patterns against one field</td><td>re.regex($e.field, %list) nocase</td></tr>
+      </tbody>
+    </table>
+    <div class="callout yellow" style="margin-top:12px">
+      <div class="callout-label">💡 Anti-pattern</div>
+      <p>Hardcoding IOCs inside rule bodies. When a new C2 domain appears, you'd edit and redeploy the rule. With a reference list, the threat intel team updates the list; <em>all rules referencing it pick up the change automatically.</em></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">OR-Rule Pattern — When Logic Gets Complex</div>
+    <pre><span class="cm">// Split complex OR into separate rules. Each fires independently.</span>
+<span class="kw">rule</span> <span class="hd">ps_execution_by_path</span> {
+  <span class="kw">meta:</span> severity = <span class="st">"MEDIUM"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="st">"PROCESS_LAUNCH"</span>
+    $e.target.process.file.full_path = <span class="st">"C:\\...\\powershell.exe"</span>
+    <span class="fn">re.regex</span>($e.target.process.command_line, `-enc`) <span class="kw">nocase</span>
+  <span class="kw">condition:</span> $e
+}
+
+<span class="kw">rule</span> <span class="hd">ps_spawned_from_office</span> {
+  <span class="kw">meta:</span> severity = <span class="st">"HIGH"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="st">"PROCESS_LAUNCH"</span>
+    $e.target.process.file.name = <span class="st">"powershell.exe"</span>
+    <span class="fn">re.regex</span>($e.principal.process.file.name, `(winword|excel|outlook)\.exe`) <span class="kw">nocase</span>
+  <span class="kw">condition:</span> $e
+}</pre>
+  </div>
+
+</div><!-- /tab-logic -->
+
+
+<!-- ================================================================
+     MATCH / OUTCOME / CONDITION TAB
+     ================================================================ -->
+<div class="section" id="tab-moc">
+
+  <div class="card blue">
+    <div class="card-title">match: — Grouping &amp; Time Windows</div>
+    <div class="rule-list">
+      <div class="rule-row">
+        <div class="rule-icon">⏱</div>
+        <div class="rule-text"><strong>Single variable:</strong> <code>match: $host over 1h</code> — groups all matching events by <code>$host</code>, evaluates the condition once per window per unique host value. One alert per host per hour max.</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-icon">⊕</div>
+        <div class="rule-text"><strong>Multi-variable:</strong> <code>match: $user, $src_ip over 10m</code> — compound GROUP BY. Fires only when the same pair appears together. Far fewer false positives than single-variable grouping.</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-icon">⚓</div>
+        <div class="rule-text"><strong>Anchored window:</strong> <code>match: $ip over 30m after $scan</code> — window starts at <code>$scan</code>'s timestamp. Enforces ordering. Floating windows (no <code>after</code>) can match in any order.</div>
+      </div>
+    </div>
+    <pre style="margin-top:10px"><span class="cm">// Multi-variable — brute force from specific source</span>
+<span class="kw">match:</span>
+  $user, $src_ip <span class="kw">over</span> <span class="li">10m</span>
+
+<span class="cm">// Anchored — correlated events in sequence</span>
+<span class="kw">match:</span>
+  $ip <span class="kw">over</span> <span class="li">2h</span> <span class="kw">after</span> $scan</pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Deduplication &amp; Window Behaviour</div>
+    <div class="rule-list">
+      <div class="rule-row">
+        <div class="rule-icon">📊</div>
+        <div class="rule-text">With <code>match:</code> — Chronicle waits until the window closes, evaluates the condition <em>once</em>, fires at most one alert per unique group value per window. 500 login failures → <strong>1 alert</strong>.</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-icon">⚡</div>
+        <div class="rule-text">Without <code>match:</code> — condition is evaluated for <em>every single matching event</em>. One alert per event. If you expect volume, always add a <code>match:</code> window.</div>
+      </div>
+    </div>
+    <pre style="margin-top:10px"><span class="cm">// Noisy — one alert per event</span>
+<span class="kw">rule</span> <span class="hd">brute_force_noisy</span> {
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="st">"USER_LOGIN"</span>
+    $e.security_result.action = <span class="st">"BLOCK"</span>
+  <span class="kw">condition:</span> $e    <span class="cm">// alert storm guaranteed</span>
+}
+
+<span class="cm">// Tuned — one alert per user per 10 minutes</span>
+<span class="kw">rule</span> <span class="hd">brute_force_tuned</span> {
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="st">"USER_LOGIN"</span>
+    $e.security_result.action = <span class="st">"BLOCK"</span>
+    $user = $e.principal.user.userid
+  <span class="kw">match:</span>
+    $user <span class="kw">over</span> <span class="li">10m</span>
+  <span class="kw">condition:</span>
+    #e > <span class="li">10</span>
+}</pre>
+  </div>
+
+  <div class="card green">
+    <div class="card-title green">outcome: — Aggregate Functions (Complete Table)</div>
+    <table class="ref-table">
+      <thead><tr><th>Function</th><th>Purpose</th><th>Use in condition?</th></tr></thead>
+      <tbody>
+        <tr><td>count(field)</td><td>Count of non-null field values</td><td>Via $var &gt; N or #e shorthand</td></tr>
+        <tr><td>count_distinct(field)</td><td>Count of unique values</td><td>Via $var &gt; N</td></tr>
+        <tr><td>sum(field)</td><td>Numeric sum</td><td>Via $var &gt; N</td></tr>
+        <tr><td>max(field)</td><td>Maximum value</td><td>Via $var &gt; N</td></tr>
+        <tr><td>min(field)</td><td>Minimum value</td><td>Via $var &gt; N</td></tr>
+        <tr><td>array(field)</td><td>Collect all values (includes duplicates)</td><td>No — alert context only</td></tr>
+        <tr><td>array_distinct(field)</td><td>Collect unique values</td><td>No — alert context only</td></tr>
+      </tbody>
+    </table>
+    <pre style="margin-top:12px"><span class="cm">// count vs #e shorthand — equivalent</span>
+<span class="kw">outcome:</span>
+  $hits = <span class="fn">count</span>($e.metadata.id)
+<span class="kw">condition:</span>
+  $hits > <span class="li">10</span>
+<span class="cm">// same as:</span>
+<span class="kw">condition:</span>
+  #e > <span class="li">10</span>   <span class="cm">// #e shorthand — use this for brevity</span>
+
+<span class="cm">// Arithmetic in outcome:</span>
+<span class="kw">outcome:</span>
+  $byte_range  = <span class="fn">max</span>($e.network.sent_bytes) - <span class="fn">min</span>($e.network.sent_bytes)
+  $avg_bytes   = <span class="fn">sum</span>($e.network.sent_bytes) / <span class="fn">count</span>($e.metadata.id)
+  $risk_score  = <span class="fn">count</span>($e.metadata.id) * <span class="fn">max</span>($e.security_result.risk_score)
+  $log_count   = <span class="fn">math.log</span>(<span class="fn">count</span>($e.metadata.id))
+  $dest_sample = <span class="fn">array_distinct</span>($e.target.hostname)</pre>
+    <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">Arithmetic operators: <code>+</code> <code>-</code> <code>*</code> <code>/</code> — watch for divide-by-zero. Everything in outcome: appears in the Chronicle alert detail view — design for analyst triage readability.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Direct Timestamp Comparisons</div>
+    <pre><span class="cm">// Enforce that event B happened after event A</span>
+$login.metadata.event_timestamp.seconds >
+  $scan.metadata.event_timestamp.seconds
+
+<span class="cm">// Detect two auth events within 60 seconds (impossible travel)</span>
+$e2.metadata.event_timestamp.seconds >
+  $e1.metadata.event_timestamp.seconds
+$e2.metadata.event_timestamp.seconds &lt;
+  $e1.metadata.event_timestamp.seconds + <span class="li">60</span>
+<span class="kw">NOT</span> $e2.principal.ip = $e1.principal.ip   <span class="cm">// different IPs</span>
+
+<span class="cm">// Surface time delta in alert</span>
+<span class="kw">outcome:</span>
+  $delta_s = <span class="fn">max</span>($login.metadata.event_timestamp.seconds) -
+             <span class="fn">min</span>($scan.metadata.event_timestamp.seconds)</pre>
+  </div>
+
+</div><!-- /tab-moc -->
+
+
+<!-- ================================================================
+     FUNCTIONS & UDM TAB
+     ================================================================ -->
+<div class="section" id="tab-functions">
+
+  <div class="card blue">
+    <div class="card-title">String &amp; Regex Functions</div>
+    <table class="ref-table">
+      <thead><tr><th>Function</th><th>Purpose</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>re.regex(field, pattern)</td><td>Regex match — returns true/false</td><td>Append nocase for case-insensitive</td></tr>
+        <tr><td>re.capture(field, pattern)</td><td>Extracts captured group into variable</td><td>Exactly ONE capture group required</td></tr>
+        <tr><td>strings.contains(field, sub)</td><td>Substring match — cheaper than regex</td><td>Case sensitive</td></tr>
+        <tr><td>strings.coalesce(v1, v2, ...)</td><td>First non-null/non-empty value</td><td>Use for cross-vendor field normalisation</td></tr>
+        <tr><td>strings.concat(v1, sep, v2)</td><td>Concatenate strings</td><td>Build composite keys for match:</td></tr>
+        <tr><td>strings.to_lower(field)</td><td>Lowercase a string</td><td>Use before contains/regex for case normalisation</td></tr>
+        <tr><td>net.ip_in_range_cidr(ip, cidr)</td><td>IP ∈ CIDR range test</td><td>Use NOT to exclude ranges</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card red">
+    <div class="card-title red">re.capture — The Silent Exclusion Gotcha</div>
+    <div class="rule-list">
+      <div class="rule-row">
+        <div class="rule-icon">☠</div>
+        <div class="rule-text"><strong>When re.capture finds no match:</strong> the placeholder is <em>unset</em> (not null — unset), and the <strong>event is silently excluded</strong> from all results. No error. Rule compiles and runs. Zero results with no explanation.</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-icon">🔢</div>
+        <div class="rule-text"><strong>Exactly one capture group required.</strong> Zero groups or two+ groups cause a compile-time error. <code>re.capture($e.url, `^https?://([^/]+)`)</code> is valid. <code>re.capture($e.url, `^(https?)://([^/]+)`)</code> is not.</div>
+      </div>
+    </div>
+    <pre style="margin-top:12px"><span class="cm">// Safe debugging pattern — stage in UDM Search</span>
+
+<span class="cm">// Stage 1: verify base pattern matches (no capture)</span>
+<span class="kw">events:</span>
+  <span class="fn">re.regex</span>($e.network.dns.questions.name, `^[^.]+\..+`)
+
+<span class="cm">// Stage 2: add capture — verify count doesn't drop</span>
+<span class="kw">events:</span>
+  <span class="fn">re.regex</span>($e.network.dns.questions.name, `^[^.]+\..+`)
+  $tld = <span class="fn">re.capture</span>($e.network.dns.questions.name, `^[^.]+\.(.+)`)
+
+<span class="cm">// Stage 3: add constraint</span>
+<span class="kw">events:</span>
+  $tld = <span class="fn">re.capture</span>($e.network.dns.questions.name, `^[^.]+\.(.+)`)
+  $tld = <span class="st">"ru"</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">strings.coalesce — Cross-Vendor Normalisation</div>
+    <pre><span class="cm">// Different vendors populate different hostname fields</span>
+$host = <span class="fn">strings.coalesce</span>(
+  $e.principal.asset.hostname,
+  $e.principal.hostname,
+  $e.principal.ip          <span class="cm">// fallback to IP if no hostname</span>
+)
+
+<span class="cm">// Normalise parent process field across EDR vendors</span>
+$parent = <span class="fn">strings.coalesce</span>(
+  $e.principal.process.file.name,
+  <span class="fn">re.capture</span>($e.principal.process.file.full_path, `([^\\]+)$`)
+)
+<span class="fn">re.regex</span>($parent, `(winword|excel|powerpnt|outlook)\.exe`) <span class="kw">nocase</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">UDM Noun Fields — Complete Set</div>
+    <table class="ref-table">
+      <thead><tr><th>Noun</th><th>Meaning</th><th>When Populated</th></tr></thead>
+      <tbody>
+        <tr><td>principal</td><td>The actor initiating the action</td><td>Always — the source</td></tr>
+        <tr><td>target</td><td>The object being acted upon</td><td>Always — the destination/victim</td></tr>
+        <tr><td>src</td><td>Explicit source when principal is ambiguous</td><td>Network traffic, some proxy/firewall logs</td></tr>
+        <tr><td>intermediary</td><td>Middle entity: proxy, NAT, load balancer</td><td>Proxy logs, forwarded traffic</td></tr>
+        <tr><td>observer</td><td>System that observed the event (sensor, agent)</td><td>IDS/IPS, network taps</td></tr>
+        <tr><td>about</td><td>Additional entities related to the event</td><td>Threat intel enrichment, file events</td></tr>
+      </tbody>
+    </table>
+    <pre style="margin-top:12px"><span class="cm">// src — when firewall puts collector in principal, real src in src</span>
+<span class="fn">net.ip_in_range_cidr</span>($e.src.ip, <span class="st">"10.0.0.0/8"</span>)
+$src_ip = <span class="fn">strings.coalesce</span>($e.src.ip, $e.principal.ip)
+
+<span class="cm">// intermediary — detect unexpected proxy</span>
+$e.intermediary.ip != <span class="st">""</span>
+<span class="kw">NOT</span> <span class="fn">net.ip_in_range_cidr</span>($e.intermediary.ip, <span class="st">"10.10.20.0/24"</span>)
+
+<span class="cm">// observer — scope detection to specific sensor</span>
+<span class="fn">re.regex</span>($e.observer.hostname, `^ids-dmz`) <span class="kw">nocase</span>
+
+<span class="cm">// about — threat intel enrichment field</span>
+$e.about.labels.key = <span class="st">"threat_category"</span>
+$e.about.labels.value = <span class="st">"ransomware"</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Timestamp Functions</div>
+    <table class="ref-table">
+      <thead><tr><th>Function</th><th>Returns</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>timestamp.get_hour(ts, tz)</td><td>Integer 0–23</td><td>timestamp.get_hour($e.metadata.event_timestamp, "America/New_York")</td></tr>
+        <tr><td>timestamp.get_day_of_week(ts, tz)</td><td>Integer 1=Sun … 7=Sat</td><td>timestamp.get_day_of_week($e.metadata.event_timestamp, "UTC")</td></tr>
+        <tr><td>.seconds field</td><td>Unix epoch integer</td><td>$e.metadata.event_timestamp.seconds</td></tr>
+      </tbody>
+    </table>
+    <pre style="margin-top:10px"><span class="cm">// After-hours login detection</span>
+$hour = <span class="fn">timestamp.get_hour</span>($e.metadata.event_timestamp, <span class="st">"America/New_York"</span>)
+($hour > <span class="li">22</span> <span class="kw">or</span> $hour &lt; <span class="li">6</span>)
+
+<span class="cm">// Weekend activity</span>
+$dow = <span class="fn">timestamp.get_day_of_week</span>($e.metadata.event_timestamp, <span class="st">"UTC"</span>)
+($dow = <span class="li">1</span> <span class="kw">or</span> $dow = <span class="li">7</span>)    <span class="cm">// 1=Sunday, 7=Saturday</span></pre>
+  </div>
+
+</div><!-- /tab-functions -->
+
+
+<!-- ================================================================
+     OPERATIONS TAB
+     ================================================================ -->
+<div class="section" id="tab-ops">
+
+  <div class="card blue">
+    <div class="card-title">Saved Queries vs Persistent Rules</div>
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">Saved Queries (UDM Search)</div>
+        <div class="decision-item"><span class="di">📍</span>Location: Search bar → Save → "Saved Searches"</div>
+        <div class="decision-item"><span class="di">🖱</span>Execution: Manual only — click to run</div>
+        <div class="decision-item"><span class="di">👁</span>Output: Results in the search UI</div>
+        <div class="decision-item"><span class="di">📂</span>Version control: None built-in</div>
+        <div class="decision-item"><span class="di">✅</span>Use for recurring investigation queries, incident triage, bookmarked searches</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">Persistent Rules (Detection Engine)</div>
+        <div class="decision-item"><span class="di">📍</span>Location: Detection → Rules → Rules Editor</div>
+        <div class="decision-item"><span class="di">⚡</span>Execution: Automatic, continuous, 24/7</div>
+        <div class="decision-item"><span class="di">🔔</span>Output: Alerts in the findings queue</div>
+        <div class="decision-item"><span class="di">📝</span>Version control: Chronicle tracks every edit as new version</div>
+        <div class="decision-item"><span class="di">✅</span>Use for automated detection; triggers SOAR playbooks</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card yellow">
+    <div class="card-title yellow">Rule States</div>
+    <table class="ref-table">
+      <thead><tr><th>State</th><th>Behaviour</th><th>When to Use</th></tr></thead>
+      <tbody>
+        <tr><td>Test</td><td>Runs, alerts go to separate test queue only</td><td>All new rules before promotion</td></tr>
+        <tr><td>Live</td><td>Running against incoming events</td><td>Active detection, alerts generated</td></tr>
+        <tr><td>Alerting</td><td>Running AND forwarding to alert management</td><td>Production with SOAR integration</td></tr>
+        <tr><td>Disabled</td><td>Not running at all</td><td>Retired or temporarily paused rules</td></tr>
+      </tbody>
+    </table>
+    <div class="callout green" style="margin-top:12px">
+      <div class="callout-label">✓ Rule Promotion Workflow</div>
+      <p><em>Write → Test state → Retrohunt → Evaluate → Promote to Alerting.</em> Never deploy directly to Live/Alerting. Start every new rule in Test.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Testing Rules Before Deployment</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Prototype in UDM Search first</strong><br>
+          Paste your <code>events:</code> conditions without the rule wrapper. Visual, fast feedback on whether field conditions match real data.
+          <span class="tip">💡 If UDM Search returns results → field paths and values are correct. Wrap in a rule.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Create rule in Test state</strong><br>
+          Detection → Rules → New Rule → set state to "Test" before saving. Production alert queues are not affected.
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Run a retrohunt</strong><br>
+          Select rule → Run Retrohunt → specify time range (minimum 7 days; use 30+ days for rare attacks). Chronicle evaluates the rule against historical data.
+          <span class="note">⚠ Wrong log_type or empty fields cause zero retrohunt results. Verify field existence in UDM Search first.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Evaluate retrohunt results</strong><br>
+          Did it fire? Did it fire on the right things? Too noisy? Compare against known-bad events from past incidents.
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <strong>Promote to Alerting</strong><br>
+          Rule state → "Alerting" → Chronicle now generates real production alerts.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Testing Gotchas</div>
+    <div class="rule-list">
+      <div class="rule-row">
+        <div class="rule-icon">⚠️</div>
+        <div class="rule-text"><span class="neg">Wrong log_type string:</span> Rule never fires because <code>"WINDOWS_SYSMON"</code> vs <code>"WINDOWS_SYSMON_8_0"</code>. Always verify the exact string via UDM Search first.</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-icon">⚠️</div>
+        <div class="rule-text"><span class="neg">Empty field:</span> Filtering on a field your log source doesn't populate. Check: <code>$e.target.asset.hostname != ""</code> in UDM Search before using it in a rule.</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-icon">⚠️</div>
+        <div class="rule-text"><span class="neg">Retrohunt time range too short:</span> Some attacks are rare. Run retrohunt over 30+ days for meaningful signal-to-noise data.</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-icon">⚠️</div>
+        <div class="rule-text"><span class="neg">re.capture silent exclusion:</span> A broken capture pattern silently drops all events. Prototype with re.regex first, then add re.capture.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card green">
+    <div class="card-title green">Rule Versioning &amp; rule_id</div>
+    <div class="rule-list">
+      <div class="rule-row">
+        <div class="rule-icon">🔑</div>
+        <div class="rule-text"><strong>rule_id</strong> — immutable UUID assigned at creation: <code>ru_a1b2c3d4-e5f6-7890-abcd-ef1234567890</code>. Never changes even if you rename or edit the rule. Use in SOAR playbooks and API calls.</div>
+      </div>
+      <div class="rule-row">
+        <div class="rule-icon">📌</div>
+        <div class="rule-text"><strong>Version ID</strong> — every edit creates a new version: <code>ru_...@v_12345678_000000</code>. Findings reference which version generated them. Roll back via the API.</div>
+      </div>
+    </div>
+    <pre style="margin-top:12px"><span class="cm"># Key API endpoints</span>
+<span class="kw">GET</span>  /v2/rules                                          <span class="cm"># list all rules</span>
+<span class="kw">POST</span> /v2/rules                                          <span class="cm"># create a rule</span>
+<span class="kw">POST</span> /v2/rules/{ruleId}:enableLiveRule                  <span class="cm"># enable</span>
+<span class="kw">GET</span>  /v2/rules/{ruleId}/detections                     <span class="cm"># get findings</span>
+<span class="kw">POST</span> /v2/rules:verifyRuleText                           <span class="cm"># validate syntax only</span>
+
+<span class="cm"># GitOps / CI pipeline pattern</span>
+<span class="li">PR with rule change</span>
+  → <span class="fn">POST /v2/rules:verifyRuleText</span>   <span class="cm"># syntax validation</span>
+  → <span class="fn">deploy to test env + retrohunt</span>
+  → <span class="fn">review findings</span>
+  → <span class="fn">merge to main → deploy production</span></pre>
+  </div>
+
+  <div class="card">
+    <div class="card-title">GitOps Folder Structure</div>
+    <pre><span class="hd">rules/</span>
+  <span class="li">lateral_movement/</span>
+    brute_force_login.yar
+    impossible_travel.yar
+  <span class="li">exfiltration/</span>
+    large_upload.yar
+    dns_tunneling.yar
+  <span class="li">persistence/</span>
+    scheduled_task_creation.yar
+  <span class="li">execution/</span>
+    encoded_powershell.yar
+    lolbin_execution.yar</pre>
+    <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">Manage rules in Git, deploy via the Chronicle API. Use <code>POST /v2/rules:verifyRuleText</code> in CI for syntax validation before any deployment touches production.</div>
+  </div>
+
+</div><!-- /tab-ops -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

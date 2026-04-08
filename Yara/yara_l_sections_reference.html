@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YARA-L — Complete Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     CSS VARIABLES — dark / light
+     ============================================================ */
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+    --kw:            #6aabf7;
+    --fn:            #e0a040;
+    --str:           #7ec85a;
+    --cmt:           #3a4060;
+    --req-bg:        #2e1a1a;
+    --req-text:      #f09595;
+    --req-border:    #7a2f2f;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+    --kw:            #185FA5;
+    --fn:            #854F0B;
+    --str:           #3B6D11;
+    --cmt:           #9c9a92;
+    --req-bg:        #FCEBEB;
+    --req-text:      #A32D2D;
+    --req-border:    #F09595;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ============================================================
+     HEADER
+     ============================================================ */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600; font-size: 15px;
+    color: var(--accent); letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    padding: 2px 8px; border-radius: 3px;
+    background: var(--accent-glow); color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em;
+  }
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg); border: 1px solid var(--border-accent);
+    border-radius: 12px; cursor: pointer; position: relative;
+    appearance: none; outline: none; transition: background 0.3s;
+  }
+  .toggle::after {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; background: var(--accent);
+    border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  /* ============================================================
+     TOP NAV TABS
+     ============================================================ */
+  nav.top-nav {
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    padding: 0 32px; display: flex; overflow-x: auto;
+  }
+  nav.top-nav button {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    padding: 10px 16px; background: none; border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted); cursor: pointer; white-space: nowrap;
+    transition: all 0.2s; letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  nav.top-nav button:hover { color: var(--text); }
+  nav.top-nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ============================================================
+     MAIN LAYOUT
+     ============================================================ */
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; }
+
+  .tab-section { display: none; }
+  .tab-section.active { display: block; }
+
+  /* ============================================================
+     SIDEBAR LAYOUT (for Sections tab)
+     ============================================================ */
+  .sidebar-layout {
+    display: grid;
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 0;
+    min-height: 60vh;
+  }
+  .sidebar-nav {
+    border-right: 1px solid var(--border);
+    padding: 12px 0;
+  }
+  .sidebar-nav-section {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-dim); padding: 12px 16px 4px;
+  }
+  .sidebar-btn {
+    display: block; width: 100%; text-align: left;
+    padding: 7px 16px; border: none; background: transparent;
+    cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif;
+    color: var(--text-muted); transition: all .12s;
+    border-left: 2px solid transparent;
+  }
+  .sidebar-btn:hover { background: var(--bg-code); color: var(--text); }
+  .sidebar-btn.active {
+    background: var(--bg-code); color: var(--text); font-weight: 500;
+    border-left-color: var(--accent);
+  }
+  .sidebar-content { padding: 0 0 0 28px; }
+  .sidebar-panel { display: none; }
+  .sidebar-panel.active { display: block; }
+
+  /* ============================================================
+     CARDS
+     ============================================================ */
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px 24px;
+    box-shadow: var(--shadow); transition: background 0.3s, border 0.3s;
+    margin-bottom: 20px;
+  }
+  .card:last-child { margin-bottom: 0; }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-muted); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title::before {
+    content: ''; display: inline-block;
+    width: 3px; height: 12px; background: var(--accent); border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  /* ============================================================
+     HERO
+     ============================================================ */
+  .hero {
+    background: var(--bg-card); border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent); border-radius: 8px;
+    padding: 24px; box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+    margin-bottom: 20px;
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600;
+    color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  /* ============================================================
+     GRID HELPERS
+     ============================================================ */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* ============================================================
+     SECTION HEADING
+     ============================================================ */
+  .section-heading {
+    font-size: 18px; font-weight: 600; color: var(--text);
+    margin-bottom: 20px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ============================================================
+     LABELS
+     ============================================================ */
+  .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 500; color: var(--text-muted);
+    letter-spacing: .07em; text-transform: uppercase;
+    margin-bottom: 7px; margin-top: 20px;
+  }
+  .label:first-child { margin-top: 0; }
+
+  /* ============================================================
+     RULE ROWS
+     ============================================================ */
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row {
+    display: grid; grid-template-columns: 20px 1fr;
+    gap: 12px; align-items: flex-start;
+    padding: 10px 14px; background: var(--bg-code);
+    border: 1px solid var(--border); border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent);
+  }
+
+  /* ============================================================
+     CODE / PRE BLOCKS
+     ============================================================ */
+  pre {
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 6px; padding: 14px 16px; overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    line-height: 1.8; color: var(--text); margin-top: 8px; margin-bottom: 8px;
+  }
+  code {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    background: var(--tag-bg); padding: 1px 5px; border-radius: 3px;
+    border: 1px solid var(--border); color: var(--accent);
+  }
+  pre code { background: none; border: none; padding: 0; color: inherit; }
+  .kw  { color: var(--kw); }
+  .fn  { color: var(--fn); }
+  .str { color: var(--str); }
+  .cmt { color: var(--cmt); font-style: italic; }
+  .hd  { color: var(--accent4); font-weight: 600; }
+  .li  { color: var(--accent3); }
+
+  /* ============================================================
+     NOTE / CALLOUT BLOCKS
+     ============================================================ */
+  .note {
+    font-size: 12px; color: var(--text-muted); line-height: 1.65;
+    padding: 10px 14px; background: var(--bg-code);
+    border-left: 2px solid var(--border-accent); border-radius: 0;
+    margin-top: 4px; margin-bottom: 8px;
+  }
+  .note pre { margin-top: 8px; }
+  .note code { background: var(--bg-card); }
+
+  .callout {
+    background: var(--bg-code); border: 1px solid var(--border-accent);
+    border-radius: 6px; padding: 16px 20px; margin-bottom: 16px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* ============================================================
+     PILLS
+     ============================================================ */
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+  .pill {
+    font-size: 12px; font-family: 'IBM Plex Mono', monospace;
+    padding: 3px 10px; border-radius: 20px;
+    border: 1px solid var(--border-accent);
+    color: var(--text-muted); background: var(--bg-code);
+  }
+  .pill.req { border-color: var(--req-border); color: var(--req-text); background: var(--req-bg); }
+
+  /* ============================================================
+     FUNCTION CARDS GRID
+     ============================================================ */
+  .fn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+  .fn-card {
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 6px; padding: 9px 12px;
+  }
+  .fn-name { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--fn); font-weight: 500; }
+  .fn-desc { font-size: 11px; color: var(--text-muted); margin-top: 3px; line-height: 1.4; }
+
+  /* ============================================================
+     FUNCTION SECTION TABS
+     ============================================================ */
+  .fn-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 20px; }
+  .fn-tab {
+    padding: 5px 12px; border-radius: 20px;
+    border: 1px solid var(--border-accent); font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace; cursor: pointer;
+    background: transparent; color: var(--text-muted); transition: all .12s;
+  }
+  .fn-tab:hover { background: var(--bg-code); color: var(--text); }
+  .fn-tab.active {
+    background: var(--bg-code); color: var(--text); font-weight: 500;
+    border-color: var(--border-accent);
+  }
+  .fn-panel { display: none; }
+  .fn-panel.active { display: block; }
+
+  .fn-block {
+    border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden; margin-bottom: 20px;
+  }
+  .fn-block-header {
+    padding: 10px 16px; background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .fn-sig { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; color: var(--fn); }
+  .fn-blurb { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .snippet { border-bottom: 1px solid var(--border); }
+  .snippet:last-of-type { border-bottom: none; }
+  .snip-label {
+    font-size: 10px; font-weight: 500; color: var(--text-dim);
+    letter-spacing: .06em; text-transform: uppercase;
+    padding: 8px 16px 2px;
+  }
+  .snippet pre { border: none; border-radius: 0; background: transparent; padding: 4px 16px 12px; }
+  .fn-note {
+    font-size: 12px; color: var(--text-muted); line-height: 1.65;
+    padding: 10px 16px; background: var(--bg-code);
+    border-top: 1px solid var(--border);
+  }
+
+  .fn-callout {
+    border: 1px solid var(--border); border-left: 3px solid var(--border-accent);
+    border-radius: 6px; padding: 10px 14px; margin-bottom: 14px;
+    font-size: 12px; color: var(--text-muted); line-height: 1.7;
+    background: var(--bg-code);
+  }
+  .fn-callout strong { font-weight: 500; color: var(--text); }
+  .fn-callout code { font-size: 11px; }
+
+  /* ============================================================
+     GOTCHA LIST
+     ============================================================ */
+  .gotcha-list { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+  .gotcha { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .gotcha-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .gotcha-tag {
+    font-size: 10px; font-weight: 500; letter-spacing: .06em;
+    text-transform: uppercase; padding: 2px 8px; border-radius: 20px;
+    white-space: nowrap;
+  }
+  .tag-rule { background: var(--req-bg); color: var(--req-text); border: 1px solid var(--req-border); }
+  .tag-tip  { background: rgba(62,207,142,0.1); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .tag-warn { background: rgba(247,162,62,0.1); color: var(--accent4); border: 1px solid rgba(247,162,62,0.3); }
+  .tag-info { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); }
+  .gotcha-title { font-size: 13px; font-weight: 500; color: var(--text); }
+  .gotcha-body { padding: 10px 14px; font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+  .gotcha-body code { font-size: 11px; background: var(--bg-code); border-color: var(--border); }
+  .gotcha-body pre { margin-top: 8px; }
+
+  /* ============================================================
+     REF TABLE
+     ============================================================ */
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); text-align: left; padding: 8px 12px;
+    background: var(--bg-code); border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px; border-bottom: 1px solid var(--border);
+    font-size: 13px; vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    color: var(--accent); white-space: nowrap;
+  }
+
+  /* ============================================================
+     STATS / SECTION ORDER STRIP
+     ============================================================ */
+  .order-strip {
+    display: flex; gap: 0; border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden; margin-bottom: 20px;
+  }
+  .order-item {
+    flex: 1; padding: 12px 14px; background: var(--bg-code);
+    border-right: 1px solid var(--border); text-align: center;
+    position: relative;
+  }
+  .order-item:last-child { border-right: none; }
+  .order-item.required { background: rgba(224,95,122,0.05); border-bottom: 2px solid var(--accent2); }
+  .order-item.optional { background: rgba(79,142,247,0.05); border-bottom: 2px solid var(--accent); }
+  .order-num {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    color: var(--text-dim); margin-bottom: 4px;
+  }
+  .order-name {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600;
+    color: var(--kw);
+  }
+  .order-tag {
+    font-size: 9px; padding: 1px 6px; border-radius: 10px; margin-top: 4px;
+    display: inline-block; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.05em;
+  }
+  .order-tag.req { background: var(--req-bg); color: var(--req-text); border: 1px solid var(--req-border); }
+  .order-tag.opt { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); }
+
+  /* ============================================================
+     INTERACTIVE SECTION (from file 2)
+     ============================================================ */
+  .tier-tabs { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+  .tier-tab {
+    padding: 7px 18px; border-radius: 20px; border: 1px solid var(--border-accent);
+    font-size: 13px; cursor: pointer; background: transparent;
+    color: var(--text-muted); font-family: 'DM Sans', sans-serif;
+    transition: all .12s; -webkit-tap-highlight-color: transparent;
+  }
+  .tier-tab:hover { background: var(--bg-code); }
+  .tier-tab.active { font-weight: 500; color: var(--text); background: var(--bg-code); }
+  .tier-tab.easy.active   { background: rgba(62,207,142,0.1); color: var(--accent3); border-color: rgba(62,207,142,0.4); }
+  .tier-tab.medium.active { background: rgba(247,162,62,0.1); color: var(--accent4); border-color: rgba(247,162,62,0.4); }
+  .tier-tab.complex.active{ background: rgba(79,142,247,0.1); color: var(--accent);  border-color: rgba(79,142,247,0.4); }
+
+  .tier-panel { display: none; }
+  .tier-panel.active { display: block; }
+
+  /* Rule strip */
+  .rule-strip { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 18px; }
+  .rule-strip-inner { display: grid; }
+  .rule-strip-inner.c4 { grid-template-columns: repeat(4,1fr); }
+  .rule-strip-inner.c5 { grid-template-columns: repeat(5,1fr); }
+  @media(max-width:700px){
+    .rule-strip-inner.c4,.rule-strip-inner.c5 { grid-template-columns: repeat(2,1fr); }
+  }
+  .rs { padding: 10px 13px; border-right: 1px solid var(--border); background: var(--bg-code); }
+  .rs:last-child { border-right: none; }
+  .rs-lbl {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px;
+  }
+  .rs-code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text); line-height: 1.9; }
+
+  /* Step controls */
+  .steps-ctrl { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .sbtn {
+    padding: 8px 18px; font-size: 13px; border-radius: 6px;
+    border: 1px solid var(--border-accent); background: transparent;
+    color: var(--text); cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all .12s; min-height: 36px; -webkit-tap-highlight-color: transparent;
+  }
+  .sbtn:hover { background: var(--bg-code); }
+  .sbtn:disabled { opacity: 0.3; cursor: default; }
+  .sctr { font-size: 11px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  /* Section badges */
+  .sbadge {
+    font-size: 10px; font-weight: 500; padding: 2px 9px; border-radius: 20px;
+    border: 1px solid; font-family: 'IBM Plex Mono', monospace; white-space: nowrap;
+  }
+  .sb-ev { background: rgba(62,207,142,0.1); color: var(--accent3); border-color: rgba(62,207,142,0.4); }
+  .sb-ma { background: var(--accent-glow);   color: var(--accent);  border-color: rgba(79,142,247,0.4); }
+  .sb-ou { background: rgba(247,162,62,0.1); color: var(--accent4); border-color: rgba(247,162,62,0.4); }
+  .sb-co { background: var(--accent2-glow);  color: var(--accent2); border-color: rgba(224,95,122,0.4); }
+
+  /* Step description */
+  .step-desc {
+    font-size: 12px; color: var(--text-muted); line-height: 1.8;
+    padding: 12px 14px; background: var(--bg-code);
+    border-radius: 6px; border-left: 2px solid var(--border-accent); margin-bottom: 14px;
+  }
+  .step-desc p { margin-bottom: 9px; }
+  .step-desc p:last-child { margin-bottom: 0; }
+  .step-desc strong { font-weight: 500; color: var(--text); }
+  .step-desc code { font-size: 11px; }
+
+  /* Stage label */
+  .slabel {
+    font-size: 10px; font-weight: 500; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+
+  /* Event table */
+  .ev-scroll {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    margin-bottom: 16px; border-radius: 6px; border: 1px solid var(--border);
+  }
+  .ev-scroll .col-head, .ev-scroll .ev-list { min-width: 420px; }
+  .col-head { display: flex; background: var(--bg-code); border-bottom: 1px solid var(--border); }
+  .ch { font-size: 10px; font-weight: 500; color: var(--text-muted); letter-spacing: .05em; text-transform: uppercase; padding: 5px 9px; flex-shrink: 0; }
+  .ev-list { display: flex; flex-direction: column; }
+  .ev { display: flex; border-bottom: 1px solid var(--border); transition: opacity .25s; }
+  .ev:last-child { border-bottom: none; }
+  .ev.dim { opacity: 0.13; }
+  .ev.hi { background: var(--accent-glow); }
+  .ec { padding: 5px 9px; font-size: 11px; border-right: 1px solid var(--border); display: flex; align-items: center; white-space: nowrap; background: var(--bg-code); flex-shrink: 0; }
+  .ec.val { background: var(--bg-card); font-family: 'IBM Plex Mono', monospace; color: var(--text-muted); flex: 1; min-width: 0; }
+  .ec:last-child { border-right: none; }
+
+  /* Badges (block/allow) */
+  .badge { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
+  .b-block { background: var(--req-bg); color: var(--req-text); border-color: var(--req-border); }
+  .b-allow { background: rgba(62,207,142,0.1); color: var(--accent3); border-color: rgba(62,207,142,0.4); }
+
+  /* Buckets */
+  .buckets { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .bucket { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: border-color .25s, opacity .25s; }
+  .bucket.ab { border-color: var(--accent2); border-width: 1.5px; }
+  .bucket.dim { opacity: 0.35; }
+  .bhead { padding: 8px 12px; background: var(--bg-code); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
+  .bkey { font-weight: 500; font-size: 12px; word-break: break-all; }
+  .bwin { font-size: 10px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; word-break: break-all; flex-basis: 100%; }
+  .bcnt { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+  .verdict { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px; border: 1px solid; word-break: break-word; }
+  .va { background: var(--req-bg); color: var(--req-text); border-color: var(--req-border); }
+  .vp { background: var(--bg-code); color: var(--text-muted); border-color: var(--border); }
+  .brows { padding: 6px 12px; display: flex; flex-direction: column; overflow-x: auto; }
+  .br { display: flex; gap: 8px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--text-muted); padding: 4px 0; border-bottom: 1px solid var(--border); min-width: 0; flex-wrap: wrap; }
+  .br:last-child { border-bottom: none; }
+  .br strong { color: var(--text); }
+  .br-lbl { flex-shrink: 0; min-width: 120px; color: var(--text-dim); }
+  .br-val { color: var(--text); font-weight: 500; }
+
+  /* Alert box */
+  .alert-box {
+    background: var(--req-bg); border: 1px solid var(--req-border);
+    border-radius: 6px; padding: 10px 13px;
+    font-size: 12px; color: var(--req-text);
+    margin-bottom: 16px; display: flex; gap: 8px; align-items: flex-start; line-height: 1.6;
+  }
+  .adot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent2); margin-top: 3px; flex-shrink: 0; }
+
+  .hidden { display: none; }
+
+  /* ============================================================
+     SCROLLBAR + ANIMATION
+     ============================================================ */
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .tab-section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media(max-width:700px){
+    .sidebar-layout { grid-template-columns: 1fr; }
+    .sidebar-nav { border-right: none; border-bottom: 1px solid var(--border); }
+    .sidebar-content { padding: 20px 0 0; }
+    main { padding: 20px 16px; }
+    header { padding: 12px 16px; }
+    nav.top-nav { padding: 0 16px; }
+    .fn-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">YARA-L<span> — Complete Reference</span></div>
+    <div class="badge">CHRONICLE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav class="top-nav">
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="sections">Sections</button>
+  <button data-tab="functions">Functions</button>
+  <button data-tab="variables">Variables &amp; UDM</button>
+  <button data-tab="gotchas">Gotchas</button>
+  <button data-tab="interactive">Interactive</button>
+</nav>
+
+<main>
+
+  <!-- ============================================================
+       OVERVIEW TAB
+       ============================================================ -->
+  <div class="tab-section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>YARA-L 2.0</h2>
+      <p>Google Chronicle's detection language. Rules match against the <strong>Unified Data Model (UDM)</strong> — a normalised schema applied to all ingested log sources. Two modes: <strong>UDM Search</strong> (ad-hoc queries) and <strong>Detection Engine</strong> (persistent, time-windowed rules that fire alerts).</p>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">⚠ Section Order is Strict</div>
+      <p>Detection Engine rules must always follow this exact order. The parser will reject any other sequence. You can omit optional sections, but the ones you include must appear in this order.</p>
+    </div>
+
+    <div class="order-strip">
+      <div class="order-item optional">
+        <div class="order-num">1</div>
+        <div class="order-name">meta:</div>
+        <div><span class="order-tag opt">optional</span></div>
+      </div>
+      <div class="order-item required">
+        <div class="order-num">2</div>
+        <div class="order-name">events:</div>
+        <div><span class="order-tag req">required</span></div>
+      </div>
+      <div class="order-item optional">
+        <div class="order-num">3</div>
+        <div class="order-name">match:</div>
+        <div><span class="order-tag opt">optional</span></div>
+      </div>
+      <div class="order-item optional">
+        <div class="order-num">4</div>
+        <div class="order-name">outcome:</div>
+        <div><span class="order-tag opt">optional</span></div>
+      </div>
+      <div class="order-item required">
+        <div class="order-num">5</div>
+        <div class="order-name">condition:</div>
+        <div><span class="order-tag req">required</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">UDM Search vs Detection Engine</div>
+        <table class="ref-table">
+          <thead><tr><th></th><th>UDM Search</th><th>Detection Engine</th></tr></thead>
+          <tbody>
+            <tr><td>rule wrapper</td><td>None</td><td><code>rule name { }</code></td></tr>
+            <tr><td>sections</td><td><code>events:</code> only</td><td>up to 5 sections</td></tr>
+            <tr><td>time scoping</td><td>UI date picker</td><td><code>match: over Xm/h/d</code></td></tr>
+            <tr><td>alerts</td><td>No</td><td>Yes</td></tr>
+            <tr><td>condition:</td><td>Not used</td><td>Required</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Key Concepts</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔍</div>
+            <div class="rule-text"><strong>events:</strong> is a WHERE clause. Every line is AND. All must be true. Eliminates non-matching events permanently.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🪣</div>
+            <div class="rule-text"><strong>match:</strong> is a GROUP BY + time window. Forms buckets of events per unique key value per window.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📊</div>
+            <div class="rule-text"><strong>outcome:</strong> runs aggregate functions per bucket. Results surface in alert detail for triage.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>condition:</strong> evaluates once per bucket. A per-bucket gate — not a global check across all buckets.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Full Rule Structure</div>
+      <pre><span class="kw">rule</span> example_rule {
+  <span class="kw">meta:</span>
+    author      = <span class="str">"analyst"</span>
+    severity    = <span class="str">"HIGH"</span>      <span class="cmt">// LOW | MEDIUM | HIGH | CRITICAL</span>
+    description = <span class="str">"Detects repeated failed logins"</span>
+    tactic      = <span class="str">"TA0006"</span>   <span class="cmt">// MITRE tactic</span>
+    technique   = <span class="str">"T1110"</span>    <span class="cmt">// MITRE technique</span>
+
+  <span class="kw">events:</span>
+    $e.metadata.log_type       = <span class="str">"USER_LOGIN"</span>
+    $e.security_result.action  = <span class="str">"BLOCK"</span>
+    $user = $e.principal.user.userid    <span class="cmt">// bind placeholder</span>
+
+  <span class="kw">match:</span>
+    $user <span class="kw">over</span> 10m               <span class="cmt">// group by user, 10-min windows</span>
+
+  <span class="kw">outcome:</span>
+    $hits = <span class="fn">count</span>($e.metadata.id)  <span class="cmt">// surfaces in alert</span>
+
+  <span class="kw">condition:</span>
+    #e > 5                          <span class="cmt">// fire if bucket has &gt;5 events</span>
+}</pre>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">💡 Always include severity in meta:</div>
+      <p><em>Omitting meta:</em> with at least <em>severity</em> means alerts will have no triage priority in Chronicle's alert pipeline — analysts see them with no severity label. Always include <code>severity = "HIGH"</code> (or LOW / MEDIUM / CRITICAL) at minimum.</p>
+    </div>
+
+  </div><!-- /tab-overview -->
+
+
+  <!-- ============================================================
+       SECTIONS TAB
+       ============================================================ -->
+  <div class="tab-section" id="tab-sections">
+    <div class="sidebar-layout">
+      <div class="sidebar-nav">
+        <div class="sidebar-nav-section">UDM Search</div>
+        <button class="sidebar-btn active" onclick="showPanel('udm-events', this)">events:</button>
+        <div class="sidebar-nav-section">Detection Rule</div>
+        <button class="sidebar-btn" onclick="showPanel('rule-meta', this)">meta:</button>
+        <button class="sidebar-btn" onclick="showPanel('rule-events', this)">events:</button>
+        <button class="sidebar-btn" onclick="showPanel('rule-match', this)">match:</button>
+        <button class="sidebar-btn" onclick="showPanel('rule-outcome', this)">outcome:</button>
+        <button class="sidebar-btn" onclick="showPanel('rule-condition', this)">condition:</button>
+      </div>
+
+      <div class="sidebar-content">
+
+        <!-- UDM Search events: -->
+        <div id="udm-events" class="sidebar-panel active">
+          <div class="section-heading">UDM Search — events:</div>
+          <div class="label">Required</div>
+          <div class="pill-row"><span class="pill req">events: (only section)</span></div>
+          <div class="note">UDM Search has ONE section only. No rule wrapper, no condition, no meta. Just filters. Time scoping is done via the UI date picker.</div>
+          <div class="label">Structure</div>
+          <pre><span class="kw">events:</span>
+  $e.metadata.log_type = <span class="str">"NETWORK_HTTP"</span>
+  $e.principal.ip = <span class="str">"10.1.2.3"</span>
+  <span class="fn">re.regex</span>($e.target.url, <span class="str">`/admin`</span>) nocase
+  <span class="fn">net.ip_in_range_cidr</span>($e.principal.ip, <span class="str">"10.0.0.0/8"</span>)</pre>
+          <div class="label">Rules</div>
+          <div class="note">Every line is an AND condition — all must be true.<br>Use multiple <code>$e</code> variables for OR-like logic across event types.<br>Backticks for regex literals, quotes for strings.<br><code>nocase</code> makes re.regex case-insensitive.</div>
+          <div class="label">Comparison operators</div>
+          <div class="pill-row">
+            <span class="pill">=</span><span class="pill">!=</span><span class="pill">&gt;</span><span class="pill">&lt;</span><span class="pill">&gt;=</span><span class="pill">&lt;=</span>
+          </div>
+          <div class="label">Placeholder variables</div>
+          <div class="note">Assign a field to <code>$var</code> to bind it for reuse or to constrain across lines:
+<pre><span class="kw">events:</span>
+  $ip = $e.principal.ip      <span class="cmt">// bind</span>
+  $ip = <span class="str">"10.1.2.3"</span>            <span class="cmt">// constrain same var</span></pre></div>
+        </div>
+
+        <!-- Detection Rule meta: -->
+        <div id="rule-meta" class="sidebar-panel">
+          <div class="section-heading">Detection Rule — meta:</div>
+          <div class="label">Required / Optional</div>
+          <div class="pill-row"><span class="pill">meta: (optional, but severity strongly recommended)</span></div>
+          <div class="label">Structure</div>
+          <pre><span class="kw">meta:</span>
+  author      = <span class="str">"hala"</span>
+  severity    = <span class="str">"HIGH"</span>      <span class="cmt">// LOW | MEDIUM | HIGH | CRITICAL</span>
+  priority    = <span class="str">"HIGH"</span>
+  description = <span class="str">"Detects encoded PS"</span>
+  assumption  = <span class="str">"EDR deployed"</span>
+  confidence  = <span class="str">"HIGH"</span>
+  tactic      = <span class="str">"TA0002"</span>   <span class="cmt">// MITRE tactic ID</span>
+  technique   = <span class="str">"T1059"</span>    <span class="cmt">// MITRE technique ID</span></pre>
+          <div class="note">All fields are free-form <code>key = "string"</code> pairs. Only <code>severity</code> and <code>priority</code> are consumed by Chronicle's alerting pipeline — the rest are documentation. No required fields, but <code>severity</code> is strongly recommended to avoid unlabelled alerts.</div>
+        </div>
+
+        <!-- Detection Rule events: -->
+        <div id="rule-events" class="sidebar-panel">
+          <div class="section-heading">Detection Rule — events:</div>
+          <div class="label">Required</div>
+          <div class="pill-row"><span class="pill req">events: (required)</span></div>
+          <div class="label">Single event</div>
+          <pre><span class="kw">events:</span>
+  $e.metadata.log_type = <span class="str">"PROCESS_LAUNCH"</span>
+  $host = $e.principal.asset.hostname
+  $host = <span class="str">"dc01.corp.local"</span>
+  <span class="fn">re.regex</span>($e.target.process.command_line,
+    <span class="str">`powershell.*-enc`</span>) nocase</pre>
+          <div class="label">Multi-event (correlation)</div>
+          <pre><span class="kw">events:</span>
+  <span class="cmt">// event 1 — network scan</span>
+  $scan.metadata.log_type = <span class="str">"NETWORK_SCAN"</span>
+  $ip = $scan.principal.ip
+
+  <span class="cmt">// event 2 — login from same IP</span>
+  $login.metadata.log_type      = <span class="str">"USER_LOGIN"</span>
+  $login.security_result.action = <span class="str">"ALLOW"</span>
+  $ip = $login.principal.ip   <span class="cmt">// shared var = join key</span></pre>
+          <div class="note">Use different event variables (<code>$scan</code>, <code>$login</code>) to correlate multiple event types. A shared placeholder variable (<code>$ip</code>) is the join key — Chronicle enforces they share the same value. Every line is AND. Placeholder vars bound here are available in <code>match:</code>, <code>outcome:</code>, and <code>condition:</code>.</div>
+        </div>
+
+        <!-- Detection Rule match: -->
+        <div id="rule-match" class="sidebar-panel">
+          <div class="section-heading">Detection Rule — match:</div>
+          <div class="label">Required / Optional</div>
+          <div class="pill-row"><span class="pill">match: (optional — omit for per-event alerts)</span></div>
+          <div class="label">Structure</div>
+          <pre><span class="kw">match:</span>
+  $var1, $var2 <span class="kw">over</span> 10m
+
+<span class="kw">match:</span>
+  $host <span class="kw">over</span> 1h
+
+<span class="kw">match:</span>
+  $ip <span class="kw">over</span> 30m <span class="kw">after</span> $scan   <span class="cmt">// anchor window to event</span></pre>
+          <div class="label">Window durations</div>
+          <div class="pill-row">
+            <span class="pill">Xm (minutes)</span>
+            <span class="pill">Xh (hours)</span>
+            <span class="pill">Xd (days)</span>
+          </div>
+          <div class="note">Variables listed here must be plain placeholders (<code>$hostname</code>) — <strong>never dotted field paths</strong>. They become the GROUP BY key. Chronicle evaluates the condition once per unique value of these vars per window.</div>
+          <div class="label">after keyword</div>
+          <div class="note"><code>after $event</code> anchors the window start to a specific event's timestamp. Used for ordered sequence detection — "B must happen after A within the window". Each triggering event creates its own independent window.</div>
+          <div class="label">Composite key (multi-field grouping)</div>
+          <div class="note"><code>match:</code> cannot reference dotted paths. Bind fields to placeholders in <code>events:</code> first, then use <code>strings.concat()</code> for a single combined key if needed:
+<pre><span class="kw">events:</span>
+  $user = $e.principal.user.userid
+  $host = $e.target.asset.hostname
+  $key  = <span class="fn">strings.concat</span>($user, <span class="str">":"</span>, $host)
+<span class="kw">match:</span> $key <span class="kw">over</span> 1h</pre></div>
+        </div>
+
+        <!-- Detection Rule outcome: -->
+        <div id="rule-outcome" class="sidebar-panel">
+          <div class="section-heading">Detection Rule — outcome:</div>
+          <div class="label">Required / Optional</div>
+          <div class="pill-row"><span class="pill">outcome: (optional)</span></div>
+          <div class="label">Structure</div>
+          <pre><span class="kw">outcome:</span>
+  $hits         = <span class="fn">count</span>($e.metadata.id)
+  $total_bytes  = <span class="fn">sum</span>($e.network.sent_bytes)
+  $unique_dests = <span class="fn">count_distinct</span>($e.target.hostname)
+  $max_score    = <span class="fn">max</span>($e.security_result.severity_details)
+  $min_score    = <span class="fn">min</span>($e.security_result.severity_details)
+  $risk         = <span class="fn">max</span>($e.security_result.risk_score) + 10
+  $sample_cmd   = <span class="fn">array_distinct</span>($e.target.process.command_line)</pre>
+          <div class="label">Aggregate functions</div>
+          <div class="fn-grid">
+            <div class="fn-card"><div class="fn-name">count(field)</div><div class="fn-desc">Count of non-null values</div></div>
+            <div class="fn-card"><div class="fn-name">count_distinct(field)</div><div class="fn-desc">Unique value count</div></div>
+            <div class="fn-card"><div class="fn-name">sum(field)</div><div class="fn-desc">Numeric sum</div></div>
+            <div class="fn-card"><div class="fn-name">max(field)</div><div class="fn-desc">Maximum value</div></div>
+            <div class="fn-card"><div class="fn-name">min(field)</div><div class="fn-desc">Minimum value</div></div>
+            <div class="fn-card"><div class="fn-name">array(field)</div><div class="fn-desc">Collect all values into list</div></div>
+            <div class="fn-card"><div class="fn-name">array_distinct(field)</div><div class="fn-desc">Collect unique values</div></div>
+          </div>
+          <div class="note">Outcome variables surface in the alert detail — analysts see computed values without re-running queries. They can also be used in <code>condition:</code> via <code>$var > N</code>. Arithmetic on outcome vars is supported (<code>$risk = max($score) + 10</code>).</div>
+          <div class="note"><strong>count vs #e:</strong> <code>#e</code> (the count shorthand in condition:) only drives the logic — it doesn't surface in the alert. If you also want the count visible in the alert for triage, define it as an outcome variable. The two are independent.</div>
+        </div>
+
+        <!-- Detection Rule condition: -->
+        <div id="rule-condition" class="sidebar-panel">
+          <div class="section-heading">Detection Rule — condition:</div>
+          <div class="label">Required</div>
+          <div class="pill-row"><span class="pill req">condition: (required in Detection Engine)</span></div>
+          <div class="label">Patterns</div>
+          <pre><span class="cmt">// fire on every matching event</span>
+<span class="kw">condition:</span>
+  $e
+
+<span class="cmt">// fire when count exceeds threshold</span>
+<span class="kw">condition:</span>
+  #e > 10
+
+<span class="cmt">// fire on outcome variable threshold</span>
+<span class="kw">condition:</span>
+  $total_bytes > 500000000
+
+<span class="cmt">// fire when both event types present</span>
+<span class="kw">condition:</span>
+  $scan <span class="kw">and</span> $login
+
+<span class="cmt">// fire when first present, second absent</span>
+<span class="kw">condition:</span>
+  $e <span class="kw">and not</span> $e2
+
+<span class="cmt">// combined</span>
+<span class="kw">condition:</span>
+  #e > 5 <span class="kw">and</span> $total_bytes > 1000000
+
+<span class="cmt">// OR threshold — lateral movement OR exfil</span>
+<span class="kw">condition:</span>
+  $scan <span class="kw">and</span> $login
+  <span class="kw">and</span> ($hosts_hit > 2 <span class="kw">or</span> $total_bytes > 500000)</pre>
+          <div class="label">Count shorthand</div>
+          <div class="note"><code>#e</code> is the count of matched events for variable <code>$e</code>. Equivalent to defining <code>$hits = count($e.metadata.id)</code> in outcome and testing <code>$hits > N</code> — just shorter. Does not surface in the alert detail.</div>
+          <div class="label">Logical operators</div>
+          <div class="pill-row">
+            <span class="pill">and</span><span class="pill">or</span><span class="pill">not</span>
+          </div>
+          <div class="note"><strong>condition: is a per-bucket gate, not a global one.</strong> You can have 100 buckets and fire exactly 1 alert, depending on whether each bucket individually crosses the threshold.</div>
+        </div>
+
+      </div><!-- /sidebar-content -->
+    </div><!-- /sidebar-layout -->
+  </div><!-- /tab-sections -->
+
+
+  <!-- ============================================================
+       FUNCTIONS TAB
+       ============================================================ -->
+  <div class="tab-section" id="tab-functions">
+
+    <div class="fn-callout"><strong>re.capture</strong> — underused but powerful. Use it whenever you need to group or filter on a <em>part</em> of a field value (subdomain, path segment, username prefix). RE2 only — no lookaheads. Pattern must contain exactly one capture group.</div>
+    <div class="fn-callout"><strong>strings.concat</strong> — solves the <code>match:</code> dotted-path constraint. When you need a composite group-by key, bind fields to placeholders then concat into one variable.</div>
+    <div class="fn-callout"><strong>timestamp.*</strong> — always pass an explicit IANA timezone string. Omitting it defaults to UTC and after-hours rules will misfire for non-UTC environments.</div>
+    <div class="fn-callout"><strong>arrays.contains vs =</strong> — Chronicle's implicit array expansion means <code>=</code> already checks all elements for most repeated fields. Use <code>arrays.contains()</code> when a field doesn't expand implicitly, or when intent needs to be explicit.</div>
+
+    <div class="fn-tabs">
+      <button class="fn-tab active" onclick="showFnPanel('fn-regex', this)">re.*</button>
+      <button class="fn-tab" onclick="showFnPanel('fn-strings', this)">strings.*</button>
+      <button class="fn-tab" onclick="showFnPanel('fn-net', this)">net.*</button>
+      <button class="fn-tab" onclick="showFnPanel('fn-timestamp', this)">timestamp.*</button>
+      <button class="fn-tab" onclick="showFnPanel('fn-math', this)">math.*</button>
+      <button class="fn-tab" onclick="showFnPanel('fn-arrays', this)">arrays.*</button>
+    </div>
+
+    <!-- re.* -->
+    <div id="fn-regex" class="fn-panel active">
+      <div class="fn-block">
+        <div class="fn-block-header">
+          <span class="fn-sig">re.regex(field, `pattern`) [nocase]</span>
+          <span class="fn-blurb">Returns true if field matches the regex. Backtick delimiters — no escaping needed for most chars. RE2 syntax (no lookaheads).</span>
+        </div>
+        <div class="snippet"><div class="snip-label">UDM Search — encoded PowerShell</div>
+<pre><span class="kw">events:</span>
+  $e.metadata.log_type = <span class="str">"PROCESS_LAUNCH"</span>
+  <span class="fn">re.regex</span>($e.target.process.command_line,
+    <span class="str">`powershell.*((-|\/)(e|en|enc|enco|encod|encoded))`</span>) nocase</pre></div>
+        <div class="snippet"><div class="snip-label">UDM Search — suspicious URI paths</div>
+<pre><span class="kw">events:</span>
+  $e.metadata.log_type = <span class="str">"NETWORK_HTTP"</span>
+  <span class="fn">re.regex</span>($e.target.url,
+    <span class="str">`\/(wp-admin|phpmyadmin|\.env|\.git|admin)`</span>) nocase</pre></div>
+        <div class="snippet"><div class="snip-label">Detection Rule — beacon-like user-agent frequency</div>
+<pre><span class="kw">rule</span> suspicious_useragent {
+  <span class="kw">meta:</span> severity = <span class="str">"MEDIUM"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="str">"NETWORK_HTTP"</span>
+    <span class="fn">re.regex</span>($e.network.http.user_agent,
+      <span class="str">`^(curl|wget|python-requests|go-http)`</span>) nocase
+    $ip = $e.principal.ip
+  <span class="kw">match:</span> $ip <span class="kw">over</span> 1h
+  <span class="kw">outcome:</span> $hits = <span class="fn">count</span>($e.metadata.id)
+  <span class="kw">condition:</span> #e > 20
+}</pre></div>
+        <div class="fn-note"><code>nocase</code> is a keyword after the closing paren, not a flag inside the pattern. Anchors <code>^</code> <code>$</code>, character classes, and quantifiers all work normally.</div>
+      </div>
+
+      <div class="fn-block">
+        <div class="fn-block-header">
+          <span class="fn-sig">re.capture(field, `pattern`)</span>
+          <span class="fn-blurb">Extracts the first capture group. Use to pull a sub-value for binding or comparison when the field doesn't exist directly in UDM.</span>
+        </div>
+        <div class="snippet"><div class="snip-label">UDM Search — extract and match domain from URL</div>
+<pre><span class="kw">events:</span>
+  $e.metadata.log_type = <span class="str">"NETWORK_HTTP"</span>
+  $domain = <span class="fn">re.capture</span>($e.target.url, <span class="str">`https?://([^/]+)`</span>)
+  $domain = <span class="str">"evil.example.com"</span></pre></div>
+        <div class="snippet"><div class="snip-label">Detection Rule — group by extracted subdomain</div>
+<pre><span class="kw">rule</span> dns_subdomain_spray {
+  <span class="kw">meta:</span> severity = <span class="str">"HIGH"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="str">"NETWORK_DNS"</span>
+    $subdomain = <span class="fn">re.capture</span>(
+      $e.network.dns.questions.name, <span class="str">`^([^.]+)\..+`</span>)
+  <span class="kw">match:</span> $subdomain <span class="kw">over</span> 10m
+  <span class="kw">outcome:</span> $src_count = <span class="fn">count_distinct</span>($e.principal.ip)
+  <span class="kw">condition:</span> $src_count > 50  <span class="cmt">// same subdomain hit from 50+ IPs</span>
+}</pre></div>
+        <div class="fn-note">Pattern must contain exactly one capture group <code>(...)</code>. If there is no match, the variable is unset and the event is excluded. This is your tool for deriving a grouping key that doesn't exist as a direct UDM field. RE2 only — no lookaheads, no lookbehinds.</div>
+      </div>
+    </div>
+
+    <!-- strings.* -->
+    <div id="fn-strings" class="fn-panel">
+      <div class="fn-block">
+        <div class="fn-block-header">
+          <span class="fn-sig">strings.concat(a, b, ...)</span>
+          <span class="fn-blurb">Concatenates two or more string values. Main use: build composite group-by keys when match: can't take dotted field paths.</span>
+        </div>
+        <div class="snippet"><div class="snip-label">Detection Rule — composite key (user + host) in match</div>
+<pre><span class="kw">rule</span> lateral_movement_by_pair {
+  <span class="kw">meta:</span> severity = <span class="str">"HIGH"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="str">"USER_LOGIN"</span>
+    $e.security_result.action = <span class="str">"ALLOW"</span>
+    $user = $e.principal.user.userid
+    $host = $e.target.asset.hostname
+    $pair = <span class="fn">strings.concat</span>($user, <span class="str">":"</span>, $host)
+  <span class="kw">match:</span> $pair <span class="kw">over</span> 1h
+  <span class="kw">outcome:</span> $src_count = <span class="fn">count_distinct</span>($e.principal.ip)
+  <span class="kw">condition:</span> $src_count > 3  <span class="cmt">// same user+host from 3+ source IPs</span>
+}</pre></div>
+        <div class="fn-note">You can't write <code>match: $e.principal.user.userid, $e.target.hostname over 1h</code> — dotted paths are not allowed in <code>match:</code>. Bind each field to a placeholder, concat into one key, group on that.</div>
+      </div>
+
+      <div class="fn-block">
+        <div class="fn-block-header">
+          <span class="fn-sig">strings.to_lower(field)</span>
+          <span class="fn-blurb">Lowercases a string. Use before comparison when source data casing is inconsistent — cheaper than regex+nocase for fixed-string matches.</span>
+        </div>
+        <div class="snippet"><div class="snip-label">UDM Search — case-insensitive user match without regex</div>
+<pre><span class="kw">events:</span>
+  $e.metadata.log_type = <span class="str">"USER_LOGIN"</span>
+  <span class="fn">strings.to_lower</span>($e.principal.user.userid) = <span class="str">"jsmith"</span></pre></div>
+        <div class="snippet"><div class="snip-label">Detection Rule — normalise before grouping</div>
+<pre><span class="kw">rule</span> repeated_admin_login {
+  <span class="kw">meta:</span> severity = <span class="str">"MEDIUM"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="str">"USER_LOGIN"</span>
+    $user_lc = <span class="fn">strings.to_lower</span>($e.principal.user.userid)
+    <span class="fn">re.regex</span>($user_lc, <span class="str">`^(admin|administrator|root)$`</span>)
+  <span class="kw">match:</span> $user_lc <span class="kw">over</span> 30m
+  <span class="kw">condition:</span> #e > 5
+}</pre></div>
+        <div class="fn-note">Prefer <code>strings.to_lower</code> + exact match over <code>re.regex + nocase</code> when doing a fixed-string comparison — it's cheaper at scale and intent is clearer.</div>
+      </div>
+    </div>
+
+    <!-- net.* -->
+    <div id="fn-net" class="fn-panel">
+      <div class="fn-block">
+        <div class="fn-block-header">
+          <span class="fn-sig">net.ip_in_range_cidr(ip_field, "cidr")</span>
+          <span class="fn-blurb">Returns true if the IP falls within the given CIDR. Works with IPv4 and IPv6. Stack multiple NOT calls to exclude all trusted ranges.</span>
+        </div>
+        <div class="snippet"><div class="snip-label">UDM Search — internal src to external dest</div>
+<pre><span class="kw">events:</span>
+  $e.metadata.log_type = <span class="str">"NETWORK_HTTP"</span>
+  <span class="fn">net.ip_in_range_cidr</span>($e.principal.ip, <span class="str">"10.0.0.0/8"</span>)
+  NOT <span class="fn">net.ip_in_range_cidr</span>($e.target.ip, <span class="str">"10.0.0.0/8"</span>)
+  NOT <span class="fn">net.ip_in_range_cidr</span>($e.target.ip, <span class="str">"172.16.0.0/12"</span>)
+  NOT <span class="fn">net.ip_in_range_cidr</span>($e.target.ip, <span class="str">"192.168.0.0/16"</span>)</pre></div>
+        <div class="snippet"><div class="snip-label">Detection Rule — data leaving a sensitive subnet</div>
+<pre><span class="kw">rule</span> sensitive_subnet_egress {
+  <span class="kw">meta:</span> severity = <span class="str">"CRITICAL"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="str">"NETWORK_CONNECTION"</span>
+    <span class="fn">net.ip_in_range_cidr</span>($e.principal.ip, <span class="str">"10.10.50.0/24"</span>)
+    NOT <span class="fn">net.ip_in_range_cidr</span>($e.target.ip, <span class="str">"10.0.0.0/8"</span>)
+    $e.network.sent_bytes > 0
+    $src = $e.principal.ip
+  <span class="kw">match:</span> $src <span class="kw">over</span> 1h
+  <span class="kw">outcome:</span> $total = <span class="fn">sum</span>($e.network.sent_bytes)
+  <span class="kw">condition:</span> $total > 100000000  <span class="cmt">// 100 MB out of sensitive subnet</span>
+}</pre></div>
+        <div class="snippet"><div class="snip-label">Detection Rule — login from outside known-good ranges</div>
+<pre><span class="kw">rule</span> login_outside_hq_ranges {
+  <span class="kw">meta:</span> severity = <span class="str">"MEDIUM"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="str">"USER_LOGIN"</span>
+    $e.security_result.action = <span class="str">"ALLOW"</span>
+    NOT <span class="fn">net.ip_in_range_cidr</span>($e.principal.ip, <span class="str">"203.0.113.0/24"</span>)
+    NOT <span class="fn">net.ip_in_range_cidr</span>($e.principal.ip, <span class="str">"198.51.100.0/24"</span>)
+    NOT <span class="fn">net.ip_in_range_cidr</span>($e.principal.ip, <span class="str">"10.0.0.0/8"</span>)
+  <span class="kw">condition:</span> $e
+}</pre></div>
+        <div class="fn-note"><code>NOT net.ip_in_range_cidr(...)</code> is your main tool for "everything outside these known-good ranges". Stack multiple NOT calls to exclude all trusted CIDRs before asserting the match.</div>
+      </div>
+    </div>
+
+    <!-- timestamp.* -->
+    <div id="fn-timestamp" class="fn-panel">
+      <div class="fn-block">
+        <div class="fn-block-header">
+          <span class="fn-sig">timestamp.get_hour(ts, "tz")</span>
+          <span class="fn-blurb">Extracts the hour (0–23) from a timestamp in the given IANA timezone. Use for business-hours detection.</span>
+        </div>
+        <div class="snippet"><div class="snip-label">Detection Rule — logins outside business hours</div>
+<pre><span class="kw">rule</span> after_hours_login {
+  <span class="kw">meta:</span> severity = <span class="str">"MEDIUM"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="str">"USER_LOGIN"</span>
+    $e.security_result.action = <span class="str">"ALLOW"</span>
+    $hour = <span class="fn">timestamp.get_hour</span>(
+      $e.metadata.event_timestamp, <span class="str">"Africa/Nairobi"</span>)
+    $hour > 19   <span class="cmt">// after 7pm local time</span>
+  <span class="kw">condition:</span> $e
+}</pre></div>
+      </div>
+      <div class="fn-block">
+        <div class="fn-block-header">
+          <span class="fn-sig">timestamp.get_day_of_week(ts, "tz")</span>
+          <span class="fn-blurb">Returns 1 (Sunday) through 7 (Saturday). Combine with get_hour for full business-hours coverage.</span>
+        </div>
+        <div class="snippet"><div class="snip-label">Detection Rule — weekend admin activity</div>
+<pre><span class="kw">rule</span> weekend_admin_activity {
+  <span class="kw">meta:</span> severity = <span class="str">"HIGH"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="str">"USER_LOGIN"</span>
+    $e.principal.user.userid = <span class="str">"svc-admin"</span>
+    $dow = <span class="fn">timestamp.get_day_of_week</span>(
+      $e.metadata.event_timestamp, <span class="str">"Africa/Nairobi"</span>)
+    $dow = 1 <span class="kw">or</span> $dow = 7  <span class="cmt">// 1=Sun, 7=Sat</span>
+  <span class="kw">condition:</span> $e
+}</pre></div>
+        <div class="snippet"><div class="snip-label">Detection Rule — ordered sequence with timestamp comparison</div>
+<pre><span class="kw">rule</span> recon_before_exfil {
+  <span class="kw">meta:</span> severity = <span class="str">"CRITICAL"</span>
+  <span class="kw">events:</span>
+    $scan.metadata.log_type  = <span class="str">"NETWORK_SCAN"</span>
+    $exfil.metadata.log_type = <span class="str">"NETWORK_HTTP"</span>
+    $exfil.network.sent_bytes > 10000000
+    $ip = $scan.principal.ip
+    $ip = $exfil.principal.ip
+    $exfil.metadata.event_timestamp.seconds >
+      $scan.metadata.event_timestamp.seconds
+  <span class="kw">match:</span> $ip <span class="kw">over</span> 2h <span class="kw">after</span> $scan
+  <span class="kw">condition:</span> $scan <span class="kw">and</span> $exfil
+}</pre></div>
+        <div class="fn-note">Timezone must be an IANA name: <code>"Africa/Nairobi"</code>, <code>"Europe/London"</code>, <code>"America/New_York"</code>, <code>"UTC"</code> etc. Omitting it or using <code>"UTC"</code> when analysts work in another timezone will produce confusing alert times.</div>
+      </div>
+    </div>
+
+    <!-- math.* -->
+    <div id="fn-math" class="fn-panel">
+      <div class="fn-block">
+        <div class="fn-block-header">
+          <span class="fn-sig">math.abs(n)</span>
+          <span class="fn-blurb">Absolute value. Use to detect deviation in either direction from a known baseline.</span>
+        </div>
+        <div class="snippet"><div class="snip-label">Detection Rule — response size deviation from baseline</div>
+<pre><span class="kw">rule</span> anomalous_response_size {
+  <span class="kw">meta:</span> severity = <span class="str">"MEDIUM"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="str">"NETWORK_HTTP"</span>
+    $e.target.url = <span class="str">"/api/export"</span>
+    $deviation = <span class="fn">math.abs</span>(
+      $e.network.received_bytes - 50000)  <span class="cmt">// 50 KB baseline</span>
+    $deviation > 200000                   <span class="cmt">// 200 KB off baseline</span>
+  <span class="kw">condition:</span> $e
+}</pre></div>
+      </div>
+      <div class="fn-block">
+        <div class="fn-block-header">
+          <span class="fn-sig">math.log(n)</span>
+          <span class="fn-blurb">Natural logarithm. Rarely used as a filter — mainly for compressing large numeric ranges into a readable score in outcome.</span>
+        </div>
+        <div class="snippet"><div class="snip-label">Detection Rule — log-scaled score surfaced in alert</div>
+<pre><span class="kw">rule</span> high_volume_dns {
+  <span class="kw">meta:</span> severity = <span class="str">"MEDIUM"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="str">"NETWORK_DNS"</span>
+    $host = $e.principal.asset.hostname
+  <span class="kw">match:</span> $host <span class="kw">over</span> 10m
+  <span class="kw">outcome:</span>
+    $count     = <span class="fn">count</span>($e.metadata.id)
+    $log_score = <span class="fn">math.log</span>(<span class="fn">count</span>($e.metadata.id))
+  <span class="kw">condition:</span> #e > 500
+}</pre></div>
+        <div class="fn-note"><code>math.log</code> is useful for surfacing a compressed score in the alert — log(1000) ≈ 6.9, log(10000) ≈ 9.2 — so analysts see signal magnitude without raw counts that vary wildly. Rarely used as a filter condition itself.</div>
+      </div>
+    </div>
+
+    <!-- arrays.* -->
+    <div id="fn-arrays" class="fn-panel">
+      <div class="fn-block">
+        <div class="fn-block-header">
+          <span class="fn-sig">arrays.contains(array_field, value)</span>
+          <span class="fn-blurb">Returns true if any element in a repeated/array UDM field equals the value. Use when you need explicit membership testing.</span>
+        </div>
+        <div class="snippet"><div class="snip-label">UDM Search — user in a specific group</div>
+<pre><span class="kw">events:</span>
+  $e.metadata.log_type = <span class="str">"USER_LOGIN"</span>
+  <span class="fn">arrays.contains</span>(
+    $e.principal.user.group_identifiers, <span class="str">"domain admins"</span>)</pre></div>
+        <div class="snippet"><div class="snip-label">Detection Rule — privileged group deleting sensitive files</div>
+<pre><span class="kw">rule</span> admin_group_file_delete {
+  <span class="kw">meta:</span> severity = <span class="str">"HIGH"</span>
+  <span class="kw">events:</span>
+    $e.metadata.log_type = <span class="str">"FILE_DELETION"</span>
+    <span class="fn">arrays.contains</span>(
+      $e.principal.user.group_identifiers, <span class="str">"domain admins"</span>)
+    <span class="fn">re.regex</span>($e.target.file.full_path,
+      <span class="str">`\\(finance|legal|hr)\\`</span>) nocase
+  <span class="kw">condition:</span> $e
+}</pre></div>
+        <div class="fn-note">For most repeated UDM fields (like <code>email_addresses</code>, <code>dns.questions.name</code>) Chronicle's implicit array expansion means <code>=</code> already checks all elements. Use <code>arrays.contains</code> explicitly for fields that don't expand implicitly, or when intent needs to be clear. When in doubt, try <code>=</code> first.</div>
+      </div>
+    </div>
+
+  </div><!-- /tab-functions -->
+
+
+  <!-- ============================================================
+       VARIABLES & UDM FIELDS TAB
+       ============================================================ -->
+  <div class="tab-section" id="tab-variables">
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Event Variables</div>
+        <div class="note">Start with <code>$</code>. Bind to an event instance. Used to correlate multiple event types.<br><br>
+          <code>$e</code> — single event (convention; any name works)<br>
+          <code>$e1</code>, <code>$e2</code> — when you need two separate event streams<br>
+          <code>$scan</code>, <code>$login</code> — named for readability in multi-event rules</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Placeholder Variables</div>
+        <div class="note">Also start with <code>$</code>. Assigned a field value, not an event.
+<pre><span class="kw">events:</span>
+  $host = $e.principal.asset.hostname  <span class="cmt">// bind</span>
+  $host = <span class="str">"dc01.corp"</span>                  <span class="cmt">// constrain</span></pre>
+          Can be used in <code>match:</code> as a group-by key. Can be used in <code>condition:</code> for threshold tests.</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Count Shorthand</div>
+        <div class="note"><code>#e</code> — count of events matched by <code>$e</code> within the window. Only usable in <code>condition:</code>. Does not surface in alert detail.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Outcome Variables</div>
+        <div class="note">Defined in <code>outcome:</code>, referenced in <code>condition:</code>.
+<pre><span class="kw">outcome:</span>   $hits = <span class="fn">count</span>($e.metadata.id)
+<span class="kw">condition:</span> $hits > 5</pre></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title green">Common UDM Fields</div>
+      <div class="label">Always available</div>
+      <pre>$e.metadata.log_type
+$e.metadata.event_type
+$e.metadata.event_timestamp.seconds
+$e.metadata.id</pre>
+      <div class="label">Principal (actor / source)</div>
+      <pre>$e.principal.ip
+$e.principal.hostname
+$e.principal.asset.hostname
+$e.principal.user.userid
+$e.principal.user.email_addresses
+$e.principal.process.pid
+$e.principal.process.command_line</pre>
+      <div class="label">Target (destination / object)</div>
+      <pre>$e.target.ip
+$e.target.hostname
+$e.target.url
+$e.target.application
+$e.target.process.command_line
+$e.target.file.full_path
+$e.target.file.sha256</pre>
+      <div class="label">Network</div>
+      <pre>$e.network.sent_bytes
+$e.network.received_bytes
+$e.network.dns.questions.name
+$e.network.http.method
+$e.network.http.response_code</pre>
+      <div class="label">Security result</div>
+      <pre>$e.security_result.action         <span class="cmt">// ALLOW | BLOCK | UNKNOWN</span>
+$e.security_result.severity
+$e.security_result.risk_score
+$e.security_result.category</pre>
+      <div class="note">UDM has hundreds of fields. These are the most-used. Use Chronicle's field autocomplete in the UI for the full list, or browse the UDM field reference in the docs.</div>
+    </div>
+
+  </div><!-- /tab-variables -->
+
+
+  <!-- ============================================================
+       GOTCHAS TAB
+       ============================================================ -->
+  <div class="tab-section" id="tab-gotchas">
+    <div class="gotcha-list">
+
+      <div class="gotcha">
+        <div class="gotcha-header"><span class="gotcha-tag tag-rule">Parser Rule</span><span class="gotcha-title">Section order is strict</span></div>
+        <div class="gotcha-body">Detection Engine rules must always follow this exact order — Chronicle's parser will reject anything else:<br><br>
+          <code>meta</code> → <code>events</code> → <code>match</code> → <code>outcome</code> → <code>condition</code><br><br>
+          You can omit optional sections, but the sections you do include must appear in this sequence.
+        </div>
+      </div>
+
+      <div class="gotcha">
+        <div class="gotcha-header"><span class="gotcha-tag tag-rule">Required sections</span><span class="gotcha-title">Only events: and condition: are mandatory in Detection Engine</span></div>
+        <div class="gotcha-body">
+          <code>meta</code>, <code>match</code>, and <code>outcome</code> are all optional. But omitting <code>meta</code> with at least <code>severity</code> means your alerts will have no triage priority in Chronicle's alert pipeline — analysts will see them with no severity label. Always include at minimum:<br><br>
+          <pre><span class="kw">meta:</span>
+  severity = <span class="str">"HIGH"</span>  <span class="cmt">// LOW | MEDIUM | HIGH | CRITICAL</span></pre>
+        </div>
+      </div>
+
+      <div class="gotcha">
+        <div class="gotcha-header"><span class="gotcha-tag tag-info">UDM Search</span><span class="gotcha-title">UDM Search is just the events: block — nothing else</span></div>
+        <div class="gotcha-body">
+          No <code>rule {}</code> wrapper. No <code>condition:</code>. No <code>meta:</code>. The entire query is a bare <code>events:</code> block. Time scoping is done via the UI date picker, not in the query syntax.
+          <pre><span class="kw">events:</span>
+  $e.metadata.log_type = <span class="str">"NETWORK_HTTP"</span>
+  $e.principal.ip = <span class="str">"10.1.2.3"</span></pre>
+        </div>
+      </div>
+
+      <div class="gotcha">
+        <div class="gotcha-header"><span class="gotcha-tag tag-tip">Array fields</span><span class="gotcha-title">Chronicle auto-expands repeated fields — no indexing needed</span></div>
+        <div class="gotcha-body">
+          For repeated/array UDM fields like <code>$e.principal.user.email_addresses</code> or <code>$e.network.dns.questions.name</code>, Chronicle automatically checks if <em>any</em> element in the array satisfies your condition. You do not need to index into them.<br><br>
+          <pre><span class="cmt">// This checks ALL email addresses, not just index 0</span>
+$e.principal.user.email_addresses = <span class="str">"user@corp.com"</span></pre>
+          Use <code>arrays.contains()</code> explicitly only when a field doesn't support implicit expansion or when intent needs to be unambiguous.
+        </div>
+      </div>
+
+      <div class="gotcha">
+        <div class="gotcha-header"><span class="gotcha-tag tag-warn">match: constraint</span><span class="gotcha-title">match: only accepts plain placeholder variables — never dotted paths</span></div>
+        <div class="gotcha-body">
+          This is the most common parse error. You cannot use a field path directly in <code>match:</code>.<br><br>
+          <pre><span class="cmt">// WRONG — parser error</span>
+<span class="kw">match:</span>
+  $e.principal.asset.hostname <span class="kw">over</span> 1h
+
+<span class="cmt">// CORRECT — bind first, then match on the placeholder</span>
+<span class="kw">events:</span>
+  $host = $e.principal.asset.hostname
+<span class="kw">match:</span>
+  $host <span class="kw">over</span> 1h</pre>
+        </div>
+      </div>
+
+      <div class="gotcha">
+        <div class="gotcha-header"><span class="gotcha-tag tag-warn">match: + concat</span><span class="gotcha-title">Can't group by two fields directly — use strings.concat() for a composite key</span></div>
+        <div class="gotcha-body">
+          <code>match:</code> takes a variable, not a field expression. If you want to group by two fields together, bind each to a placeholder and concat them into a single key.<br><br>
+          <pre><span class="cmt">// WRONG</span>
+<span class="kw">match:</span> $e.principal.user.userid, $e.target.hostname <span class="kw">over</span> 1h
+
+<span class="cmt">// CORRECT</span>
+<span class="kw">events:</span>
+  $user = $e.principal.user.userid
+  $host = $e.target.asset.hostname
+  $key  = <span class="fn">strings.concat</span>($user, <span class="str">":"</span>, $host)
+<span class="kw">match:</span> $key <span class="kw">over</span> 1h</pre>
+        </div>
+      </div>
+
+      <div class="gotcha">
+        <div class="gotcha-header"><span class="gotcha-tag tag-warn">Timestamp functions</span><span class="gotcha-title">timestamp.* functions require an explicit IANA timezone</span></div>
+        <div class="gotcha-body">
+          If you omit the timezone argument, Chronicle defaults to UTC. After-hours and weekend rules will misfire for any environment not in UTC. Always pass the IANA name for your environment:<br><br>
+          <pre><span class="fn">timestamp.get_hour</span>($e.metadata.event_timestamp, <span class="str">"Africa/Nairobi"</span>)
+<span class="fn">timestamp.get_day_of_week</span>($e.metadata.event_timestamp, <span class="str">"Europe/London"</span>)</pre>
+          Other valid examples: <code>"America/New_York"</code>, <code>"Asia/Dubai"</code>, <code>"UTC"</code>.
+        </div>
+      </div>
+
+      <div class="gotcha">
+        <div class="gotcha-header"><span class="gotcha-tag tag-tip">re.capture</span><span class="gotcha-title">re.capture is underused — it's the right tool for sub-field grouping</span></div>
+        <div class="gotcha-body">
+          When you need to group or filter on a <em>part</em> of a field value — a subdomain, a path segment, a username prefix — <code>re.capture</code> is your tool. The extracted value can be used as a <code>match:</code> group-by key or constrained directly.<br><br>
+          Limitation: RE2 only — no lookaheads, no lookbehinds. The pattern must contain exactly one capture group.
+          <pre><span class="cmt">// extract leftmost DNS label and group on it</span>
+$sub = <span class="fn">re.capture</span>($e.network.dns.questions.name, <span class="str">`^([^.]+)\..+`</span>)
+<span class="kw">match:</span> $sub <span class="kw">over</span> 10m</pre>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /tab-gotchas -->
+
+
+  <!-- ============================================================
+       INTERACTIVE TAB (from match_outcome_condition_complexity_3)
+       ============================================================ -->
+  <div class="tab-section" id="tab-interactive">
+
+    <div class="callout blue" style="margin-bottom:18px">
+      <div class="callout-label">📽 How this works</div>
+      <p>Three complexity tiers. Each steps through the same rule pipeline — <em>events: → match: → outcome: → condition:</em> — showing exactly what Chronicle does at each stage, from raw stream to fired alert.</p>
+    </div>
+
+    <div class="tier-tabs">
+      <button class="tier-tab easy active" onclick="showTier('easy',this)">Easy</button>
+      <button class="tier-tab medium" onclick="showTier('medium',this)">Medium</button>
+      <button class="tier-tab complex" onclick="showTier('complex',this)">Complex</button>
+    </div>
+
+    <!-- EASY -->
+    <div id="tier-easy" class="tier-panel active">
+      <div class="rule-strip">
+        <div class="rule-strip-inner c4">
+          <div class="rs"><div class="rs-lbl">events:</div><div class="rs-code">log_type = <span class="str">"USER_LOGIN"</span><br>action = <span class="str">"BLOCK"</span><br>$user = userid</div></div>
+          <div class="rs"><div class="rs-lbl">match:</div><div class="rs-code">$user <span class="kw">over</span> 10m</div></div>
+          <div class="rs"><div class="rs-lbl">outcome:</div><div class="rs-code">$hits = <span class="fn">count</span>($e.id)</div></div>
+          <div class="rs"><div class="rs-lbl">condition:</div><div class="rs-code">#e > 3</div></div>
+        </div>
+      </div>
+      <div class="steps-ctrl">
+        <button class="sbtn" id="e-prev" onclick="step('easy',-1)" disabled>← prev</button>
+        <button class="sbtn" id="e-next" onclick="step('easy',1)">next →</button>
+        <span class="sctr" id="e-ctr">step 1 / 5</span>
+      </div>
+      <div class="step-desc" id="e-desc"></div>
+      <div id="e-s1"><div class="slabel"><span class="sbadge sb-ev">events:</span>Raw stream — everything Chronicle received</div><div class="ev-scroll"><div class="col-head" id="e-ch1"></div><div class="ev-list" id="e-raw"></div></div></div>
+      <div id="e-s2" class="hidden"><div class="slabel"><span class="sbadge sb-ev">events:</span>Filter applied — only matching rows survive</div><div class="ev-scroll"><div class="col-head" id="e-ch2"></div><div class="ev-list" id="e-filtered"></div></div></div>
+      <div id="e-s3" class="hidden"><div class="slabel"><span class="sbadge sb-ma">match:</span>$user over 10m — buckets formed</div><div class="buckets" id="e-buckets"></div></div>
+      <div id="e-s4" class="hidden"><div class="slabel"><span class="sbadge sb-ou">outcome:</span>$hits computed per bucket</div><div class="buckets" id="e-outcome"></div></div>
+      <div id="e-s5" class="hidden"><div class="slabel"><span class="sbadge sb-co">condition:</span>#e > 3 evaluated per bucket</div><div id="e-alerts"></div><div class="buckets" id="e-verdict"></div></div>
+    </div>
+
+    <!-- MEDIUM -->
+    <div id="tier-medium" class="tier-panel">
+      <div class="rule-strip">
+        <div class="rule-strip-inner c5">
+          <div class="rs"><div class="rs-lbl">events:</div><div class="rs-code">log_type = <span class="str">"USER_LOGIN"</span><br>action = <span class="str">"BLOCK"</span><br>$user = userid<br>$src_ip = principal.ip</div></div>
+          <div class="rs"><div class="rs-lbl">match:</div><div class="rs-code">$user, $src_ip<br><span class="kw">over</span> 10m</div></div>
+          <div class="rs"><div class="rs-lbl">outcome:</div><div class="rs-code">$attempts = <span class="fn">count</span>($e.id)<br>$hosts = <span class="fn">count_distinct</span>(target)</div></div>
+          <div class="rs"><div class="rs-lbl">condition:</div><div class="rs-code">#e > 3 <span class="kw">and</span><br>$hosts > 1</div></div>
+          <div class="rs"><div class="rs-lbl">new concepts</div><div class="rs-code" style="color:var(--text-muted)">compound match key<br>two outcome vars<br>AND in condition</div></div>
+        </div>
+      </div>
+      <div class="steps-ctrl">
+        <button class="sbtn" id="m-prev" onclick="step('medium',-1)" disabled>← prev</button>
+        <button class="sbtn" id="m-next" onclick="step('medium',1)">next →</button>
+        <span class="sctr" id="m-ctr">step 1 / 5</span>
+      </div>
+      <div class="step-desc" id="m-desc"></div>
+      <div id="m-s1"><div class="slabel"><span class="sbadge sb-ev">events:</span>Raw stream — same user, multiple IPs and hosts</div><div class="ev-scroll"><div class="col-head" id="m-ch1"></div><div class="ev-list" id="m-raw"></div></div></div>
+      <div id="m-s2" class="hidden"><div class="slabel"><span class="sbadge sb-ev">events:</span>Filter + variable binding</div><div class="ev-scroll"><div class="col-head" id="m-ch2"></div><div class="ev-list" id="m-filtered"></div></div></div>
+      <div id="m-s3" class="hidden"><div class="slabel"><span class="sbadge sb-ma">match:</span>$user, $src_ip over 10m — compound key</div><div class="buckets" id="m-buckets"></div></div>
+      <div id="m-s4" class="hidden"><div class="slabel"><span class="sbadge sb-ou">outcome:</span>Two variables per bucket</div><div class="buckets" id="m-outcome"></div></div>
+      <div id="m-s5" class="hidden"><div class="slabel"><span class="sbadge sb-co">condition:</span>#e > 3 AND $hosts > 1</div><div id="m-alerts"></div><div class="buckets" id="m-verdict"></div></div>
+    </div>
+
+    <!-- COMPLEX -->
+    <div id="tier-complex" class="tier-panel">
+      <div class="rule-strip">
+        <div class="rule-strip-inner c5">
+          <div class="rs"><div class="rs-lbl">events:</div><div class="rs-code">$scan.type = <span class="str">"NETWORK_SCAN"</span><br>$login.type = <span class="str">"USER_LOGIN"</span><br>$src = $scan.ip<br>$src = $login.ip<br>$login.ts > $scan.ts</div></div>
+          <div class="rs"><div class="rs-lbl">match:</div><div class="rs-code">$src <span class="kw">over</span> 30m<br><span class="kw">after</span> $scan</div></div>
+          <div class="rs"><div class="rs-lbl">outcome:</div><div class="rs-code">$scan_count<br>$login_count<br>$total_bytes<br>$hosts_hit<br>$risk = max × count</div></div>
+          <div class="rs"><div class="rs-lbl">condition:</div><div class="rs-code">$scan <span class="kw">and</span> $login<br><span class="kw">and</span> ($hosts_hit > 2<br><span class="kw">or</span> bytes > 500k)</div></div>
+          <div class="rs"><div class="rs-lbl">new concepts</div><div class="rs-code" style="color:var(--text-muted)">two event types<br>join var<br>timestamp order<br>after anchor<br>arithmetic outcome<br>OR in condition</div></div>
+        </div>
+      </div>
+      <div class="steps-ctrl">
+        <button class="sbtn" id="c-prev" onclick="step('complex',-1)" disabled>← prev</button>
+        <button class="sbtn" id="c-next" onclick="step('complex',1)">next →</button>
+        <span class="sctr" id="c-ctr">step 1 / 5</span>
+      </div>
+      <div class="step-desc" id="c-desc"></div>
+      <div id="c-s1"><div class="slabel"><span class="sbadge sb-ev">events:</span>Raw stream — two event types intermixed</div><div class="ev-scroll"><div class="col-head" id="c-ch1"></div><div class="ev-list" id="c-raw"></div></div></div>
+      <div id="c-s2" class="hidden"><div class="slabel"><span class="sbadge sb-ev">events:</span>Filter + join — shared $src, timestamp ordering enforced</div><div class="ev-scroll"><div class="col-head" id="c-ch2"></div><div class="ev-list" id="c-filtered"></div></div></div>
+      <div id="c-s3" class="hidden"><div class="slabel"><span class="sbadge sb-ma">match:</span>$src over 30m after $scan — each scan anchors its own window</div><div class="buckets" id="c-buckets"></div></div>
+      <div id="c-s4" class="hidden"><div class="slabel"><span class="sbadge sb-ou">outcome:</span>Five variables including arithmetic — per bucket</div><div class="buckets" id="c-outcome"></div></div>
+      <div id="c-s5" class="hidden"><div class="slabel"><span class="sbadge sb-co">condition:</span>Both event types required + OR threshold</div><div id="c-alerts"></div><div class="buckets" id="c-verdict"></div></div>
+    </div>
+
+  </div><!-- /tab-interactive -->
+
+</main>
+
+<script>
+/* ============================================================
+   TOP NAV TAB SWITCHING
+   ============================================================ */
+document.querySelectorAll('nav.top-nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.tab;
+    document.querySelectorAll('nav.top-nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + target).classList.add('active');
+  });
+});
+
+/* ============================================================
+   SIDEBAR PANEL SWITCHING (Sections tab)
+   ============================================================ */
+function showPanel(id, btn) {
+  document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ============================================================
+   FUNCTION TAB SWITCHING (Functions tab)
+   ============================================================ */
+function showFnPanel(id, btn) {
+  document.querySelectorAll('.fn-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.fn-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ============================================================
+   THEME TOGGLE
+   ============================================================ */
+const toggle = document.getElementById('themeToggle');
+const label  = document.getElementById('toggle-label');
+const html   = document.documentElement;
+
+toggle.addEventListener('change', () => {
+  const isLight = toggle.checked;
+  html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+  label.textContent = isLight ? 'LIGHT' : 'DARK';
+  try { localStorage.setItem('yara-theme', isLight ? 'light' : 'dark'); } catch(e) {}
+});
+
+// Init theme from localStorage
+(function() {
+  let saved;
+  try { saved = localStorage.getItem('yara-theme'); } catch(e) {}
+  if (saved === 'light') {
+    html.setAttribute('data-theme', 'light');
+    toggle.checked = true;
+    label.textContent = 'LIGHT';
+  }
+})();
+
+/* ============================================================
+   INTERACTIVE SECTION (from match_outcome_condition_complexity_3)
+   ============================================================ */
+(function(){
+
+/* ── DATA ── */
+const eEv=[
+  {t:'09:01',user:'jsmith',  type:'USER_LOGIN',action:'BLOCK', ip:'185.220.101.12'},
+  {t:'09:02',user:'akorir',  type:'USER_LOGIN',action:'ALLOW', ip:'10.0.1.45'},
+  {t:'09:03',user:'jsmith',  type:'USER_LOGIN',action:'BLOCK', ip:'185.220.101.12'},
+  {t:'09:04',user:'mwanjiku',type:'USER_LOGIN',action:'ALLOW', ip:'10.0.2.88'},
+  {t:'09:05',user:'jsmith',  type:'USER_LOGIN',action:'BLOCK', ip:'185.220.101.12'},
+  {t:'09:06',user:'akorir',  type:'USER_LOGIN',action:'BLOCK', ip:'41.90.65.3'},
+  {t:'09:07',user:'jsmith',  type:'USER_LOGIN',action:'BLOCK', ip:'185.220.101.12'},
+  {t:'09:09',user:'jsmith',  type:'USER_LOGIN',action:'BLOCK', ip:'185.220.101.12'},
+  {t:'09:14',user:'akorir',  type:'USER_LOGIN',action:'BLOCK', ip:'41.90.65.3'},
+  {t:'09:16',user:'mwanjiku',type:'USER_LOGIN',action:'BLOCK', ip:'10.0.2.88'},
+];
+const eBk=[
+  {key:'jsmith',  win:'09:00–09:10',evs:[{t:'09:01'},{t:'09:03'},{t:'09:05'},{t:'09:07'},{t:'09:09'}],cnt:5,alert:true, cond:'#e=5 > 3 ✓ → ALERT'},
+  {key:'akorir',  win:'09:00–09:10',evs:[{t:'09:06'}],cnt:1,alert:false,cond:'#e=1 > 3 ✗ → no alert'},
+  {key:'akorir',  win:'09:10–09:20',evs:[{t:'09:14'}],cnt:1,alert:false,cond:'#e=1 > 3 ✗ → no alert'},
+  {key:'mwanjiku',win:'09:10–09:20',evs:[{t:'09:16'}],cnt:1,alert:false,cond:'#e=1 > 3 ✗ → no alert'},
+];
+const eC={jsmith:'#4f8ef7',akorir:'#3ecf8e',mwanjiku:'#f7a23e'};
+
+const mEv=[
+  {t:'09:01',user:'jsmith', action:'BLOCK',src:'185.220.101.12',host:'dc01'},
+  {t:'09:02',user:'jsmith', action:'BLOCK',src:'185.220.101.12',host:'dc01'},
+  {t:'09:03',user:'jsmith', action:'BLOCK',src:'185.220.101.12',host:'mail01'},
+  {t:'09:04',user:'jsmith', action:'BLOCK',src:'185.220.101.12',host:'vpn01'},
+  {t:'09:05',user:'jsmith', action:'BLOCK',src:'41.90.65.3',    host:'dc01'},
+  {t:'09:06',user:'jsmith', action:'BLOCK',src:'41.90.65.3',    host:'dc01'},
+  {t:'09:07',user:'akorir', action:'BLOCK',src:'197.248.10.5',  host:'dc01'},
+  {t:'09:08',user:'akorir', action:'BLOCK',src:'197.248.10.5',  host:'dc01'},
+  {t:'09:09',user:'akorir', action:'BLOCK',src:'197.248.10.5',  host:'dc01'},
+  {t:'09:09',user:'akorir', action:'BLOCK',src:'197.248.10.5',  host:'dc01'},
+];
+const mBk=[
+  {key:'jsmith + 185.220.101.12',win:'09:00–09:10',evs:[{t:'09:01',host:'dc01'},{t:'09:02',host:'dc01'},{t:'09:03',host:'mail01'},{t:'09:04',host:'vpn01'}],cnt:4,hosts:3,alert:true, cond:'#e=4>3 ✓  $hosts=3>1 ✓  → ALERT'},
+  {key:'jsmith + 41.90.65.3',    win:'09:00–09:10',evs:[{t:'09:05',host:'dc01'},{t:'09:06',host:'dc01'}],cnt:2,hosts:1,alert:false,cond:'#e=2>3 ✗  → no alert'},
+  {key:'akorir + 197.248.10.5',  win:'09:00–09:10',evs:[{t:'09:07',host:'dc01'},{t:'09:08',host:'dc01'},{t:'09:09',host:'dc01'},{t:'09:09',host:'dc01'}],cnt:4,hosts:1,alert:false,cond:'$hosts=1>1 ✗  → no alert'},
+];
+const mC={'jsmith + 185.220.101.12':'#4f8ef7','jsmith + 41.90.65.3':'#3ecf8e','akorir + 197.248.10.5':'#f7a23e'};
+
+const cEv=[
+  {t:'09:00',type:'NETWORK_SCAN',src:'45.33.32.156',target:'10.0.0.0/24',val:'—'},
+  {t:'09:02',type:'USER_LOGIN',  src:'45.33.32.156',target:'dc01',        val:'bytes:0 score:72'},
+  {t:'09:05',type:'USER_LOGIN',  src:'45.33.32.156',target:'mail01',      val:'bytes:0 score:68'},
+  {t:'09:08',type:'USER_LOGIN',  src:'45.33.32.156',target:'filesvr',     val:'bytes:620000 score:85'},
+  {t:'09:10',type:'NETWORK_SCAN',src:'10.0.1.44',   target:'10.0.0.0/24',val:'—'},
+  {t:'09:12',type:'USER_LOGIN',  src:'10.0.1.44',   target:'dc01',        val:'bytes:0 score:30'},
+  {t:'09:40',type:'NETWORK_SCAN',src:'45.33.32.156',target:'10.0.0.0/24',val:'—'},
+  {t:'09:45',type:'USER_LOGIN',  src:'45.33.32.156',target:'dc01',        val:'bytes:0 score:55'},
+];
+const cFS=['✓ scan — window anchor','✓ joined to scan@09:00','✓ joined to scan@09:00','✓ joined to scan@09:00','✓ scan — window anchor','✓ joined to scan@09:10','✓ scan — new window anchor','✓ joined to scan@09:40'];
+const cBk=[
+  {key:'45.33.32.156',win:'09:00–09:30 (anchored @ 09:00)',scans:1,logins:3,bytes:620000,hosts:3,risk:255,alert:true,cond:'$hosts=3>2 ✓ → ALERT',scanEvs:[{t:'09:00'}],loginEvs:[{t:'09:02',target:'dc01',bytes:0},{t:'09:05',target:'mail01',bytes:0},{t:'09:08',target:'filesvr',bytes:620000}]},
+  {key:'10.0.1.44',   win:'09:10–09:40 (anchored @ 09:10)',scans:1,logins:1,bytes:0,    hosts:1,risk:30, alert:false,cond:'$hosts=1>2 ✗  bytes=0>500k ✗ → no alert',scanEvs:[{t:'09:10'}],loginEvs:[{t:'09:12',target:'dc01',bytes:0}]},
+  {key:'45.33.32.156',win:'09:40–10:10 (anchored @ 09:40)',scans:1,logins:1,bytes:0,    hosts:1,risk:55, alert:false,cond:'$hosts=1>2 ✗  bytes=0>500k ✗ → no alert',scanEvs:[{t:'09:40'}],loginEvs:[{t:'09:45',target:'dc01',bytes:0}]},
+];
+const cBkeys=['45.33.32.156 (w1)','10.0.1.44','45.33.32.156 (w2)'];
+const cBcol={'45.33.32.156 (w1)':'#4f8ef7','10.0.1.44':'#3ecf8e','45.33.32.156 (w2)':'#f7a23e'};
+
+/* ── DESCRIPTIONS ── */
+const eD=[
+  `<p><strong>What you're looking at:</strong> The raw event stream as Chronicle received it — every login attempt from every user over ~16 minutes. No filtering has happened yet. The rule is watching all of this arrive in real time.</p>
+   <p><strong>What events: will do:</strong> The <code>events:</code> section acts as a WHERE clause. It specifies which events are relevant to this rule. Everything that doesn't match gets discarded immediately — it never enters the grouping or counting logic. In this rule the conditions are <code>log_type = "USER_LOGIN"</code> and <code>action = "BLOCK"</code>. The third line, <code>$user = userid</code>, is not a filter — it's a variable binding. It extracts the userid field and stores it as <code>$user</code>, making it available to <code>match:</code> later.</p>
+   <p><strong>Everything after this stage depends on getting events: right.</strong> Events that don't survive the filter are permanently gone from the rule's perspective.</p>`,
+  `<p><strong>The filter ran.</strong> Every event that didn't satisfy all conditions was eliminated. The dimmed rows no longer exist as far as this rule is concerned.</p>
+   <p><strong>What was eliminated:</strong> akorir's 09:02 login had <code>action = "ALLOW"</code> — doesn't match <code>action = "BLOCK"</code>, discarded. mwanjiku's 09:04 login same. They will never be counted. 7 events survive out of 10.</p>
+   <p><strong>The variable binding is now live.</strong> Each surviving event has <code>$user</code> bound to its userid value. This is the value that <code>match:</code> will use as the grouping key in the next step.</p>`,
+  `<p><strong>What match: does:</strong> It takes the 7 surviving events and sorts them into buckets. The bucket key is <code>$user</code>. Every unique value gets its own bucket. Events with the same <code>$user</code> value falling within the same 10-minute window go into the same bucket.</p>
+   <p><strong>The time window is critical:</strong> <code>over 10m</code> means Chronicle only groups events within the same 10-minute period. akorir has two BLOCK events — 09:06 and 09:14. These straddle the 09:10 boundary so they land in different windows and become separate buckets. Each bucket is evaluated completely independently.</p>
+   <p><strong>The bucket key is always (variable + window), not just the variable alone.</strong> The same user can appear in multiple buckets across multiple windows.</p>`,
+  `<p><strong>What outcome: does:</strong> For each bucket, Chronicle runs the aggregate functions you defined. <code>$hits = count($e.id)</code> counts how many events are in the bucket. This value appears in the alert detail when the rule fires — analysts see the exact count immediately without running a follow-up query.</p>
+   <p><strong>Why define outcome: separately from condition:?</strong> Because <code>#e</code> (the count shorthand in condition:) only drives the logic — it doesn't surface in the alert. If you also want the count visible in the alert for triage, define it as an outcome variable. The two are independent: <code>$hits</code> appears in the alert, <code>#e</code> gates the firing.</p>`,
+  `<p><strong>What condition: does:</strong> It evaluates once per bucket. <code>#e > 3</code> fires an alert only if the bucket contains more than 3 events. Each bucket is evaluated independently — what happens in one has no effect on any other.</p>
+   <p><strong>jsmith's bucket:</strong> 5 events in 09:00–09:10. 5 > 3 is true — one alert fires. <strong>All other buckets:</strong> 1 event each. 1 > 3 is false — no alert. Total alerts: 1.</p>
+   <p><strong>Key insight:</strong> The condition is a per-bucket gate, not a global one. You can have 100 buckets and fire exactly 1 alert, depending on whether each bucket individually crosses the threshold.</p>`,
+];
+const mD=[
+  `<p><strong>The scenario:</strong> jsmith appears with two different source IPs — <code>185.220.101.12</code> and <code>41.90.65.3</code>. He's trying different internal hosts each time. akorir is hammering from one IP, targeting only dc01.</p>
+   <p><strong>Why a single match key isn't enough:</strong> Grouping by <code>$user</code> alone would merge jsmith's two IPs into one bucket with 6 events — triggering the threshold. But that hides the real signal: one IP is trying many hosts (lateral movement), the other is retrying one host (brute force). The compound key separates these behaviours.</p>
+   <p><strong>The events: section now binds two variables:</strong> <code>$user</code> and <code>$src_ip</code>. Both become part of the match key.</p>`,
+  `<p><strong>All 10 events pass the filter</strong> — they're all BLOCK events. But each event now has two bound variables: <code>$user</code> and <code>$src_ip</code>. These two values together will become the compound bucket key.</p>
+   <p><strong>Why bind $src_ip in events:?</strong> Because <code>match:</code> only accepts plain placeholder variables — it cannot reference dotted field paths like <code>$e.principal.ip</code> directly. Binding in <code>events:</code> is the required mechanism to make any field value available for grouping in <code>match:</code>.</p>`,
+  `<p><strong>Compound key grouping:</strong> The bucket key is the combination of <code>$user</code> AND <code>$src_ip</code>. jsmith from 185.x.x.x is a completely different bucket from jsmith from 41.x.x.x, even though it's the same person. Each pair is an independent group.</p>
+   <p><strong>Three buckets form:</strong> jsmith+185.x: 4 events across dc01, mail01, vpn01. jsmith+41.x: 2 events both on dc01. akorir+197.x: 4 events all on dc01. Chronicle computes outcome variables for each independently.</p>`,
+  `<p><strong>Two outcome variables per bucket:</strong> <code>$attempts = count($e.id)</code> counts every event. <code>$hosts = count_distinct($e.target.hostname)</code> counts only unique hostnames.</p>
+   <p><strong>count vs count_distinct:</strong> count tells you how persistent the attack is. count_distinct tells you how wide it spread. High count + low distinct = hammering one target. Moderate count + high distinct = moving laterally. These are completely different threat profiles that require different responses.</p>`,
+  `<p><strong>AND condition — both clauses must independently be true:</strong> <code>#e > 3 and $hosts > 1</code> requires more than 3 events AND more than 1 distinct host. Failing either check means no alert, regardless of how the other performs.</p>
+   <p><strong>jsmith+185.x:</strong> #e=4>3 ✓ and $hosts=3>1 ✓ — one alert fires. <strong>jsmith+41.x:</strong> #e=2>3 ✗ — fails count, no alert. <strong>akorir+197.x:</strong> #e=4>3 ✓ but $hosts=1>1 ✗ — fails spread check. akorir is brute-forcing one target, not doing lateral movement. The rule correctly distinguishes the two. One alert total.</p>`,
+];
+const cD=[
+  `<p><strong>Two event types in the stream:</strong> NETWORK_SCAN (highlighted) and USER_LOGIN events. They come from different log sources with no inherent connection. Chronicle simply receives them as separate events.</p>
+   <p><strong>The goal:</strong> Detect an IP that first scans the network then logs into hosts — recon-then-lateral-movement. No single event type can detect this. The combination — scan followed by login from the same IP within a time window — is the signal. This requires correlating two event types.</p>
+   <p><strong>Note:</strong> 45.33.32.156 scans twice (09:00 and 09:40). Each scan will anchor its own independent 30-minute window and produce its own bucket.</p>`,
+  `<p><strong>How events: handles two event types:</strong> Two separate event variables — <code>$scan</code> and <code>$login</code> — each with their own filter conditions. The shared variable <code>$src</code> is the join key: Chronicle only forms a valid pair when both events share the same source IP.</p>
+   <p><strong>The timestamp ordering constraint <code>$login.ts > $scan.ts</code>:</strong> Enforces that the login must occur after the scan. Without this, a login from days ago matching today's scan could satisfy the rule — not the pattern we're detecting.</p>
+   <p><strong>The 09:40 scan and 09:45 login</strong> are from the same IP as the 09:00 window but will form a completely separate bucket — the 09:40 scan anchors a fresh window.</p>`,
+  `<p><strong>match: $src over 30m after $scan:</strong> The <code>after $scan</code> modifier anchors the start of each 30-minute window to the timestamp of the scan event itself, not to an arbitrary clock boundary. Each scan event creates its own independent time window.</p>
+   <p><strong>Why 45.33.32.156 gets two separate buckets:</strong> It scanned at 09:00 — window 09:00–09:30. It scanned again at 09:40 — completely new window 09:40–10:10. Chronicle does not merge them. Two scans = two independent detection windows = two independent alert evaluations.</p>
+   <p><strong>Practical implication:</strong> Attackers sometimes deliberately stagger activity to evade fixed-window detection. With <code>after $scan</code>, each new probe creates a fresh detection opportunity.</p>`,
+  `<p><strong>Five outcome variables — two arithmetic:</strong> Each answers a different triage question. <strong>$scan_count / $login_count</strong> — how many of each event type. <strong>$total_bytes</strong> — was data transferred? <strong>$hosts_hit</strong> — how far did they spread? <strong>$risk = max(score) × login_count</strong> — a composite signal that amplifies the highest risk score by how many login events occurred.</p>
+   <p><strong>First bucket (45.33.32.156, 09:00 window):</strong> 1 scan, 3 logins, 620,000 bytes from filesvr, 3 distinct hosts, risk=255. An analyst opening this alert sees the full picture immediately — no follow-up queries needed.</p>
+   <p><strong>Other buckets:</strong> 1 scan, 1 login, 0 bytes, 1 host. Early-stage probing with no confirmed exfiltration.</p>`,
+  `<p><strong>condition: with presence check + OR threshold:</strong> Three parts. First: <code>$scan and $login</code> — both event types must be present. A bucket with only scans or only logins fails immediately regardless of outcome values. This is a pure existence check. Second: the OR expression — at least one of <code>$hosts_hit > 2</code> or <code>$total_bytes > 500000</code> must pass.</p>
+   <p><strong>Why OR for the threshold?</strong> Because lateral movement (many hosts) and data exfiltration (large bytes) are two different manifestations of the same threat. An attacker might do one or the other. AND would miss an attacker who spread laterally but kept each transfer small.</p>
+   <p><strong>First bucket:</strong> Both types present ✓. $hosts_hit=3>2 ✓. OR short-circuits — one alert fires. <strong>Other two buckets:</strong> Both types present ✓. But $hosts_hit=1 and bytes=0 — both sides of OR fail. No alert. Total: 1 alert.</p>`,
+];
+
+/* ── HELPERS ── */
+const STATE={easy:0,medium:0,complex:0};
+const MAX={easy:5,medium:5,complex:5};
+
+function bk(a){return a==='BLOCK'?'<span class="badge b-block">BLOCK</span>':'<span class="badge b-allow">ALLOW</span>';}
+function scanB(){return '<span class="badge" style="background:var(--accent-glow);color:var(--accent);border:1px solid rgba(79,142,247,0.4);font-size:10px;padding:2px 6px;border-radius:20px">SCAN</span>';}
+function loginB(){return '<span class="badge b-allow" style="font-size:10px;padding:2px 6px">LOGIN</span>';}
+function ch(w,txt){return `<div class="ch" style="width:${w}px">${txt}</div>`;}
+function ec(w,v,isV){return `<div class="ec${isV?' val':''}" style="${w?'width:'+w+'px':'flex:1;min-width:80px'}">${v}</div>`;}
+
+function eHead(){return ch(55,'time')+ch(75,'user')+ch(95,'log type')+ch(65,'action')+ch(130,'IP');}
+function eRow(e,dim){return `<div class="ev${dim?' dim':''}">${ec(55,e.t,true)}${ec(75,`<strong style="color:${eC[e.user]}">${e.user}</strong>`)}${ec(95,e.type,true)}${ec(65,bk(e.action))}${ec(130,e.ip,true)}</div>`;}
+function mHead(){return ch(50,'time')+ch(65,'user')+ch(65,'action')+ch(120,'src IP')+ch(80,'target');}
+function mRow(e){return `<div class="ev">${ec(50,e.t,true)}${ec(65,`<strong>${e.user}</strong>`)}${ec(65,bk(e.action))}${ec(120,e.src,true)}${ec(80,e.host,true)}</div>`;}
+function cHead(){return ch(50,'time')+ch(70,'type')+ch(120,'src IP')+ch(95,'target')+ch(0,'bytes / score');}
+function cRow(e,status){const iS=e.type==='NETWORK_SCAN';return `<div class="ev${iS?' hi':''}">${ec(50,e.t,true)}<div class="ec" style="width:70px">${iS?scanB():loginB()}</div>${ec(120,e.src,true)}${ec(95,e.target,true)}${ec(0,status||e.val,true)}</div>`;}
+
+/* ── RENDERERS ── */
+function rEasy(s){
+  const eRaw=document.getElementById('e-raw'),eFil=document.getElementById('e-filtered');
+  const eCh1=document.getElementById('e-ch1'),eCh2=document.getElementById('e-ch2');
+  if(s===0){eCh1.innerHTML=eHead();eRaw.innerHTML=eEv.map(e=>eRow(e,false)).join('');}
+  if(s===1){eCh2.innerHTML=eHead();eFil.innerHTML=eEv.map(e=>eRow(e,e.action!=='BLOCK')).join('');}
+  if(s===2) document.getElementById('e-buckets').innerHTML=eBk.map(b=>`<div class="bucket"><div class="bhead"><span class="bkey" style="color:${eC[b.key]}">${b.key}</span><span class="bcnt">${b.cnt} event${b.cnt!==1?'s':''}</span><span class="bwin">window: ${b.win}</span></div><div class="brows">${b.evs.map(e=>`<div class="br"><span class="br-lbl">${e.t}</span>${bk('BLOCK')}</div>`).join('')}</div></div>`).join('');
+  if(s===3) document.getElementById('e-outcome').innerHTML=eBk.map(b=>`<div class="bucket"><div class="bhead"><span class="bkey" style="color:${eC[b.key]}">${b.key}</span><span class="bcnt">#e = ${b.cnt}</span><span class="bwin">${b.win}</span></div><div class="brows"><div class="br"><span class="br-lbl">$hits</span><span class="br-val">${b.cnt}</span></div></div></div>`).join('');
+  if(s===4){
+    document.getElementById('e-alerts').innerHTML=`<div class="alert-box"><div class="adot"></div><strong>1 alert generated</strong> — jsmith: 5 failed logins in 09:00–09:10. $hits = 5 appears in the alert detail.</div>`;
+    document.getElementById('e-verdict').innerHTML=eBk.map(b=>`<div class="bucket${b.alert?' ab':' dim'}"><div class="bhead"><span class="bkey" style="color:${eC[b.key]}">${b.key}</span><span class="bcnt">#e = ${b.cnt}</span><span class="bwin">${b.win}</span><span class="verdict ${b.alert?'va':'vp'}">${b.cond}</span></div></div>`).join('');
+  }
+}
+
+function rMedium(s){
+  const mCh1=document.getElementById('m-ch1'),mCh2=document.getElementById('m-ch2');
+  if(s===0){mCh1.innerHTML=mHead();document.getElementById('m-raw').innerHTML=mEv.map(e=>mRow(e)).join('');}
+  if(s===1){mCh2.innerHTML=mHead();document.getElementById('m-filtered').innerHTML=mEv.map(e=>mRow(e)).join('');}
+  if(s===2) document.getElementById('m-buckets').innerHTML=mBk.map(b=>`<div class="bucket"><div class="bhead"><span class="bkey" style="color:${mC[b.key]}">${b.key}</span><span class="bcnt">${b.cnt} events · ${b.hosts} host${b.hosts!==1?'s':''}</span><span class="bwin">window: ${b.win}</span></div><div class="brows">${b.evs.map(e=>`<div class="br"><span class="br-lbl">${e.t}</span><span>${e.host}</span></div>`).join('')}</div></div>`).join('');
+  if(s===3) document.getElementById('m-outcome').innerHTML=mBk.map(b=>`<div class="bucket"><div class="bhead"><span class="bkey" style="color:${mC[b.key]}">${b.key}</span><span class="bwin">${b.win}</span></div><div class="brows"><div class="br"><span class="br-lbl">$attempts</span><span class="br-val">${b.cnt}</span></div><div class="br"><span class="br-lbl">$hosts</span><span class="br-val">${b.hosts}</span></div></div></div>`).join('');
+  if(s===4){
+    document.getElementById('m-alerts').innerHTML=`<div class="alert-box"><div class="adot"></div><strong>1 alert generated</strong> — jsmith from 185.220.101.12: 4 attempts across 3 hosts. Both AND conditions satisfied.</div>`;
+    document.getElementById('m-verdict').innerHTML=mBk.map(b=>`<div class="bucket${b.alert?' ab':' dim'}"><div class="bhead"><span class="bkey" style="color:${mC[b.key]}">${b.key}</span><span class="bcnt">#e=${b.cnt} · $hosts=${b.hosts}</span><span class="bwin">${b.win}</span><span class="verdict ${b.alert?'va':'vp'}">${b.cond}</span></div></div>`).join('');
+  }
+}
+
+function rComplex(s){
+  const cCh1=document.getElementById('c-ch1'),cCh2=document.getElementById('c-ch2');
+  if(s===0){cCh1.innerHTML=cHead();document.getElementById('c-raw').innerHTML=cEv.map(e=>cRow(e,null)).join('');}
+  if(s===1){cCh2.innerHTML=cHead();document.getElementById('c-filtered').innerHTML=cEv.map((e,i)=>cRow(e,`<span style="color:var(--accent3);font-size:10px">${cFS[i]}</span>`)).join('');}
+  if(s===2) document.getElementById('c-buckets').innerHTML=cBk.map((b,i)=>`<div class="bucket"><div class="bhead"><span class="bkey" style="color:${cBcol[cBkeys[i]]}">${b.key}</span><span class="bwin">${b.win}</span></div><div class="brows">${b.scanEvs.map(e=>`<div class="br"><span class="br-lbl">${e.t}</span><span style="color:var(--accent)">SCAN</span><span style="color:var(--text-muted);font-size:10px"> window anchor</span></div>`).join('')}${b.loginEvs.map(e=>`<div class="br"><span class="br-lbl">${e.t}</span><span style="color:var(--accent3)">LOGIN</span><span style="margin-left:8px">${e.target}</span>${e.bytes>0?`<span style="color:var(--text-muted);font-size:10px;margin-left:auto">${e.bytes.toLocaleString()} bytes</span>`:''}</div>`).join('')}</div></div>`).join('');
+  if(s===3) document.getElementById('c-outcome').innerHTML=cBk.map((b,i)=>`<div class="bucket"><div class="bhead"><span class="bkey" style="color:${cBcol[cBkeys[i]]}">${b.key}</span><span class="bwin">${b.win}</span></div><div class="brows"><div class="br"><span class="br-lbl">$scan_count</span><span class="br-val">${b.scans}</span></div><div class="br"><span class="br-lbl">$login_count</span><span class="br-val">${b.logins}</span></div><div class="br"><span class="br-lbl">$total_bytes</span><span class="br-val">${b.bytes.toLocaleString()}</span></div><div class="br"><span class="br-lbl">$hosts_hit</span><span class="br-val">${b.hosts}</span></div><div class="br"><span class="br-lbl">$risk</span><span class="br-val">${b.risk}</span></div></div></div>`).join('');
+  if(s===4){
+    document.getElementById('c-alerts').innerHTML=`<div class="alert-box"><div class="adot"></div><strong>1 alert generated</strong> — 45.33.32.156 window 09:00–09:30: scan then logins to 3 hosts, 620,000 bytes out. $hosts_hit=3 > 2. $risk=255.</div>`;
+    document.getElementById('c-verdict').innerHTML=cBk.map((b,i)=>`<div class="bucket${b.alert?' ab':' dim'}"><div class="bhead"><span class="bkey" style="color:${cBcol[cBkeys[i]]}">${b.key}</span><span class="bcnt">hosts=${b.hosts} · bytes=${b.bytes.toLocaleString()}</span><span class="bwin">${b.win}</span><span class="verdict ${b.alert?'va':'vp'}">${b.cond}</span></div></div>`).join('');
+  }
+}
+
+const R={easy:rEasy,medium:rMedium,complex:rComplex};
+const D={easy:eD,medium:mD,complex:cD};
+
+function upd(tier){
+  const s=STATE[tier],m=MAX[tier],p=tier[0];
+  document.getElementById(`${p}-desc`).innerHTML=D[tier][s];
+  document.getElementById(`${p}-ctr`).textContent=`step ${s+1} / ${m}`;
+  document.getElementById(`${p}-prev`).disabled=s===0;
+  document.getElementById(`${p}-next`).disabled=s===m-1;
+  for(let i=1;i<=m;i++){const el=document.getElementById(`${p}-s${i}`);if(el)el.classList.toggle('hidden',i-1!==s);}
+  R[tier](s);
+}
+
+window.step=function(tier,dir){STATE[tier]=Math.max(0,Math.min(MAX[tier]-1,STATE[tier]+dir));upd(tier);};
+
+window.showTier=function(tier,btn){
+  document.querySelectorAll('.tier-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tier-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tier-'+tier).classList.add('active');
+  upd(tier);
+};
+
+upd('easy'); upd('medium'); upd('complex');
+
+})();
+</script>
+</body>
+</html>

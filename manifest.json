@@ -145,9 +145,9 @@
       },
       {
         "type": "file",
-        "name": "Dream-Skill.md",
-        "label": "Dream Skill",
-        "path": "cc_masterclass_modules/Dream-Skill.md"
+        "name": "DreamSkill.md",
+        "label": "Dreamskill",
+        "path": "cc_masterclass_modules/DreamSkill.md"
       }
     ]
   },

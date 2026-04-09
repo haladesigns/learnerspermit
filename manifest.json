@@ -564,6 +564,24 @@
     "children": [
       {
         "type": "file",
+        "name": "gdscript-language-basics.html",
+        "label": "Gdscript Language Basics",
+        "path": "godot/gdscript-language-basics.html"
+      },
+      {
+        "type": "file",
+        "name": "godot-2d-nodes.html",
+        "label": "Godot 2d Nodes",
+        "path": "godot/godot-2d-nodes.html"
+      },
+      {
+        "type": "file",
+        "name": "godot-level-design.html",
+        "label": "Godot Level Design",
+        "path": "godot/godot-level-design.html"
+      },
+      {
+        "type": "file",
         "name": "t",
         "label": "T",
         "path": "godot/t"

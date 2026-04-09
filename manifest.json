@@ -570,12 +570,6 @@
     "children": [
       {
         "type": "file",
-        "name": "ref.txt",
-        "label": "Ref",
-        "path": "Yara/ref.txt"
-      },
-      {
-        "type": "file",
         "name": "yara-l-complete-reference.html",
         "label": "Yara L Complete Reference",
         "path": "Yara/yara-l-complete-reference.html"

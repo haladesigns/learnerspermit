@@ -58,22 +58,24 @@ body {
   font-size: 14px;
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* ── Header ── */
 .header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 18px 28px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
   position: sticky;
   top: 0;
   z-index: 100;
+  flex-wrap: wrap;
 }
-.header-left { display: flex; align-items: center; gap: 14px; }
+.header-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .badge {
   background: var(--blue-dim);
   color: var(--blue);
@@ -81,14 +83,21 @@ body {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: .08em;
-  padding: 3px 8px;
+  padding: 3px 7px;
   border-radius: 4px;
   border: 1px solid rgba(74,144,226,0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .badge.warn { background: var(--amber-dim); color: var(--amber); border-color: rgba(232,168,64,0.3); }
-.header-title { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
+.header-title {
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  color: var(--text); letter-spacing: -.01em;
+  white-space: nowrap; min-width: 0;
+}
 .header-title span { color: var(--blue); }
-.header-right { display: flex; align-items: center; gap: 10px; }
+.header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.header-version { font-size: 11px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
 
 /* Theme toggle */
 .theme-toggle {
@@ -108,10 +117,11 @@ body {
 .tabs-bar {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 0 28px;
+  padding: 0 8px;
   display: flex;
   gap: 0;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .tabs-bar::-webkit-scrollbar { height: 2px; }
 .tabs-bar::-webkit-scrollbar-thumb { background: var(--border2); }
@@ -120,7 +130,7 @@ body {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: .04em;
-  padding: 12px 16px;
+  padding: 11px 12px;
   border: none;
   background: none;
   color: var(--muted);
@@ -128,12 +138,13 @@ body {
   border-bottom: 2px solid transparent;
   white-space: nowrap;
   transition: all .15s;
+  flex-shrink: 0;
 }
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
 
 /* ── Content ── */
-.content { max-width: 900px; margin: 0 auto; padding: 28px; }
+.content { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
 .tab-panel { display: none; animation: fadeIn .2s ease; }
 .tab-panel.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -186,7 +197,29 @@ body {
 .rule-body { flex: 1; }
 .rule-body strong { color: var(--text); font-weight: 600; }
 .rule-body p { color: var(--muted); font-size: 13px; margin-top: 3px; line-height: 1.5; }
-.rule-body code { font-family: var(--mono); font-size: 12px; color: var(--amber); background: var(--amber-dim); padding: 1px 5px; border-radius: 3px; }
+.rule-body code { font-family: var(--mono); font-size: 12px; color: var(--amber); background: var(--amber-dim); padding: 1px 5px; border-radius: 3px; word-break: break-all; }
+
+/* ── Mobile overrides ── */
+@media (max-width: 600px) {
+  .header { padding: 10px 12px; }
+  .header-version { display: none; }
+  .header-title { font-size: 12px; }
+  .content { padding: 16px 12px; }
+  .rule-row { padding: 10px 12px; gap: 10px; }
+  .rule-label { font-size: 9px; padding: 2px 5px; }
+  .rule-body p { font-size: 12px; }
+  .step-row { padding: 10px 12px; gap: 10px; }
+  .callout { padding: 10px 12px; gap: 10px; }
+  .callout-body { font-size: 12px; }
+  .arch-grid { grid-template-columns: 1fr; gap: 6px; }
+  .arch-arrow { transform: rotate(90deg); font-size: 14px; padding: 4px 0; }
+  .arch-item { font-size: 11px; }
+  .dd-grid { grid-template-columns: 1fr; }
+  pre { font-size: 11px; padding: 10px 12px; }
+  .code-lang { font-size: 9px; }
+  .section-title { font-size: 11px; }
+  p.lead { font-size: 13px; }
+}
 
 /* ── Code blocks ── */
 .code-block {
@@ -282,32 +315,33 @@ pre .ty { color: #60c8f8; }
 
 /* ── Flow diagram ── */
 .flow {
-  display: flex; flex-wrap: wrap; gap: 0; align-items: stretch;
+  display: flex; flex-direction: column; gap: 2px;
   margin: 10px 0;
 }
 .flow-step {
-  flex: 1; min-width: 120px;
   background: var(--surface2);
   border: 1px solid var(--border);
-  padding: 12px 14px;
+  padding: 10px 14px;
   position: relative;
+  display: flex; align-items: flex-start; gap: 12px;
+  border-radius: 6px;
 }
-.flow-step:not(:last-child)::after {
-  content: '→';
-  position: absolute; right: -14px; top: 50%;
-  transform: translateY(-50%);
-  color: var(--blue);
-  font-family: var(--mono); font-size: 16px;
-  z-index: 1;
+.flow-step-left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.flow-num { font-family: var(--mono); font-size: 10px; color: var(--blue); font-weight: 700; white-space: nowrap; }
+.flow-connector {
+  display: flex; justify-content: center; padding: 0;
+  color: var(--faint); font-size: 12px; line-height: 1; margin: 0 0 0 14px;
+  font-family: var(--mono);
 }
-.flow-step:first-child { border-radius: 8px 0 0 8px; }
-.flow-step:last-child { border-radius: 0 8px 8px 0; }
-.flow-num { font-family: var(--mono); font-size: 10px; color: var(--blue); font-weight: 700; margin-bottom: 5px; }
-.flow-title { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.flow-title { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
 .flow-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
 
 /* ── Arch diagram (roles) ── */
-.arch-grid { display: grid; grid-template-columns: 1fr 80px 1fr; gap: 0; align-items: center; margin: 10px 0; }
+.arch-grid {
+  display: grid;
+  grid-template-columns: 1fr 48px 1fr;
+  gap: 0; align-items: center; margin: 10px 0;
+}
 .arch-box {
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: 8px; padding: 14px;
@@ -343,7 +377,7 @@ p.lead { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom:
     <span class="header-title"><span>App</span>Functions — Ground-Up Reference</span>
   </div>
   <div class="header-right">
-    <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">alpha08 · Android 16+</span>
+    <span class="header-version">alpha08 · Android 16+</span>
     <button class="theme-toggle" onclick="toggleTheme()">☀ / ☾</button>
   </div>
 </div>
@@ -378,34 +412,33 @@ p.lead { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom:
     <div class="section-head"><span class="section-icon">FLOW</span><span class="section-title">How a call travels end-to-end</span></div>
     <div class="flow">
       <div class="flow-step">
-        <div class="flow-num">01</div>
-        <div class="flow-title">Declare</div>
-        <div class="flow-desc">App annotates Kotlin functions with <code>@AppFunction</code></div>
+        <div class="flow-step-left"><div class="flow-num">01</div></div>
+        <div><div class="flow-title">Declare</div><div class="flow-desc">App annotates Kotlin functions with <code>@AppFunction</code></div></div>
       </div>
+      <div class="flow-connector">↓</div>
       <div class="flow-step">
-        <div class="flow-num">02</div>
-        <div class="flow-title">Compile</div>
-        <div class="flow-desc">KSP compiler generates XML schema → bundled in APK</div>
+        <div class="flow-step-left"><div class="flow-num">02</div></div>
+        <div><div class="flow-title">Compile</div><div class="flow-desc">KSP compiler generates XML schema → bundled in APK</div></div>
       </div>
+      <div class="flow-connector">↓</div>
       <div class="flow-step">
-        <div class="flow-num">03</div>
-        <div class="flow-title">Index</div>
-        <div class="flow-desc">Android OS reads schema via AppSearch on install</div>
+        <div class="flow-step-left"><div class="flow-num">03</div></div>
+        <div><div class="flow-title">Index</div><div class="flow-desc">Android OS reads schema via AppSearch on install</div></div>
       </div>
+      <div class="flow-connector">↓</div>
       <div class="flow-step">
-        <div class="flow-num">04</div>
-        <div class="flow-title">Discover</div>
-        <div class="flow-desc">Agent queries metadata, gets typed signatures</div>
+        <div class="flow-step-left"><div class="flow-num">04</div></div>
+        <div><div class="flow-title">Discover</div><div class="flow-desc">Agent queries metadata, gets typed signatures</div></div>
       </div>
+      <div class="flow-connector">↓</div>
       <div class="flow-step">
-        <div class="flow-num">05</div>
-        <div class="flow-title">Invoke</div>
-        <div class="flow-desc">Agent calls via <code>AppFunctionManager</code>, AIDL IPC</div>
+        <div class="flow-step-left"><div class="flow-num">05</div></div>
+        <div><div class="flow-title">Invoke</div><div class="flow-desc">Agent calls via <code>AppFunctionManager</code>, AIDL IPC</div></div>
       </div>
+      <div class="flow-connector">↓</div>
       <div class="flow-step">
-        <div class="flow-num">06</div>
-        <div class="flow-title">Execute</div>
-        <div class="flow-desc">Tool app's <code>AppFunctionService</code> runs logic, returns result</div>
+        <div class="flow-step-left"><div class="flow-num">06</div></div>
+        <div><div class="flow-title">Execute</div><div class="flow-desc">Tool app's <code>AppFunctionService</code> runs logic, returns result</div></div>
       </div>
     </div>
   </div>

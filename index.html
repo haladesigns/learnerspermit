@@ -188,7 +188,7 @@
   .category {
     display: flex;
     flex-direction: column;
-    max-height: 70vh;
+    max-height: 340px;
   }
   .category-scroll {
     overflow-y: auto;
@@ -217,7 +217,7 @@
   }
   @media (max-width: 480px) {
     #directory { grid-template-columns: 1fr; gap: 3rem 0; }
-    .category { max-height: none; }
+    .category { max-height: 340px; }
   }
 
   /* ── Entrance animations ── */
@@ -344,11 +344,44 @@ function fileIcon(name) {
 }
 
 // ── Render ─────────────────────────────────────────────────────────────────
-function renderManifest(entries) {
-  document.getElementById('loading')?.remove();
-  const dir     = document.getElementById('directory');
+// ── Sort ──────────────────────────────────────────────────────────────────
+function sortEntries(entries) {
+  // Separate folders and files, sort each group, folders first
   const folders = entries.filter(e => e.type === 'folder');
   const files   = entries.filter(e => e.type === 'file');
+
+  function smartSort(a, b) {
+    const aLabel = a.label || a.name || '';
+    const bLabel = b.label || b.name || '';
+    const aNum = parseInt(aLabel, 10);
+    const bNum = parseInt(bLabel, 10);
+    const aIsNum = !isNaN(aNum) && /^\d/.test(aLabel);
+    const bIsNum = !isNaN(bNum) && /^\d/.test(bLabel);
+
+    // Both numeric → sort by number
+    if (aIsNum && bIsNum) return aNum - bNum;
+    // Only a is numeric → a comes first
+    if (aIsNum) return -1;
+    // Only b is numeric → b comes first
+    if (bIsNum) return 1;
+    // Both alpha → case-insensitive alphabetical
+    return aLabel.localeCompare(bLabel, undefined, { sensitivity: 'base' });
+  }
+
+  // Recursively sort children too
+  [...folders, ...files].forEach(e => {
+    if (e.children?.length) e.children = sortEntries(e.children);
+  });
+
+  return [...folders.sort(smartSort), ...files.sort(smartSort)];
+}
+
+function renderManifest(entries) {
+  document.getElementById('loading')?.remove();
+  const sorted  = sortEntries(entries);
+  const dir     = document.getElementById('directory');
+  const folders = sorted.filter(e => e.type === 'folder');
+  const files   = sorted.filter(e => e.type === 'file');
   if (files.length) appendColumn('Root Files', files, dir);
   folders.forEach(f => appendColumn(f.label, f.children, dir));
   // Kick off entrance sequence

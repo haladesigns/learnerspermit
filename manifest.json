@@ -579,12 +579,6 @@
         "name": "godot-level-design.html",
         "label": "Godot Level Design",
         "path": "godot/godot-level-design.html"
-      },
-      {
-        "type": "file",
-        "name": "t",
-        "label": "T",
-        "path": "godot/t"
       }
     ]
   },

@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Big-O Notation — Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 720px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .pos   { color: var(--accent3); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .st { color: var(--accent3); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td.good  { color: var(--accent3); font-weight: 600; }
+  .ref-table td.ok    { color: var(--accent4); font-weight: 600; }
+  .ref-table td.bad   { color: var(--accent2); font-weight: 600; }
+  .ref-table td.muted { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 100px;
+  }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 600; color: var(--accent2); }
+  .stat-val.green { color: var(--accent3); }
+  .stat-val.amber { color: var(--accent4); }
+  .stat-val.blue  { color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Complexity band rows */
+  .complexity-band {
+    display: grid;
+    grid-template-columns: 110px 90px 1fr 200px;
+    gap: 12px;
+    align-items: center;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    font-size: 13px;
+  }
+  .complexity-band:last-child { border-bottom: none; }
+  .complexity-band:hover { background: var(--accent-glow); }
+  .complexity-band.header {
+    background: var(--bg-code);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    cursor: default;
+  }
+  .cb-notation { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; }
+  .cb-name     { color: var(--text-muted); font-size: 12px; }
+  .cb-verdict  {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+    display: inline-block;
+  }
+  .v-excellent { background: rgba(62,207,142,0.15); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .v-good      { background: rgba(79,142,247,0.15); color: var(--accent);  border: 1px solid rgba(79,142,247,0.3); }
+  .v-ok        { background: rgba(247,162,62,0.15); color: var(--accent4); border: 1px solid rgba(247,162,62,0.3); }
+  .v-bad       { background: rgba(224,95,122,0.15); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+  .v-terrible  { background: rgba(180,40,60,0.2);   color: #ff4060;        border: 1px solid rgba(255,64,96,0.3); }
+
+  /* Inline notation pills */
+  .pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .pill-blue   { background: var(--accent-glow);  color: var(--accent);  border: 1px solid rgba(79,142,247,0.3); }
+  .pill-green  { background: var(--accent3-glow); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .pill-amber  { background: rgba(247,162,62,0.12); color: var(--accent4); border: 1px solid rgba(247,162,62,0.3); }
+  .pill-red    { background: var(--accent2-glow); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+
+  /* DS operation grid */
+  .ds-table { width: 100%; border-collapse: collapse; }
+  .ds-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 8px 10px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+  .ds-table th:first-child { text-align: left; }
+  .ds-table th:last-child { border-right: none; }
+  .ds-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    font-size: 12px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .ds-table td:first-child { text-align: left; font-family: 'IBM Plex Mono', monospace; color: var(--accent); border-right: 1px solid var(--border-accent); }
+  .ds-table td:last-child { border-right: none; color: var(--text-muted); font-size: 11px; text-align: left; }
+  .ds-table tr:last-child td { border-bottom: none; }
+  .ds-table tr:hover td { background: var(--accent-glow); }
+
+  /* Copy button */
+  .copy-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    background: var(--tag-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 3px;
+    color: var(--text-muted);
+    cursor: pointer;
+    float: right;
+    margin-top: -2px;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { background: var(--accent-glow); color: var(--accent); border-color: rgba(79,142,247,0.4); }
+
+  /* Mnemonic display */
+  .mnemonic-row {
+    display: flex;
+    gap: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .mnemonic-cell {
+    flex: 1;
+    padding: 10px 8px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+    background: var(--bg-code);
+    transition: background 0.15s;
+  }
+  .mnemonic-cell:last-child { border-right: none; }
+  .mnemonic-cell:hover { background: var(--bg-card); }
+  .mc-letter { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; }
+  .mc-word   { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .mc-class  { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text-dim); margin-top: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  /* Interview level tags */
+  .level {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+    display: inline-block;
+    margin-left: 6px;
+  }
+  .l-junior  { background: rgba(62,207,142,0.12); color: var(--accent3); border: 1px solid rgba(62,207,142,0.25); }
+  .l-mid     { background: rgba(79,142,247,0.12); color: var(--accent);  border: 1px solid rgba(79,142,247,0.25); }
+  .l-senior  { background: rgba(247,162,62,0.12); color: var(--accent4); border: 1px solid rgba(247,162,62,0.25); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Big-O Notation<span> — reference</span></div>
+    <div class="badge">ALGORITHMS</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="complexities">Complexity Classes</button>
+  <button data-tab="rules">Golden Rules</button>
+  <button data-tab="datastructures">Data Structures</button>
+  <button data-tab="space">Space Complexity</button>
+  <button data-tab="interview">Interview Patterns</button>
+  <button data-tab="python">Python Reference</button>
+</nav>
+
+<main>
+
+  <!-- ============================================================ OVERVIEW -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Big-O Notation</h2>
+      <p>Big-O is the <strong>speedometer of scaling</strong> — it measures how an algorithm's execution time (or memory) grows as the input size <strong>n</strong> approaches infinity. It does not measure actual seconds; it measures the <strong>shape of the growth curve</strong>. We always analyze the worst-case scenario.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">The Core Question</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📈</div>
+            <div class="rule-text">Big-O asks: <strong>as n → ∞, how does runtime grow?</strong> This is called asymptotic or "tail" behavior.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text"><strong>Always worst-case.</strong> An unsorted search might finish on element 1, but Big-O assumes you checked all n elements.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✂️</div>
+            <div class="rule-text"><strong>Constants are dropped.</strong> O(2n) = O(n). O(n² + n) = O(n²). We care about growth class, not steepness.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔑</div>
+            <div class="rule-text"><strong>Define n first.</strong> Is n the array length? Number of tree nodes? String length? Without a defined n, Big-O is meaningless.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title yellow">Why It Matters</div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-val green">32</div>
+            <div class="stat-label">Steps for O(log n) on 4 billion items</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">4B</div>
+            <div class="stat-label">Steps for O(n) on 4 billion items</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" style="font-size:16px">16×10¹⁸</div>
+            <div class="stat-label">Steps for O(n²) on 4 billion items</div>
+          </div>
+        </div>
+        <div style="margin-top:14px; font-size:12px; color:var(--text-muted); line-height:1.6">
+          The difference between O(log n) and O(n²) on a 4-billion-item dataset is the difference between an instant result and waiting longer than the age of the universe.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Complexity Hierarchy at a Glance — fastest → slowest</div>
+      <div style="border: 1px solid var(--border); border-radius: 6px; overflow: hidden;">
+        <div class="complexity-band header">
+          <div>Notation</div><div>Name</div><div>Analogy</div><div>Verdict</div>
+        </div>
+        <div class="complexity-band">
+          <div class="cb-notation" style="color:var(--accent3)">O(1)</div>
+          <div class="cb-name">Constant</div>
+          <div style="font-size:12px">Rocket ship / Speed of light. Array index, hash map lookup.</div>
+          <div><span class="cb-verdict v-excellent">EXCELLENT</span></div>
+        </div>
+        <div class="complexity-band">
+          <div class="cb-notation" style="color:var(--accent3)">O(log n)</div>
+          <div class="cb-name">Logarithmic</div>
+          <div style="font-size:12px">Speed of sound. Binary search halves the search space each step.</div>
+          <div><span class="cb-verdict v-excellent">EXCELLENT</span></div>
+        </div>
+        <div class="complexity-band">
+          <div class="cb-notation" style="color:var(--accent3)">O(√n)</div>
+          <div class="cb-name">Square Root</div>
+          <div style="font-size:12px">Rare. Factor-finding (only iterate up to √n, factors come in pairs).</div>
+          <div><span class="cb-verdict v-good">GOOD</span></div>
+        </div>
+        <div class="complexity-band">
+          <div class="cb-notation" style="color:var(--accent)">O(n)</div>
+          <div class="cb-name">Linear</div>
+          <div style="font-size:12px">Supercar. Single pass through all elements. Sum an array.</div>
+          <div><span class="cb-verdict v-good">GOOD</span></div>
+        </div>
+        <div class="complexity-band">
+          <div class="cb-notation" style="color:var(--accent)">O(n log n)</div>
+          <div class="cb-name">Linearithmic</div>
+          <div style="font-size:12px">Efficient sorting gold standard: merge sort, heap sort, quicksort.</div>
+          <div><span class="cb-verdict v-ok">ACCEPTABLE</span></div>
+        </div>
+        <div class="complexity-band">
+          <div class="cb-notation" style="color:var(--accent4)">O(n²)</div>
+          <div class="cb-name">Quadratic</div>
+          <div style="font-size:12px">Classroom handshakes. Nested loops. Naive sorting (bubble, insertion).</div>
+          <div><span class="cb-verdict v-bad">AVOID</span></div>
+        </div>
+        <div class="complexity-band">
+          <div class="cb-notation" style="color:var(--accent4)">O(n³)</div>
+          <div class="cb-name">Cubic</div>
+          <div style="font-size:12px">Three nested loops. Finding all unique triplets, 3D traversal.</div>
+          <div><span class="cb-verdict v-bad">AVOID</span></div>
+        </div>
+        <div class="complexity-band">
+          <div class="cb-notation" style="color:var(--accent2)">O(2ⁿ)</div>
+          <div class="cb-name">Exponential</div>
+          <div style="font-size:12px">Recursive forks. Generating all subsets/combinations. Naïve Fibonacci.</div>
+          <div><span class="cb-verdict v-terrible">TOO SLOW</span></div>
+        </div>
+        <div class="complexity-band">
+          <div class="cb-notation" style="color:var(--accent2)">O(n!)</div>
+          <div class="cb-name">Factorial</div>
+          <div style="font-size:12px">Permutations. Traveling Salesman. The absolute worst common class.</div>
+          <div><span class="cb-verdict v-terrible">DISASTROUS</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Core Mindset</div>
+      <p><em>Don't memorize the shape of code.</em> Understand what your algorithm is actually doing. Two nested loops can be O(n) (sliding window, monotonic stack) if each element is only processed once total. Know the mechanism, not the pattern.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ============================================================ COMPLEXITY CLASSES -->
+  <div class="section" id="tab-complexities">
+
+    <!-- O(1) -->
+    <div class="card green">
+      <div class="card-title green">O(1) — Constant Time</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚡</div>
+          <div class="rule-text"><strong>Definition:</strong> Runtime does not change regardless of input size. A flat line on the chart.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📦</div>
+          <div class="rule-text"><strong>Examples:</strong> <code>arr[i]</code> index lookup, <code>dict[key]</code> hash map get/insert/delete, <code>stack.push()</code> / <code>stack.pop()</code>, grabbing the first item on a list, <code>set.add()</code>.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Caveat:</span> Hash maps are O(1) <em>average case</em>. In worst case (all keys collide), they degrade to O(n). Always note average vs worst.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- O(log n) -->
+    <div class="card green">
+      <div class="card-title green">O(log n) — Logarithmic Time</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">✂️</div>
+          <div class="rule-text"><strong>The halving principle:</strong> Each step eliminates half the remaining search space. Ask: "How many times can I divide n by 2 until I reach 1?" That count is log₂(n).</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔢</div>
+          <div class="rule-text"><strong>The math:</strong> 2ˣ = n → x = log₂(n). For n = 4,000,000,000, log₂(4B) ≈ <strong>32 steps</strong>. This is why O(log n) is practically a flat line at scale.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📦</div>
+          <div class="rule-text"><strong>Examples:</strong> Binary search on a sorted array, balanced BST search/insert/delete, heap push/pop. Requires an <strong>invariant</strong> — a property (like sortedness) that stays true and allows halving.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">BST warning:</span> If the BST becomes skewed (inserting 1, 2, 3, 4... in order), it degenerates to a linked list and BST operations become O(n).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- O(sqrt n) -->
+    <div class="card blue">
+      <div class="card-title">O(√n) — Square Root Time</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🔍</div>
+          <div class="rule-text"><strong>When it appears:</strong> Finding all factors of n. Factors always come in pairs — one ≤ √n and one ≥ √n. So you only need to iterate up to √n to find both elements of every pair.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📦</div>
+          <div class="rule-text"><strong>Example:</strong> <code>for i in range(1, int(n**0.5)+1): if n % i == 0: factors.add(i); factors.add(n//i)</code> — adds both members of each factor pair in one iteration.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- O(n) -->
+    <div class="card blue">
+      <div class="card-title">O(n) — Linear Time</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">➡️</div>
+          <div class="rule-text"><strong>Definition:</strong> Runtime grows 1:1 with input. Single pass through all elements.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📦</div>
+          <div class="rule-text"><strong>Examples:</strong> Sum an array, search unsorted list, iterate a linked list, sliding window algorithms, monotonic stack algorithms.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚡</div>
+          <div class="rule-text"><span class="pos">Heapify exception:</span> Building a heap from scratch (<code>heapify</code>) is O(n) — even though it looks like it should be O(n log n). This is a known optimization. Individually pushing n elements into a heap <em>is</em> O(n log n).</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Array insertion trap:</span> Inserting at the end of an array is O(1). Inserting at the front or middle is O(n) because every subsequent element must shift right.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Nested ≠ n²:</span> Sliding windows and monotonic stacks can have nested loops but still be O(n) — each element is pushed and popped from the stack exactly once, for O(n) total work.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- O(n log n) -->
+    <div class="card yellow">
+      <div class="card-title yellow">O(n log n) — Linearithmic Time</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🔀</div>
+          <div class="rule-text"><strong>The pattern:</strong> Perform O(log n) work for each of the n elements. Visualize merge sort: the array is split in half log n times (log n levels), and at each level, all n elements are merged — so n × log n total operations.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📦</div>
+          <div class="rule-text"><strong>Examples:</strong> Merge sort, quicksort (avg), heap sort, all built-in sort functions (<code>sorted()</code> in Python, <code>.sort()</code> in JS). Assume built-in sorts are O(n log n) in interviews.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">💡</div>
+          <div class="rule-text"><strong>Heap sort = n log n:</strong> Popping the root from a heap is O(log n). Pop n elements → n × log n. Note: building the heap first is only O(n), so O(n) + O(n log n) = O(n log n) total.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- O(n²) -->
+    <div class="card red">
+      <div class="card-title red">O(n²) — Quadratic Time</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🤝</div>
+          <div class="rule-text"><strong>The handshake pattern:</strong> Every element interacts with every other element. 10 students → 100 handshakes; 100 students → 10,000 handshakes.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📦</div>
+          <div class="rule-text"><strong>Examples:</strong> Nested loops over the same array, iterating a 2D grid (n×n), bubble sort, insertion sort, selection sort.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Half-square trap:</span> If you iterate n+(n-1)+(n-2)+...+1, that's a triangle — which is half of an n×n square. n²/2 drops its constant → still O(n²). Don't be fooled.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">💡</div>
+          <div class="rule-text"><strong>N×M variant:</strong> If two arrays have different lengths n and m, nested loops give O(n×m). If sequential (not nested), it's O(n+m). If they're the same array, it's O(n²).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- O(2^n) and O(n!) -->
+    <div class="grid-2">
+      <div class="card red">
+        <div class="card-title red">O(2ⁿ) — Exponential</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🌳</div>
+            <div class="rule-text"><strong>The fork pattern:</strong> Each recursive call creates 2 new calls. A decision tree of height n and 2 branches per node = 2ⁿ total nodes.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📦</div>
+            <div class="rule-text"><strong>Examples:</strong> Naïve recursive Fibonacci, generating all subsets/combinations, backtracking problems.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💡</div>
+            <div class="rule-text"><strong>Generalizes to O(cⁿ):</strong> If each call creates 3 branches, it's O(3ⁿ). The base is the branching factor, the exponent is the tree height.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">O(n!) — Factorial</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔄</div>
+            <div class="rule-text"><strong>The permutation pattern:</strong> The decision tree shrinks at each level. For "CAT": 3 choices → 2 choices → 1 choice = 3×2×1 = 6 permutations = 3!</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📦</div>
+            <div class="rule-text"><strong>Examples:</strong> Generating all permutations, Traveling Salesman Problem (TSP).</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Scale reality:</span> 20! = 2.4×10¹⁸. At 20 elements this is already computationally impossible for most problems. n=30 is unthinkable.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /complexities -->
+
+
+  <!-- ============================================================ GOLDEN RULES -->
+  <div class="section" id="tab-rules">
+
+    <div class="hero">
+      <h2>The 3 Golden Rules of Big-O</h2>
+      <p>These three rules let you simplify any complex expression to its Big-O class in seconds. Master these and you can analyze any algorithm on the fly.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">The 3 Golden Rules</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Drop Constants</strong><br>
+            O(2n), O(50n), and O(n/2) are all just O(n). Constants only change the steepness of a line, not its shape. As n → ∞, a 2× constant becomes irrelevant relative to the growth class.
+            <pre><span class="cm"># All of these are O(n):</span>
+<span class="fn">2n + 5</span>   →  <span class="st">O(n)</span>
+<span class="fn">n/2</span>      →  <span class="st">O(n)</span>
+<span class="fn">100n + 999</span> → <span class="st">O(n)</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Keep Only the Dominant Term</strong><br>
+            In O(n² + n), as n grows large, n becomes insignificant compared to n². Keep only the fastest-growing term. Exception: if the variables are different (n vs m), keep both.
+            <pre><span class="fn">n² + n</span>        →  <span class="st">O(n²)</span>    <span class="cm"># same variable, drop smaller</span>
+<span class="fn">n³ + n² + n</span>    →  <span class="st">O(n³)</span>    <span class="cm"># dominant term wins</span>
+<span class="fn">m + n log n</span>    →  <span class="st">O(m + n log n)</span>  <span class="cm"># different vars: keep both</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Worst-Case Focus</strong><br>
+            Always analyze the worst-case scenario. Even if you find the item on the first try sometimes, Big-O assumes you might have to check every element. Use the worst-case to design systems that won't fail under bad inputs.
+            <span class="note">⚠ An interviewer might also ask about best-case (Ω) and average-case (Θ). Be ready to distinguish: "That's O(n) worst-case, but O(1) best-case if the element is first."</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">3-Step Fast Track: Finding the Tightest Bound</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Remove standalone constants</strong> — strip all fixed numerical additions.
+            <pre><span class="fn">5n² + 10</span>  →  <span class="st">5n²</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Identify the dominant growth term</strong> — keep only the fastest-growing factor.
+            <pre><span class="fn">5n² + n log n</span>  →  <span class="st">5n²</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Discard leading coefficients</strong> — drop all multipliers.
+            <pre><span class="fn">5n²</span>  →  <span class="st">O(n²)</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Addition Rule (Sequential)</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">➕</div>
+            <div class="rule-text">Two loops that run one after the other (not nested): add the complexities, then apply the dominant term rule.</div>
+          </div>
+        </div>
+        <pre><span class="cm"># Loop 1: O(n), then Loop 2: O(m)</span>
+<span class="kw">for</span> i <span class="kw">in</span> range(n): ...  <span class="cm"># O(n)</span>
+<span class="kw">for</span> j <span class="kw">in</span> range(m): ...  <span class="cm"># O(m)</span>
+<span class="cm"># Total: O(n + m)</span>
+<span class="cm"># If n == m: O(2n) → O(n)</span></pre>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Multiplication Rule (Nested)</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">✖️</div>
+            <div class="rule-text">Two loops nested inside each other: multiply the complexities.</div>
+          </div>
+        </div>
+        <pre><span class="cm"># Loop over n, inner loop over m</span>
+<span class="kw">for</span> i <span class="kw">in</span> range(n):
+  <span class="kw">for</span> j <span class="kw">in</span> range(m):
+    ...
+<span class="cm"># Total: O(n × m)</span>
+<span class="cm"># If n == m: O(n²)</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">The Mnemonic — Slowest to Fastest</div>
+      <div style="margin-bottom:12px; font-size:13px; color:var(--text-muted)">
+        <em>"Creativity Learning Scientific Limits New Push Experiments Fascinating"</em>
+      </div>
+      <div class="mnemonic-row">
+        <div class="mnemonic-cell">
+          <div class="mc-letter" style="color:var(--accent3)">C</div>
+          <div class="mc-word">Creativity</div>
+          <div class="mc-class">O(1)</div>
+        </div>
+        <div class="mnemonic-cell">
+          <div class="mc-letter" style="color:var(--accent3)">L</div>
+          <div class="mc-word">Learning</div>
+          <div class="mc-class">O(log n)</div>
+        </div>
+        <div class="mnemonic-cell">
+          <div class="mc-letter" style="color:var(--accent)">S</div>
+          <div class="mc-word">Scientific</div>
+          <div class="mc-class">O(√n)</div>
+        </div>
+        <div class="mnemonic-cell">
+          <div class="mc-letter" style="color:var(--accent)">L</div>
+          <div class="mc-word">Limits</div>
+          <div class="mc-class">O(n)</div>
+        </div>
+        <div class="mnemonic-cell">
+          <div class="mc-letter" style="color:var(--accent4)">N</div>
+          <div class="mc-word">New</div>
+          <div class="mc-class">O(n log n)</div>
+        </div>
+        <div class="mnemonic-cell">
+          <div class="mc-letter" style="color:var(--accent4)">P</div>
+          <div class="mc-word">Push</div>
+          <div class="mc-class">O(n²)</div>
+        </div>
+        <div class="mnemonic-cell">
+          <div class="mc-letter" style="color:var(--accent2)">E</div>
+          <div class="mc-word">Experiments</div>
+          <div class="mc-class">O(2ⁿ)</div>
+        </div>
+        <div class="mnemonic-cell">
+          <div class="mc-letter" style="color:var(--accent2)">F</div>
+          <div class="mc-word">Fascinating</div>
+          <div class="mc-class">O(n!)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠️ Common Proof Technique — Upper Bound Validation</div>
+      <p>To prove f(n) = O(g(n)), find constants <em>c</em> and <em>n₀</em> such that f(n) ≤ c·g(n) for all n ≥ n₀. For 2n+3 = O(n): choose c=5 and n₀=1. Then 2(1)+3 = 5 ≤ 5·1. Valid. To disprove O(1) for 2n+3: assume bounded by constant c. For n > c/2, we have 2n > c, so 2n+3 > c — contradiction.</p>
+    </div>
+
+  </div><!-- /rules -->
+
+
+  <!-- ============================================================ DATA STRUCTURES -->
+  <div class="section" id="tab-datastructures">
+
+    <div class="hero">
+      <h2>Data Structure Operation Profiles</h2>
+      <p>The data structure you choose defines your algorithm's efficiency ceiling. Each structure has a specific "terrain" it was optimized for. Choose based on which operations you need to perform most frequently.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Time Complexity by Operation</div>
+      <table class="ds-table">
+        <thead>
+          <tr>
+            <th>Structure</th>
+            <th>Access</th>
+            <th>Search</th>
+            <th>Insert</th>
+            <th>Delete</th>
+            <th>Worst-Case Trigger</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Array</td>
+            <td class="good">O(1)</td>
+            <td class="ok">O(n)</td>
+            <td class="ok">O(n)*</td>
+            <td class="ok">O(n)*</td>
+            <td>* at front/middle. End operations are O(1). Resizing copies entire array.</td>
+          </tr>
+          <tr>
+            <td>Linked List</td>
+            <td class="ok">O(n)</td>
+            <td class="ok">O(n)</td>
+            <td class="good">O(1)†</td>
+            <td class="good">O(1)†</td>
+            <td>† only if reference already held. Must traverse O(n) to find node first.</td>
+          </tr>
+          <tr>
+            <td>Stack</td>
+            <td class="ok">O(n)</td>
+            <td class="ok">O(n)</td>
+            <td class="good">O(1)</td>
+            <td class="good">O(1)</td>
+            <td>Access only from top (push/pop). Full traversal needed for arbitrary search.</td>
+          </tr>
+          <tr>
+            <td>Queue</td>
+            <td class="ok">O(n)</td>
+            <td class="ok">O(n)</td>
+            <td class="good">O(1)</td>
+            <td class="good">O(1)</td>
+            <td>Enqueue at back, dequeue from front — both O(1). Traversal for search.</td>
+          </tr>
+          <tr>
+            <td>Hash Map</td>
+            <td class="good">O(1) avg</td>
+            <td class="good">O(1) avg</td>
+            <td class="good">O(1) avg</td>
+            <td class="good">O(1) avg</td>
+            <td>Hash collisions → O(n). Chaining or linear probing resolves but degrades perf.</td>
+          </tr>
+          <tr>
+            <td>Hash Set</td>
+            <td class="good">O(1) avg</td>
+            <td class="good">O(1) avg</td>
+            <td class="good">O(1) avg</td>
+            <td class="good">O(1) avg</td>
+            <td>Same as Hash Map. Worst-case O(n) with collisions.</td>
+          </tr>
+          <tr>
+            <td>BST (Balanced)</td>
+            <td class="good">O(log n)</td>
+            <td class="good">O(log n)</td>
+            <td class="good">O(log n)</td>
+            <td class="good">O(log n)</td>
+            <td>Unbalanced/skewed BST degenerates to linked list → all ops become O(n).</td>
+          </tr>
+          <tr>
+            <td>Heap</td>
+            <td class="good">O(1)‡</td>
+            <td class="ok">O(n)</td>
+            <td class="good">O(log n)</td>
+            <td class="good">O(log n)</td>
+            <td>‡ O(1) for root only. Arbitrary search is O(n). Bubble up/down on insert/delete.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Individual structure deep dives -->
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Array — Row of Lockers</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">O(1) index lookup:</span> Contiguous memory means the CPU calculates the exact address and jumps there instantly. Excellent cache locality.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">O(n) front/middle insert:</span> Adding a locker in position 1 forces every other locker to shift right. Worst case: insert at position 0.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">O(n) resizing:</span> When capacity is exceeded, allocate a new larger block and copy every element. This O(n) spike is amortized O(1) over many operations.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💡</div>
+            <div class="rule-text"><strong>Best for:</strong> Random access by index, fixed-size data, cache-friendly iteration.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card blue">
+        <div class="card-title">Linked List — Train Cars</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">O(1) insert/delete (with reference):</span> Just redirect pointers — no shifting. No resizing wall ever.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">O(n) access:</span> No index jumps. You must traverse from the head car-by-car to reach node #50. Poor cache locality (pointer chasing).</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">O(n) to find before insert:</span> Insert itself is O(1), but finding the node to insert next to first requires traversal.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💡</div>
+            <div class="rule-text"><strong>Best for:</strong> Frequent insertions/deletions where you hold references, flexible sizing.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card blue">
+        <div class="card-title">Hash Map — Office Mailroom</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">O(1) average for all ops:</span> Hash function maps key → index. Direct lookup without scanning.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Collision degrades to O(n):</span> If many keys hash to the same bucket, lookups degrade to scanning a list within that bucket.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💡</div>
+            <div class="rule-text"><strong>Resolution:</strong> Chaining (linked list per bucket) or linear probing (find next empty slot). Both restore average O(1) with good load factors.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💡</div>
+            <div class="rule-text"><strong>Space-time trade:</strong> Using a hash map trades O(n) extra space to reduce O(n²) search to O(n). Classic two-sum pattern.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card blue">
+        <div class="card-title">Heap — Pyramid of Boxes</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">O(1) peek at min/max:</span> Root is always the smallest (min heap) or largest (max heap). Instant access to the "most important" item.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💡</div>
+            <div class="rule-text"><strong>O(log n) insert/delete:</strong> New element is added, then "bubbles up" by swapping with parents until heap property is restored. Tree height = log n.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><span class="pos">O(n) heapify:</span> Building a heap from an unsorted array is O(n), not O(n log n). Use <code>heapq.heapify()</code> in Python — not individual pushes.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">No arbitrary search:</span> Heap only guarantees root access. Finding a specific non-root element is O(n).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">Choosing the Right Structure — Decision Guide</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Your Primary Need</th><th>Choose</th><th>Because</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Fast lookup by key/value</td>
+            <td>Hash Map / Hash Set</td>
+            <td class="muted">O(1) average lookup by design</td>
+          </tr>
+          <tr>
+            <td>Fast lookup by index position</td>
+            <td>Array</td>
+            <td class="muted">O(1) index access via contiguous memory</td>
+          </tr>
+          <tr>
+            <td>Sorted data, fast search</td>
+            <td>Balanced BST</td>
+            <td class="muted">O(log n) by halving search space</td>
+          </tr>
+          <tr>
+            <td>Always access min or max</td>
+            <td>Heap / Priority Queue</td>
+            <td class="muted">O(1) peek, O(log n) rebalance</td>
+          </tr>
+          <tr>
+            <td>LIFO / undo / DFS</td>
+            <td>Stack</td>
+            <td class="muted">O(1) push/pop from top</td>
+          </tr>
+          <tr>
+            <td>FIFO / BFS / task queue</td>
+            <td>Queue / Deque</td>
+            <td class="muted">O(1) enqueue/dequeue from ends</td>
+          </tr>
+          <tr>
+            <td>Frequent insert/delete, no random access</td>
+            <td>Linked List</td>
+            <td class="muted">O(1) pointer manipulation (with reference)</td>
+          </tr>
+          <tr>
+            <td>Deduplication / membership test</td>
+            <td>Hash Set</td>
+            <td class="muted">O(1) contains check, stores only unique elements</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /datastructures -->
+
+
+  <!-- ============================================================ SPACE COMPLEXITY -->
+  <div class="section" id="tab-space">
+
+    <div class="hero">
+      <h2>Space Complexity</h2>
+      <p>Space complexity asks the same question as time complexity — but for memory: <strong>how does memory usage grow as n grows?</strong> Same complexity classes apply (O(1), O(n), O(n²), etc.). The key distinction is <strong>auxiliary space</strong> — memory your algorithm allocates beyond the input itself.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Auxiliary vs Total Space</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📐</div>
+            <div class="rule-text"><strong>Total space</strong> = input space + auxiliary space. Big-O usually refers to auxiliary (extra) space.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><strong>O(1) auxiliary:</strong> Algorithm modifies input in-place. No new arrays, no proportional allocations.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💡</div>
+            <div class="rule-text"><strong>O(n) auxiliary:</strong> Creating one new array of size n. Common and often acceptable.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">O(n²) auxiliary:</span> Creating an array of n elements for every n elements in input. Memory exhaustion risk.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">The Trade-off Principle</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">💰</div>
+            <div class="rule-text"><strong>"We can buy memory, but we can't buy time."</strong> In production, it's almost always worth spending extra O(n) space to reduce time from O(n²) to O(n).</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📦</div>
+            <div class="rule-text"><strong>Classic example:</strong> Two-sum problem. Brute force (nested loops) = O(n²) time, O(1) space. Hash map approach = O(n) time, O(n) space. The trade is almost always worth it.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">Interview rule:</span> Only approve O(n) extra space if it yields a measurable reduction in time complexity class (e.g., n² → n).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title red">Recursion — The Invisible Stack</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📚</div>
+          <div class="rule-text"><strong>Every recursive call occupies a stack frame.</strong> The call stack is space you're using even though you didn't explicitly allocate it. Interviewers may ask you to include or exclude recursive stack space — ask first.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🌳</div>
+          <div class="rule-text"><strong>The max-depth rule:</strong> Space complexity of recursion = maximum depth of the call stack at any one time. Not total nodes visited — just how deep the stack gets before backtracking.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">💡</div>
+          <div class="rule-text"><strong>Fibonacci example:</strong> The call tree for fib(n) has O(2ⁿ) total calls (time), but the call stack is only ever n levels deep at maximum → O(n) space. Backtracking removes completed calls before new branches are explored.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Stack overflow risk:</span> If recursion depth is O(n) and n is very large (millions), this is an architectural risk. Consider iteration + explicit stack, or tail recursion where supported.</div>
+        </div>
+      </div>
+      <pre><span class="cm"># Fibonacci recursion tree — fib(4)</span>
+<span class="cm"># fib(4)</span>
+<span class="cm">#   fib(3)          fib(2)</span>
+<span class="cm">#     fib(2) fib(1)   fib(1) fib(0)</span>
+<span class="cm">#</span>
+<span class="cm"># Time:  O(2^n) — exponential total nodes</span>
+<span class="cm"># Space: O(n)   — max stack depth at any moment = n levels</span></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Space Complexity Quick Reference</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Pattern</th><th>Space</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>In-place mutation, no extra vars</td>
+            <td class="good">O(1)</td>
+            <td class="muted">Reverse array in place, two-pointer swap</td>
+          </tr>
+          <tr>
+            <td>Single variable or fixed-size array</td>
+            <td class="good">O(1)</td>
+            <td class="muted">Running sum, counter, max-so-far</td>
+          </tr>
+          <tr>
+            <td>New array/list of size n</td>
+            <td class="ok">O(n)</td>
+            <td class="muted">Copy of input, output list, hash map</td>
+          </tr>
+          <tr>
+            <td>Recursive call stack depth n</td>
+            <td class="ok">O(n)</td>
+            <td class="muted">DFS on a linked list, recursive Fibonacci</td>
+          </tr>
+          <tr>
+            <td>n arrays each of size n</td>
+            <td class="bad">O(n²)</td>
+            <td class="muted">Adjacency matrix for n-node graph</td>
+          </tr>
+          <tr>
+            <td>Recursion with 2-branch tree, depth n</td>
+            <td class="ok">O(n)</td>
+            <td class="muted">Still O(n) — only the active call path is on stack</td>
+          </tr>
+          <tr>
+            <td>Memoization cache for O(n) subproblems</td>
+            <td class="ok">O(n)</td>
+            <td class="muted">DP Fibonacci with memo dict</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✅ Memory Audit Checklist</div>
+      <p>Before submitting: <em>Do you create any new data structures proportional to n?</em> Count each new array, dict, or set. Is your recursion depth bounded? Does your algorithm have any O(n) resizing events (dynamic array overflow)? Can you modify the input in-place instead?</p>
+    </div>
+
+  </div><!-- /space -->
+
+
+  <!-- ============================================================ INTERVIEW PATTERNS -->
+  <div class="section" id="tab-interview">
+
+    <div class="hero">
+      <h2>Interview Patterns & Gotchas</h2>
+      <p>These are the patterns, traps, and signal phrases that come up repeatedly in technical interviews. Know the mechanism behind each, not just the label.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Code Pattern → Complexity Signal</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>What You See in Code</th><th>Likely Complexity</th><th>Key Caveat</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Single loop over n</td>
+            <td class="good">O(n)</td>
+            <td class="muted">Unless each iteration does more work internally</td>
+          </tr>
+          <tr>
+            <td>Nested loops over same array</td>
+            <td class="bad">O(n²)</td>
+            <td class="muted">Exception: sliding window / monotonic stack can be O(n)</td>
+          </tr>
+          <tr>
+            <td>Halving search space each step</td>
+            <td class="good">O(log n)</td>
+            <td class="muted">Requires invariant (sorted data, balanced tree)</td>
+          </tr>
+          <tr>
+            <td>Built-in sort (Python sorted(), .sort())</td>
+            <td class="ok">O(n log n)</td>
+            <td class="muted">Timsort in Python. Always state this assumption.</td>
+          </tr>
+          <tr>
+            <td>Recursive function calling itself twice</td>
+            <td class="bad">O(2ⁿ)</td>
+            <td class="muted">Without memoization. With memo: O(n)</td>
+          </tr>
+          <tr>
+            <td>Generating all subsets</td>
+            <td class="bad">O(2ⁿ)</td>
+            <td class="muted">2 choices per element (include or exclude)</td>
+          </tr>
+          <tr>
+            <td>Generating all permutations</td>
+            <td class="bad">O(n!)</td>
+            <td class="muted">n choices, then n-1, then n-2...</td>
+          </tr>
+          <tr>
+            <td>Three nested loops</td>
+            <td class="bad">O(n³)</td>
+            <td class="muted">Finding all unique triplets in an array</td>
+          </tr>
+          <tr>
+            <td>heapq.heapify(arr)</td>
+            <td class="good">O(n)</td>
+            <td class="muted">Not O(n log n) — this is a known optimization</td>
+          </tr>
+          <tr>
+            <td>Iterating up to √n</td>
+            <td class="ok">O(√n)</td>
+            <td class="muted">Factor-finding pattern</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title red">Critical Gotchas</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Nested ≠ always n²:</span> Sliding window and monotonic stack algorithms have nested loops but are O(n) because each element is pushed/popped at most once. Count total work, not loop nesting.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Array delete/insert at front is O(n):</span> Even though it looks like one operation. Shifting all n elements is the hidden cost.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Hash map worst case is O(n):</span> Always distinguish average O(1) from worst-case O(n) when collisions cause degenerate chains. State "O(1) amortized average."</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Unbalanced BST degenerates to O(n):</span> Insert 1, 2, 3, 4 in order and you get a linked list. BST guarantees only hold when balanced.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Heapify vs n pushes:</span> Building heap from array = O(n). Pushing n items one at a time = O(n log n). The difference matters. Always prefer heapify when you have the full array upfront.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Triangular iteration is still O(n²):</span> n + (n-1) + (n-2)...+1 = n(n+1)/2 = n²/2. The constant ½ drops → O(n²). A triangle is half a square.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Two different input variables:</span> If your algorithm uses array A (size n) and array B (size m), sequential loops = O(n+m). Nested loops = O(n×m). Don't collapse both to "O(n)".</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">3-Tier Interview Competency</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num"><span class="level l-junior">JR</span></div>
+          <div class="step-body">
+            <strong>Junior Level</strong><br>
+            Identifies simple O(n) and O(n²) loops. Guesses complexity based on loop count. Misses hidden costs like array resizing, recursive stack depth, or the heapify distinction.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num"><span class="level l-mid">MID</span></div>
+          <div class="step-body">
+            <strong>Mid Level</strong><br>
+            Accurately identifies O(log n) and O(n log n). Distinguishes average vs worst-case hash map performance. Accounts for auxiliary space. Knows heapify is O(n).
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num"><span class="level l-senior">SR</span></div>
+          <div class="step-body">
+            <strong>Senior Level</strong><br>
+            Always finds tightest bound. Uses amortized analysis for complex loops (sliding window, monotonic stack). Understands recursive stack impacts via tree height. Justifies trade-offs with the limit criterion: f(n) ≤ C × g(n).
+            <span class="tip">💡 Senior signal: spontaneously states best/average/worst separately for each structure used, and defines n explicitly at the start.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Say This in Interviews</div>
+        <div class="decision-item"><span class="di">✅</span>Define n first: "Let n be the length of the input array."</div>
+        <div class="decision-item"><span class="di">✅</span>State average vs worst: "O(1) average, O(n) worst for hash map."</div>
+        <div class="decision-item"><span class="di">✅</span>Justify structure choice: "I chose a hash map for O(1) lookup, accepting O(n) extra space."</div>
+        <div class="decision-item"><span class="di">✅</span>Distinguish time and space: state both separately.</div>
+        <div class="decision-item"><span class="di">✅</span>Flag the heapify optimization: "heapify is O(n), not O(n log n)."</div>
+        <div class="decision-item"><span class="di">✅</span>Note when nested loops are still O(n): "Each element is pushed/popped at most once."</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Avoid These Mistakes</div>
+        <div class="decision-item"><span class="di">❌</span>Guessing "O(n²) because there are two loops" without analyzing what each loop does.</div>
+        <div class="decision-item"><span class="di">❌</span>Calling all hash map ops "O(1)" without noting the worst-case caveat.</div>
+        <div class="decision-item"><span class="di">❌</span>Using "n" for all inputs when you have distinct arrays of different sizes.</div>
+        <div class="decision-item"><span class="di">❌</span>Forgetting that array insert at front is O(n), not O(1).</div>
+        <div class="decision-item"><span class="di">❌</span>Claiming BST is always O(log n) without noting the balanced requirement.</div>
+        <div class="decision-item"><span class="di">❌</span>Ignoring call stack space in recursive solutions.</div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">🎯 Interview Opening Move</div>
+      <p>When given a problem, immediately state the time and space complexities of your proposed solution before writing a line of code. It shows you're thinking about scalability from the start — and if your complexity claim hints at a known pattern (e.g., O(log n) suggests binary search), it can guide your implementation.</p>
+    </div>
+
+  </div><!-- /interview -->
+
+
+  <!-- ============================================================ PYTHON REFERENCE -->
+  <div class="section" id="tab-python">
+
+    <div class="hero">
+      <h2>Python — Big-O Quick Reference</h2>
+      <p>Python-specific complexity for the most commonly used built-ins and data structures. Timsort is Python's default sort (hybrid merge+insertion). <code>deque</code> is the right tool when you need O(1) operations at both ends.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">list (dynamic array)</div>
+        <table class="ref-table">
+          <thead><tr><th>Operation</th><th>Time</th></tr></thead>
+          <tbody>
+            <tr><td>lst[i]</td><td class="good">O(1)</td></tr>
+            <tr><td>lst.append(x)</td><td class="good">O(1) amort.</td></tr>
+            <tr><td>lst.pop()</td><td class="good">O(1)</td></tr>
+            <tr><td>lst.insert(0, x)</td><td class="bad">O(n)</td></tr>
+            <tr><td>lst.pop(0)</td><td class="bad">O(n)</td></tr>
+            <tr><td>x in lst</td><td class="bad">O(n)</td></tr>
+            <tr><td>lst.sort() / sorted(lst)</td><td class="ok">O(n log n)</td></tr>
+            <tr><td>len(lst)</td><td class="good">O(1)</td></tr>
+            <tr><td>lst[a:b] (slice)</td><td class="ok">O(k)*</td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">* k = length of slice. Slicing copies k elements.</div>
+      </div>
+
+      <div class="card blue">
+        <div class="card-title">dict (hash map)</div>
+        <table class="ref-table">
+          <thead><tr><th>Operation</th><th>Time</th></tr></thead>
+          <tbody>
+            <tr><td>d[key]</td><td class="good">O(1) avg</td></tr>
+            <tr><td>d[key] = val</td><td class="good">O(1) avg</td></tr>
+            <tr><td>del d[key]</td><td class="good">O(1) avg</td></tr>
+            <tr><td>key in d</td><td class="good">O(1) avg</td></tr>
+            <tr><td>val in d.values()</td><td class="bad">O(n)</td></tr>
+            <tr><td>len(d)</td><td class="good">O(1)</td></tr>
+            <tr><td>d.get(key, default)</td><td class="good">O(1) avg</td></tr>
+            <tr><td>d.update(other)</td><td class="ok">O(k)*</td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">* k = size of other dict. Value lookup is O(n) — dicts optimize for key, not value search.</div>
+      </div>
+
+      <div class="card blue">
+        <div class="card-title">set (hash set)</div>
+        <table class="ref-table">
+          <thead><tr><th>Operation</th><th>Time</th></tr></thead>
+          <tbody>
+            <tr><td>x in s</td><td class="good">O(1) avg</td></tr>
+            <tr><td>s.add(x)</td><td class="good">O(1) avg</td></tr>
+            <tr><td>s.remove(x)</td><td class="good">O(1) avg</td></tr>
+            <tr><td>s.discard(x)</td><td class="good">O(1) avg</td></tr>
+            <tr><td>s1 & s2 (intersection)</td><td class="ok">O(min(n,m))</td></tr>
+            <tr><td>s1 | s2 (union)</td><td class="ok">O(n+m)</td></tr>
+            <tr><td>s1 - s2 (difference)</td><td class="ok">O(n)</td></tr>
+            <tr><td>len(s)</td><td class="good">O(1)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card blue">
+        <div class="card-title">collections.deque</div>
+        <table class="ref-table">
+          <thead><tr><th>Operation</th><th>Time</th></tr></thead>
+          <tbody>
+            <tr><td>dq.append(x)</td><td class="good">O(1)</td></tr>
+            <tr><td>dq.appendleft(x)</td><td class="good">O(1)</td></tr>
+            <tr><td>dq.pop()</td><td class="good">O(1)</td></tr>
+            <tr><td>dq.popleft()</td><td class="good">O(1)</td></tr>
+            <tr><td>dq[i] (arbitrary)</td><td class="bad">O(n)</td></tr>
+            <tr><td>x in dq</td><td class="bad">O(n)</td></tr>
+            <tr><td>len(dq)</td><td class="good">O(1)</td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">Use deque instead of list when you need O(1) operations at both ends (BFS queues, sliding windows).</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">heapq (min-heap)</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚡</div>
+          <div class="rule-text"><code>heapq.heapify(lst)</code> — <span class="pos">O(n)</span> — Converts an existing list to a heap in-place. This is the fast path. Do not loop and heappush.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">➕</div>
+          <div class="rule-text"><code>heapq.heappush(h, x)</code> — <span class="pos">O(log n)</span> — Push item and bubble up to restore heap property.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">➖</div>
+          <div class="rule-text"><code>heapq.heappop(h)</code> — <span class="pos">O(log n)</span> — Remove and return smallest item. Bubble down to restore.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">👀</div>
+          <div class="rule-text"><code>h[0]</code> — <span class="pos">O(1)</span> — Peek at smallest element without removing it.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Max-heap trick:</span> Python only has min-heap. For max-heap, negate values on push: <code>heapq.heappush(h, -val)</code>, then negate on pop: <code>-heapq.heappop(h)</code>.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">Common Python Patterns + Their Complexity</div>
+      <pre><button class="copy-btn" onclick="copyCode(this)">COPY</button><span class="cm"># ─── TWO SUM — O(n) time, O(n) space ───────────────────────────</span>
+<span class="kw">def</span> <span class="fn">two_sum</span>(nums, target):
+    seen = {}                          <span class="cm"># hash map: O(n) space</span>
+    <span class="kw">for</span> i, n <span class="kw">in</span> enumerate(nums):      <span class="cm"># single pass: O(n) time</span>
+        diff = target - n
+        <span class="kw">if</span> diff <span class="kw">in</span> seen:               <span class="cm"># O(1) lookup</span>
+            <span class="kw">return</span> [seen[diff], i]
+        seen[n] = i
+
+<span class="cm"># ─── BINARY SEARCH — O(log n) time, O(1) space ─────────────────</span>
+<span class="kw">def</span> <span class="fn">binary_search</span>(arr, target):
+    lo, hi = <span class="li">0</span>, len(arr) - <span class="li">1</span>
+    <span class="kw">while</span> lo <= hi:                    <span class="cm"># halves search space: O(log n)</span>
+        mid = (lo + hi) // <span class="li">2</span>
+        <span class="kw">if</span> arr[mid] == target: <span class="kw">return</span> mid
+        <span class="kw">elif</span> arr[mid] < target: lo = mid + <span class="li">1</span>
+        <span class="kw">else</span>: hi = mid - <span class="li">1</span>
+    <span class="kw">return</span> -<span class="li">1</span>
+
+<span class="cm"># ─── SLIDING WINDOW — O(n) time, O(1) space ────────────────────</span>
+<span class="cm"># Nested loop that is still O(n): each element added/removed once</span>
+<span class="kw">def</span> <span class="fn">max_sum_subarray</span>(nums, k):
+    window = <span class="fn">sum</span>(nums[:k])
+    best = window
+    <span class="kw">for</span> i <span class="kw">in</span> range(k, len(nums)):     <span class="cm"># O(n) total</span>
+        window += nums[i] - nums[i-k]
+        best = <span class="fn">max</span>(best, window)
+    <span class="kw">return</span> best
+
+<span class="cm"># ─── HEAPIFY — O(n) vs n pushes O(n log n) ─────────────────────</span>
+<span class="kw">import</span> heapq
+nums = [<span class="li">3</span>, <span class="li">1</span>, <span class="li">4</span>, <span class="li">1</span>, <span class="li">5</span>, <span class="li">9</span>]
+
+<span class="cm"># FAST: heapify existing list in-place — O(n)</span>
+heapq.<span class="fn">heapify</span>(nums)
+
+<span class="cm"># SLOW: push one at a time — O(n log n)</span>
+h = []
+<span class="kw">for</span> n <span class="kw">in</span> nums:
+    heapq.<span class="fn">heappush</span>(h, n)           <span class="cm"># each push: O(log n)</span></pre>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✅ Python-Specific Rules</div>
+      <p>Use <em>deque</em> not list when doing queue operations (BFS). Use <em>set</em> for membership tests, not list. Use <em>heapq.heapify()</em> not a loop of heappush. <em>sorted()</em> and <em>.sort()</em> are both O(n log n) Timsort. Value lookup in dict is O(n) — only key lookup is O(1).</p>
+    </div>
+
+  </div><!-- /python -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+
+  function copyCode(btn) {
+    const pre = btn.parentElement;
+    const text = pre.innerText.replace('COPY', '').trim();
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'COPIED';
+      setTimeout(() => btn.textContent = 'COPY', 1500);
+    });
+  }
+</script>
+</body>
+</html>

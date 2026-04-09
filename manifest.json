@@ -567,12 +567,6 @@
         "name": "dot_product_cosine_full_journey.html",
         "label": "Dot Product Cosine Full Journey",
         "path": "neural-nets/dot_product_cosine_full_journey.html"
-      },
-      {
-        "type": "file",
-        "name": "t.txt",
-        "label": "T",
-        "path": "neural-nets/t.txt"
       }
     ]
   },

@@ -1,6 +1,19 @@
 [
   {
     "type": "folder",
+    "name": "Android",
+    "label": "Android",
+    "children": [
+      {
+        "type": "file",
+        "name": "readme.txt",
+        "label": "Readme",
+        "path": "Android/readme.txt"
+      }
+    ]
+  },
+  {
+    "type": "folder",
     "name": "cc_masterclass_modules",
     "label": "Cc Masterclass Modules",
     "children": [

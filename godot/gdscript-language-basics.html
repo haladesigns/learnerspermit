@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDScript Language Basics — Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; color: var(--accent); letter-spacing: -0.02em; }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em; }
+  .py-badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; background: rgba(62,207,142,0.1); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); letter-spacing: 0.05em; }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle { width: 44px; height: 24px; background: var(--toggle-bg); border: 1px solid var(--border-accent); border-radius: 12px; cursor: pointer; position: relative; appearance: none; outline: none; transition: background 0.3s; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: var(--accent); border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s; }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; overflow-x: auto; }
+  nav button { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.2s; letter-spacing: 0.04em; text-transform: uppercase; }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; box-shadow: var(--shadow); transition: background 0.3s, border 0.3s; }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero { background: var(--bg-card); border: 1px solid var(--border-accent); border-left: 3px solid var(--accent); border-radius: 8px; padding: 24px; box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow); }
+  .hero h2 { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em; }
+  .hero p { color: var(--text); font-size: 15px; max-width: 780px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row { display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
+
+  pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.8; color: var(--text); margin-top: 10px; }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent); }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .str { color: var(--accent3); }
+  .num { color: var(--accent4); }
+  .ty { color: #b48ead; }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); text-align: left; padding: 8px 12px; background: var(--bg-code); border-bottom: 1px solid var(--border); }
+  .ref-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); white-space: nowrap; }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .callout { background: var(--bg-code); border: 1px solid var(--border-accent); border-radius: 6px; padding: 16px 20px; }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header { padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item { padding: 9px 16px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
+
+  /* Python comparison pill */
+  .py-compare { display: inline-flex; align-items: center; gap: 5px; background: rgba(62,207,142,0.08); border: 1px solid rgba(62,207,142,0.2); border-radius: 4px; padding: 2px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--accent3); margin-bottom: 10px; }
+
+  /* Two-column code compare */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+  @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+  .compare-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 6px 12px; border-radius: 4px 4px 0 0; margin-bottom: 0; }
+  .compare-label.py  { background: rgba(62,207,142,0.12); color: var(--accent3); }
+  .compare-label.gd  { background: rgba(79,142,247,0.12); color: var(--accent); }
+  .compare-grid pre  { margin-top: 0; border-radius: 0 0 6px 6px; }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * { animation: fadeUp 0.25s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* copy button */
+  .code-wrap { position: relative; margin-top: 10px; }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 3px 8px; background: var(--tag-bg); border: 1px solid var(--border-accent); border-radius: 4px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .code-wrap pre { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">GDScript<span> — Language Basics</span></div>
+    <div class="badge">GODOT 4</div>
+    <div class="py-badge">🐍 Python-friendly</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="variables">Variables & Types</button>
+  <button data-tab="functions">Functions</button>
+  <button data-tab="control">Control Flow</button>
+  <button data-tab="collections">Arrays & Dicts</button>
+  <button data-tab="classes">Classes & Signals</button>
+  <button data-tab="gotchas">Python → GDScript</button>
+</nav>
+
+<main>
+
+  <!-- ====== OVERVIEW ====== -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>GDScript — Language Fundamentals</h2>
+      <p>GDScript is Godot's built-in scripting language: Python-like syntax, indentation-based, dynamically typed by default with <strong>optional static typing</strong>. If you know Python, you already know ~70% of GDScript — the remaining 30% is engine integration (Nodes, Signals, lifecycle functions). This tool covers the language layer; engine/scene concepts get their own tool.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">The Four Foundations</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">1️⃣</div>
+            <div class="rule-text"><strong>Literal values & variables</strong> — how data is stored and named. The building blocks of every program.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">2️⃣</div>
+            <div class="rule-text"><strong>Constants</strong> — values that never change at runtime; prefer <code>const</code> over <code>var</code> when the value is fixed.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">3️⃣</div>
+            <div class="rule-text"><strong>Control flow</strong> — <code>if</code>, <code>elif</code>, <code>else</code>, <code>match</code>, <code>for</code>, <code>while</code>. Same logic, different syntax.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">4️⃣</div>
+            <div class="rule-text"><strong>Functions & classes</strong> — how you organise and reuse code. Master these and switching languages is just memorising syntax.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Quick-Start: Hello World</div>
+        <div class="code-wrap">
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+          <pre><span class="kw">extends</span> <span class="ty">Node</span>
+
+<span class="cm"># Called when the node enters the scene tree</span>
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    <span class="fn">print</span>(<span class="str">"Hello, Godot!"</span>)
+
+    <span class="cm"># Variables — dynamic (Python-style)</span>
+    <span class="kw">var</span> score = <span class="num">0</span>
+
+    <span class="cm"># Variables — static (preferred in Godot 4)</span>
+    <span class="kw">var</span> health: <span class="ty">int</span> = <span class="num">100</span>
+    <span class="kw">var</span> speed := <span class="num">5.0</span>   <span class="cm"># := infers type</span>
+
+    <span class="cm"># Constant</span>
+    <span class="kw">const</span> MAX_HEALTH = <span class="num">100</span>
+
+    <span class="fn">print</span>(<span class="str">"health: %d  speed: %.1f"</span> % [health, speed])</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Lifecycle Functions — Execution Order</div>
+      <table class="ref-table">
+        <thead><tr><th>Function</th><th>When it runs</th><th>Common use</th></tr></thead>
+        <tbody>
+          <tr><td>_init()</td><td>When the script object is created (before scene)</td><td>Set default property values; avoid node access here</td></tr>
+          <tr><td>_enter_tree()</td><td>Node added to the scene tree</td><td>Rarely needed directly</td></tr>
+          <tr><td>_ready()</td><td>Node + all children fully initialised</td><td>⭐ Your main setup function — safe to access child nodes</td></tr>
+          <tr><td>_process(delta)</td><td>Every rendered frame</td><td>Visual updates, input polling, non-physics movement</td></tr>
+          <tr><td>_physics_process(delta)</td><td>Every physics frame (fixed rate, default 60 Hz)</td><td>⭐ Movement, collision — use this for consistent physics</td></tr>
+          <tr><td>_input(event)</td><td>When an input event fires</td><td>Keyboard / mouse / gamepad events</td></tr>
+          <tr><td>_exit_tree()</td><td>Node removed from tree</td><td>Cleanup, disconnect signals</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Key Principle from the Series</div>
+      <p>Master these four foundations — <em>variables, constants, control flow, functions/classes</em> — and switching to any other language (C#, C++, Python, Lua) is just memorising new syntax. The concepts transfer 1:1.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ====== VARIABLES & TYPES ====== -->
+  <div class="section" id="tab-variables">
+
+    <div class="card blue">
+      <div class="card-title">Variable Declaration — Three Styles</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cm"># 1. Dynamic (no type) — flexible, less safe</span>
+<span class="kw">var</span> score = <span class="num">0</span>
+<span class="kw">var</span> player_name = <span class="str">"Hala"</span>
+
+<span class="cm"># 2. Explicit static type — safest, best autocomplete</span>
+<span class="kw">var</span> health: <span class="ty">int</span> = <span class="num">100</span>
+<span class="kw">var</span> speed: <span class="ty">float</span> = <span class="num">5.0</span>
+<span class="kw">var</span> is_alive: <span class="ty">bool</span> = <span class="kw">true</span>
+<span class="kw">var</span> name: <span class="ty">String</span> = <span class="str">"Hero"</span>
+
+<span class="cm"># 3. Inferred static type  (:=)  — concise + safe</span>
+<span class="kw">var</span> damage := <span class="num">25</span>       <span class="cm"># inferred as int</span>
+<span class="kw">var</span> gravity := <span class="num">9.8</span>    <span class="cm"># inferred as float</span>
+<span class="kw">var</span> tag := <span class="str">"enemy"</span>   <span class="cm"># inferred as String</span>
+
+<span class="cm"># Constants — SCREAMING_SNAKE by convention</span>
+<span class="kw">const</span> MAX_HEALTH = <span class="num">100</span>
+<span class="kw">const</span> GRAVITY: <span class="ty">float</span> = <span class="num">9.8</span>
+
+<span class="cm"># @onready — waits until _ready() before assigning</span>
+<span class="cm"># (safe way to grab child nodes)</span>
+<span class="kw">@onready</span> <span class="kw">var</span> sprite: <span class="ty">Sprite2D</span> = <span class="fn">$Sprite2D</span></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Built-in Types Quick Reference</div>
+      <table class="ref-table">
+        <thead><tr><th>Type</th><th>Example value</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>int</td><td>42, -7, 0xFF</td><td>64-bit integer; hex (0x), binary (0b) literals supported</td></tr>
+          <tr><td>float</td><td>3.14, 9.8, 1e6</td><td>64-bit; always write decimal point or use float() cast</td></tr>
+          <tr><td>bool</td><td>true, false</td><td>Lowercase — unlike Python's True/False</td></tr>
+          <tr><td>String</td><td>"hello", 'world'</td><td>UTF-8; supports format strings with %</td></tr>
+          <tr><td>Vector2</td><td>Vector2(1.0, 0.0)</td><td>2D position/direction; has .x .y; use for 2D games</td></tr>
+          <tr><td>Vector3</td><td>Vector3(0, 1, 0)</td><td>3D position/direction; has .x .y .z</td></tr>
+          <tr><td>Color</td><td>Color(1, 0, 0, 1)</td><td>RGBA 0.0–1.0; or Color.RED, Color.BLUE etc.</td></tr>
+          <tr><td>Array</td><td>[1, "two", true]</td><td>Mixed types by default; use Array[int] for typed</td></tr>
+          <tr><td>Dictionary</td><td>{"key": "value"}</td><td>Like Python dict; keys can be any type</td></tr>
+          <tr><td>Variant</td><td>(any)</td><td>Dynamic — equivalent to no type annotation at all</td></tr>
+          <tr><td>null</td><td>null</td><td>Absence of value; like Python's None</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card green">
+        <div class="card-title green">Static Typing — Why Bother</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><span class="pos">Up to 2× faster</span> — statically typed GDScript compiles to tighter bytecode than dynamic.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔍</div>
+            <div class="rule-text"><span class="pos">Better autocomplete</span> — the editor knows what methods are available on a typed variable.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🐛</div>
+            <div class="rule-text"><span class="pos">Catch bugs early</span> — type mismatches flagged at edit-time, not at runtime mid-game.</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted)">
+          Typing is <em>gradual</em> — mix typed and untyped freely. Start dynamic, add types where it matters.
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Export & @onready</div>
+        <div class="code-wrap">
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+          <pre><span class="cm"># @export — visible in Godot Inspector</span>
+<span class="kw">@export</span> <span class="kw">var</span> speed: <span class="ty">float</span> = <span class="num">200.0</span>
+<span class="kw">@export</span> <span class="kw">var</span> max_health: <span class="ty">int</span> = <span class="num">100</span>
+<span class="kw">@export</span> <span class="kw">var</span> player_name: <span class="ty">String</span> = <span class="str">"Hero"</span>
+
+<span class="cm"># @onready — assigned after _ready() fires</span>
+<span class="cm"># $ is shorthand for get_node()</span>
+<span class="kw">@onready</span> <span class="kw">var</span> label := <span class="fn">$Label</span>
+<span class="kw">@onready</span> <span class="kw">var</span> timer: <span class="ty">Timer</span> = <span class="fn">$Timer</span>
+
+<span class="cm"># Static variables — belong to class, not instance</span>
+<span class="kw">static</span> <span class="kw">var</span> instance_count: <span class="ty">int</span> = <span class="num">0</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">String Formatting</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="kw">var</span> name := <span class="str">"Hala"</span>
+<span class="kw">var</span> score := <span class="num">9500</span>
+
+<span class="cm"># % format (similar to Python %)</span>
+<span class="fn">print</span>(<span class="str">"Player: %s  Score: %d"</span> % [name, score])
+
+<span class="cm"># String concatenation</span>
+<span class="fn">print</span>(<span class="str">"Player: "</span> + name)
+
+<span class="cm"># str() conversion</span>
+<span class="fn">print</span>(<span class="str">"Score: "</span> + <span class="fn">str</span>(score))
+
+<span class="cm"># Multiline strings (triple-quote)</span>
+<span class="kw">var</span> lore = <span class="str">"""
+    In the beginning there was Godot,
+    and it was free and open source.
+"""</span></pre>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠️ Gotcha: int ÷ int = int</div>
+      <p>In GDScript (like Python 2 and C): <em>5 / 2 == 2</em>, not 2.5. To get float division, make at least one operand a float: <em>5.0 / 2</em> or <em>float(5) / 2</em>.</p>
+    </div>
+
+  </div><!-- /variables -->
+
+
+  <!-- ====== FUNCTIONS ====== -->
+  <div class="section" id="tab-functions">
+
+    <div class="card blue">
+      <div class="card-title">Function Anatomy</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cm"># Basic function — no types</span>
+<span class="kw">func</span> <span class="fn">greet</span>(player_name):
+    <span class="fn">print</span>(<span class="str">"Hello, "</span> + player_name)
+
+<span class="cm"># Typed function — preferred in Godot 4</span>
+<span class="cm"># param types after :   return type after -></span>
+<span class="kw">func</span> <span class="fn">calculate_damage</span>(base: <span class="ty">int</span>, multiplier: <span class="ty">float</span>) -> <span class="ty">int</span>:
+    <span class="kw">return</span> <span class="ty">int</span>(base * multiplier)
+
+<span class="cm"># Default parameter values</span>
+<span class="kw">func</span> <span class="fn">heal</span>(amount: <span class="ty">int</span> = <span class="num">10</span>) -> <span class="ty">void</span>:
+    health += amount
+
+<span class="cm"># void = no return value</span>
+<span class="kw">func</span> <span class="fn">reset</span>() -> <span class="ty">void</span>:
+    health = MAX_HEALTH
+    score = <span class="num">0</span>
+
+<span class="cm"># Calling functions</span>
+<span class="fn">greet</span>(<span class="str">"Hala"</span>)
+<span class="kw">var</span> dmg := <span class="fn">calculate_damage</span>(<span class="num">50</span>, <span class="num">1.5</span>)  <span class="cm"># returns 75</span>
+<span class="fn">heal</span>()            <span class="cm"># uses default (10)</span>
+<span class="fn">heal</span>(<span class="num">25</span>)          <span class="cm"># overrides default</span></pre>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Lambda Functions</div>
+        <div class="code-wrap">
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+          <pre><span class="cm"># Lambda — anonymous function stored in a variable</span>
+<span class="kw">var</span> double = <span class="kw">func</span>(x: <span class="ty">int</span>) -> <span class="ty">int</span>: <span class="kw">return</span> x * <span class="num">2</span>
+
+<span class="cm"># Call with .call()</span>
+<span class="fn">print</span>(double.<span class="fn">call</span>(<span class="num">7</span>))   <span class="cm"># 14</span>
+
+<span class="cm"># Common use: passing to array methods</span>
+<span class="kw">var</span> nums = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+<span class="kw">var</span> evens = nums.<span class="fn">filter</span>(<span class="kw">func</span>(n): <span class="kw">return</span> n % <span class="num">2</span> == <span class="num">0</span>)
+<span class="cm"># evens = [2, 4]</span>
+
+<span class="cm"># Lambdas capture surrounding scope</span>
+<span class="kw">var</span> multiplier = <span class="num">3</span>
+<span class="kw">var</span> times_three = <span class="kw">func</span>(x): <span class="kw">return</span> x * multiplier</pre>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Coroutines — await</div>
+        <div class="code-wrap">
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+          <pre><span class="cm"># await pauses execution until a signal fires</span>
+<span class="cm"># or a coroutine completes</span>
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    <span class="fn">print</span>(<span class="str">"waiting 2 seconds..."</span>)
+    <span class="kw">await</span> <span class="fn">get_tree</span>().<span class="fn">create_timer</span>(<span class="num">2.0</span>).timeout
+    <span class="fn">print</span>(<span class="str">"done!"</span>)
+
+    <span class="cm"># await a signal from another node</span>
+    <span class="kw">await</span> <span class="fn">$AnimationPlayer</span>.animation_finished
+
+    <span class="cm"># await another coroutine</span>
+    <span class="kw">await</span> <span class="fn">some_async_function</span>()</pre>
+        </div>
+        <div style="margin-top:8px; font-size:12px; color:var(--text-muted)">⚠️ A function using <code>await</code> automatically becomes a coroutine — its caller gets a signal back.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Function Best Practices</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">Use typed signatures</span> — <code>func shoot(target: Node2D, damage: int) -> void</code> catches misuse at edit time and documents intent.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">Guard clauses at the top</span> — return early if preconditions fail rather than nesting everything in an if block.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">Single return at the end</span> (GDQuest style) — avoids hard-to-track return paths in the middle of functions.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">❌</div>
+          <div class="rule-text"><span class="neg">Don't override native methods</span> — Godot 4 warns <code>NATIVE_METHOD_OVERRIDE</code> and treats it as an error. Only override virtual methods (prefixed <code>_</code>).</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><strong>pass keyword</strong> — placeholder for empty function bodies, just like Python.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /functions -->
+
+
+  <!-- ====== CONTROL FLOW ====== -->
+  <div class="section" id="tab-control">
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">if / elif / else</div>
+        <div class="code-wrap">
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+          <pre><span class="kw">var</span> health := <span class="num">45</span>
+
+<span class="kw">if</span> health <= <span class="num">0</span>:
+    <span class="fn">print</span>(<span class="str">"dead"</span>)
+<span class="kw">elif</span> health < <span class="num">25</span>:
+    <span class="fn">print</span>(<span class="str">"critical"</span>)
+<span class="kw">elif</span> health < <span class="num">50</span>:
+    <span class="fn">print</span>(<span class="str">"low"</span>)          <span class="cm"># ← this runs</span>
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="str">"ok"</span>)
+
+<span class="cm"># Ternary (inline if)</span>
+<span class="kw">var</span> state = <span class="str">"alive"</span> <span class="kw">if</span> health > <span class="num">0</span> <span class="kw">else</span> <span class="str">"dead"</span>
+
+<span class="cm"># Boolean operators — spelled out like Python</span>
+<span class="kw">if</span> is_alive <span class="kw">and</span> health > <span class="num">10</span>:
+    <span class="fn">shoot</span>()
+<span class="kw">if</span> <span class="kw">not</span> is_alive <span class="kw">or</span> health == <span class="num">0</span>:
+    <span class="fn">die</span>()</pre>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">match — GDScript's switch</div>
+        <div class="code-wrap">
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+          <pre><span class="kw">var</span> state := <span class="str">"idle"</span>
+
+<span class="cm"># match is more powerful than switch</span>
+<span class="kw">match</span> state:
+    <span class="str">"idle"</span>:
+        <span class="fn">play_idle_anim</span>()
+    <span class="str">"run"</span>:
+        <span class="fn">play_run_anim</span>()
+    <span class="str">"jump"</span>, <span class="str">"fall"</span>:   <span class="cm"># multiple values</span>
+        <span class="fn">play_air_anim</span>()
+    _:                  <span class="cm"># default (wildcard)</span>
+        <span class="fn">print</span>(<span class="str">"unknown state"</span>)
+
+<span class="cm"># match with type check</span>
+<span class="kw">match</span> typeof(value):
+    <span class="ty">TYPE_INT</span>:    <span class="fn">print</span>(<span class="str">"integer"</span>)
+    <span class="ty">TYPE_STRING</span>: <span class="fn">print</span>(<span class="str">"string"</span>)
+    _:           <span class="fn">print</span>(<span class="str">"other"</span>)</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">for loops</div>
+        <div class="code-wrap">
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+          <pre><span class="cm"># range(n) — 0 to n-1</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">5</span>:            <span class="cm"># shorthand</span>
+    <span class="fn">print</span>(i)            <span class="cm"># 0 1 2 3 4</span>
+
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">5</span>):     <span class="cm"># same as above</span>
+    <span class="fn">print</span>(i)
+
+<span class="cm"># range(start, stop, step)</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">2</span>, <span class="num">10</span>, <span class="num">2</span>):   <span class="cm"># 2 4 6 8</span>
+    <span class="fn">print</span>(i)
+
+<span class="cm"># count down</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">10</span>, <span class="num">0</span>, -<span class="num">1</span>):
+    <span class="fn">print</span>(i)            <span class="cm"># 10 9 8 ... 1</span>
+
+<span class="cm"># iterate array</span>
+<span class="kw">var</span> enemies = [<span class="str">"goblin"</span>, <span class="str">"troll"</span>, <span class="str">"boss"</span>]
+<span class="kw">for</span> enemy <span class="kw">in</span> enemies:
+    <span class="fn">print</span>(enemy)
+
+<span class="cm"># break and continue work exactly like Python</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="num">10</span>:
+    <span class="kw">if</span> i == <span class="num">3</span>: <span class="kw">continue</span>   <span class="cm"># skip 3</span>
+    <span class="kw">if</span> i == <span class="num">7</span>: <span class="kw">break</span>      <span class="cm"># stop at 7</span>
+    <span class="fn">print</span>(i)</pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">while loop</div>
+        <div class="code-wrap">
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+          <pre><span class="kw">var</span> countdown := <span class="num">10</span>
+
+<span class="kw">while</span> countdown > <span class="num">0</span>:
+    <span class="fn">print</span>(countdown)
+    countdown -= <span class="num">1</span>
+
+<span class="fn">print</span>(<span class="str">"Liftoff!"</span>)
+
+<span class="cm"># Simulate combat round-by-round</span>
+<span class="kw">var</span> player_hp := <span class="num">80</span>
+<span class="kw">var</span> enemy_hp  := <span class="num">45</span>
+
+<span class="kw">while</span> player_hp > <span class="num">0</span> <span class="kw">and</span> enemy_hp > <span class="num">0</span>:
+    enemy_hp  -= <span class="num">12</span>   <span class="cm"># player attacks</span>
+    player_hp -= <span class="num">8</span>    <span class="cm"># enemy attacks</span>
+
+<span class="kw">if</span> player_hp > <span class="num">0</span>:
+    <span class="fn">print</span>(<span class="str">"Player wins!"</span>)
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="str">"Player lost."</span>)</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">💡 match vs if-elif chains</div>
+      <p>Prefer <em>match</em> when checking a single variable against multiple literal values — it's cleaner and more readable than long if/elif chains. <em>if/elif</em> is better when conditions involve comparisons (<code>&lt;</code>, <code>&gt;</code>) or complex boolean logic.</p>
+    </div>
+
+  </div><!-- /control -->
+
+
+  <!-- ====== COLLECTIONS ====== -->
+  <div class="section" id="tab-collections">
+
+    <div class="card blue">
+      <div class="card-title">Arrays</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cm"># Untyped array — mixed types OK</span>
+<span class="kw">var</span> bag = [<span class="str">"sword"</span>, <span class="num">42</span>, <span class="kw">true</span>]
+
+<span class="cm"># Typed array — all elements must be int</span>
+<span class="kw">var</span> scores: <span class="ty">Array</span>[<span class="ty">int</span>] = [<span class="num">100</span>, <span class="num">200</span>, <span class="num">350</span>]
+
+<span class="cm"># Common operations</span>
+scores.<span class="fn">append</span>(<span class="num">450</span>)          <span class="cm"># add to end</span>
+scores.<span class="fn">push_front</span>(<span class="num">50</span>)       <span class="cm"># add to front</span>
+scores.<span class="fn">pop_back</span>()            <span class="cm"># remove + return last</span>
+scores.<span class="fn">pop_front</span>()           <span class="cm"># remove + return first</span>
+scores.<span class="fn">insert</span>(<span class="num">1</span>, <span class="num">150</span>)       <span class="cm"># insert at index 1</span>
+scores.<span class="fn">erase</span>(<span class="num">200</span>)            <span class="cm"># remove first match by value</span>
+scores.<span class="fn">remove_at</span>(<span class="num">0</span>)         <span class="cm"># remove by index</span>
+
+<span class="fn">print</span>(scores.<span class="fn">size</span>())         <span class="cm"># length</span>
+<span class="fn">print</span>(<span class="num">100</span> <span class="kw">in</span> scores)         <span class="cm"># membership test</span>
+scores.<span class="fn">sort</span>()                 <span class="cm"># in-place sort</span>
+scores.<span class="fn">shuffle</span>()              <span class="cm"># in-place shuffle</span>
+<span class="kw">var</span> copy = scores.<span class="fn">duplicate</span>() <span class="cm"># shallow copy</span>
+
+<span class="cm"># Functional methods (return new arrays)</span>
+<span class="kw">var</span> big = scores.<span class="fn">filter</span>(<span class="kw">func</span>(s): <span class="kw">return</span> s > <span class="num">200</span>)
+<span class="kw">var</span> doubled = scores.<span class="fn">map</span>(<span class="kw">func</span>(s): <span class="kw">return</span> s * <span class="num">2</span>)
+<span class="kw">var</span> total = scores.<span class="fn">reduce</span>(<span class="kw">func</span>(acc, s): <span class="kw">return</span> acc + s, <span class="num">0</span>)</pre>
+      </div>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Dictionaries</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cm"># Create — keys can be any type</span>
+<span class="kw">var</span> player = {
+    <span class="str">"name"</span>: <span class="str">"Hala"</span>,
+    <span class="str">"hp"</span>: <span class="num">100</span>,
+    <span class="str">"level"</span>: <span class="num">5</span>,
+    <span class="str">"skills"</span>: [<span class="str">"fireball"</span>, <span class="str">"shield"</span>]
+}
+
+<span class="cm"># Access — bracket or dot notation</span>
+<span class="fn">print</span>(player[<span class="str">"name"</span>])       <span class="cm"># "Hala"</span>
+<span class="fn">print</span>(player.<span class="fn">hp</span>)             <span class="cm"># 100  (dot notation)</span>
+
+<span class="cm"># Safe access (returns null if key missing)</span>
+<span class="kw">var</span> mp = player.<span class="fn">get</span>(<span class="str">"mp"</span>, <span class="num">0</span>)  <span class="cm"># default 0</span>
+
+<span class="cm"># Modify</span>
+player[<span class="str">"hp"</span>] = <span class="num">80</span>
+player[<span class="str">"stamina"</span>] = <span class="num">50</span>      <span class="cm"># add new key</span>
+player.<span class="fn">erase</span>(<span class="str">"stamina"</span>)      <span class="cm"># remove key</span>
+
+<span class="cm"># Check key existence</span>
+<span class="kw">if</span> player.<span class="fn">has</span>(<span class="str">"level"</span>):
+    <span class="fn">print</span>(<span class="str">"level: %d"</span> % player.level)
+
+<span class="cm"># Iterate — gives keys (NOT key-value pairs!)</span>
+<span class="kw">for</span> key <span class="kw">in</span> player:
+    <span class="fn">print</span>(<span class="str">"%s: %s"</span> % [key, <span class="fn">str</span>(player[key])])
+
+<span class="cm"># Iterate values only</span>
+<span class="kw">for</span> val <span class="kw">in</span> player.<span class="fn">values</span>():
+    <span class="fn">print</span>(val)
+
+<span class="cm"># Typed dict (Godot 4.4+)</span>
+<span class="kw">var</span> costs: <span class="ty">Dictionary</span>[<span class="ty">String</span>, <span class="ty">int</span>] = {<span class="str">"sword"</span>: <span class="num">50</span>, <span class="str">"bow"</span>: <span class="num">30</span>}</pre>
+      </div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">⚠️ Collection Gotchas (especially for Python devs)</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">for dict: gives keys only</span> — unlike Python's <code>for k, v in dict.items()</code>, GDScript gives you the key. Access value via <code>dict[key]</code> inside the loop.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Dict == compares by reference</span> — <code>{0:10} == {0:10}</code> is <strong>false</strong>. Two separate dict literals are different objects even with identical contents. Use <code>.hash()</code> to compare by content.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Assignment copies the reference</span> — <code>var b = a</code> does NOT copy an array/dict; both point to the same data. Use <code>a.duplicate()</code> for a shallow copy, <code>a.duplicate(true)</code> for deep.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Typed array assign quirk</span> — methods like <code>.filter()</code> and <code>.map()</code> return untyped arrays. Use <code>.assign()</code> to put the result into a typed array variable.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No <code>dict.map_in_place()</code></span> — it doesn't exist. Use a <code>for key in dict: dict[key] = ...</code> loop instead.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Don't mutate a collection while iterating it</span> — collect keys/indices to remove first, then erase after the loop.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /collections -->
+
+
+  <!-- ====== CLASSES & SIGNALS ====== -->
+  <div class="section" id="tab-classes">
+
+    <div class="card blue">
+      <div class="card-title">Class Anatomy</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cm"># File: player.gd</span>
+<span class="kw">class_name</span> <span class="ty">Player</span>           <span class="cm"># optional: register as global type</span>
+<span class="kw">extends</span> <span class="ty">CharacterBody2D</span>    <span class="cm"># inheritance</span>
+
+<span class="cm"># --- Signals ---</span>
+<span class="kw">signal</span> <span class="fn">died</span>()
+<span class="kw">signal</span> <span class="fn">health_changed</span>(new_health: <span class="ty">int</span>)
+
+<span class="cm"># --- Constants ---</span>
+<span class="kw">const</span> MAX_HEALTH: <span class="ty">int</span> = <span class="num">100</span>
+
+<span class="cm"># --- Exported properties (visible in Inspector) ---</span>
+<span class="kw">@export</span> <span class="kw">var</span> speed: <span class="ty">float</span> = <span class="num">200.0</span>
+
+<span class="cm"># --- Member variables ---</span>
+<span class="kw">var</span> health: <span class="ty">int</span> = MAX_HEALTH
+
+<span class="cm"># --- Onready (assigned after _ready) ---</span>
+<span class="kw">@onready</span> <span class="kw">var</span> anim: <span class="ty">AnimationPlayer</span> = <span class="fn">$AnimationPlayer</span>
+
+<span class="cm"># --- Constructor (rarely needed in Godot) ---</span>
+<span class="kw">func</span> <span class="fn">_init</span>() -> <span class="ty">void</span>:
+    health = MAX_HEALTH
+
+<span class="cm"># --- Lifecycle ---</span>
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    died.<span class="fn">connect</span>(_on_died)   <span class="cm"># connect own signal</span>
+
+<span class="kw">func</span> <span class="fn">_physics_process</span>(delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    <span class="fn">move_and_slide</span>()
+
+<span class="cm"># --- Public methods ---</span>
+<span class="kw">func</span> <span class="fn">take_damage</span>(amount: <span class="ty">int</span>) -> <span class="ty">void</span>:
+    health -= amount
+    health_changed.<span class="fn">emit</span>(health)    <span class="cm"># emit signal</span>
+    <span class="kw">if</span> health <= <span class="num">0</span>:
+        died.<span class="fn">emit</span>()
+
+<span class="cm"># --- Private / signal callbacks (underscore prefix) ---</span>
+<span class="kw">func</span> <span class="fn">_on_died</span>() -> <span class="ty">void</span>:
+    <span class="fn">queue_free</span>()             <span class="cm"># remove node from scene</span></pre>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card green">
+        <div class="card-title green">Signals — The Godot Way</div>
+        <div class="code-wrap">
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+          <pre><span class="cm"># Define a signal (in the emitter script)</span>
+<span class="kw">signal</span> <span class="fn">enemy_died</span>(enemy_name: <span class="ty">String</span>)
+
+<span class="cm"># Emit a signal</span>
+enemy_died.<span class="fn">emit</span>(<span class="str">"goblin"</span>)
+
+<span class="cm"># Connect in code (receiver connects to emitter)</span>
+emitter.<span class="fn">enemy_died</span>.<span class="fn">connect</span>(_on_enemy_died)
+
+<span class="cm"># The receiving function</span>
+<span class="kw">func</span> <span class="fn">_on_enemy_died</span>(name: <span class="ty">String</span>) -> <span class="ty">void</span>:
+    <span class="fn">print</span>(name + <span class="str">" defeated!"</span>)
+    score += <span class="num">100</span>
+
+<span class="cm"># Disconnect when done</span>
+emitter.<span class="fn">enemy_died</span>.<span class="fn">disconnect</span>(_on_enemy_died)
+
+<span class="cm"># One-shot connection (auto-disconnects)</span>
+<span class="fn">$Timer</span>.timeout.<span class="fn">connect</span>(
+    _on_timeout, CONNECT_ONE_SHOT
+)</pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Enums</div>
+        <div class="code-wrap">
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+          <pre><span class="cm"># Simple enum (auto-increments from 0)</span>
+<span class="kw">enum</span> <span class="ty">State</span> { IDLE, RUN, JUMP, FALL, DEAD }
+
+<span class="cm"># Explicit values</span>
+<span class="kw">enum</span> <span class="ty">Direction</span> {
+    NORTH = <span class="num">0</span>,
+    EAST  = <span class="num">90</span>,
+    SOUTH = <span class="num">180</span>,
+    WEST  = <span class="num">270</span>
+}
+
+<span class="cm"># Usage</span>
+<span class="kw">var</span> current_state: <span class="ty">State</span> = <span class="ty">State</span>.IDLE
+
+<span class="kw">match</span> current_state:
+    <span class="ty">State</span>.IDLE: <span class="fn">play_idle</span>()
+    <span class="ty">State</span>.RUN:  <span class="fn">play_run</span>()
+    <span class="ty">State</span>.JUMP: <span class="fn">play_jump</span>()
+
+<span class="cm"># Enums work as types in static typing</span>
+<span class="kw">func</span> <span class="fn">set_state</span>(s: <span class="ty">State</span>) -> <span class="ty">void</span>:
+    current_state = s</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Inheritance</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cm"># Parent class: enemy.gd</span>
+<span class="kw">class_name</span> <span class="ty">Enemy</span>
+<span class="kw">extends</span> <span class="ty">CharacterBody2D</span>
+
+<span class="kw">var</span> hp: <span class="ty">int</span> = <span class="num">50</span>
+
+<span class="kw">func</span> <span class="fn">attack</span>() -> <span class="ty">void</span>:
+    <span class="fn">print</span>(<span class="str">"Enemy attacks!"</span>)
+
+<span class="cm"># Child class: goblin.gd</span>
+<span class="kw">class_name</span> <span class="ty">Goblin</span>
+<span class="kw">extends</span> <span class="ty">Enemy</span>              <span class="cm"># inherit from Enemy</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    hp = <span class="num">25</span>               <span class="cm"># override property value</span>
+
+<span class="kw">func</span> <span class="fn">attack</span>() -> <span class="ty">void</span>:
+    <span class="kw">super</span>.<span class="fn">attack</span>()         <span class="cm"># call parent method</span>
+    <span class="fn">print</span>(<span class="str">"...with a dagger!"</span>)
+
+<span class="cm"># is keyword — type check</span>
+<span class="kw">if</span> entity <span class="kw">is</span> <span class="ty">Goblin</span>:
+    entity.<span class="fn">attack</span>()
+
+<span class="cm"># as keyword — safe cast (returns null on fail)</span>
+<span class="kw">var</span> goblin := entity <span class="kw">as</span> <span class="ty">Goblin</span>
+<span class="kw">if</span> goblin:
+    goblin.<span class="fn">attack</span>()</pre>
+      </div>
+    </div>
+
+  </div><!-- /classes -->
+
+
+  <!-- ====== PYTHON → GDSCRIPT ====== -->
+  <div class="section" id="tab-gotchas">
+
+    <div class="hero" style="border-left-color: var(--accent3);">
+      <h2 style="color: var(--accent3);">Python → GDScript Translation Guide</h2>
+      <p>For Python devs, GDScript is mostly familiar — but there are traps. This tab is the diff, not a full tutorial.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Side-by-Side Syntax Comparison</div>
+
+      <div style="margin-bottom:20px">
+        <div class="py-compare">🐍 Python → GDScript differences</div>
+
+        <div class="compare-grid">
+          <div>
+            <div class="compare-label py">Python</div>
+            <pre><span class="cm"># Booleans</span>
+x = <span class="kw">True</span>
+y = <span class="kw">None</span>
+<span class="kw">not</span> x
+x <span class="kw">and</span> y
+
+<span class="cm"># Print</span>
+<span class="fn">print</span>(<span class="str">"hi"</span>, x, sep=<span class="str">","</span>)
+
+<span class="cm"># Class init</span>
+<span class="kw">def</span> <span class="fn">__init__</span>(<span class="kw">self</span>):
+    <span class="kw">self</span>.hp = <span class="num">100</span>
+
+<span class="cm"># f-strings</span>
+<span class="fn">print</span>(<span class="fn">f</span><span class="str">"HP: {hp}"</span>)
+
+<span class="cm"># Dict iteration</span>
+<span class="kw">for</span> k, v <span class="kw">in</span> d.<span class="fn">items</span>():
+    <span class="fn">print</span>(k, v)
+
+<span class="cm"># Comprehensions</span>
+evens = [x <span class="kw">for</span> x <span class="kw">in</span> nums
+         <span class="kw">if</span> x % <span class="num">2</span> == <span class="num">0</span>]
+
+<span class="cm"># Inheritance super()</span>
+<span class="kw">super</span>().<span class="fn">__init__</span>()</pre>
+          </div>
+          <div>
+            <div class="compare-label gd">GDScript 4</div>
+            <pre><span class="cm"># Booleans — lowercase!</span>
+x = <span class="kw">true</span>
+y = <span class="kw">null</span>
+<span class="kw">not</span> x         <span class="cm"># same</span>
+x <span class="kw">and</span> y       <span class="cm"># same</span>
+
+<span class="cm"># Print — no sep/end kwargs</span>
+<span class="fn">print</span>(<span class="str">"hi"</span>, x)  <span class="cm"># space-separated</span>
+
+<span class="cm"># Class init</span>
+<span class="kw">func</span> <span class="fn">_init</span>() -> <span class="ty">void</span>:
+    hp = <span class="num">100</span>   <span class="cm"># no self.</span>
+
+<span class="cm"># Format strings — % syntax</span>
+<span class="fn">print</span>(<span class="str">"HP: %d"</span> % hp)
+
+<span class="cm"># Dict iteration — keys ONLY!</span>
+<span class="kw">for</span> k <span class="kw">in</span> d:
+    <span class="fn">print</span>(k, d[k])
+
+<span class="cm"># No comprehensions — use .filter()/.map()</span>
+<span class="kw">var</span> evens = nums.<span class="fn">filter</span>(
+    <span class="kw">func</span>(x): <span class="kw">return</span> x % <span class="num">2</span> == <span class="num">0</span>
+)
+<span class="cm"># Inheritance super</span>
+<span class="kw">super</span>.<span class="fn">_init</span>()   <span class="cm"># or just super()</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">Python → GDScript Traps</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">true / false / null — lowercase</span> — Python uses <code>True</code>, <code>False</code>, <code>None</code>. GDScript is all lowercase. This will silently fail or error.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No self. prefix</span> — Python requires <code>self.hp</code>; GDScript accesses member variables directly as <code>hp</code>. Use <code>self</code> only for disambiguation.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No list/dict comprehensions</span> — use <code>.filter()</code>, <code>.map()</code>, <code>.reduce()</code> with lambdas, or a regular for loop.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Integer division</span> — <code>5 / 2 == 2</code>, not 2.5. Write <code>5.0 / 2</code> or use <code>float(5) / 2</code> for float division.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">print() has no sep/end kwargs</span> — use <code>prints()</code> for space-separated, <code>printt()</code> for tab-separated, <code>printraw()</code> for no newline.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Tabs vs spaces</span> — GDScript is strict about indentation consistency. Mix tabs and spaces and you get parse errors.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No f-strings</span> — use <code>"value: %d" % x</code> or <code>"value: " + str(x)</code>. F-string syntax will throw an error.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No tuple unpacking in for loops</span> — <code>for k, v in dict.items()</code> doesn't exist. Iterate keys and access values manually.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Things GDScript Does Better for Games</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🎮</div>
+          <div class="rule-text"><span class="pos">Vector math built-in</span> — <code>Vector2</code>, <code>Vector3</code>, <code>Transform2D</code> etc. are first-class types with operators, dot product, cross product, lerp already defined.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🎮</div>
+          <div class="rule-text"><span class="pos">Signals replace callbacks</span> — no need for event systems or observer pattern boilerplate. Signals are a language feature.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🎮</div>
+          <div class="rule-text"><span class="pos">@export puts variables in the Inspector</span> — tweak values without changing code. Faster iteration than Python's argparse or config files.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🎮</div>
+          <div class="rule-text"><span class="pos">await is ergonomic</span> — wait for a timer, animation, or signal in one line, no callback nesting needed.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🎮</div>
+          <div class="rule-text"><span class="pos">match is more powerful than switch</span> — supports multiple values per arm, type checks, and wildcard patterns in one clean construct.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">🧭 Learning Advice from the Series</div>
+      <p>Watch or read tutorials in <em>multiple languages</em>, not just GDScript — seeing the same concept in C++, Python, and GDScript makes it clear that programming is just syntax on top of universal foundations. Post stuck questions to <em>Stack Overflow</em> AND the <em>Godot Engine forums</em>; the dual post benefits both communities.</p>
+    </div>
+
+  </div><!-- /gotchas -->
+
+</main>
+
+<script>
+  // Tab nav
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  // Theme toggle
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+
+  // Copy button
+  function copyCode(btn) {
+    const pre = btn.nextElementSibling;
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+      btn.textContent = 'copied!';
+      setTimeout(() => btn.textContent = 'copy', 1500);
+    });
+  }
+</script>
+</body>
+</html>

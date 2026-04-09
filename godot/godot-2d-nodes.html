@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Godot 4 — 2D Nodes Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:#0d0f14; --bg-card:#13161e; --bg-code:#0a0c10;
+    --border:#1e2330; --border-accent:#2e3550;
+    --text:#c8d0e8; --text-muted:#5a6380; --text-dim:#3a4060;
+    --accent:#4f8ef7; --accent-glow:rgba(79,142,247,0.15);
+    --accent2:#e05f7a; --accent2-glow:rgba(224,95,122,0.12);
+    --accent3:#3ecf8e; --accent3-glow:rgba(62,207,142,0.12);
+    --accent4:#f7a23e; --accent4-glow:rgba(247,162,62,0.12);
+    --tag-bg:#1a1f2e; --shadow:0 4px 24px rgba(0,0,0,0.4); --toggle-bg:#1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:#f0f2f8; --bg-card:#ffffff; --bg-code:#e8ebf5;
+    --border:#d4d9ec; --border-accent:#b8c0dc;
+    --text:#1a1f35; --text-muted:#6b748f; --text-dim:#adb5cc;
+    --accent:#2563eb; --accent-glow:rgba(37,99,235,0.1);
+    --accent2:#c9354f; --accent2-glow:rgba(201,53,79,0.1);
+    --accent3:#0d7c4e; --accent3-glow:rgba(13,124,78,0.1);
+    --accent4:#c47400; --accent4-glow:rgba(196,116,0,0.1);
+    --tag-bg:#e8ebf5; --shadow:0 4px 24px rgba(0,0,0,0.08); --toggle-bg:#d4d9ec;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;min-height:100vh;transition:background .3s,color .3s}
+
+  header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;justify-content:space-between}
+  .header-left{display:flex;align-items:center;gap:12px}
+  .logo{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:var(--accent);letter-spacing:-.02em}
+  .logo span{color:var(--text-muted);font-weight:400}
+  .badge{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:3px;background:var(--accent-glow);color:var(--accent);border:1px solid rgba(79,142,247,0.3);letter-spacing:.05em}
+  .toggle-wrap{display:flex;align-items:center;gap:8px}
+  .toggle-label{font-size:12px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace}
+  .toggle{width:44px;height:24px;background:var(--toggle-bg);border:1px solid var(--border-accent);border-radius:12px;cursor:pointer;position:relative;appearance:none;outline:none;transition:background .3s}
+  .toggle::after{content:'';position:absolute;width:18px;height:18px;background:var(--accent);border-radius:50%;top:2px;left:2px;transition:transform .3s}
+  [data-theme="light"] .toggle::after{transform:translateX(20px)}
+
+  nav{background:var(--bg);border-bottom:1px solid var(--border);padding:0 32px;display:flex;overflow-x:auto}
+  nav button{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:10px 16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);cursor:pointer;white-space:nowrap;transition:all .2s;letter-spacing:.04em;text-transform:uppercase}
+  nav button:hover{color:var(--text)}
+  nav button.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+  main{max-width:1100px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:24px}
+  .section{display:none;flex-direction:column;gap:20px}
+  .section.active{display:flex}
+  .section.active>*{animation:fadeUp .25s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px 24px;box-shadow:var(--shadow)}
+  .card.blue{border-left:3px solid var(--accent)}
+  .card.red{border-left:3px solid var(--accent2)}
+  .card.green{border-left:3px solid var(--accent3)}
+  .card.yellow{border-left:3px solid var(--accent4)}
+
+  .card-title{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .card-title::before{content:'';display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px}
+  .card-title.red::before{background:var(--accent2)}
+  .card-title.green::before{background:var(--accent3)}
+  .card-title.yellow::before{background:var(--accent4)}
+
+  .hero{background:var(--bg-card);border:1px solid var(--border-accent);border-left:3px solid var(--accent);border-radius:8px;padding:24px;box-shadow:var(--shadow),inset 0 0 60px var(--accent-glow)}
+  .hero h2{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--accent);margin-bottom:8px;letter-spacing:-.02em}
+  .hero p{color:var(--text);font-size:15px;max-width:780px;line-height:1.7}
+  .hero p strong{color:var(--accent);font-weight:600}
+
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+  @media(max-width:800px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+  /* ── Node cards ── */
+  .node-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+  .node-card{background:var(--bg-code);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s,transform .15s;cursor:pointer}
+  .node-card:hover{border-color:var(--border-accent);transform:translateY(-2px)}
+  .node-card.active-card{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .node-header{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+  .node-icon{font-size:20px;flex-shrink:0}
+  .node-name{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--accent)}
+  .node-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;letter-spacing:.05em;margin-left:auto;flex-shrink:0}
+  .tag-physics{background:rgba(224,95,122,0.15);color:var(--accent2);border:1px solid rgba(224,95,122,0.3)}
+  .tag-visual{background:rgba(79,142,247,0.12);color:var(--accent);border:1px solid rgba(79,142,247,0.25)}
+  .tag-utility{background:rgba(247,162,62,0.12);color:var(--accent4);border:1px solid rgba(247,162,62,0.25)}
+  .tag-audio{background:rgba(62,207,142,0.12);color:var(--accent3);border:1px solid rgba(62,207,142,0.25)}
+  .tag-light{background:rgba(247,220,62,0.12);color:#f7dc3e;border:1px solid rgba(247,220,62,0.25)}
+  .tag-base{background:rgba(90,99,128,0.2);color:var(--text-muted);border:1px solid var(--border-accent)}
+  .node-body{padding:12px 16px;font-size:12px;color:var(--text-muted);line-height:1.6}
+  .node-body strong{color:var(--text);font-weight:500}
+
+  /* ── Detail panel ── */
+  .detail-panel{background:var(--bg-card);border:1px solid var(--border-accent);border-radius:8px;padding:0;overflow:hidden;display:none}
+  .detail-panel.visible{display:block}
+  .detail-header{padding:16px 24px;background:var(--bg-code);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+  .detail-header-icon{font-size:28px}
+  .detail-header-title{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--accent)}
+  .detail-header-sub{font-size:13px;color:var(--text-muted);margin-top:2px}
+  .detail-close{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:4px 10px;background:var(--tag-bg);border:1px solid var(--border-accent);border-radius:4px;color:var(--text-muted);cursor:pointer;transition:all .2s}
+  .detail-close:hover{color:var(--accent2);border-color:var(--accent2)}
+  .detail-body{padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+  .detail-section-title{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:8px}
+
+  /* scenario strip */
+  .scenario{background:var(--bg-code);border:1px solid var(--border);border-left:3px solid var(--accent4);border-radius:6px;padding:14px 16px}
+  .scenario-label{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent4);margin-bottom:6px}
+  .scenario p{font-size:13px;color:var(--text);line-height:1.6}
+  .scenario p code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)}
+
+  /* code block */
+  pre{background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:14px 16px;overflow-x:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.8;color:var(--text);margin:0}
+  .cm{color:var(--text-muted);font-style:italic}
+  .kw{color:var(--accent)}
+  .fn{color:var(--accent2)}
+  .str{color:var(--accent3)}
+  .num{color:var(--accent4)}
+  .ty{color:#b48ead}
+  .hd{color:var(--accent4);font-weight:600}
+
+  .code-wrap{position:relative}
+  .copy-btn{position:absolute;top:8px;right:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 8px;background:var(--tag-bg);border:1px solid var(--border-accent);border-radius:4px;color:var(--text-muted);cursor:pointer;transition:all .2s;z-index:1}
+  .copy-btn:hover{color:var(--accent);border-color:var(--accent)}
+
+  /* rule rows */
+  .rule-list{display:flex;flex-direction:column;gap:8px}
+  .rule-row{display:grid;grid-template-columns:20px 1fr;gap:12px;align-items:flex-start;padding:10px 14px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px;transition:border-color .2s}
+  .rule-row:hover{border-color:var(--border-accent)}
+  .rule-icon{font-size:14px;line-height:1.5}
+  .rule-text{font-size:13px;color:var(--text);line-height:1.5}
+  .rule-text strong{color:var(--accent4);font-weight:600}
+  .rule-text .neg{color:var(--accent2);font-weight:600}
+  .rule-text .pos{color:var(--accent3);font-weight:600}
+  .rule-text code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)}
+
+  /* scene tree diagram */
+  .tree{font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:2;padding:14px 16px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px}
+  .tree-root{color:var(--accent4);font-weight:600}
+  .tree-child{color:var(--accent);padding-left:20px;display:block}
+  .tree-grand{color:var(--accent3);padding-left:40px;display:block}
+  .tree-note{color:var(--text-muted);font-size:11px}
+
+  .callout{background:var(--bg-code);border:1px solid var(--border-accent);border-radius:6px;padding:14px 18px}
+  .callout.blue{border-left:3px solid var(--accent)}
+  .callout.red{border-left:3px solid var(--accent2)}
+  .callout.green{border-left:3px solid var(--accent3)}
+  .callout.yellow{border-left:3px solid var(--accent4)}
+  .callout-label{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+  .callout.blue .callout-label{color:var(--accent)}
+  .callout.red .callout-label{color:var(--accent2)}
+  .callout.green .callout-label{color:var(--accent3)}
+  .callout.yellow .callout-label{color:var(--accent4)}
+  .callout p{font-size:13px;color:var(--text);line-height:1.6}
+  .callout p em{font-style:normal;font-weight:500}
+  .callout.blue p em{color:var(--accent)}
+  .callout.red p em{color:var(--accent2)}
+  .callout.green p em{color:var(--accent3)}
+  .callout.yellow p em{color:var(--accent4)}
+
+  .ref-table{width:100%;border-collapse:collapse}
+  .ref-table th{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);text-align:left;padding:8px 12px;background:var(--bg-code);border-bottom:1px solid var(--border)}
+  .ref-table td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top}
+  .ref-table tr:last-child td{border-bottom:none}
+  .ref-table tr:hover td{background:var(--accent-glow)}
+  .ref-table td:first-child{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);white-space:nowrap}
+
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border-accent);border-radius:3px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Godot 4<span> — 2D Nodes</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="physics">Physics Bodies</button>
+  <button data-tab="visual">Visual & Sprites</button>
+  <button data-tab="detection">Detection & Areas</button>
+  <button data-tab="audio">Audio & Particles</button>
+  <button data-tab="lighting">Lighting & FX</button>
+  <button data-tab="utility">Utility Nodes</button>
+  <button data-tab="scenarios">Full Scenarios</button>
+</nav>
+
+<main>
+
+<!-- ===== OVERVIEW ===== -->
+<div class="section active" id="tab-overview">
+  <div class="hero">
+    <h2>Godot 4 — Every 2D Node</h2>
+    <p>All 2D nodes inherit from <strong>Node2D</strong>, which tracks position, rotation, and scale. Click any node card to see what it does, its scene tree structure, and the GDScript code that brings it to life. Nodes are ingredients — scenes are recipes built from them.</p>
+  </div>
+
+  <div class="card blue">
+    <div class="card-title">Node2D — The Root of Everything 2D</div>
+    <div class="rule-list">
+      <div class="rule-row"><div class="rule-icon">📐</div><div class="rule-text"><strong>position</strong> — <code>Vector2</code>. Where the node is in 2D space relative to its parent.</div></div>
+      <div class="rule-row"><div class="rule-icon">🔄</div><div class="rule-text"><strong>rotation</strong> — float in radians. <code>rotation_degrees</code> is the same property in degrees.</div></div>
+      <div class="rule-row"><div class="rule-icon">🔍</div><div class="rule-text"><strong>scale</strong> — <code>Vector2</code>. Default is <code>Vector2(1, 1)</code>. Half scale = <code>Vector2(0.5, 0.5)</code>.</div></div>
+      <div class="rule-row"><div class="rule-icon">🌍</div><div class="rule-text"><strong>global_position</strong> — position in world space, not relative to parent. Use this for distance checks between nodes.</div></div>
+      <div class="rule-row"><div class="rule-icon">👁️</div><div class="rule-text"><strong>visible</strong> — bool. <code>hide()</code> / <code>show()</code> are shorthand methods.</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Node Hierarchy Map — Physics Bodies</div>
+    <div class="tree">
+      <span class="tree-root">CollisionObject2D  <span class="tree-note">(base — can't use standalone)</span></span>
+      <span class="tree-child">└─ PhysicsBody2D  <span class="tree-note">(base — can't use standalone)</span></span>
+      <span class="tree-grand">└─ StaticBody2D       <span class="tree-note">walls, floors — doesn't move</span></span>
+      <span class="tree-grand">└─ AnimatableBody2D   <span class="tree-note">moving platforms — pushes others</span></span>
+      <span class="tree-grand">└─ RigidBody2D        <span class="tree-note">physics objects — gravity, forces</span></span>
+      <span class="tree-grand">└─ CharacterBody2D    <span class="tree-note">⭐ player / enemies — code-controlled</span></span>
+      <span class="tree-child">└─ Area2D            <span class="tree-note">detection zones, custom physics regions</span></span>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card yellow">
+      <div class="card-title yellow">The Golden Rule: Physics Node Choice</div>
+      <div class="rule-list">
+        <div class="rule-row"><div class="rule-icon">🎮</div><div class="rule-text"><span style="color:var(--accent4);font-weight:600">Player / Enemy</span> → <code>CharacterBody2D</code> — precise code control</div></div>
+        <div class="rule-row"><div class="rule-icon">🧱</div><div class="rule-text"><span style="color:var(--accent4);font-weight:600">Walls / Ground</span> → <code>StaticBody2D</code> — never moves</div></div>
+        <div class="rule-row"><div class="rule-icon">🪨</div><div class="rule-text"><span style="color:var(--accent4);font-weight:600">Physics Objects</span> → <code>RigidBody2D</code> — gravity, bounce, forces</div></div>
+        <div class="rule-row"><div class="rule-icon">⚙️</div><div class="rule-text"><span style="color:var(--accent4);font-weight:600">Moving Platform</span> → <code>AnimatableBody2D</code> — scripted/animated, pushes bodies</div></div>
+        <div class="rule-row"><div class="rule-icon">🔍</div><div class="rule-text"><span style="color:var(--accent4);font-weight:600">Pickup / Trigger Zone</span> → <code>Area2D</code> — no physics, just detection</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">CollisionShape2D — Required by All Physics</div>
+      <div class="rule-list">
+        <div class="rule-row"><div class="rule-icon">📦</div><div class="rule-text">Every physics node needs a <code>CollisionShape2D</code> (or <code>CollisionPolygon2D</code>) as a <strong>child</strong>. This defines the physical shape.</div></div>
+        <div class="rule-row"><div class="rule-icon">⭕</div><div class="rule-text">Common shapes: <code>CircleShape2D</code>, <code>RectangleShape2D</code>, <code>CapsuleShape2D</code>. Set in the Inspector.</div></div>
+        <div class="rule-row"><div class="rule-icon">⚠️</div><div class="rule-text"><span class="neg">Forgetting CollisionShape2D</span> is the #1 beginner mistake — physics body exists but nothing can collide with it.</div></div>
+        <div class="rule-row"><div class="rule-icon">💡</div><div class="rule-text">Use <code>CollisionPolygon2D</code> for irregular shapes — draw the polygon directly in the editor.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout yellow">
+    <div class="callout-label">📐 Godot's Coordinate System</div>
+    <p>Y-axis points <em>down</em> — positive Y moves a node downward. <em>Vector2(0, -1)</em> is up. Angles increase <em>clockwise</em>. This differs from standard math but matches screen coordinates.</p>
+  </div>
+</div>
+
+
+<!-- ===== PHYSICS ===== -->
+<div class="section" id="tab-physics">
+
+  <div id="physics-detail" class="detail-panel">
+    <div class="detail-header">
+      <div class="detail-header-icon" id="pd-icon"></div>
+      <div><div class="detail-header-title" id="pd-title"></div><div class="detail-header-sub" id="pd-sub"></div></div>
+      <button class="detail-close" onclick="closeDetail('physics-detail')">✕ close</button>
+    </div>
+    <div class="detail-body" id="pd-body"></div>
+  </div>
+
+  <div class="node-grid" id="physics-grid">
+
+    <div class="node-card" onclick="showPhysicsDetail('char')">
+      <div class="node-header"><div class="node-icon">🎮</div><div class="node-name">CharacterBody2D</div><div class="node-tag tag-physics">PHYSICS</div></div>
+      <div class="node-body">Specialized physics body for <strong>player/enemy control</strong>. Has <code>move_and_slide()</code> and <code>move_and_collide()</code>. Not affected by gravity automatically — you apply it in code.</div>
+    </div>
+
+    <div class="node-card" onclick="showPhysicsDetail('static')">
+      <div class="node-header"><div class="node-icon">🧱</div><div class="node-name">StaticBody2D</div><div class="node-tag tag-physics">PHYSICS</div></div>
+      <div class="node-body">Physics body that <strong>cannot be moved</strong>. Other bodies collide with and slide along it. Use for walls, floors, ceilings. Moving it in code teleports, does not push.</div>
+    </div>
+
+    <div class="node-card" onclick="showPhysicsDetail('rigid')">
+      <div class="node-header"><div class="node-icon">🪨</div><div class="node-name">RigidBody2D</div><div class="node-tag tag-physics">PHYSICS</div></div>
+      <div class="node-body">Full physics simulation — <strong>gravity, forces, bounce, friction</strong>. Use for crates, balls, debris. Not for player characters. Control via <code>apply_force()</code>, <code>apply_impulse()</code>.</div>
+    </div>
+
+    <div class="node-card" onclick="showPhysicsDetail('anim')">
+      <div class="node-header"><div class="node-icon">⚙️</div><div class="node-name">AnimatableBody2D</div><div class="node-tag tag-physics">PHYSICS</div></div>
+      <div class="node-body">Like StaticBody2D but <strong>can move via code or animation</strong>. Not affected by gravity. When moved, <strong>pushes other physics bodies</strong> — perfect for moving platforms and doors.</div>
+    </div>
+
+    <div class="node-card" onclick="showPhysicsDetail('joint')">
+      <div class="node-header"><div class="node-icon">🔗</div><div class="node-name">Joint2D Nodes</div><div class="node-tag tag-physics">PHYSICS</div></div>
+      <div class="node-body">Connects two physics bodies together. Three types: <strong>DampedSpring</strong> (spring), <strong>GrooveJoint</strong> (piston / slide axis), <strong>PinJoint</strong> (pivot point — free rotation).</div>
+    </div>
+
+  </div><!-- /physics-grid -->
+
+  <div class="callout red">
+    <div class="callout-label">⚠️ Collision Layers & Masks</div>
+    <p>Every physics body and Area2D has a <em>collision_layer</em> (what layer this object is on) and <em>collision_mask</em> (what layers it detects). Two objects only interact if one's layer is in the other's mask. This is how you prevent enemies from colliding with each other while still colliding with the player.</p>
+  </div>
+</div>
+
+
+<!-- ===== VISUAL ===== -->
+<div class="section" id="tab-visual">
+
+  <div id="visual-detail" class="detail-panel">
+    <div class="detail-header">
+      <div class="detail-header-icon" id="vd-icon"></div>
+      <div><div class="detail-header-title" id="vd-title"></div><div class="detail-header-sub" id="vd-sub"></div></div>
+      <button class="detail-close" onclick="closeDetail('visual-detail')">✕ close</button>
+    </div>
+    <div class="detail-body" id="vd-body"></div>
+  </div>
+
+  <div class="node-grid" id="visual-grid">
+
+    <div class="node-card" onclick="showVisualDetail('sprite')">
+      <div class="node-header"><div class="node-icon">🖼️</div><div class="node-name">Sprite2D</div><div class="node-tag tag-visual">VISUAL</div></div>
+      <div class="node-body">Renders a <strong>static texture</strong> to the screen. Supports region rendering from a texture atlas. Set <code>flip_h</code> / <code>flip_v</code> to mirror the sprite.</div>
+    </div>
+
+    <div class="node-card" onclick="showVisualDetail('animsprite')">
+      <div class="node-header"><div class="node-icon">🎞️</div><div class="node-name">AnimatedSprite2D</div><div class="node-tag tag-visual">VISUAL</div></div>
+      <div class="node-body">Renders animated sprites from a <strong>SpriteFrames resource</strong>. Built-in animation editor for setting up sprite sheet animations. Has <code>play()</code>, <code>stop()</code>, <code>animation_finished</code> signal.</div>
+    </div>
+
+    <div class="node-card" onclick="showVisualDetail('camera')">
+      <div class="node-header"><div class="node-icon">📷</div><div class="node-name">Camera2D</div><div class="node-tag tag-visual">VISUAL</div></div>
+      <div class="node-body">Sets the <strong>viewport's view point</strong>. Usually a child of the player. Has drag, smoothing, and zoom settings. Limit properties clamp camera to world bounds.</div>
+    </div>
+
+    <div class="node-card" onclick="showVisualDetail('line')">
+      <div class="node-header"><div class="node-icon">📏</div><div class="node-name">Line2D</div><div class="node-tag tag-visual">VISUAL</div></div>
+      <div class="node-body">Draws a <strong>2D polyline</strong> through a set of points. Configurable width, taper, corner rounding, and texture. Useful for ropes, trails, debug paths.</div>
+    </div>
+
+    <div class="node-card" onclick="showVisualDetail('polygon')">
+      <div class="node-header"><div class="node-icon">⬡</div><div class="node-name">Polygon2D</div><div class="node-tag tag-visual">VISUAL</div></div>
+      <div class="node-body">Renders a <strong>filled polygon</strong>. Points are set in an array or edited visually in the editor. Supports UV mapping for textures.</div>
+    </div>
+
+    <div class="node-card" onclick="showVisualDetail('tilemap')">
+      <div class="node-header"><div class="node-icon">🗺️</div><div class="node-name">TileMap</div><div class="node-tag tag-visual">VISUAL</div></div>
+      <div class="node-body">The main node for building <strong>2D tile-based levels</strong>. Paint tiles in the editor. Supports physics layers, navigation layers, and auto-tiling. One of the largest nodes in Godot.</div>
+    </div>
+
+    <div class="node-card" onclick="showVisualDetail('parallax')">
+      <div class="node-header"><div class="node-icon">🌄</div><div class="node-name">ParallaxBackground + ParallaxLayer</div><div class="node-tag tag-visual">VISUAL</div></div>
+      <div class="node-body"><strong>Scrolling background layers</strong> at different speeds. ParallaxBackground is the container; each ParallaxLayer holds sprites and has a <code>motion_scale</code> for parallax depth.</div>
+    </div>
+
+    <div class="node-card" onclick="showVisualDetail('marker')">
+      <div class="node-header"><div class="node-icon">📍</div><div class="node-name">Marker2D</div><div class="node-tag tag-utility">UTILITY</div></div>
+      <div class="node-body"><strong>Debug-only node</strong> — invisible in builds. Shows position/rotation in the editor. Use as <strong>spawn points</strong>, waypoints, bullet origins, or any invisible reference position.</div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ===== DETECTION ===== -->
+<div class="section" id="tab-detection">
+
+  <div id="detect-detail" class="detail-panel">
+    <div class="detail-header">
+      <div class="detail-header-icon" id="dd-icon"></div>
+      <div><div class="detail-header-title" id="dd-title"></div><div class="detail-header-sub" id="dd-sub"></div></div>
+      <button class="detail-close" onclick="closeDetail('detect-detail')">✕ close</button>
+    </div>
+    <div class="detail-body" id="dd-body"></div>
+  </div>
+
+  <div class="node-grid" id="detect-grid">
+
+    <div class="node-card" onclick="showDetectDetail('area')">
+      <div class="node-header"><div class="node-icon">🔍</div><div class="node-name">Area2D</div><div class="node-tag tag-physics">DETECTION</div></div>
+      <div class="node-body">Two roles: <strong>1) Detection field</strong> — emits signals when bodies enter/exit. <strong>2) Physics override zone</strong> — local gravity, wind, audio. Use for pickups, damage zones, water.</div>
+    </div>
+
+    <div class="node-card" onclick="showDetectDetail('raycast')">
+      <div class="node-header"><div class="node-icon">📡</div><div class="node-name">RayCast2D</div><div class="node-tag tag-utility">DETECTION</div></div>
+      <div class="node-body">Casts an <strong>infinitely thin ray</strong> in a direction, reports first collision. Use for line-of-sight checks, ground detection, laser beams.</div>
+    </div>
+
+    <div class="node-card" onclick="showDetectDetail('shapecast')">
+      <div class="node-header"><div class="node-icon">🔎</div><div class="node-name">ShapeCast2D</div><div class="node-tag tag-utility">DETECTION</div></div>
+      <div class="node-body">Like RayCast2D but uses a <strong>shape</strong> (rectangle, circle) instead of a line. Better for detecting whether a character can fit through a gap, or area-of-effect checks.</div>
+    </div>
+
+    <div class="node-card" onclick="showDetectDetail('visiblenotifier')">
+      <div class="node-header"><div class="node-icon">👁️</div><div class="node-name">VisibleOnScreenNotifier2D</div><div class="node-tag tag-utility">DETECTION</div></div>
+      <div class="node-body">Emits <code>screen_entered</code> / <code>screen_exited</code> signals. <strong>VisibleOnScreenEnabler2D</strong> variant auto-enables/disables its parent node — perfect for performance optimisation.</div>
+    </div>
+
+    <div class="node-card" onclick="showDetectDetail('remotetransform')">
+      <div class="node-header"><div class="node-icon">🔀</div><div class="node-name">RemoteTransform2D</div><div class="node-tag tag-utility">UTILITY</div></div>
+      <div class="node-body">Copies its own transform to a <strong>remote node</strong> without being its parent. Selective — can sync only position, only rotation, or all. Useful for camera rigs and UI that follow world objects.</div>
+    </div>
+
+    <div class="node-card" onclick="showDetectDetail('pathfollow')">
+      <div class="node-header"><div class="node-icon">🛤️</div><div class="node-name">Path2D + PathFollow2D</div><div class="node-tag tag-utility">UTILITY</div></div>
+      <div class="node-body"><strong>Path2D</strong> defines a Bézier curve. <strong>PathFollow2D</strong> binds a node to that curve and moves it along it. Use for patrol routes, cutscene movement, conveyor belts.</div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ===== AUDIO ===== -->
+<div class="section" id="tab-audio">
+
+  <div class="node-grid">
+
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">🔊</div><div class="node-name">AudioStreamPlayer2D</div><div class="node-tag tag-audio">AUDIO</div></div>
+      <div class="node-body">Plays audio <strong>from a position in 2D space</strong>. Volume attenuates with distance. Settings: volume, pitch, max_distance, attenuation. Needs an AudioStream resource.</div>
+    </div>
+
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">👂</div><div class="node-name">AudioListener2D</div><div class="node-tag tag-audio">AUDIO</div></div>
+      <div class="node-body">Overrides the camera as the <strong>listening point for 2D audio</strong>. By default, the camera is the listener. Add this if you want audio to be heard from a different position.</div>
+    </div>
+
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">✨</div><div class="node-name">GPUParticles2D</div><div class="node-tag tag-visual">VISUAL</div></div>
+      <div class="node-body">GPU-accelerated <strong>2D particle system</strong>. Faster than CPUParticles2D for large counts. Controlled by a ParticleProcessMaterial. Best learned by adding one and experimenting.</div>
+    </div>
+
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">💨</div><div class="node-name">CPUParticles2D</div><div class="node-tag tag-visual">VISUAL</div></div>
+      <div class="node-body">CPU-side particle system. <strong>More portable</strong> than GPU particles (works on all hardware). Slower for very large particle counts. Same visual results for small-to-medium effects.</div>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <div class="card-title">AudioStreamPlayer2D — GDScript</div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="kw">extends</span> <span class="ty">Node2D</span>
+
+<span class="kw">@onready</span> <span class="kw">var</span> footstep_sfx: <span class="ty">AudioStreamPlayer2D</span> = <span class="fn">$FootstepSFX</span>
+<span class="kw">@onready</span> <span class="kw">var</span> hit_sfx:      <span class="ty">AudioStreamPlayer2D</span> = <span class="fn">$HitSFX</span>
+
+<span class="kw">func</span> <span class="fn">play_footstep</span>() -> <span class="ty">void</span>:
+    <span class="cm"># Randomise pitch slightly so repeated sounds feel natural</span>
+    footstep_sfx.pitch_scale = <span class="fn">randf_range</span>(<span class="num">0.9</span>, <span class="num">1.1</span>)
+    footstep_sfx.<span class="fn">play</span>()
+
+<span class="kw">func</span> <span class="fn">play_hit</span>() -> <span class="ty">void</span>:
+    <span class="cm"># Stop whatever was playing and restart</span>
+    hit_sfx.<span class="fn">stop</span>()
+    hit_sfx.<span class="fn">play</span>()
+
+<span class="cm"># Wait for a sound to finish before doing something</span>
+<span class="kw">func</span> <span class="fn">play_then_die</span>() -> <span class="ty">void</span>:
+    hit_sfx.<span class="fn">play</span>()
+    <span class="kw">await</span> hit_sfx.finished
+    <span class="fn">queue_free</span>()</pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== LIGHTING ===== -->
+<div class="section" id="tab-lighting">
+
+  <div class="node-grid">
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">🌑</div><div class="node-name">CanvasModulate</div><div class="node-tag tag-light">LIGHTING</div></div>
+      <div class="node-body"><strong>Required to enable 2D shadows</strong>. Darkens the scene to a base colour so 2D lights can illuminate it. Add one to the scene root before adding any 2D lights.</div>
+    </div>
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">💡</div><div class="node-name">PointLight2D</div><div class="node-tag tag-light">LIGHTING</div></div>
+      <div class="node-body">Lights the scene using a <strong>texture</strong>, not a point. The shadow is cast from the node's center. Give it a circular texture for a torch/lamp effect. Needs CanvasModulate in scene.</div>
+    </div>
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">☀️</div><div class="node-name">DirectionalLight2D</div><div class="node-tag tag-light">LIGHTING</div></div>
+      <div class="node-body">Illuminates the <strong>entire scene from one angle</strong> — like the sun or moon. Shadows don't warp with distance (unlike PointLight2D). Set the rotation to control light angle.</div>
+    </div>
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">🌒</div><div class="node-name">LightOccluder2D</div><div class="node-tag tag-light">LIGHTING</div></div>
+      <div class="node-body">Defines the <strong>shadow-casting shape</strong> of an object. Add as a child of any node that should cast shadows. Draw its OccluderPolygon2D to match the object's silhouette.</div>
+    </div>
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">🖥️</div><div class="node-name">BackBufferCopy</div><div class="node-tag tag-visual">FX</div></div>
+      <div class="node-body">Captures a <strong>region of the screen</strong> (or all of it) into a texture. The texture is accessible in shaders via the <code>hint_screen_texture</code> variable. Use for glass, portals, distortion shaders.</div>
+    </div>
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">🎨</div><div class="node-name">CanvasGroup</div><div class="node-tag tag-visual">FX</div></div>
+      <div class="node-body">Merges all child nodes into a <strong>single draw call</strong>. Makes translucent children blend correctly as a unit (e.g. a bottle and its liquid). Useful for compositing effects.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">2D Lighting — Minimal Setup</div>
+    <div class="tree" style="margin-bottom:12px">
+      <span class="tree-root">Node2D  <span class="tree-note">(scene root)</span></span>
+      <span class="tree-child">├─ CanvasModulate  <span class="tree-note">color: #1a1a2e  ← darkness base</span></span>
+      <span class="tree-child">├─ TileMap         <span class="tree-note">(your level)</span></span>
+      <span class="tree-child">│    └─ LightOccluder2D  <span class="tree-note">(on walls that cast shadow)</span></span>
+      <span class="tree-child">└─ Player</span>
+      <span class="tree-grand">└─ PointLight2D   <span class="tree-note">texture: torch.png  ← follows player</span></span>
+    </div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="cm"># Flicker a torch light with noise</span>
+<span class="kw">extends</span> <span class="ty">PointLight2D</span>
+
+<span class="kw">@export</span> <span class="kw">var</span> base_energy: <span class="ty">float</span> = <span class="num">1.0</span>
+<span class="kw">@export</span> <span class="kw">var</span> flicker_amount: <span class="ty">float</span> = <span class="num">0.15</span>
+<span class="kw">var</span> time := <span class="num">0.0</span>
+
+<span class="kw">func</span> <span class="fn">_process</span>(delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    time += delta
+    <span class="cm"># sin wave at different frequencies = organic flicker</span>
+    energy = base_energy + <span class="fn">sin</span>(time * <span class="num">7.3</span>) * flicker_amount \
+                         + <span class="fn">sin</span>(time * <span class="num">13.1</span>) * flicker_amount * <span class="num">0.5</span></pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== UTILITY ===== -->
+<div class="section" id="tab-utility">
+
+  <div class="node-grid">
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">🦴</div><div class="node-name">Skeleton2D + Bone2D</div><div class="node-tag tag-utility">ANIMATION</div></div>
+      <div class="node-body">2D skeletal animation system. <strong>Skeleton2D</strong> is the root; <strong>Bone2D</strong> nodes are the skeleton bones. Skin a Polygon2D mesh to it. Third-party tools like DragonBones/Spine can also export for Godot.</div>
+    </div>
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">🗺️</div><div class="node-name">NavigationRegion2D</div><div class="node-tag tag-utility">NAVIGATION</div></div>
+      <div class="node-body">Defines a <strong>walkable area</strong> for AI pathfinding. Unlike 3D, you must draw the region manually (no auto-bake). Pair with <code>NavigationAgent2D</code> on the enemy to find paths through it.</div>
+    </div>
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">⛔</div><div class="node-name">NavigationObstacle2D</div><div class="node-tag tag-utility">NAVIGATION</div></div>
+      <div class="node-body">A <strong>dynamic obstacle</strong> in the navigation mesh. Moving characters or objects the AI should avoid. Works in real-time unlike static NavRegion baking.</div>
+    </div>
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">🧩</div><div class="node-name">MeshInstance2D</div><div class="node-tag tag-visual">VISUAL</div></div>
+      <div class="node-body">Renders a <strong>3D mesh in 2D space</strong>. Useful for rendering 3D objects flat on a 2D scene, or for custom procedural geometry. Rare in pure 2D games.</div>
+    </div>
+    <div class="node-card">
+      <div class="node-header"><div class="node-icon">🌿</div><div class="node-name">MultiMeshInstance2D</div><div class="node-tag tag-visual">VISUAL</div></div>
+      <div class="node-body">Renders <strong>many copies of one mesh efficiently</strong>. GPU-instanced, so rendering 10,000 grass blades is far cheaper than 10,000 Sprite2D nodes. Great for environmental density.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Path2D + PathFollow2D — Patrol Route</div>
+    <div class="tree" style="margin-bottom:12px">
+      <span class="tree-root">Node2D</span>
+      <span class="tree-child">├─ Path2D            <span class="tree-note">draw patrol curve in editor</span></span>
+      <span class="tree-grand">└─ PathFollow2D      <span class="tree-note">attaches enemy to the path</span></span>
+      <span class="tree-grand">    └─ Enemy          <span class="tree-note">CharacterBody2D + visuals</span></span>
+    </div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="cm"># Attach this script to PathFollow2D</span>
+<span class="kw">extends</span> <span class="ty">PathFollow2D</span>
+
+<span class="kw">@export</span> <span class="kw">var</span> speed: <span class="ty">float</span> = <span class="num">80.0</span>    <span class="cm"># pixels per second along path</span>
+<span class="kw">var</span> direction: <span class="ty">float</span> = <span class="num">1.0</span>          <span class="cm"># 1 = forward, -1 = reverse</span>
+
+<span class="kw">func</span> <span class="fn">_process</span>(delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    progress_ratio += speed * direction * delta  <span class="cm"># 0.0 → 1.0 = full path</span>
+
+    <span class="cm"># Reverse direction at each end</span>
+    <span class="kw">if</span> progress_ratio >= <span class="num">1.0</span>:
+        progress_ratio = <span class="num">1.0</span>
+        direction = -<span class="num">1.0</span>
+    <span class="kw">elif</span> progress_ratio <= <span class="num">0.0</span>:
+        progress_ratio = <span class="num">0.0</span>
+        direction = <span class="num">1.0</span></pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== FULL SCENARIOS ===== -->
+<div class="section" id="tab-scenarios">
+
+  <div class="hero" style="border-left-color:var(--accent3)">
+    <h2 style="color:var(--accent3)">Real Game Scenarios</h2>
+    <p>These are complete, working scene + script combos — the kind of thing you'll build in your first games. Each shows how <strong>nodes work together with GDScript</strong>.</p>
+  </div>
+
+  <!-- SCENARIO 1: Player Movement -->
+  <div class="card blue">
+    <div class="card-title">Scenario 1 — Top-Down Player Movement</div>
+    <div class="scenario" style="margin-bottom:12px">
+      <div class="scenario-label">📐 Scene Tree</div>
+      <div class="tree">
+        <span class="tree-root">Player  (CharacterBody2D)</span>
+        <span class="tree-child">├─ Sprite2D           <span class="tree-note">your character texture</span></span>
+        <span class="tree-child">├─ CollisionShape2D   <span class="tree-note">CapsuleShape2D</span></span>
+        <span class="tree-child">└─ Camera2D           <span class="tree-note">follows the player automatically</span></span>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="cm"># player.gd — attach to CharacterBody2D</span>
+<span class="kw">extends</span> <span class="ty">CharacterBody2D</span>
+
+<span class="kw">const</span> SPEED: <span class="ty">float</span> = <span class="num">200.0</span>
+
+<span class="kw">func</span> <span class="fn">_physics_process</span>(delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    <span class="cm"># get_vector returns a normalised Vector2 from 4 input actions</span>
+    <span class="cm"># ui_left/right/up/down are built-in — no Input Map setup needed</span>
+    <span class="kw">var</span> dir := <span class="ty">Input</span>.<span class="fn">get_vector</span>(<span class="str">"ui_left"</span>, <span class="str">"ui_right"</span>, <span class="str">"ui_up"</span>, <span class="str">"ui_down"</span>)
+
+    <span class="cm"># Set the built-in velocity property — move_and_slide() reads it</span>
+    velocity = dir * SPEED
+
+    <span class="cm"># Flip sprite to face direction of movement</span>
+    <span class="kw">if</span> dir.x != <span class="num">0</span>:
+        <span class="fn">$Sprite2D</span>.flip_h = dir.x < <span class="num">0</span>
+
+    <span class="cm"># Handles collision response, slides along walls</span>
+    <span class="fn">move_and_slide</span>()</pre>
+    </div>
+    <div class="callout blue" style="margin-top:12px">
+      <div class="callout-label">💡 Key Points</div>
+      <p>Use <em>_physics_process</em>, not <em>_process</em>, for all movement — ensures consistent physics at 60Hz. <em>get_vector()</em> normalises diagonals so you don't move faster at 45°. <em>velocity</em> is a built-in property on CharacterBody2D — set it, then call <em>move_and_slide()</em>.</p>
+    </div>
+  </div>
+
+  <!-- SCENARIO 2: Platformer -->
+  <div class="card yellow">
+    <div class="card-title yellow">Scenario 2 — Platformer with Jump & Gravity</div>
+    <div class="scenario" style="margin-bottom:12px">
+      <div class="scenario-label">📐 Scene Tree</div>
+      <div class="tree">
+        <span class="tree-root">Player  (CharacterBody2D)  <span class="tree-note">motion_mode = Grounded</span></span>
+        <span class="tree-child">├─ AnimatedSprite2D  <span class="tree-note">animations: idle, run, jump</span></span>
+        <span class="tree-child">└─ CollisionShape2D  <span class="tree-note">CapsuleShape2D</span></span>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="kw">extends</span> <span class="ty">CharacterBody2D</span>
+
+<span class="kw">const</span> SPEED:       <span class="ty">float</span> = <span class="num">200.0</span>
+<span class="kw">const</span> JUMP_FORCE:  <span class="ty">float</span> = -<span class="num">400.0</span>  <span class="cm"># negative = upward (Y-down)</span>
+<span class="kw">const</span> GRAVITY:     <span class="ty">float</span> = <span class="num">900.0</span>
+
+<span class="kw">@onready</span> <span class="kw">var</span> anim: <span class="ty">AnimatedSprite2D</span> = <span class="fn">$AnimatedSprite2D</span>
+
+<span class="kw">func</span> <span class="fn">_physics_process</span>(delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    <span class="cm"># Apply gravity when airborne</span>
+    <span class="kw">if</span> <span class="kw">not</span> <span class="fn">is_on_floor</span>():
+        velocity.y += GRAVITY * delta
+
+    <span class="cm"># Jump — only from the ground</span>
+    <span class="kw">if</span> <span class="ty">Input</span>.<span class="fn">is_action_just_pressed</span>(<span class="str">"ui_accept"</span>) <span class="kw">and</span> <span class="fn">is_on_floor</span>():
+        velocity.y = JUMP_FORCE
+
+    <span class="cm"># Horizontal movement</span>
+    <span class="kw">var</span> h := <span class="ty">Input</span>.<span class="fn">get_axis</span>(<span class="str">"ui_left"</span>, <span class="str">"ui_right"</span>)
+    velocity.x = h * SPEED
+
+    <span class="cm"># Update animation</span>
+    <span class="kw">if</span> <span class="kw">not</span> <span class="fn">is_on_floor</span>():
+        anim.<span class="fn">play</span>(<span class="str">"jump"</span>)
+    <span class="kw">elif</span> h != <span class="num">0</span>:
+        anim.<span class="fn">play</span>(<span class="str">"run"</span>)
+        anim.flip_h = h < <span class="num">0</span>
+    <span class="kw">else</span>:
+        anim.<span class="fn">play</span>(<span class="str">"idle"</span>)
+
+    <span class="fn">move_and_slide</span>()</pre>
+    </div>
+    <div class="callout yellow" style="margin-top:12px">
+      <div class="callout-label">💡 Key Points</div>
+      <p><em>is_on_floor()</em> returns true when CharacterBody2D's motion_mode is Grounded and it's touching a floor. <em>is_action_just_pressed()</em> fires once per press — use this for jump so holding down doesn't multi-jump. Y-axis is inverted: negative = up.</p>
+    </div>
+  </div>
+
+  <!-- SCENARIO 3: Pickup -->
+  <div class="card green">
+    <div class="card-title green">Scenario 3 — Coin Pickup (Area2D)</div>
+    <div class="scenario" style="margin-bottom:12px">
+      <div class="scenario-label">📐 Scene Tree</div>
+      <div class="tree">
+        <span class="tree-root">Coin  (Area2D)</span>
+        <span class="tree-child">├─ AnimatedSprite2D   <span class="tree-note">spin animation</span></span>
+        <span class="tree-child">└─ CollisionShape2D   <span class="tree-note">CircleShape2D — slightly larger than sprite</span></span>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="cm"># coin.gd — attach to Area2D</span>
+<span class="kw">extends</span> <span class="ty">Area2D</span>
+
+<span class="kw">signal</span> <span class="fn">collected</span>(value: <span class="ty">int</span>)   <span class="cm"># tell the world this coin was picked up</span>
+
+<span class="kw">@export</span> <span class="kw">var</span> coin_value: <span class="ty">int</span> = <span class="num">10</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    <span class="cm"># Connect the Area2D built-in signal to our handler</span>
+    body_entered.<span class="fn">connect</span>(_on_body_entered)
+    <span class="fn">$AnimatedSprite2D</span>.<span class="fn">play</span>(<span class="str">"spin"</span>)
+
+<span class="kw">func</span> <span class="fn">_on_body_entered</span>(body: <span class="ty">Node2D</span>) -> <span class="ty">void</span>:
+    <span class="cm"># Only react to the player, not other bodies</span>
+    <span class="kw">if</span> body.<span class="fn">is_in_group</span>(<span class="str">"player"</span>):
+        collected.<span class="fn">emit</span>(coin_value)     <span class="cm"># parent scene listens to this</span>
+        <span class="fn">queue_free</span>()                    <span class="cm"># remove coin from scene</span>
+
+<span class="cm"># In the level scene, listen for coins:</span>
+<span class="cm"># $Coin.collected.connect(_on_coin_collected)</span>
+<span class="cm"># func _on_coin_collected(value: int) -> void:</span>
+<span class="cm">#     score += value</span></pre>
+    </div>
+    <div class="callout green" style="margin-top:12px">
+      <div class="callout-label">💡 Key Points</div>
+      <p>Area2D's <em>body_entered</em> signal fires when any physics body enters. Filter by group (<em>is_in_group</em>) to react only to the player. Emit a custom signal upward so the coin doesn't need to know about the score system — clean separation of concerns. <em>queue_free()</em> safely removes a node at the end of the frame.</p>
+    </div>
+  </div>
+
+  <!-- SCENARIO 4: Enemy with RayCast -->
+  <div class="card red">
+    <div class="card-title red">Scenario 4 — Enemy Line-of-Sight (RayCast2D)</div>
+    <div class="scenario" style="margin-bottom:12px">
+      <div class="scenario-label">📐 Scene Tree</div>
+      <div class="tree">
+        <span class="tree-root">Enemy  (CharacterBody2D)</span>
+        <span class="tree-child">├─ Sprite2D</span>
+        <span class="tree-child">├─ CollisionShape2D</span>
+        <span class="tree-child">└─ SightRay  (RayCast2D)   <span class="tree-note">target_position: Vector2(200, 0)</span></span>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="kw">extends</span> <span class="ty">CharacterBody2D</span>
+
+<span class="kw">enum</span> <span class="ty">State</span> { PATROL, CHASE }
+<span class="kw">var</span> state: <span class="ty">State</span> = <span class="ty">State</span>.PATROL
+
+<span class="kw">@export</span> <span class="kw">var</span> patrol_speed: <span class="ty">float</span> = <span class="num">60.0</span>
+<span class="kw">@export</span> <span class="kw">var</span> chase_speed:  <span class="ty">float</span> = <span class="num">120.0</span>
+
+<span class="kw">@onready</span> <span class="kw">var</span> ray: <span class="ty">RayCast2D</span> = <span class="fn">$SightRay</span>
+
+<span class="kw">var</span> player: <span class="ty">Node2D</span> = <span class="kw">null</span>
+
+<span class="kw">func</span> <span class="fn">_physics_process</span>(delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    <span class="cm"># Point ray toward the player each frame</span>
+    <span class="kw">if</span> player:
+        ray.target_position = ray.<span class="fn">to_local</span>(player.global_position)
+
+    <span class="cm"># Check what the ray is hitting</span>
+    <span class="kw">if</span> ray.<span class="fn">is_colliding</span>():
+        <span class="kw">var</span> hit := ray.<span class="fn">get_collider</span>()
+        <span class="kw">if</span> hit.<span class="fn">is_in_group</span>(<span class="str">"player"</span>):
+            state = <span class="ty">State</span>.CHASE
+            player = hit
+        <span class="kw">else</span>:
+            state = <span class="ty">State</span>.PATROL  <span class="cm"># wall blocking view</span>
+    <span class="kw">else</span>:
+        state = <span class="ty">State</span>.PATROL
+
+    <span class="cm"># Act on state</span>
+    <span class="kw">match</span> state:
+        <span class="ty">State</span>.PATROL:
+            velocity.x = patrol_speed  <span class="cm"># simple walk right (add reversal logic)</span>
+        <span class="ty">State</span>.CHASE:
+            <span class="kw">var</span> dir := (<span class="fn">player</span>.global_position - global_position).<span class="fn">normalized</span>()
+            velocity = dir * chase_speed
+
+    <span class="fn">move_and_slide</span>()</pre>
+    </div>
+    <div class="callout red" style="margin-top:12px">
+      <div class="callout-label">💡 Key Points</div>
+      <p>RayCast2D's <em>target_position</em> is in <em>local</em> space — use <em>to_local()</em> to convert the player's world position. <em>is_colliding()</em> only returns true on the frame after the ray updates; <em>get_collider()</em> returns the first thing hit. This pattern gives you line-of-sight that respects walls correctly.</p>
+    </div>
+  </div>
+
+  <!-- SCENARIO 5: AnimatedSprite2D + flip -->
+  <div class="card">
+    <div class="card-title">Scenario 5 — AnimatedSprite2D Full Integration</div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="cm"># Handles animations on a CharacterBody2D player</span>
+<span class="kw">extends</span> <span class="ty">CharacterBody2D</span>
+
+<span class="kw">@onready</span> <span class="kw">var</span> anim: <span class="ty">AnimatedSprite2D</span> = <span class="fn">$AnimatedSprite2D</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    <span class="cm"># Listen for when an animation finishes</span>
+    anim.animation_finished.<span class="fn">connect</span>(_on_animation_finished)
+
+<span class="kw">func</span> <span class="fn">_physics_process</span>(delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    <span class="kw">var</span> dir := <span class="ty">Input</span>.<span class="fn">get_axis</span>(<span class="str">"ui_left"</span>, <span class="str">"ui_right"</span>)
+    velocity.x = dir * <span class="num">200.0</span>
+    <span class="fn">move_and_slide</span>()
+    <span class="fn">_update_animation</span>(dir)
+
+<span class="kw">func</span> <span class="fn">_update_animation</span>(dir: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    <span class="kw">if</span> <span class="kw">not</span> <span class="fn">is_on_floor</span>():
+        <span class="fn">_play</span>(<span class="str">"jump"</span>)
+    <span class="kw">elif</span> dir != <span class="num">0</span>:
+        <span class="fn">_play</span>(<span class="str">"run"</span>)
+        anim.flip_h = dir < <span class="num">0</span>   <span class="cm"># mirror sprite when moving left</span>
+    <span class="kw">else</span>:
+        <span class="fn">_play</span>(<span class="str">"idle"</span>)
+
+<span class="cm"># Guard: only call play() if animation is changing</span>
+<span class="cm"># prevents restarting the same animation every frame</span>
+<span class="kw">func</span> <span class="fn">_play</span>(name: <span class="ty">String</span>) -> <span class="ty">void</span>:
+    <span class="kw">if</span> anim.animation != name:
+        anim.<span class="fn">play</span>(name)
+
+<span class="cm"># One-shot animations (attack, hurt) — resume idle when done</span>
+<span class="kw">func</span> <span class="fn">play_attack</span>() -> <span class="ty">void</span>:
+    anim.<span class="fn">play</span>(<span class="str">"attack"</span>)   <span class="cm"># animation_finished fires when done</span>
+
+<span class="kw">func</span> <span class="fn">_on_animation_finished</span>() -> <span class="ty">void</span>:
+    <span class="kw">if</span> anim.animation <span class="kw">in</span> [<span class="str">"attack"</span>, <span class="str">"hurt"</span>]:
+        anim.<span class="fn">play</span>(<span class="str">"idle"</span>)   <span class="cm"># return to idle after one-shot plays</span></pre>
+    </div>
+  </div>
+
+</div><!-- /scenarios -->
+
+</main>
+
+<script>
+// ── Tab navigation ──
+const tabs = document.querySelectorAll('nav button');
+const sections = document.querySelectorAll('.section');
+tabs.forEach(btn => {
+  btn.addEventListener('click', () => {
+    tabs.forEach(b => b.classList.remove('active'));
+    sections.forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Theme toggle ──
+document.getElementById('themeToggle').addEventListener('change', e => {
+  const light = e.target.checked;
+  document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+  document.getElementById('toggle-label').textContent = light ? 'LIGHT' : 'DARK';
+});
+
+// ── Copy buttons ──
+function copyCode(btn) {
+  const pre = btn.nextElementSibling;
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 1500);
+  });
+}
+
+// ── Detail panel data ──
+const physicsData = {
+  char: {
+    icon:'🎮', title:'CharacterBody2D', sub:'Player / Enemy — code-controlled physics body',
+    tree:`<span class="tree-root">Player  (CharacterBody2D)</span>
+<span class="tree-child">├─ AnimatedSprite2D</span>
+<span class="tree-child">├─ CollisionShape2D   <span class="tree-note">CapsuleShape2D</span></span>
+<span class="tree-child">└─ Camera2D           <span class="tree-note">child = follows player</span></span>`,
+    scenario:'You build the player character, enemies, and any NPC that needs precise movement control. Combine with <code>move_and_slide()</code> for platformers or top-down games.',
+    code:`<span class="kw">extends</span> <span class="ty">CharacterBody2D</span>
+
+<span class="kw">const</span> SPEED = <span class="num">200.0</span>
+<span class="kw">const</span> JUMP  = -<span class="num">400.0</span>
+<span class="kw">const</span> GRAVITY = <span class="num">900.0</span>
+
+<span class="kw">func</span> <span class="fn">_physics_process</span>(delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    <span class="kw">if</span> <span class="kw">not</span> <span class="fn">is_on_floor</span>():
+        velocity.y += GRAVITY * delta
+
+    <span class="kw">if</span> <span class="ty">Input</span>.<span class="fn">is_action_just_pressed</span>(<span class="str">"ui_accept"</span>) <span class="kw">and</span> <span class="fn">is_on_floor</span>():
+        velocity.y = JUMP
+
+    velocity.x = <span class="ty">Input</span>.<span class="fn">get_axis</span>(<span class="str">"ui_left"</span>,<span class="str">"ui_right"</span>) * SPEED
+    <span class="fn">move_and_slide</span>()
+
+<span class="cm"># Check what you collided with after move_and_slide()</span>
+<span class="kw">func</span> <span class="fn">_check_collisions</span>() -> <span class="ty">void</span>:
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">get_slide_collision_count</span>():
+        <span class="kw">var</span> col := <span class="fn">get_slide_collision</span>(i)
+        <span class="kw">if</span> col.<span class="fn">get_collider</span>().<span class="fn">is_in_group</span>(<span class="str">"enemy"</span>):
+            <span class="fn">take_damage</span>(<span class="num">10</span>)`
+  },
+  static: {
+    icon:'🧱', title:'StaticBody2D', sub:'Walls, floors, ceilings — never moves',
+    tree:`<span class="tree-root">Wall  (StaticBody2D)</span>
+<span class="tree-child">└─ CollisionShape2D  <span class="tree-note">RectangleShape2D matching the sprite</span></span>`,
+    scenario:'Every wall, platform, and floor tile is a StaticBody2D — or baked into a TileMap with physics layers. Moving it in code teleports it instead of pushing other bodies.',
+    code:`<span class="kw">extends</span> <span class="ty">StaticBody2D</span>
+
+<span class="cm"># Moving a static body teleports it — use AnimatableBody2D</span>
+<span class="cm"># if you need to push other bodies.</span>
+<span class="cm"># Static bodies are mostly set up in the editor.</span>
+
+<span class="cm"># You CAN add a PhysicsMaterial to set friction/bounce</span>
+<span class="cm"># via the Inspector — no code needed.</span>
+
+<span class="cm"># If you need the player to stick to a moving surface:</span>
+<span class="cm"># Use AnimatableBody2D instead — it sets floor velocity</span>
+<span class="cm"># so CharacterBody2D move_and_slide() picks it up.</span>`
+  },
+  rigid: {
+    icon:'🪨', title:'RigidBody2D', sub:'Physics objects — gravity, forces, bounce',
+    tree:`<span class="tree-root">Crate  (RigidBody2D)</span>
+<span class="tree-child">├─ Sprite2D</span>
+<span class="tree-child">└─ CollisionShape2D  <span class="tree-note">RectangleShape2D</span></span>`,
+    scenario:'Use for any object the physics engine should control: crates, balls, arrows, debris. NOT for the player — you lose precise control. Apply forces to move it, not direct position changes.',
+    code:`<span class="kw">extends</span> <span class="ty">RigidBody2D</span>
+
+<span class="cm"># Never set position directly — use forces/impulses</span>
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    <span class="cm"># One-shot push (like an explosion)</span>
+    <span class="fn">apply_impulse</span>(<span class="ty">Vector2</span>(<span class="num">200</span>, -<span class="num">300</span>))
+
+<span class="kw">func</span> <span class="fn">_integrate_forces</span>(state: <span class="ty">PhysicsDirectBodyState2D</span>) -> <span class="ty">void</span>:
+    <span class="cm"># Safe place to modify physics state each frame</span>
+    <span class="cm"># state.linear_velocity, state.transform etc.</span>
+    <span class="kw">pass</span>
+
+<span class="cm"># Detect collision via body_entered signal</span>
+<span class="kw">func</span> <span class="fn">_ready2</span>() -> <span class="ty">void</span>:
+    body_entered.<span class="fn">connect</span>(_on_body_hit)
+
+<span class="kw">func</span> <span class="fn">_on_body_hit</span>(body: <span class="ty">Node</span>) -> <span class="ty">void</span>:
+    <span class="fn">print</span>(<span class="str">"hit: "</span>, body.name)`
+  },
+  anim: {
+    icon:'⚙️', title:'AnimatableBody2D', sub:'Moving platforms — pushes other bodies',
+    tree:`<span class="tree-root">Platform  (AnimatableBody2D)</span>
+<span class="tree-child">├─ Sprite2D</span>
+<span class="tree-child">├─ CollisionShape2D</span>
+<span class="tree-child">└─ AnimationPlayer  <span class="tree-note">animates position back and forth</span></span>`,
+    scenario:'Moving platforms, doors, elevators. Unlike StaticBody2D, moving an AnimatableBody2D in code or animation correctly pushes CharacterBody2D players riding on top of it.',
+    code:`<span class="kw">extends</span> <span class="ty">AnimatableBody2D</span>
+
+<span class="kw">@export</span> <span class="kw">var</span> move_distance: <span class="ty">float</span> = <span class="num">200.0</span>
+<span class="kw">@export</span> <span class="kw">var</span> move_speed:    <span class="ty">float</span> = <span class="num">80.0</span>
+
+<span class="kw">var</span> start_pos: <span class="ty">Vector2</span>
+<span class="kw">var</span> direction: <span class="ty">float</span> = <span class="num">1.0</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    start_pos = position
+
+<span class="kw">func</span> <span class="fn">_physics_process</span>(delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    position.x += move_speed * direction * delta
+
+    <span class="kw">var</span> dist := position.x - start_pos.x
+    <span class="kw">if</span> dist >= move_distance:  direction = -<span class="num">1.0</span>
+    <span class="kw">elif</span> dist <= <span class="num">0</span>:           direction =  <span class="num">1.0</span>`
+  },
+  joint: {
+    icon:'🔗', title:'Joint2D Nodes', sub:'Connect two physics bodies',
+    tree:`<span class="tree-root">Node2D</span>
+<span class="tree-child">├─ RigidBody2D  (node_a)</span>
+<span class="tree-child">├─ RigidBody2D  (node_b)</span>
+<span class="tree-child">└─ DampedSpringJoint2D  <span class="tree-note">set node_a and node_b in Inspector</span></span>`,
+    scenario:'DampedSpring for suspension (car, rope bridge), GrooveJoint for pistons/sliding doors, PinJoint for pendulums or connected rigid platforms.',
+    code:`<span class="cm"># Joints are mostly configured in the Inspector.</span>
+<span class="cm"># But you can connect them in code:</span>
+<span class="kw">@onready</span> <span class="kw">var</span> joint: <span class="ty">DampedSpringJoint2D</span> = <span class="fn">$SpringJoint</span>
+<span class="kw">@onready</span> <span class="kw">var</span> bodyA: <span class="ty">RigidBody2D</span> = <span class="fn">$BodyA</span>
+<span class="kw">@onready</span> <span class="kw">var</span> bodyB: <span class="ty">RigidBody2D</span> = <span class="fn">$BodyB</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    joint.node_a = bodyA.<span class="fn">get_path</span>()
+    joint.node_b = bodyB.<span class="fn">get_path</span>()
+    joint.rest_length = <span class="num">100.0</span>
+    joint.stiffness    = <span class="num">60.0</span>
+    joint.damping      = <span class="num">5.0</span>`
+  }
+};
+
+const visualData = {
+  sprite: {
+    icon:'🖼️', title:'Sprite2D', sub:'Render a static texture',
+    tree:`<span class="tree-root">Player  (CharacterBody2D)</span>
+<span class="tree-child">└─ Sprite2D  <span class="tree-note">texture: player.png</span></span>`,
+    scenario:'Static image that never animates. Use for UI elements, background objects, or any node with a single appearance. Swap texture in code to fake simple animation.',
+    code:`<span class="kw">@onready</span> <span class="kw">var</span> spr: <span class="ty">Sprite2D</span> = <span class="fn">$Sprite2D</span>
+
+<span class="kw">func</span> <span class="fn">face_left</span>() -> <span class="ty">void</span>:   spr.flip_h = <span class="kw">true</span>
+<span class="kw">func</span> <span class="fn">face_right</span>() -> <span class="ty">void</span>:  spr.flip_h = <span class="kw">false</span>
+
+<span class="cm"># Swap texture at runtime</span>
+<span class="kw">@export</span> <span class="kw">var</span> hurt_texture: <span class="ty">Texture2D</span>
+<span class="kw">@export</span> <span class="kw">var</span> normal_texture: <span class="ty">Texture2D</span>
+
+<span class="kw">func</span> <span class="fn">show_hurt</span>() -> <span class="ty">void</span>:
+    spr.texture = hurt_texture
+    <span class="kw">await</span> <span class="fn">get_tree</span>().<span class="fn">create_timer</span>(<span class="num">0.5</span>).timeout
+    spr.texture = normal_texture
+
+<span class="cm"># Tint red when hit</span>
+<span class="kw">func</span> <span class="fn">flash_red</span>() -> <span class="ty">void</span>:
+    spr.modulate = <span class="ty">Color</span>.<span class="fn">RED</span>
+    <span class="kw">await</span> <span class="fn">get_tree</span>().<span class="fn">create_timer</span>(<span class="num">0.2</span>).timeout
+    spr.modulate = <span class="ty">Color</span>.<span class="fn">WHITE</span>`
+  },
+  animsprite: {
+    icon:'🎞️', title:'AnimatedSprite2D', sub:'Sprite sheet animations',
+    tree:`<span class="tree-root">Player  (CharacterBody2D)</span>
+<span class="tree-child">└─ AnimatedSprite2D  <span class="tree-note">SpriteFrames resource with: idle, run, jump, attack</span></span>`,
+    scenario:'The workhorse visual node for 2D characters. Set up animation frames in the editor via SpriteFrames, then drive them from code based on player state.',
+    code:`<span class="kw">@onready</span> <span class="kw">var</span> anim: <span class="ty">AnimatedSprite2D</span> = <span class="fn">$AnimatedSprite2D</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    anim.<span class="fn">play</span>(<span class="str">"idle"</span>)
+    anim.animation_finished.<span class="fn">connect</span>(_on_anim_done)
+
+<span class="cm"># Guard prevents restarting the same animation each frame</span>
+<span class="kw">func</span> <span class="fn">set_anim</span>(name: <span class="ty">String</span>) -> <span class="ty">void</span>:
+    <span class="kw">if</span> anim.animation != name:
+        anim.<span class="fn">play</span>(name)
+
+<span class="cm"># One-shot: play attack once, then return to idle</span>
+<span class="kw">var</span> attacking := <span class="kw">false</span>
+<span class="kw">func</span> <span class="fn">attack</span>() -> <span class="ty">void</span>:
+    attacking = <span class="kw">true</span>
+    anim.<span class="fn">play</span>(<span class="str">"attack"</span>)
+
+<span class="kw">func</span> <span class="fn">_on_anim_done</span>() -> <span class="ty">void</span>:
+    attacking = <span class="kw">false</span>
+    anim.<span class="fn">play</span>(<span class="str">"idle"</span>)`
+  },
+  camera: {
+    icon:'📷', title:'Camera2D', sub:'Sets the viewport view point',
+    tree:`<span class="tree-root">Player  (CharacterBody2D)</span>
+<span class="tree-child">└─ Camera2D  <span class="tree-note">child of player = follows automatically</span></span>`,
+    scenario:'Simply making Camera2D a child of the player is enough to follow it. Add drag and smoothing in the Inspector for a game-feel boost. Limit the camera to world bounds.',
+    code:`<span class="kw">@onready</span> <span class="kw">var</span> cam: <span class="ty">Camera2D</span> = <span class="fn">$Camera2D</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    cam.position_smoothing_enabled = <span class="kw">true</span>
+    cam.position_smoothing_speed   = <span class="num">5.0</span>
+    cam.drag_horizontal_enabled    = <span class="kw">true</span>
+    cam.drag_horizontal_offset     = <span class="num">0.2</span>   <span class="cm"># look ahead</span>
+
+    <span class="cm"># Clamp camera to level bounds (prevents showing void)</span>
+    cam.limit_left   = <span class="num">0</span>
+    cam.limit_right  = <span class="num">3200</span>
+    cam.limit_top    = <span class="num">0</span>
+    cam.limit_bottom = <span class="num">1800</span>
+
+<span class="cm"># Screenshake effect</span>
+<span class="kw">func</span> <span class="fn">shake</span>(strength: <span class="ty">float</span>, duration: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    <span class="kw">var</span> end := <span class="ty">Time</span>.<span class="fn">get_ticks_msec</span>() + duration * <span class="num">1000</span>
+    <span class="kw">while</span> <span class="ty">Time</span>.<span class="fn">get_ticks_msec</span>() < end:
+        cam.offset = <span class="ty">Vector2</span>(<span class="fn">randf_range</span>(-strength, strength),
+                               <span class="fn">randf_range</span>(-strength, strength))
+        <span class="kw">await</span> <span class="fn">get_tree</span>().process_frame
+    cam.offset = <span class="ty">Vector2</span>.<span class="fn">ZERO</span>`
+  },
+  line: {
+    icon:'📏', title:'Line2D', sub:'Draw polylines and ropes',
+    tree:`<span class="tree-root">RopeVisual  (Node2D)</span>
+<span class="tree-child">└─ Line2D  <span class="tree-note">width: 4  default_color: #8B5E3C</span></span>`,
+    scenario:'Ropes, laser beams, debug paths, trajectory previews. Set points in the editor or dynamically in code. Often paired with RigidBody2D joints for physics ropes.',
+    code:`<span class="kw">@onready</span> <span class="kw">var</span> line: <span class="ty">Line2D</span> = <span class="fn">$Line2D</span>
+
+<span class="cm"># Draw a trajectory preview (e.g. for a launcher)</span>
+<span class="kw">func</span> <span class="fn">draw_trajectory</span>(start: <span class="ty">Vector2</span>, vel: <span class="ty">Vector2</span>) -> <span class="ty">void</span>:
+    line.<span class="fn">clear_points</span>()
+    <span class="kw">var</span> pos := start
+    <span class="kw">var</span> v   := vel
+    <span class="kw">var</span> g   := <span class="ty">Vector2</span>(<span class="num">0</span>, <span class="num">900</span>)   <span class="cm"># gravity</span>
+    <span class="kw">var</span> dt  := <span class="num">0.05</span>
+
+    <span class="kw">for</span> _i <span class="kw">in</span> <span class="num">30</span>:              <span class="cm"># 30 steps</span>
+        line.<span class="fn">add_point</span>(pos)
+        v   += g * dt
+        pos += v * dt`
+  },
+  polygon: {
+    icon:'⬡', title:'Polygon2D', sub:'Filled polygon shape',
+    tree:`<span class="tree-root">Zone  (Node2D)</span>
+<span class="tree-child">└─ Polygon2D  <span class="tree-note">points array drawn in editor</span></span>`,
+    scenario:'Custom visual shapes, zones, overlays. Often paired with CollisionPolygon2D for an irregular collision shape. Supports UV unwrapping for texture mapping.',
+    code:`<span class="kw">@onready</span> <span class="kw">var</span> poly: <span class="ty">Polygon2D</span> = <span class="fn">$Polygon2D</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    <span class="cm"># Set points in code (or draw in editor)</span>
+    poly.polygon = <span class="ty">PackedVector2Array</span>([
+        <span class="ty">Vector2</span>(<span class="num">0</span>, <span class="num">0</span>),
+        <span class="ty">Vector2</span>(<span class="num">100</span>, <span class="num">0</span>),
+        <span class="ty">Vector2</span>(<span class="num">50</span>, <span class="num">80</span>)
+    ])
+    poly.color = <span class="ty">Color</span>(<span class="num">0.2</span>, <span class="num">0.6</span>, <span class="num">1.0</span>, <span class="num">0.4</span>)  <span class="cm"># semi-transparent blue</span>`
+  },
+  tilemap: {
+    icon:'🗺️', title:'TileMap', sub:'2D tile-based levels',
+    tree:`<span class="tree-root">Level  (Node2D)</span>
+<span class="tree-child">└─ TileMap  <span class="tree-note">TileSet resource — multiple layers possible</span></span>`,
+    scenario:'The backbone of most 2D games. Set up your TileSet once (with physics layers for collision), then paint your level. Access cells in code to change the map dynamically.',
+    code:`<span class="kw">@onready</span> <span class="kw">var</span> tmap: <span class="ty">TileMap</span> = <span class="fn">$TileMap</span>
+
+<span class="kw">const</span> LAYER   = <span class="num">0</span>   <span class="cm"># TileMap layer index</span>
+<span class="kw">const</span> SOURCE  = <span class="num">0</span>   <span class="cm"># TileSet source index</span>
+
+<span class="cm"># Convert world position to tile cell coords</span>
+<span class="kw">func</span> <span class="fn">world_to_tile</span>(world_pos: <span class="ty">Vector2</span>) -> <span class="ty">Vector2i</span>:
+    <span class="kw">return</span> tmap.<span class="fn">local_to_map</span>(world_pos)
+
+<span class="cm"># Destroy a tile (e.g. breakable blocks)</span>
+<span class="kw">func</span> <span class="fn">break_tile</span>(world_pos: <span class="ty">Vector2</span>) -> <span class="ty">void</span>:
+    <span class="kw">var</span> cell := tmap.<span class="fn">local_to_map</span>(world_pos)
+    tmap.<span class="fn">erase_cell</span>(LAYER, cell)
+
+<span class="cm"># Set a tile by its atlas coordinates</span>
+<span class="kw">func</span> <span class="fn">place_tile</span>(cell: <span class="ty">Vector2i</span>, atlas_coords: <span class="ty">Vector2i</span>) -> <span class="ty">void</span>:
+    tmap.<span class="fn">set_cell</span>(LAYER, cell, SOURCE, atlas_coords)`
+  },
+  parallax: {
+    icon:'🌄', title:'ParallaxBackground + ParallaxLayer', sub:'Scrolling background depth layers',
+    tree:`<span class="tree-root">Level  (Node2D)</span>
+<span class="tree-child">└─ ParallaxBackground</span>
+<span class="tree-grand">├─ ParallaxLayer  <span class="tree-note">motion_scale: (0.1, 0)  — far mountains</span></span>
+<span class="tree-grand">├─ ParallaxLayer  <span class="tree-note">motion_scale: (0.4, 0)  — midground trees</span></span>
+<span class="tree-grand">└─ ParallaxLayer  <span class="tree-note">motion_scale: (0.8, 0)  — near bushes</span></span>`,
+    scenario:'Add parallax depth to side-scrolling games. Lower motion_scale = moves slower = looks further away. No code needed — just set motion_scale per layer in the Inspector.',
+    code:`<span class="cm"># Parallax is mostly editor-configured.</span>
+<span class="cm"># motion_scale: Vector2 — how much the layer moves</span>
+<span class="cm"># per unit of camera movement.</span>
+<span class="cm"># (0.1, 0) = moves 10% of camera X, 0% of camera Y</span>
+
+<span class="cm"># For infinite scrolling backgrounds, enable mirroring:</span>
+<span class="cm"># Set motion_mirroring to the width of your background texture</span>
+<span class="cm"># e.g. Vector2(1024, 0) for a 1024px-wide bg</span>
+
+<span class="cm"># You can still tint or scroll in code:</span>
+<span class="kw">@onready</span> <span class="kw">var</span> layer: <span class="ty">ParallaxLayer</span> = <span class="fn">$ParallaxBackground/FarLayer</span>
+<span class="kw">func</span> <span class="fn">set_time_of_day</span>(t: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    <span class="cm"># t: 0 = dawn, 0.5 = midday, 1 = night</span>
+    <span class="fn">$ParallaxBackground</span>.modulate = <span class="ty">Color</span>(<span class="num">1</span>-t*<span class="num">0.3</span>, <span class="num">1</span>-t*<span class="num">0.1</span>, <span class="num">1</span>+t*<span class="num">0.5</span>)`
+  },
+  marker: {
+    icon:'📍', title:'Marker2D', sub:'Invisible spawn points and reference positions',
+    tree:`<span class="tree-root">Level  (Node2D)</span>
+<span class="tree-child">├─ PlayerSpawn  (Marker2D)</span>
+<span class="tree-child">├─ EnemySpawn1  (Marker2D)</span>
+<span class="tree-child">└─ EnemySpawn2  (Marker2D)</span>`,
+    scenario:'Invisible in game builds, visible in editor. Use as spawn points, bullet origins, attack hitbox positions, or any invisible anchor in the scene.',
+    code:`<span class="kw">@onready</span> <span class="kw">var</span> spawn: <span class="ty">Marker2D</span> = <span class="fn">$PlayerSpawn</span>
+<span class="kw">@onready</span> <span class="kw">var</span> enemy_spawns := <span class="fn">$EnemySpawns</span>.<span class="fn">get_children</span>()
+
+<span class="kw">var</span> EnemyScene = <span class="fn">preload</span>(<span class="str">"res://enemy.tscn"</span>)
+
+<span class="kw">func</span> <span class="fn">spawn_player</span>(player: <span class="ty">Node2D</span>) -> <span class="ty">void</span>:
+    player.global_position = spawn.global_position
+
+<span class="kw">func</span> <span class="fn">spawn_wave</span>() -> <span class="ty">void</span>:
+    <span class="kw">for</span> point: <span class="ty">Marker2D</span> <span class="kw">in</span> enemy_spawns:
+        <span class="kw">var</span> enemy: <span class="ty">Node2D</span> = EnemyScene.<span class="fn">instantiate</span>()
+        <span class="fn">add_child</span>(enemy)
+        enemy.global_position = point.global_position`
+  }
+};
+
+const detectData = {
+  area: {
+    icon:'🔍', title:'Area2D', sub:'Detection zone + physics override region',
+    tree:`<span class="tree-root">Pickup  (Area2D)</span>
+<span class="tree-child">├─ AnimatedSprite2D</span>
+<span class="tree-child">└─ CollisionShape2D  <span class="tree-note">CircleShape2D</span></span>`,
+    scenario:'The go-to node for collectibles, damage zones, water areas, door triggers. Its body_entered/area_entered signals fire when physics bodies or other areas overlap it.',
+    code:`<span class="kw">extends</span> <span class="ty">Area2D</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    body_entered.<span class="fn">connect</span>(_on_body_entered)
+    body_exited.<span class="fn">connect</span>(_on_body_exited)
+
+<span class="kw">func</span> <span class="fn">_on_body_entered</span>(body: <span class="ty">Node2D</span>) -> <span class="ty">void</span>:
+    <span class="kw">if</span> body.<span class="fn">is_in_group</span>(<span class="str">"player"</span>):
+        <span class="fn">print</span>(<span class="str">"player entered zone"</span>)
+
+<span class="kw">func</span> <span class="fn">_on_body_exited</span>(body: <span class="ty">Node2D</span>) -> <span class="ty">void</span>:
+    <span class="kw">if</span> body.<span class="fn">is_in_group</span>(<span class="str">"player"</span>):
+        <span class="fn">print</span>(<span class="str">"player left zone"</span>)
+
+<span class="cm"># Override gravity for this zone (e.g. zero-G area):</span>
+<span class="cm"># Set gravity_space_override + gravity in the Inspector</span>
+<span class="cm"># Bodies that enter will use this area's gravity settings</span>`
+  },
+  raycast: {
+    icon:'📡', title:'RayCast2D', sub:'Collision detection along a line',
+    tree:`<span class="tree-root">Enemy  (CharacterBody2D)</span>
+<span class="tree-child">└─ SightRay  (RayCast2D)   <span class="tree-note">target_position: Vector2(200, 0)</span></span>`,
+    scenario:'Line-of-sight AI, ground detection (is the player walking off a ledge?), laser beams, ground slope detection. Enable the node and call is_colliding() each frame.',
+    code:`<span class="kw">@onready</span> <span class="kw">var</span> ray: <span class="ty">RayCast2D</span> = <span class="fn">$GroundRay</span>
+
+<span class="kw">func</span> <span class="fn">_physics_process</span>(_delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    <span class="kw">if</span> ray.<span class="fn">is_colliding</span>():
+        <span class="kw">var</span> hit    := ray.<span class="fn">get_collider</span>()         <span class="cm"># the node hit</span>
+        <span class="kw">var</span> pt     := ray.<span class="fn">get_collision_point</span>()  <span class="cm"># world position</span>
+        <span class="kw">var</span> normal := ray.<span class="fn">get_collision_normal</span>() <span class="cm"># surface normal</span>
+
+        <span class="kw">if</span> hit.<span class="fn">is_in_group</span>(<span class="str">"ground"</span>):
+            <span class="fn">print</span>(<span class="str">"ground detected at: "</span>, pt)
+
+<span class="cm"># Exclude the ray's own owner from hitting itself</span>
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    ray.<span class="fn">add_exception</span>(<span class="kw">self</span>)   <span class="cm"># don't hit own collision shape</span>
+    ray.enabled = <span class="kw">true</span>`
+  },
+  shapecast: {
+    icon:'🔎', title:'ShapeCast2D', sub:'Shape-based collision sweep',
+    tree:`<span class="tree-root">Player  (CharacterBody2D)</span>
+<span class="tree-child">└─ WidthCheck  (ShapeCast2D)  <span class="tree-note">shape: RectangleShape2D</span></span>`,
+    scenario:'Check if a character can fit through a gap (crouch check), area-of-effect melee sweeps, or future-position collision tests before moving.',
+    code:`<span class="kw">@onready</span> <span class="kw">var</span> cast: <span class="ty">ShapeCast2D</span> = <span class="fn">$WidthCheck</span>
+
+<span class="cm"># Check if the player can stand up from crouch</span>
+<span class="kw">func</span> <span class="fn">can_stand</span>() -> <span class="ty">bool</span>:
+    cast.<span class="fn">force_shapecast_update</span>()
+    <span class="kw">return</span> <span class="kw">not</span> cast.<span class="fn">is_colliding</span>()
+
+<span class="cm"># Melee AoE — get everything in the shape</span>
+<span class="kw">func</span> <span class="fn">melee_attack</span>() -> <span class="ty">void</span>:
+    cast.<span class="fn">force_shapecast_update</span>()
+    <span class="kw">for</span> i <span class="kw">in</span> cast.<span class="fn">get_collision_count</span>():
+        <span class="kw">var</span> target := cast.<span class="fn">get_collider</span>(i)
+        <span class="kw">if</span> target.<span class="fn">has_method</span>(<span class="str">"take_damage"</span>):
+            target.<span class="fn">take_damage</span>(<span class="num">15</span>)`
+  },
+  visiblenotifier: {
+    icon:'👁️', title:'VisibleOnScreenNotifier2D', sub:'On/off screen detection',
+    tree:`<span class="tree-root">Enemy  (CharacterBody2D)</span>
+<span class="tree-child">└─ VisibleOnScreenNotifier2D</span>`,
+    scenario:'Disable expensive AI when enemies are off screen. VisibleOnScreenEnabler2D does this automatically — just set what to disable. VisibleOnScreenNotifier2D gives you a signal for manual control.',
+    code:`<span class="kw">extends</span> <span class="ty">CharacterBody2D</span>
+
+<span class="kw">@onready</span> <span class="kw">var</span> notifier: <span class="ty">VisibleOnScreenNotifier2D</span> = <span class="fn">$Notifier</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    notifier.screen_entered.<span class="fn">connect</span>(_on_screen)
+    notifier.screen_exited.<span class="fn">connect</span>(_off_screen)
+
+<span class="kw">func</span> <span class="fn">_on_screen</span>() -> <span class="ty">void</span>:
+    set_physics_process(<span class="kw">true</span>)   <span class="cm"># resume AI</span>
+
+<span class="kw">func</span> <span class="fn">_off_screen</span>() -> <span class="ty">void</span>:
+    set_physics_process(<span class="kw">false</span>)  <span class="cm"># pause AI — saves CPU</span>`
+  },
+  remotetransform: {
+    icon:'🔀', title:'RemoteTransform2D', sub:'Copy transform to a remote node',
+    tree:`<span class="tree-root">Player  (CharacterBody2D)</span>
+<span class="tree-child">└─ CameraTarget  (RemoteTransform2D)  <span class="tree-note">remote_path: ../Camera2D</span></span>`,
+    scenario:'Keep a camera at a fixed scene level while having it track the player — without making the camera a child (which can cause issues with physics). Also useful for UI elements that follow world objects.',
+    code:`<span class="kw">@onready</span> <span class="kw">var</span> remote: <span class="ty">RemoteTransform2D</span> = <span class="fn">$CameraTarget</span>
+<span class="kw">@onready</span> <span class="kw">var</span> cam:    <span class="ty">Camera2D</span>           = <span class="fn">$"../Camera2D"</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    remote.remote_path       = cam.<span class="fn">get_path</span>()
+    remote.update_position   = <span class="kw">true</span>
+    remote.update_rotation   = <span class="kw">false</span>  <span class="cm"># don't copy rotation</span>
+    remote.update_scale      = <span class="kw">false</span>`
+  },
+  pathfollow: {
+    icon:'🛤️', title:'Path2D + PathFollow2D', sub:'Bind nodes to a curve path',
+    tree:`<span class="tree-root">Level  (Node2D)</span>
+<span class="tree-child">└─ PatrolPath  (Path2D)</span>
+<span class="tree-grand">└─ PathFollow2D  → Enemy attached here</span>`,
+    scenario:'Enemy patrol routes, boss movement patterns, cutscene dollies, conveyor belts. Draw the path in the editor, set progress_ratio (0.0–1.0) in code to move along it.',
+    code:`<span class="cm"># Attach to PathFollow2D</span>
+<span class="kw">extends</span> <span class="ty">PathFollow2D</span>
+
+<span class="kw">@export</span> <span class="kw">var</span> speed: <span class="ty">float</span> = <span class="num">80.0</span>
+<span class="kw">var</span> dir: <span class="ty">float</span> = <span class="num">1.0</span>
+
+<span class="kw">func</span> <span class="fn">_process</span>(delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    progress_ratio += speed * dir * delta * <span class="num">0.001</span>
+    <span class="kw">if</span>   progress_ratio >= <span class="num">1.0</span>: dir = -<span class="num">1.0</span>
+    <span class="kw">elif</span> progress_ratio <= <span class="num">0.0</span>: dir =  <span class="num">1.0</span>`
+  }
+};
+
+// ── Show/hide detail panels ──
+function showPhysicsDetail(key) {
+  const d = physicsData[key]; if (!d) return;
+  document.getElementById('pd-icon').textContent  = d.icon;
+  document.getElementById('pd-title').textContent = d.title;
+  document.getElementById('pd-sub').textContent   = d.sub;
+  document.getElementById('pd-body').innerHTML    = buildDetail(d);
+  const panel = document.getElementById('physics-detail');
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+function showVisualDetail(key) {
+  const d = visualData[key]; if (!d) return;
+  document.getElementById('vd-icon').textContent  = d.icon;
+  document.getElementById('vd-title').textContent = d.title;
+  document.getElementById('vd-sub').textContent   = d.sub;
+  document.getElementById('vd-body').innerHTML    = buildDetail(d);
+  const panel = document.getElementById('visual-detail');
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+function showDetectDetail(key) {
+  const d = detectData[key]; if (!d) return;
+  document.getElementById('dd-icon').textContent  = d.icon;
+  document.getElementById('dd-title').textContent = d.title;
+  document.getElementById('dd-sub').textContent   = d.sub;
+  document.getElementById('dd-body').innerHTML    = buildDetail(d);
+  const panel = document.getElementById('detect-detail');
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function buildDetail(d) {
+  return `
+    <div>
+      <div class="detail-section-title">Scene Tree</div>
+      <div class="tree">${d.tree}</div>
+    </div>
+    <div class="scenario">
+      <div class="scenario-label">🎮 When to Use</div>
+      <p>${d.scenario}</p>
+    </div>
+    <div>
+      <div class="detail-section-title">GDScript Example</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre>${d.code}</pre>
+      </div>
+    </div>`;
+}
+
+function closeDetail(id) {
+  document.getElementById(id).classList.remove('visible');
+}
+</script>
+</body>
+</html>

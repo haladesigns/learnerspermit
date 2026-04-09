@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Godot 4 — Level Design Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:#0d0f14; --bg-card:#13161e; --bg-code:#0a0c10;
+    --border:#1e2330; --border-accent:#2e3550;
+    --text:#c8d0e8; --text-muted:#5a6380; --text-dim:#3a4060;
+    --accent:#4f8ef7; --accent-glow:rgba(79,142,247,0.15);
+    --accent2:#e05f7a; --accent2-glow:rgba(224,95,122,0.12);
+    --accent3:#3ecf8e; --accent3-glow:rgba(62,207,142,0.12);
+    --accent4:#f7a23e; --accent4-glow:rgba(247,162,62,0.12);
+    --tag-bg:#1a1f2e; --shadow:0 4px 24px rgba(0,0,0,0.4); --toggle-bg:#1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:#f0f2f8; --bg-card:#ffffff; --bg-code:#e8ebf5;
+    --border:#d4d9ec; --border-accent:#b8c0dc;
+    --text:#1a1f35; --text-muted:#6b748f; --text-dim:#adb5cc;
+    --accent:#2563eb; --accent-glow:rgba(37,99,235,0.1);
+    --accent2:#c9354f; --accent2-glow:rgba(201,53,79,0.1);
+    --accent3:#0d7c4e; --accent3-glow:rgba(13,124,78,0.1);
+    --accent4:#c47400; --accent4-glow:rgba(196,116,0,0.1);
+    --tag-bg:#e8ebf5; --shadow:0 4px 24px rgba(0,0,0,0.08); --toggle-bg:#d4d9ec;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;min-height:100vh;transition:background .3s,color .3s}
+  header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;justify-content:space-between}
+  .header-left{display:flex;align-items:center;gap:12px}
+  .logo{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:var(--accent);letter-spacing:-.02em}
+  .logo span{color:var(--text-muted);font-weight:400}
+  .badge{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:3px;background:var(--accent-glow);color:var(--accent);border:1px solid rgba(79,142,247,0.3);letter-spacing:.05em}
+  .toggle-wrap{display:flex;align-items:center;gap:8px}
+  .toggle-label{font-size:12px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace}
+  .toggle{width:44px;height:24px;background:var(--toggle-bg);border:1px solid var(--border-accent);border-radius:12px;cursor:pointer;position:relative;appearance:none;outline:none;transition:background .3s}
+  .toggle::after{content:'';position:absolute;width:18px;height:18px;background:var(--accent);border-radius:50%;top:2px;left:2px;transition:transform .3s}
+  [data-theme="light"] .toggle::after{transform:translateX(20px)}
+  nav{background:var(--bg);border-bottom:1px solid var(--border);padding:0 32px;display:flex;overflow-x:auto}
+  nav button{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:10px 16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);cursor:pointer;white-space:nowrap;transition:all .2s;letter-spacing:.04em;text-transform:uppercase}
+  nav button:hover{color:var(--text)}
+  nav button.active{color:var(--accent);border-bottom-color:var(--accent)}
+  main{max-width:1100px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:24px}
+  .section{display:none;flex-direction:column;gap:20px}
+  .section.active{display:flex}
+  .section.active>*{animation:fadeUp .25s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px 24px;box-shadow:var(--shadow)}
+  .card.blue{border-left:3px solid var(--accent)}
+  .card.red{border-left:3px solid var(--accent2)}
+  .card.green{border-left:3px solid var(--accent3)}
+  .card.yellow{border-left:3px solid var(--accent4)}
+  .card-title{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .card-title::before{content:'';display:inline-block;width:3px;height:12px;background:var(--accent);border-radius:2px}
+  .card-title.red::before{background:var(--accent2)}
+  .card-title.green::before{background:var(--accent3)}
+  .card-title.yellow::before{background:var(--accent4)}
+  .hero{background:var(--bg-card);border:1px solid var(--border-accent);border-left:3px solid var(--accent);border-radius:8px;padding:24px;box-shadow:var(--shadow),inset 0 0 60px var(--accent-glow)}
+  .hero h2{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--accent);margin-bottom:8px;letter-spacing:-.02em}
+  .hero p{color:var(--text);font-size:15px;max-width:780px;line-height:1.7}
+  .hero p strong{color:var(--accent);font-weight:600}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+  @media(max-width:800px){.grid-2,.grid-3{grid-template-columns:1fr}}
+  .rule-list{display:flex;flex-direction:column;gap:8px}
+  .rule-row{display:grid;grid-template-columns:20px 1fr;gap:12px;align-items:flex-start;padding:10px 14px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px;transition:border-color .2s}
+  .rule-row:hover{border-color:var(--border-accent)}
+  .rule-icon{font-size:14px;line-height:1.5}
+  .rule-text{font-size:13px;color:var(--text);line-height:1.5}
+  .rule-text strong{color:var(--accent4);font-weight:600}
+  .rule-text .neg{color:var(--accent2);font-weight:600}
+  .rule-text .pos{color:var(--accent3);font-weight:600}
+  .rule-text code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)}
+  .step-list{display:flex;flex-direction:column;gap:10px}
+  .step-row{display:grid;grid-template-columns:28px 1fr;gap:14px;align-items:flex-start;padding:12px 16px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px;transition:border-color .2s}
+  .step-row:hover{border-color:var(--border-accent)}
+  .step-num{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);text-align:center;margin-top:1px;line-height:1.5}
+  .step-body{font-size:13px;color:var(--text);line-height:1.5}
+  .step-body strong{color:var(--text);font-weight:600}
+  .step-body .note{color:var(--accent2);font-size:12px;display:block;margin-top:4px}
+  .step-body .tip{color:var(--accent4);font-size:12px;display:block;margin-top:4px}
+  .step-body code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)}
+  pre{background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:14px 16px;overflow-x:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.8;color:var(--text);margin:0}
+  .cm{color:var(--text-muted);font-style:italic}
+  .kw{color:var(--accent)}
+  .fn{color:var(--accent2)}
+  .str{color:var(--accent3)}
+  .num{color:var(--accent4)}
+  .ty{color:#b48ead}
+  .code-wrap{position:relative}
+  .copy-btn{position:absolute;top:8px;right:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 8px;background:var(--tag-bg);border:1px solid var(--border-accent);border-radius:4px;color:var(--text-muted);cursor:pointer;transition:all .2s;z-index:1}
+  .copy-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .tree{font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:2;padding:14px 16px;background:var(--bg-code);border:1px solid var(--border);border-radius:6px}
+  .tree-root{color:var(--accent4);font-weight:600}
+  .tree-child{color:var(--accent);padding-left:20px;display:block}
+  .tree-grand{color:var(--accent3);padding-left:40px;display:block}
+  .tree-great{color:var(--text-muted);padding-left:60px;display:block}
+  .tree-note{color:var(--text-muted);font-size:11px}
+  .callout{background:var(--bg-code);border:1px solid var(--border-accent);border-radius:6px;padding:14px 18px}
+  .callout.blue{border-left:3px solid var(--accent)}
+  .callout.red{border-left:3px solid var(--accent2)}
+  .callout.green{border-left:3px solid var(--accent3)}
+  .callout.yellow{border-left:3px solid var(--accent4)}
+  .callout-label{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+  .callout.blue .callout-label{color:var(--accent)}
+  .callout.red .callout-label{color:var(--accent2)}
+  .callout.green .callout-label{color:var(--accent3)}
+  .callout.yellow .callout-label{color:var(--accent4)}
+  .callout p{font-size:13px;color:var(--text);line-height:1.6}
+  .callout p em{font-style:normal;font-weight:500}
+  .callout.blue p em{color:var(--accent)}
+  .callout.red p em{color:var(--accent2)}
+  .callout.green p em{color:var(--accent3)}
+  .callout.yellow p em{color:var(--accent4)}
+  .ref-table{width:100%;border-collapse:collapse}
+  .ref-table th{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);text-align:left;padding:8px 12px;background:var(--bg-code);border-bottom:1px solid var(--border)}
+  .ref-table td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top}
+  .ref-table tr:last-child td{border-bottom:none}
+  .ref-table tr:hover td{background:var(--accent-glow)}
+  .ref-table td:first-child{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);white-space:nowrap}
+  .ref-table td:last-child{color:var(--text-muted);font-size:12px}
+  /* accordion */
+  .accordion{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .acc-header{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;background:var(--bg-code);cursor:pointer;user-select:none;transition:background .2s;gap:10px}
+  .acc-header:hover{background:var(--tag-bg)}
+  .acc-title{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);font-weight:600;display:flex;align-items:center;gap:10px}
+  .acc-tag{font-size:10px;padding:2px 7px;border-radius:3px;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em}
+  .acc-tag.warn{background:var(--accent2-glow);color:var(--accent2);border:1px solid rgba(224,95,122,0.3)}
+  .acc-tag.tip{background:var(--accent3-glow);color:var(--accent3);border:1px solid rgba(62,207,142,0.3)}
+  .acc-tag.info{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(79,142,247,0.3)}
+  .acc-arrow{color:var(--text-muted);font-size:11px;transition:transform .25s}
+  .acc-body{display:none;padding:16px 18px;border-top:1px solid var(--border);background:var(--bg-card)}
+  .acc-body.open{display:block}
+  .acc-body p{font-size:13px;color:var(--text);line-height:1.7;margin-bottom:10px}
+  .acc-body p:last-child{margin-bottom:0}
+  .acc-body code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)}
+  /* decision */
+  .decision-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:700px){.decision-grid{grid-template-columns:1fr}}
+  .decision-col{border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+  .decision-col-header{padding:10px 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+  .decision-col-header.use{background:var(--accent3-glow);color:var(--accent3);border-bottom:1px solid rgba(62,207,142,0.2)}
+  .decision-col-header.skip{background:var(--accent2-glow);color:var(--accent2);border-bottom:1px solid rgba(224,95,122,0.2)}
+  .decision-item{padding:9px 16px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:8px}
+  .decision-item:last-child{border-bottom:none}
+  .decision-item code{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border-accent);border-radius:3px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Godot 4<span> — Level Design</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="tilemap">TileMapLayer Setup</button>
+  <button data-tab="physics">Tile Physics</button>
+  <button data-tab="terrain">Terrain & Autotile</button>
+  <button data-tab="scenes">Scene Architecture</button>
+  <button data-tab="instancing">Instancing & Spawning</button>
+  <button data-tab="code">GDScript & Tiles</button>
+  <button data-tab="gotchas">Gotchas</button>
+</nav>
+
+<main>
+
+<!-- ======================================================= OVERVIEW -->
+<div class="section active" id="tab-overview">
+
+  <div class="hero">
+    <h2>Godot 4 — Level Design</h2>
+    <p>Building a level in Godot means combining three things: <strong>TileMapLayer</strong> nodes (the grid-painted terrain), <strong>PackedScene instancing</strong> (reusable objects like enemies, pickups, platforms), and a <strong>scene hierarchy</strong> that keeps everything organised. This tool is your end-to-end reference — from first tileset import to scripting dynamic tile changes.</p>
+  </div>
+
+  <div class="card blue">
+    <div class="card-title">The Three Pillars of a Godot Level</div>
+    <div class="rule-list">
+      <div class="rule-row"><div class="rule-icon">🗺️</div>
+        <div class="rule-text"><strong>TileMapLayer</strong> — the painted grid. Terrain, walls, floors, decoration. Efficient, physics-aware, supports autotiling. One node per visual/logical layer.</div>
+      </div>
+      <div class="rule-row"><div class="rule-icon">🧩</div>
+        <div class="rule-text"><strong>Scene Instancing</strong> — every interactive object (enemy, coin, door, chest) lives in its own <code>.tscn</code> file and gets placed as an instance. Change once, update everywhere.</div>
+      </div>
+      <div class="rule-row"><div class="rule-icon">🏗️</div>
+        <div class="rule-text"><strong>Scene Hierarchy</strong> — a clean, ordered scene tree keeps your level readable, makes debugging easier, and prevents node-access bugs. Structure intentionally.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Recommended Level Scene Tree</div>
+    <div class="tree">
+      <span class="tree-root">Level1  (Node2D)  ← scene root, holds level script</span>
+      <span class="tree-child">├─ World  (Node2D)  ← groups all tile layers</span>
+      <span class="tree-grand">│   ├─ BG         (TileMapLayer)  ← decoration, no collision</span>
+      <span class="tree-grand">│   ├─ Ground     (TileMapLayer)  ← solid terrain, has physics</span>
+      <span class="tree-grand">│   └─ Foreground (TileMapLayer)  ← top-layer decoration</span>
+      <span class="tree-child">├─ Entities  (Node2D)  ← all spawned / placed objects</span>
+      <span class="tree-grand">│   ├─ Player          (instance of player.tscn)</span>
+      <span class="tree-grand">│   ├─ Enemies         (Node2D)  ← container node</span>
+      <span class="tree-great">│   │    ├─ Goblin1    (instance of goblin.tscn)</span>
+      <span class="tree-great">│   │    └─ Goblin2    (instance of goblin.tscn)</span>
+      <span class="tree-grand">│   └─ Pickups         (Node2D)  ← container node</span>
+      <span class="tree-great">│        └─ Coin1      (instance of coin.tscn)</span>
+      <span class="tree-child">├─ SpawnPoints  (Node2D)  ← Marker2D nodes, invisible</span>
+      <span class="tree-child">└─ Camera2D</span>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="callout red">
+      <div class="callout-label">⚠️ TileMap is Deprecated in Godot 4.3+</div>
+      <p>The old <em>TileMap</em> node (with built-in layers) is deprecated as of Godot 4.3. Use <em>TileMapLayer</em> nodes instead — one node per layer. They share the same TileSet resource and work identically, just with a cleaner API. If you open old projects, Godot will offer to auto-convert.</p>
+    </div>
+    <div class="callout yellow">
+      <div class="callout-label">💡 TileSet vs TileMapLayer</div>
+      <p><em>TileSet</em> is the <strong>resource</strong> — the collection of tiles, their physics, terrains, and custom data. It's a <code>.tres</code> file you define once and reuse across multiple TileMapLayer nodes and multiple levels. <em>TileMapLayer</em> is the <strong>node</strong> — it paints cells from that TileSet onto a grid.</p>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ======================================================= TILEMAP SETUP -->
+<div class="section" id="tab-tilemap">
+
+  <div class="hero" style="border-left-color:var(--accent3)">
+    <h2 style="color:var(--accent3)">TileMapLayer Setup — Step by Step</h2>
+    <p>This is the first thing you do when starting a level. Get this right once and painting tiles is instant for every future level.</p>
+  </div>
+
+  <div class="card green">
+    <div class="card-title green">Phase 1 — Create the TileSet Resource</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Add a TileMapLayer node</strong> to your scene. In the Inspector, click the <code>Tile Set</code> property → <em>New TileSet</em>. This creates a shared resource — save it as a <code>.tres</code> file so other levels can reuse it.
+          <span class="tip">💡 One TileSet can hold multiple atlases (sprite sheets). Add all your tile graphics into the same TileSet.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Set Tile Size</strong> in the TileSet inspector. This must match your sprite sheet tile size — common sizes are <code>16×16</code>, <code>32×32</code>, <code>48×48</code>. Set this first before adding any tiles.
+          <span class="note">⚠️ Getting tile size wrong causes misaligned tiles and broken physics shapes. Set it before importing art.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Import your sprite sheet</strong> — drag the PNG from the FileSystem panel into the <em>TileSet</em> bottom panel → <em>Tiles</em> section. Godot will ask if you want to auto-create tiles from the grid. Click <strong>Yes</strong>.
+          <span class="tip">💡 You can add multiple atlases (different PNGs) to one TileSet. Drag them in one by one.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Paint your level</strong> — switch to the <em>TileMap</em> bottom panel, select a tile, and left-click/drag on the canvas. Eraser tool removes tiles. Right-click to pick a tile from the canvas.
+          <span class="tip">💡 Use the <strong>Rect</strong> and <strong>Fill</strong> tools for large areas. Hold Shift to draw a line.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card blue">
+    <div class="card-title">Phase 2 — Layer Strategy</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Add one TileMapLayer per logical layer.</strong> They all share the same TileSet resource. A typical 2D level uses: <code>BG</code> (sky, background), <code>Ground</code> (solid terrain), <code>Decoration</code> (foreground details), <code>Hazards</code> (spikes, lava).
+          <span class="tip">💡 In the Inspector, each TileMapLayer has a <code>Z Index</code> property — use this to control draw order without changing the scene tree.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Only add Physics to layers that need collision.</strong> Background and decoration layers should never have physics layers — it wastes CPU and causes invisible collision bugs.
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Rename layers descriptively</strong> — <code>Ground</code>, <code>Walls</code>, <code>Hazards</code>. You'll be selecting them from a dropdown in the TileMap panel; good names save confusion.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">TileMap Painting Tools — Quick Reference</div>
+    <table class="ref-table">
+      <thead><tr><th>Tool</th><th>Shortcut</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>Paint (pencil)</td><td>P</td><td>Paint individual tiles one cell at a time</td></tr>
+        <tr><td>Line</td><td>L</td><td>Draw a straight line of tiles between two points</td></tr>
+        <tr><td>Rect</td><td>R</td><td>Fill a rectangle with the selected tile — fastest for platforms</td></tr>
+        <tr><td>Bucket Fill</td><td>B</td><td>Flood-fill a connected region — great for backgrounds</td></tr>
+        <tr><td>Picker</td><td>I</td><td>Right-click on any painted tile to select it for painting</td></tr>
+        <tr><td>Eraser</td><td>E</td><td>Remove tiles. Combine with Rect or Line for fast clearing</td></tr>
+        <tr><td>Select</td><td>S</td><td>Select a region of painted tiles to move/copy/delete</td></tr>
+        <tr><td>Terrain</td><td>—</td><td>Paint with autotile terrains — switches tiles automatically</td></tr>
+        <tr><td>Scatter</td><td>—</td><td>Randomly place tiles from a selected set — great for decoration</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout blue">
+    <div class="callout-label">💡 Sharing a TileSet across levels</div>
+    <p>Save your TileSet as a <em>.tres</em> file (<em>Inspector → right-click TileSet → Save</em>). Then in every new level, drag that <em>.tres</em> file onto the <em>Tile Set</em> property of each TileMapLayer node. All physics shapes and terrains defined in the TileSet come along — zero repeated setup.</p>
+  </div>
+
+</div>
+
+
+<!-- ======================================================= PHYSICS -->
+<div class="section" id="tab-physics">
+
+  <div class="hero" style="border-left-color:var(--accent2)">
+    <h2 style="color:var(--accent2)">Tile Physics Setup</h2>
+    <p>Tiles don't collide by default. You have to add a Physics Layer to the TileSet resource and draw shapes on tiles. Do this once in the TileSet, and every TileMapLayer that uses it inherits the collision.</p>
+  </div>
+
+  <div class="card red">
+    <div class="card-title red">Phase 1 — Add a Physics Layer to TileSet</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Select your TileMapLayer node</strong> → click the TileSet resource in Inspector → expand <strong>Physics Layers</strong> → click <strong>Add Element</strong>.
+          <span class="tip">💡 Name it something like "world" — it helps when you have multiple physics layers for different collision purposes (e.g. "world" for terrain, "hazards" for damage zones).</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Set Collision Layer and Collision Mask.</strong> For a basic game: terrain on Layer 1, player on Layer 2, enemies on Layer 3. Terrain mask = 0 (nothing), Player mask = 1 (collides with terrain).
+          <span class="note">⚠️ The physics layer on the TileSet is separate from the layer/mask on the TileMapLayer node itself. Both need to be configured.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card yellow">
+    <div class="card-title yellow">Phase 2 — Draw Shapes on Tiles</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Open the TileSet panel</strong> (bottom of editor) → switch to <strong>Select</strong> mode → click a tile from your atlas. In the right panel, expand <strong>Physics Layer 0</strong>.
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>For rectangular tiles</strong> (most terrain): Switch to <strong>Paint</strong> mode → select <em>Physics Layer 0</em> in the paint properties → paint across all your solid tiles at once. Godot fills each tile with a full rectangle automatically.
+          <span class="tip">💡 Paint mode is the fastest way to bulk-assign rectangular collision. Use Select mode only for custom polygon shapes.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>For irregular shapes</strong> (slopes, half-tiles): In <strong>Select</strong> mode, click the tile → click the <em>+ polygon</em> icon in the physics panel → draw the collision polygon by clicking points. Click the first point again to close the shape.
+          <span class="tip">💡 Use the snap-to-grid toggle when drawing polygons for crisp edges. Hold Ctrl to temporarily disable snap.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Verify in-game:</strong> Run the scene → open <em>Debug → Visible Collision Shapes</em>. You should see orange outlines on every solid tile. Gaps mean missing physics shapes.
+          <span class="note">⚠️ The most common reason a player falls through tiles is a missing or incorrectly sized collision shape on that tile.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card green">
+    <div class="card-title green">One-Way Platforms</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Add a second Physics Layer</strong> in TileSet → name it "one_way". Set its Collision Layer to match your terrain layer.
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          In the TileSet panel, <strong>Select</strong> your platform tile → expand <strong>Physics Layer 1</strong> (the one-way layer) → draw a thin rectangle collision shape at the very <strong>top edge</strong> of the tile only.
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          In the physics shape panel, enable <strong>"One Way"</strong> on that polygon. Set <code>one_way_collision_margin</code> to a small value like <code>1.0</code>.
+          <span class="tip">💡 Drop-through logic (hold Down + Jump) requires a small script on the player — see the GDScript tab for the pattern.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="callout red">
+      <div class="callout-label">⚠️ Ghost Collisions Between Tiles</div>
+      <p>If your player snags on invisible edges between adjacent tiles, it's because the physics shapes slightly overlap at seams. Fix: use <em>simple, full-tile rectangles</em> rather than polygons for flat terrain. The engine merges adjacent rectangles into a single surface automatically.</p>
+    </div>
+    <div class="callout yellow">
+      <div class="callout-label">⚠️ Collision Layer vs TileSet Physics Layer</div>
+      <p>There are two separate layer settings: the <em>Physics Layer</em> defined inside the TileSet resource (which layer/mask the shapes use), and the <em>collision_layer / collision_mask</em> on the TileMapLayer node itself. Both must be set correctly. The TileSet physics layer inherits the node's settings.</p>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ======================================================= TERRAIN -->
+<div class="section" id="tab-terrain">
+
+  <div class="hero" style="border-left-color:var(--accent4)">
+    <h2 style="color:var(--accent4)">Terrain & Autotile</h2>
+    <p>Terrains let you paint with a <em>brush</em> instead of individual tiles — Godot picks the correct tile variant (corner, edge, inner corner) automatically based on neighbours. This is the workflow for organic-looking levels.</p>
+  </div>
+
+  <div class="card yellow">
+    <div class="card-title yellow">Terrain Setup — Step by Step</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>In TileSet Inspector → Terrain Sets → Add Element.</strong> Give it a name (e.g. "Grass") and choose a <strong>Mode</strong>:
+          <span class="tip">💡 <strong>Match Corners and Sides</strong> — most common, gives full 47-tile autotile set. <strong>Match Corners</strong> — 16 tiles needed. <strong>Match Sides</strong> — 16 tiles needed, simpler.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Assign tiles to the terrain.</strong> In the TileSet panel → <strong>Select</strong> mode → click a tile → expand <strong>Terrain</strong> → set <em>Terrain Set</em> to 0, then set each <em>peering bit</em> (the 8 surrounding squares) to your terrain type. Tiles with all 8 bits set = full surrounded tile. Tiles with only top bit set = bottom edge, etc.
+          <span class="note">⚠️ This is the most tedious part of Godot 4 terrain. Use <strong>Paint</strong> mode to mass-assign terrain bits to multiple tiles at once.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Paint with Terrain mode.</strong> In the TileMap panel → switch to <strong>Terrains</strong> tab → select your terrain → paint. Godot automatically chooses the right tile variant as you paint.
+          <span class="tip">💡 You can mix manual tile painting and terrain painting in the same layer.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Terrain Modes Explained</div>
+      <table class="ref-table">
+        <thead><tr><th>Mode</th><th>Tiles needed</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td>Match Corners + Sides</td><td>47</td><td>Full organic terrain (grass, sand, rock)</td></tr>
+          <tr><td>Match Corners</td><td>16</td><td>Diamond/isometric grids</td></tr>
+          <tr><td>Match Sides</td><td>16</td><td>Simple rectangular terrain, fewer variants</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Custom Data Layers</div>
+      <div class="rule-list">
+        <div class="rule-row"><div class="rule-icon">🏷️</div>
+          <div class="rule-text">Add <strong>Custom Data Layers</strong> to TileSet (Inspector → Custom Data Layers → Add Element). Name: <code>tile_type</code>, Type: <code>String</code>.</div>
+        </div>
+        <div class="rule-row"><div class="rule-icon">🎨</div>
+          <div class="rule-text">In TileSet panel → Select a tile → assign its custom data value: <code>"grass"</code>, <code>"ice"</code>, <code>"lava"</code>. Read it in GDScript to apply different movement friction.</div>
+        </div>
+        <div class="rule-row"><div class="rule-icon">💻</div>
+          <div class="rule-text">GDScript: <code>var data = layer.get_cell_tile_data(cell)</code> → <code>data.get_custom_data("tile_type")</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout blue">
+    <div class="callout-label">💡 Better Terrain Plugin</div>
+    <p>Godot 4's built-in terrain system requires precise peering bit setup which is tedious. The free <em>Better Terrain</em> plugin (search Godot Asset Library) provides a simpler autotile workflow closer to Godot 3 and has a much cleaner runtime API. Worth installing for serious 2D level work.</p>
+  </div>
+
+</div>
+
+
+<!-- ======================================================= SCENES -->
+<div class="section" id="tab-scenes">
+
+  <div class="hero">
+    <h2>Scene Architecture</h2>
+    <p>In Godot, every meaningful object in your level is its own <code>.tscn</code> file. Scenes are <strong>blueprints</strong> — you place instances of them. Editing the blueprint updates every instance in every level. This is the core workflow that separates maintainable projects from spaghetti.</p>
+  </div>
+
+  <div class="card blue">
+    <div class="card-title">What Gets Its Own Scene File?</div>
+    <div class="rule-list">
+      <div class="rule-row"><div class="rule-icon">✅</div><div class="rule-text"><span class="pos">Always its own scene:</span> Player, any enemy type, any pickup type, moving platform, door, chest, projectile, UI overlay, boss.</div></div>
+      <div class="rule-row"><div class="rule-icon">✅</div><div class="rule-text"><span class="pos">Usually its own scene:</span> Spawn trigger, cutscene trigger, checkpoint, area-effect zones (damage, heal, water).</div></div>
+      <div class="rule-row"><div class="rule-icon">⚠️</div><div class="rule-text"><strong>Maybe inline:</strong> A one-off decorative static body that only appears in one level. Fine to keep inline but harder to edit later.</div></div>
+      <div class="rule-row"><div class="rule-icon">❌</div><div class="rule-text"><span class="neg">Don't separate:</span> Individual TileMapLayer nodes — they belong in the level scene because they hold per-level painted data.</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Level Scene Structure (Platformer)</div>
+      <div class="tree">
+        <span class="tree-root">Level1.tscn  (Node2D)</span>
+        <span class="tree-child">├─ BG         (TileMapLayer)</span>
+        <span class="tree-child">├─ Ground     (TileMapLayer)</span>
+        <span class="tree-child">├─ Player     (player.tscn) ⬅ instance</span>
+        <span class="tree-child">├─ Enemies    (Node2D)</span>
+        <span class="tree-grand">│   ├─ Goblin1  (goblin.tscn) ⬅ instance</span>
+        <span class="tree-grand">│   └─ Goblin2  (goblin.tscn) ⬅ instance</span>
+        <span class="tree-child">├─ Pickups    (Node2D)</span>
+        <span class="tree-grand">│   └─ Coin1   (coin.tscn) ⬅ instance</span>
+        <span class="tree-child">├─ Spawns     (Node2D)  ← Marker2D children</span>
+        <span class="tree-child">└─ Camera2D</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Level Scene Structure (Top-Down RPG)</div>
+      <div class="tree">
+        <span class="tree-root">Room_Forest.tscn  (Node2D)</span>
+        <span class="tree-child">├─ BG_Ground     (TileMapLayer)</span>
+        <span class="tree-child">├─ Objects       (TileMapLayer)  ← trees, rocks</span>
+        <span class="tree-child">├─ Shadows       (TileMapLayer)  ← shadow overlay</span>
+        <span class="tree-child">├─ Player        (player.tscn) ⬅ instance</span>
+        <span class="tree-child">├─ NPCs          (Node2D)</span>
+        <span class="tree-grand">│   └─ OldMan    (npc.tscn) ⬅ instance</span>
+        <span class="tree-child">├─ Enemies       (Node2D)</span>
+        <span class="tree-child">├─ InteractZones (Node2D)  ← Area2D triggers</span>
+        <span class="tree-child">├─ LevelBounds   (StaticBody2D)  ← invisible walls</span>
+        <span class="tree-child">└─ Camera2D</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card green">
+    <div class="card-title green">The Scene Instancing Workflow in the Editor</div>
+    <div class="step-list">
+      <div class="step-row"><div class="step-num">1</div>
+        <div class="step-body"><strong>Build the object's scene separately</strong> — e.g. open a new scene, create <code>CharacterBody2D</code> with sprite, collision, and script. Save as <code>goblin.tscn</code>.</div>
+      </div>
+      <div class="step-row"><div class="step-num">2</div>
+        <div class="step-body"><strong>In your level scene:</strong> In the Scene panel (top-left), click the <strong>chain link icon</strong> ("Instance Child Scene") → select <code>goblin.tscn</code>. Or drag the <code>.tscn</code> file directly from the FileSystem panel into the scene canvas.</div>
+      </div>
+      <div class="step-row"><div class="step-num">3</div>
+        <div class="step-body"><strong>Position the instance</strong> by dragging it in the canvas. Each instance is independent — move one without affecting others.</div>
+      </div>
+      <div class="step-row"><div class="step-num">4</div>
+        <div class="step-body"><strong>Override properties per-instance</strong> — click an instanced node, find any <code>@export</code> property in the Inspector, and change it. That change applies only to this instance. The scene file (blueprint) is untouched.
+          <span class="tip">💡 This is how you set a Goblin's <code>patrol_speed</code> to 80 in one room and 140 in a harder room — same scene, different @export values.</span>
+        </div>
+      </div>
+      <div class="step-row"><div class="step-num">5</div>
+        <div class="step-body"><strong>Edit the original:</strong> Double-click an instance in the scene tree → click "Open in Editor" button at the top. Changes here propagate to every instance in every level.
+          <span class="note">⚠️ Never edit an instance expecting those changes to persist — they're overridden by the original scene. Edit the .tscn file to change all instances.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ======================================================= INSTANCING -->
+<div class="section" id="tab-instancing">
+
+  <div class="hero">
+    <h2>Instancing & Spawning in Code</h2>
+    <p>Static instancing (placed in the editor) is fine for known objects. Dynamic spawning — creating enemies, projectiles, pickups at runtime — requires GDScript. The pattern is always: <strong>preload → instantiate → configure → add_child</strong>.</p>
+  </div>
+
+  <div class="card blue">
+    <div class="card-title">The Core Pattern — preload + instantiate</div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="cm"># ── preload at the top of the script ──────────────────────────
+# preload() happens at parse time — file must exist.
+# Use load() if the path is dynamic (determined at runtime).</span>
+<span class="kw">const</span> EnemyScene: <span class="ty">PackedScene</span> = <span class="fn">preload</span>(<span class="str">"res://entities/goblin.tscn"</span>)
+<span class="kw">const</span> CoinScene:  <span class="ty">PackedScene</span> = <span class="fn">preload</span>(<span class="str">"res://entities/coin.tscn"</span>)
+<span class="kw">const</span> BulletScene:<span class="ty">PackedScene</span> = <span class="fn">preload</span>(<span class="str">"res://entities/bullet.tscn"</span>)
+
+<span class="cm"># ── spawn at a position ──────────────────────────────────────</span>
+<span class="kw">func</span> <span class="fn">spawn_enemy</span>(at: <span class="ty">Vector2</span>) -> <span class="ty">void</span>:
+    <span class="kw">var</span> enemy: <span class="ty">Node2D</span> = EnemyScene.<span class="fn">instantiate</span>()  <span class="cm"># create instance</span>
+    enemy.global_position = at                         <span class="cm"># set position BEFORE add_child</span>
+    <span class="fn">add_child</span>(enemy)                                   <span class="cm"># add to scene tree</span>
+
+<span class="cm"># ── spawn at a Marker2D spawn point ─────────────────────────</span>
+<span class="kw">@onready</span> <span class="kw">var</span> spawn_points := <span class="fn">$SpawnPoints</span>.<span class="fn">get_children</span>()
+
+<span class="kw">func</span> <span class="fn">spawn_wave</span>() -> <span class="ty">void</span>:
+    <span class="kw">for</span> pt: <span class="ty">Marker2D</span> <span class="kw">in</span> spawn_points:
+        <span class="kw">var</span> e: <span class="ty">Node2D</span> = EnemyScene.<span class="fn">instantiate</span>()
+        e.global_position = pt.global_position
+        <span class="fn">$Enemies</span>.<span class="fn">add_child</span>(e)     <span class="cm"># add to container, not root</span>
+
+<span class="cm"># ── spawn at random position ─────────────────────────────────</span>
+<span class="kw">func</span> <span class="fn">spawn_random_coins</span>(count: <span class="ty">int</span>, bounds: <span class="ty">Rect2</span>) -> <span class="ty">void</span>:
+    <span class="kw">for</span> _i <span class="kw">in</span> count:
+        <span class="kw">var</span> coin: <span class="ty">Node2D</span> = CoinScene.<span class="fn">instantiate</span>()
+        coin.global_position = <span class="ty">Vector2</span>(
+            <span class="fn">randf_range</span>(bounds.position.x, bounds.end.x),
+            <span class="fn">randf_range</span>(bounds.position.y, bounds.end.y)
+        )
+        <span class="fn">$Pickups</span>.<span class="fn">add_child</span>(coin)</pre>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card yellow">
+      <div class="card-title yellow">Projectile Spawning (Bullets)</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cm"># In player.gd — shoot toward mouse</span>
+<span class="kw">const</span> BulletScene = <span class="fn">preload</span>(<span class="str">"res://bullet.tscn"</span>)
+
+<span class="cm"># Reference to the level root — so bullet exists</span>
+<span class="cm"># independently of the player (doesn't get deleted</span>
+<span class="cm"># if player is freed)</span>
+<span class="kw">@onready</span> <span class="kw">var</span> level := <span class="fn">get_parent</span>()
+
+<span class="kw">func</span> <span class="fn">shoot</span>() -> <span class="ty">void</span>:
+    <span class="kw">var</span> bullet := BulletScene.<span class="fn">instantiate</span>()
+    <span class="cm"># Set position at the gun muzzle Marker2D</span>
+    bullet.global_position = <span class="fn">$Muzzle</span>.global_position
+    <span class="cm"># Set direction toward mouse</span>
+    bullet.direction = (<span class="fn">get_global_mouse_position</span>()
+                       - global_position).<span class="fn">normalized</span>()
+    <span class="cm"># Add to level, not player — survives player movement</span>
+    level.<span class="fn">add_child</span>(bullet)
+
+<span class="kw">func</span> <span class="fn">_input</span>(event: <span class="ty">InputEvent</span>) -> <span class="ty">void</span>:
+    <span class="kw">if</span> event.<span class="fn">is_action_pressed</span>(<span class="str">"shoot"</span>):
+        <span class="fn">shoot</span>()</pre>
+      </div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Scene Changing — Load Next Level</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cm"># In level.gd — transition to next scene</span>
+<span class="kw">func</span> <span class="fn">go_to_next_level</span>() -> <span class="ty">void</span>:
+    <span class="cm"># Immediate change</span>
+    <span class="fn">get_tree</span>().<span class="fn">change_scene_to_file</span>(
+        <span class="str">"res://levels/level2.tscn"</span>)
+
+<span class="cm"># Or: load a PackedScene variable</span>
+<span class="kw">@export</span> <span class="kw">var</span> next_level: <span class="ty">PackedScene</span>
+<span class="kw">func</span> <span class="fn">go_to_next</span>() -> <span class="ty">void</span>:
+    <span class="fn">get_tree</span>().<span class="fn">change_scene_to_packed</span>(next_level)
+
+<span class="cm"># Reload current scene (restart level)</span>
+<span class="kw">func</span> <span class="fn">restart</span>() -> <span class="ty">void</span>:
+    <span class="fn">get_tree</span>().<span class="fn">reload_current_scene</span>()
+
+<span class="cm"># Deferred — safer mid-physics-frame</span>
+<span class="kw">func</span> <span class="fn">safe_change</span>() -> <span class="ty">void</span>:
+    <span class="fn">get_tree</span>().<span class="fn">change_scene_to_file</span>.<span class="fn">call_deferred</span>(
+        <span class="str">"res://levels/level2.tscn"</span>)</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Timed Wave Spawner — Full Pattern</div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="cm"># Attach to a Node2D "EnemySpawner" in your level</span>
+<span class="kw">extends</span> <span class="ty">Node2D</span>
+
+<span class="kw">const</span> EnemyScene: <span class="ty">PackedScene</span> = <span class="fn">preload</span>(<span class="str">"res://entities/goblin.tscn"</span>)
+
+<span class="kw">@export</span> <span class="kw">var</span> max_enemies: <span class="ty">int</span>   = <span class="num">10</span>
+<span class="kw">@export</span> <span class="kw">var</span> spawn_interval: <span class="ty">float</span> = <span class="num">3.0</span>   <span class="cm"># seconds between spawns</span>
+
+<span class="kw">@onready</span> <span class="kw">var</span> spawn_points := <span class="fn">$SpawnPoints</span>.<span class="fn">get_children</span>()
+<span class="kw">@onready</span> <span class="kw">var</span> timer: <span class="ty">Timer</span> = <span class="fn">$Timer</span>
+<span class="kw">@onready</span> <span class="kw">var</span> container: <span class="ty">Node2D</span> = <span class="fn">$Enemies</span>
+
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    timer.wait_time = spawn_interval
+    timer.timeout.<span class="fn">connect</span>(_try_spawn)
+    timer.<span class="fn">start</span>()
+
+<span class="kw">func</span> <span class="fn">_try_spawn</span>() -> <span class="ty">void</span>:
+    <span class="cm"># Don't exceed max</span>
+    <span class="kw">if</span> container.<span class="fn">get_child_count</span>() >= max_enemies:
+        <span class="kw">return</span>
+
+    <span class="cm"># Pick a random spawn point</span>
+    <span class="kw">var</span> pt: <span class="ty">Marker2D</span> = spawn_points[<span class="fn">randi</span>() % spawn_points.<span class="fn">size</span>()]
+
+    <span class="kw">var</span> enemy := EnemyScene.<span class="fn">instantiate</span>()
+    enemy.global_position = pt.global_position
+    container.<span class="fn">add_child</span>(enemy)
+    <span class="cm"># Listen for death signal to decrement count</span>
+    enemy.died.<span class="fn">connect</span>(_on_enemy_died.bind(enemy))</pre>
+    </div>
+  </div>
+
+  <div class="callout red">
+    <div class="callout-label">⚠️ instance() is Godot 3 — use instantiate() in Godot 4</div>
+    <p>If you find tutorials using <em>enemyScene.instance()</em>, that's Godot 3 syntax. Godot 4 uses <em>enemyScene.instantiate()</em>. Same idea, different method name. This is one of the most common copy-paste errors when following old tutorials.</p>
+  </div>
+
+</div>
+
+
+<!-- ======================================================= CODE -->
+<div class="section" id="tab-code">
+
+  <div class="hero">
+    <h2>GDScript ↔ TileMapLayer</h2>
+    <p>Reading and modifying tiles at runtime unlocks destructible environments, procedural generation, dynamic hazards, and runtime collision updates. The API is clean once you learn the cell coordinate system.</p>
+  </div>
+
+  <div class="card blue">
+    <div class="card-title">Cell Coordinates — The Basics</div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="kw">@onready</span> <span class="kw">var</span> ground: <span class="ty">TileMapLayer</span> = <span class="fn">$Ground</span>
+
+<span class="cm"># ── World position ↔ cell coordinate conversion ──────────────</span>
+<span class="kw">func</span> <span class="fn">world_to_cell</span>(world_pos: <span class="ty">Vector2</span>) -> <span class="ty">Vector2i</span>:
+    <span class="kw">return</span> ground.<span class="fn">local_to_map</span>(ground.<span class="fn">to_local</span>(world_pos))
+
+<span class="kw">func</span> <span class="fn">cell_to_world</span>(cell: <span class="ty">Vector2i</span>) -> <span class="ty">Vector2</span>:
+    <span class="kw">return</span> ground.<span class="fn">to_global</span>(ground.<span class="fn">map_to_local</span>(cell))
+
+<span class="cm"># ── Check if a cell has a tile ────────────────────────────────</span>
+<span class="kw">func</span> <span class="fn">has_tile</span>(cell: <span class="ty">Vector2i</span>) -> <span class="ty">bool</span>:
+    <span class="kw">return</span> ground.<span class="fn">get_cell_source_id</span>(cell) != -<span class="num">1</span>
+    <span class="cm"># source_id == -1 means empty cell</span>
+
+<span class="cm"># ── Place a tile ──────────────────────────────────────────────</span>
+<span class="kw">func</span> <span class="fn">place_tile</span>(cell: <span class="ty">Vector2i</span>, atlas_coords: <span class="ty">Vector2i</span>) -> <span class="ty">void</span>:
+    ground.<span class="fn">set_cell</span>(cell,
+        <span class="num">0</span>,             <span class="cm"># source_id (which atlas in TileSet)</span>
+        atlas_coords   <span class="cm"># which tile within the atlas</span>
+    )
+
+<span class="cm"># ── Erase a tile ──────────────────────────────────────────────</span>
+<span class="kw">func</span> <span class="fn">erase_tile</span>(cell: <span class="ty">Vector2i</span>) -> <span class="ty">void</span>:
+    ground.<span class="fn">erase_cell</span>(cell)
+
+<span class="cm"># ── Get all painted cells ─────────────────────────────────────</span>
+<span class="kw">func</span> <span class="fn">_ready</span>() -> <span class="ty">void</span>:
+    <span class="kw">var</span> all_cells: <span class="ty">Array</span>[<span class="ty">Vector2i</span>] = ground.<span class="fn">get_used_cells</span>()
+    <span class="fn">print</span>(<span class="str">"total tiles: "</span>, all_cells.<span class="fn">size</span>())</pre>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card yellow">
+      <div class="card-title yellow">Reading Custom Data from Tiles</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cm"># Read custom tile data at player's feet
+# (e.g. surface type for footstep audio)</span>
+<span class="kw">@onready</span> <span class="kw">var</span> ground: <span class="ty">TileMapLayer</span> = <span class="fn">$"../Ground"</span>
+
+<span class="kw">func</span> <span class="fn">get_surface_type</span>() -> <span class="ty">String</span>:
+    <span class="kw">var</span> cell := ground.<span class="fn">local_to_map</span>(
+        ground.<span class="fn">to_local</span>(global_position))
+    <span class="kw">var</span> data := ground.<span class="fn">get_cell_tile_data</span>(cell)
+    <span class="kw">if</span> data == <span class="kw">null</span>:
+        <span class="kw">return</span> <span class="str">"air"</span>
+    <span class="kw">return</span> data.<span class="fn">get_custom_data</span>(<span class="str">"surface_type"</span>)
+
+<span class="cm"># Apply movement modifiers based on tile</span>
+<span class="kw">func</span> <span class="fn">get_friction</span>() -> <span class="ty">float</span>:
+    <span class="kw">match</span> <span class="fn">get_surface_type</span>():
+        <span class="str">"ice"</span>:   <span class="kw">return</span> <span class="num">0.05</span>
+        <span class="str">"mud"</span>:   <span class="kw">return</span> <span class="num">0.7</span>
+        <span class="str">"grass"</span>: <span class="kw">return</span> <span class="num">0.3</span>
+        _:       <span class="kw">return</span> <span class="num">1.0</span></pre>
+      </div>
+    </div>
+    <div class="card green">
+      <div class="card-title green">Destructible Tiles</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        <pre><span class="cm"># Breakable block — called when a projectile hits it</span>
+<span class="kw">extends</span> <span class="ty">Node2D</span>
+
+<span class="kw">@onready</span> <span class="kw">var</span> ground: <span class="ty">TileMapLayer</span> = <span class="fn">$"../Ground"</span>
+<span class="kw">const</span> DebrisScene = <span class="fn">preload</span>(<span class="str">"res://fx/debris.tscn"</span>)
+
+<span class="kw">func</span> <span class="fn">break_tile_at</span>(world_pos: <span class="ty">Vector2</span>) -> <span class="ty">void</span>:
+    <span class="kw">var</span> cell := ground.<span class="fn">local_to_map</span>(
+        ground.<span class="fn">to_local</span>(world_pos))
+
+    <span class="cm"># Only break tiles tagged as "breakable"</span>
+    <span class="kw">var</span> data := ground.<span class="fn">get_cell_tile_data</span>(cell)
+    <span class="kw">if</span> data == <span class="kw">null</span>: <span class="kw">return</span>
+    <span class="kw">if</span> <span class="kw">not</span> data.<span class="fn">get_custom_data</span>(<span class="str">"breakable"</span>): <span class="kw">return</span>
+
+    <span class="cm"># Spawn debris effect at tile center</span>
+    <span class="kw">var</span> centre := ground.<span class="fn">to_global</span>(
+        ground.<span class="fn">map_to_local</span>(cell))
+    <span class="kw">var</span> debris := DebrisScene.<span class="fn">instantiate</span>()
+    debris.global_position = centre
+    <span class="fn">add_child</span>(debris)
+
+    <span class="cm"># Erase the tile</span>
+    ground.<span class="fn">erase_cell</span>(cell)</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">One-Way Platform Drop-Through (GDScript)</div>
+    <div class="code-wrap">
+      <button class="copy-btn" onclick="copyCode(this)">copy</button>
+      <pre><span class="cm"># In player.gd — allow player to drop through one-way platforms</span>
+<span class="kw">extends</span> <span class="ty">CharacterBody2D</span>
+
+<span class="kw">func</span> <span class="fn">_physics_process</span>(delta: <span class="ty">float</span>) -> <span class="ty">void</span>:
+    <span class="fn">_handle_drop_through</span>()
+    <span class="cm"># ... rest of movement code ...</span>
+    <span class="fn">move_and_slide</span>()
+
+<span class="kw">func</span> <span class="fn">_handle_drop_through</span>() -> <span class="ty">void</span>:
+    <span class="cm"># Hold Down + jump input to drop through one-way platform</span>
+    <span class="kw">if</span> <span class="ty">Input</span>.<span class="fn">is_action_pressed</span>(<span class="str">"ui_down"</span>) <span class="kw">and</span> \
+       <span class="ty">Input</span>.<span class="fn">is_action_just_pressed</span>(<span class="str">"ui_accept"</span>) <span class="kw">and</span> \
+       <span class="fn">is_on_floor</span>():
+        <span class="fn">_drop_through_platform</span>()
+
+<span class="kw">func</span> <span class="fn">_drop_through_platform</span>() -> <span class="ty">void</span>:
+    <span class="cm"># Temporarily disable one-way collision for a short time</span>
+    position.y += <span class="num">2</span>    <span class="cm"># nudge below the platform surface</span>
+    <span class="kw">var</span> col: <span class="ty">KinematicCollision2D</span>
+    <span class="cm"># Disable one-way collision for 0.15 seconds</span>
+    set_collision_mask_value(<span class="num">2</span>, <span class="kw">false</span>)   <span class="cm"># layer 2 = one-way</span>
+    <span class="kw">await</span> <span class="fn">get_tree</span>().<span class="fn">create_timer</span>(<span class="num">0.15</span>).timeout
+    set_collision_mask_value(<span class="num">2</span>, <span class="kw">true</span>)    <span class="cm"># re-enable</span></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">TileMapLayer API — Quick Reference</div>
+    <table class="ref-table">
+      <thead><tr><th>Method</th><th>Returns</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>local_to_map(local_pos)</td><td>Vector2i</td><td>Convert a local-space position to a cell coordinate</td></tr>
+        <tr><td>map_to_local(cell)</td><td>Vector2</td><td>Convert a cell coordinate to the cell's center in local space</td></tr>
+        <tr><td>get_cell_source_id(cell)</td><td>int</td><td>Returns source atlas ID, or -1 if cell is empty</td></tr>
+        <tr><td>get_cell_atlas_coords(cell)</td><td>Vector2i</td><td>Returns which tile within the atlas is placed at this cell</td></tr>
+        <tr><td>get_cell_tile_data(cell)</td><td>TileData</td><td>Full tile data — read custom data, physics, etc. Null if empty</td></tr>
+        <tr><td>set_cell(cell, src, atlas)</td><td>void</td><td>Place a tile. src=source_id, atlas=atlas coords</td></tr>
+        <tr><td>erase_cell(cell)</td><td>void</td><td>Remove a tile (make cell empty)</td></tr>
+        <tr><td>get_used_cells()</td><td>Array[Vector2i]</td><td>All cells that have a tile painted</td></tr>
+        <tr><td>get_used_cells_by_id(src, atlas)</td><td>Array[Vector2i]</td><td>All cells with a specific tile</td></tr>
+        <tr><td>get_used_rect()</td><td>Rect2i</td><td>Bounding rectangle of all painted tiles</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+
+<!-- ======================================================= GOTCHAS -->
+<div class="section" id="tab-gotchas">
+
+  <div class="hero" style="border-left-color:var(--accent2)">
+    <h2 style="color:var(--accent2)">Level Design Gotchas</h2>
+    <p>These are the specific mistakes that waste hours. Most of them are invisible until you run the game.</p>
+  </div>
+
+  <div class="card red">
+    <div class="card-title red">TileMap / TileSet Gotchas</div>
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag warn">CRITICAL</span>Tile size mismatch — wrong collision positions</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>If you set the TileSet's tile size to 32×32 but your sprite sheet tiles are 16×16, all collision shapes will be misaligned. <strong>Set tile size first, before importing any art.</strong> If you need to change it later, you'll have to redraw all physics shapes.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag warn">CRITICAL</span>No physics layer → no collision</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>Adding a TileMapLayer does not automatically give tiles collision. You must: 1) add a Physics Layer to the TileSet resource, 2) draw shapes on individual tiles. If you skip either step, physics bodies fall through the floor with no error or warning.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag warn">GOTCHA</span>Ghost collisions between flat tiles</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>If your player snags or stutters on flat ground, the physics shapes on adjacent tiles are slightly overlapping at their shared edge. Fix: use <strong>full-tile rectangles</strong> for all flat tiles. Godot 4 merges adjacent full-tile rectangles at runtime, eliminating seam collisions. Avoid polygons on flat terrain.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag warn">GOTCHA</span>Editing instanced tiles expecting changes to persist</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>If you change a tile's physics shape in TileSet editor while a level scene is open and then undo something in the level editor, your TileSet edits may be reverted. <strong>Save the TileSet resource explicitly</strong> (right-click it in Inspector → Save) after any changes to physics shapes or custom data.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag tip">NOTE</span>TileMap is deprecated — use TileMapLayer</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>As of Godot 4.3, the <code>TileMap</code> node with its built-in layer system is deprecated. New projects should use individual <code>TileMapLayer</code> nodes instead. The API changes slightly: <code>get_cell_source_id(layer, cell)</code> becomes <code>get_cell_source_id(cell)</code> — no layer argument needed since each node is one layer.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card yellow">
+    <div class="card-title yellow">Instancing & Spawning Gotchas</div>
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag warn">CRITICAL</span>instance() vs instantiate() — Godot 3 vs 4</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>Godot 3: <code>scene.instance()</code>. Godot 4: <code>scene.instantiate()</code>. Many tutorials and forum answers are for Godot 3. If you get <em>"Nonexistent function 'instance'"</em>, you're using the wrong version's syntax.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag warn">GOTCHA</span>Set position BEFORE add_child()</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>If you set <code>global_position</code> after <code>add_child()</code>, the node will briefly flicker at world origin (0,0) before snapping to the target position — because <code>global_position</code> only becomes valid once a node is in the scene tree. Set <code>position</code> (local) before <code>add_child()</code>, or set <code>global_position</code> immediately after.</p>
+          <p>Safe pattern: <code>var e = Scene.instantiate()</code> → <code>e.position = target_pos</code> → <code>add_child(e)</code></p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag warn">GOTCHA</span>Bullet parented to player gets wrong velocity</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>If you <code>add_child</code> a projectile to the player node, its position is in the player's local coordinate space. When the player moves, the bullet moves with it. Add projectiles to the level root or a top-level container instead — never to a moving parent.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag warn">GOTCHA</span>Forgetting to queue_free() spawned objects</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>Every enemy or bullet you spawn stays in the scene tree consuming memory and CPU until you explicitly call <code>queue_free()</code> on it. Bullets that fly offscreen forever are a common memory leak. Connect a <code>VisibleOnScreenNotifier2D</code> signal or use a Timer to auto-free offscreen projectiles.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag tip">NOTE</span>preload() vs load() — when to use each</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p><code>preload()</code> runs at parse time — the path must be a literal string that exists at compile time. It's faster because the asset is ready before the scene runs. <code>load()</code> runs at runtime and accepts dynamic paths. Use <code>preload()</code> for all known scenes. Use <code>load()</code> only when the scene path is determined by data (e.g. loading a level from a save file string).</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Scene Architecture Gotchas</div>
+    <div class="accordion">
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag warn">GOTCHA</span>Node paths break when you rename or move nodes</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>If you access a node via a hardcoded path like <code>$Level/Entities/Enemies/Goblin1</code> and then reorganise the tree, the path breaks silently at runtime — returning null and causing null-reference errors. Prefer <code>@onready var</code> references from direct parents, or use <strong>groups</strong> to find nodes by role instead of path: <code>get_tree().get_nodes_in_group("enemies")</code>.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag warn">GOTCHA</span>Editing an instance, not the blueprint</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>Changes made to an instanced node in the level editor (moving a child node, editing its script) are <strong>overrides on that instance only</strong>. They don't change the original <code>.tscn</code> file. If you want all instances to update, open the original scene file and edit there. Accidental instance-level edits are a major source of "why did my change not work?"</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <div class="acc-title"><span class="acc-tag tip">NOTE</span>Player should usually be in the level scene, not a child of TileMapLayer</div>
+          <div class="acc-arrow">▼</div>
+        </div>
+        <div class="acc-body">
+          <p>The Player scene instance should be a direct child of the level root (or an Entities container), never a child of TileMapLayer. Making it a child of a TileMapLayer means its position is relative to the tile layer — if you ever move or offset the layer, the player moves with it.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card green">
+    <div class="card-title green">Quick Debug Checklist</div>
+    <div class="rule-list">
+      <div class="rule-row"><div class="rule-icon">🔲</div><div class="rule-text"><strong>Player falls through floor</strong> → Debug → Visible Collision Shapes. Are there orange shapes on your tiles? If not: missing physics layer or missing shapes on tiles.</div></div>
+      <div class="rule-row"><div class="rule-icon">🔲</div><div class="rule-text"><strong>Player snags on flat ground</strong> → Physics shapes overlap at tile seams. Switch all flat tiles to full-tile rectangles using Paint mode.</div></div>
+      <div class="rule-row"><div class="rule-icon">🔲</div><div class="rule-text"><strong>Spawned enemy appears at 0,0</strong> → You set global_position after add_child(). Set position before add_child(), or set global_position immediately after.</div></div>
+      <div class="rule-row"><div class="rule-icon">🔲</div><div class="rule-text"><strong>Enemy spawns but doesn't collide</strong> → Check collision_layer and collision_mask on both the enemy and the terrain TileMapLayer. Both must be configured.</div></div>
+      <div class="rule-row"><div class="rule-icon">🔲</div><div class="rule-text"><strong>Bullet moves with player</strong> → Bullet is parented to the player node. Add it to the level root instead: <code>get_parent().add_child(bullet)</code>.</div></div>
+      <div class="rule-row"><div class="rule-icon">🔲</div><div class="rule-text"><strong>Terrain tiles don't autotile correctly</strong> → Peering bits not set, or not enough tile variants in the atlas. Check the Terrain editor — tiles should be highlighted with matching colour patches.</div></div>
+      <div class="rule-row"><div class="rule-icon">🔲</div><div class="rule-text"><strong>Changed an enemy in a level but it didn't update</strong> → You edited an instance override. Open the original <code>.tscn</code> file and edit there to update all instances.</div></div>
+    </div>
+  </div>
+
+</div>
+
+
+</main>
+
+<script>
+// tabs
+const tabs = document.querySelectorAll('nav button');
+const sections = document.querySelectorAll('.section');
+tabs.forEach(btn => {
+  btn.addEventListener('click', () => {
+    tabs.forEach(b => b.classList.remove('active'));
+    sections.forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+// theme
+document.getElementById('themeToggle').addEventListener('change', e => {
+  const light = e.target.checked;
+  document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+  document.getElementById('toggle-label').textContent = light ? 'LIGHT' : 'DARK';
+});
+// copy
+function copyCode(btn) {
+  const pre = btn.nextElementSibling;
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 1500);
+  });
+}
+// accordion
+function toggleAcc(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.acc-arrow');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+</script>
+</body>
+</html>

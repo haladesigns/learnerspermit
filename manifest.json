@@ -597,12 +597,6 @@
   },
   {
     "type": "file",
-    "name": "dot_product_cosine_full_journey.html",
-    "label": "Dot Product Cosine Full Journey",
-    "path": "dot_product_cosine_full_journey.html"
-  },
-  {
-    "type": "file",
     "name": "index.html",
     "label": "Index",
     "path": "index.html"

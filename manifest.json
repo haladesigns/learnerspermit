@@ -25,6 +25,12 @@
     "children": [
       {
         "type": "file",
+        "name": "big-o-reference.html",
+        "label": "Big O Reference",
+        "path": "big-o/big-o-reference.html"
+      },
+      {
+        "type": "file",
         "name": "readme",
         "label": "Readme",
         "path": "big-o/readme"

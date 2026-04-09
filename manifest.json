@@ -20,6 +20,19 @@
   },
   {
     "type": "folder",
+    "name": "big-o",
+    "label": "Big O",
+    "children": [
+      {
+        "type": "file",
+        "name": "readme",
+        "label": "Readme",
+        "path": "big-o/readme"
+      }
+    ]
+  },
+  {
+    "type": "folder",
     "name": "cc_masterclass_modules",
     "label": "Cc Masterclass Modules",
     "children": [

@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WISC Framework — Claude Code Context Management Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 740px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 120px;
+  }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent2); }
+  .stat-val.blue  { color: var(--accent); }
+  .stat-val.green { color: var(--accent3); }
+  .stat-val.amber { color: var(--accent4); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* Layer stack */
+  .layer-stack { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .layer-row {
+    display: grid;
+    grid-template-columns: 36px 140px 1fr;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .layer-row:last-child { border-bottom: none; }
+  .layer-row:hover { background: var(--accent-glow); }
+  .layer-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    line-height: 1.2;
+    padding-top: 2px;
+  }
+  .layer-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent4);
+    font-weight: 600;
+    padding-top: 3px;
+    line-height: 1.4;
+  }
+  .layer-label small {
+    display: block;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-top: 2px;
+  }
+  .layer-desc { font-size: 13px; color: var(--text); line-height: 1.55; }
+  .layer-desc code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+  .layer-desc .note { display: block; margin-top: 4px; font-size: 12px; color: var(--text-muted); }
+
+  /* WHISK letter pills */
+  .whisk-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .w-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    border: 1px solid var(--border-accent);
+    background: var(--bg-code);
+    cursor: default;
+  }
+  .w-pill.W { color: var(--accent); border-color: rgba(79,142,247,0.4); background: var(--accent-glow); }
+  .w-pill.I { color: var(--accent3); border-color: rgba(62,207,142,0.4); background: var(--accent3-glow); }
+  .w-pill.S { color: var(--accent4); border-color: rgba(247,162,62,0.4); background: rgba(247,162,62,0.08); }
+  .w-pill.K { color: #b48ef7; border-color: rgba(180,142,247,0.4); background: rgba(180,142,247,0.08); }
+  .w-pill.C { color: var(--accent2); border-color: rgba(224,95,122,0.4); background: var(--accent2-glow); }
+
+  /* Section header pill */
+  .section-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 5px 14px 5px 10px;
+    border-radius: 20px;
+    margin-bottom: 4px;
+  }
+  .section-pill .letter {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .section-pill.W { color: var(--accent); background: var(--accent-glow); border: 1px solid rgba(79,142,247,0.3); }
+  .section-pill.I { color: var(--accent3); background: var(--accent3-glow); border: 1px solid rgba(62,207,142,0.3); }
+  .section-pill.S { color: var(--accent4); background: rgba(247,162,62,0.08); border: 1px solid rgba(247,162,62,0.3); }
+  .section-pill.C { color: var(--accent2); background: var(--accent2-glow); border: 1px solid rgba(224,95,122,0.3); }
+
+  /* Research source tag */
+  .source-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: rgba(62,207,142,0.1);
+    color: var(--accent3);
+    border: 1px solid rgba(62,207,142,0.25);
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+    margin-left: 6px;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">WISC<span> — Context Management Framework</span></div>
+    <div class="badge">CLAUDE CODE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="write">W — Write</button>
+  <button data-tab="isolate">I — Isolate</button>
+  <button data-tab="select">S — Select</button>
+  <button data-tab="compress">C — Compress</button>
+  <button data-tab="commands">Commands</button>
+</nav>
+
+<main>
+
+  <!-- ============================================================
+       OVERVIEW
+       ============================================================ -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>WISC Framework</h2>
+      <p>A battle-tested system for keeping your Claude Code context window <strong>lean and high-signal</strong>. Context rot — the measurable degradation in LLM output quality as input length grows — is responsible for roughly <strong>80% of agent failures</strong> in real codebases. WISC is the engineering response: Write, Isolate, Select, Compress.</p>
+    </div>
+
+    <!-- WHISK pills -->
+    <div class="card">
+      <div class="card-title">The Four Pillars</div>
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+        <div style="background:var(--bg-code); border:1px solid rgba(79,142,247,0.3); border-radius:8px; padding:16px 14px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:var(--accent); margin-bottom:6px;">W</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Write</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">Externalize agent memory so future sessions start fast</div>
+        </div>
+        <div style="background:var(--bg-code); border:1px solid rgba(62,207,142,0.3); border-radius:8px; padding:16px 14px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:var(--accent3); margin-bottom:6px;">I</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Isolate</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">Use sub-agents to research without polluting main context</div>
+        </div>
+        <div style="background:var(--bg-code); border:1px solid rgba(247,162,62,0.3); border-radius:8px; padding:16px 14px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:var(--accent4); margin-bottom:6px;">S</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent4); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Select</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">Load context just-in-time, not just-in-case</div>
+        </div>
+        <div style="background:var(--bg-code); border:1px solid rgba(224,95,122,0.3); border-radius:8px; padding:16px 14px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:var(--accent2); margin-bottom:6px;">C</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent2); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Compress</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">Last resort only — handoff or /compact when bloated</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card red">
+        <div class="card-title red">Why Context Rot Matters</div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-val">~80%</div>
+            <div class="stat-label">of agent failures attributed to poor context management</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val amber">30%+</div>
+            <div class="stat-label">accuracy drop for info buried in the middle of context <span class="source-tag">RESEARCH</span></div>
+          </div>
+        </div>
+        <div style="margin-top:14px; font-size:12px; color:var(--text-muted); line-height:1.7;">
+          The <strong style="color:var(--text);">Chroma technical report</strong> (2025) evaluated 18 frontier LLMs — GPT-4.1, Claude 4, Gemini 2.5, Qwen3 — and found that <em>every single one</em> degrades as context length increases. A 1M-token window still rots at 50K tokens. The issue is signal-to-noise ratio, not capacity.
+        </div>
+      </div>
+
+      <div class="card blue">
+        <div class="card-title">Core Principle</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text">The goal: keep the context window <strong>as lean as possible</strong> while giving the agent everything it genuinely needs.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧲</div>
+            <div class="rule-text"><strong>Distractor problem:</strong> Similar-but-wrong code in a large context causes confident wrong answers — especially in codebases with repeated patterns.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📐</div>
+            <div class="rule-text">Bigger windows don't fix this. <code>1M token limit</code> = more room to accumulate noise, not immunity to rot.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Mental Model</div>
+      <p><em>Context is your most precious resource</em> — not tokens you're allowed to fill, but signal you must engineer. Every token in the window competes for the model's attention. Unnecessary tokens don't sit quietly; they actively dilute the important ones.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ============================================================
+       W — WRITE
+       ============================================================ -->
+  <div class="section" id="tab-write">
+
+    <div class="hero" style="border-left-color: var(--accent);">
+      <div class="section-pill W"><span class="letter">W</span> Write — Externalize Agent Memory</div>
+      <p style="margin-top:8px;">Capture decisions and progress <em>outside</em> the context window so future sessions spend fewer tokens getting up to speed. Three strategies: git log as long-term memory, separate planning and implementation sessions, and progress/handoff files.</p>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">W1 — Git Log as Long-Term Memory</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">💾</div>
+          <div class="rule-text">Use <strong>standardized commit messages</strong> as a persistent, queryable log of what the agent has worked on. Everyone's already using Git — no extra tooling needed.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text">A <code>/commit</code> command enforces the format: <strong>what was built</strong> + <strong>how the AI layer (rules/commands) was improved</strong>. Both halves matter.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔍</div>
+          <div class="rule-text">At session start, the <code>/prime</code> command reads the <code>git log --oneline</code> to orient the agent on recent work before any planning begins.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Vague commit messages break this entirely.</span> If messages aren't structured and detailed, the log becomes useless as memory.</div>
+        </div>
+      </div>
+      <pre><span class="cm"># Example /commit command output format</span>
+<span class="hd">feat(cli): standardize test runner output formatting</span>
+
+<span class="li">Changes:</span>
+<span class="li">- Added colored output for pass/fail states</span>
+<span class="li">- Normalized exit codes across test suites</span>
+
+<span class="li">AI layer improvements:</span>
+<span class="li">- Updated /plan command to include validation step</span>
+<span class="li">- Added edge-case section to test writing rules</span></pre>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">W2 — Separate Planning &amp; Implementation Sessions</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Planning session</strong> — run <code>/prime</code>, load context, discuss the task. The agent explores, asks questions, does research.
+            <span class="tip">💡 This session gets messy. That's fine — it's disposable.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Create a structured plan</strong> — run <code>/plan</code> to produce a single markdown document. This is your hand-off artifact. It must contain <em>everything</em> the agent needs: what to build, how to validate, relevant file paths.
+            <span class="note">⚠ If the spec is incomplete, the implementation session will re-research and pollute its context.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Fresh context window</strong> — start a brand new session, run <code>/execute path/to/plan.md</code>. No other context loaded.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Implementation only</strong> — the agent is maximally focused. No planning residue, no exploratory dead-ends cluttering the window.
+            <span class="tip">💡 The spec is doing the work that context would otherwise do.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">W3 — Progress Files &amp; Decision Logs</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📝</div>
+          <div class="rule-text">Use a <code>handoff.md</code> or <code>todo.md</code> to communicate between agent sessions — or between sub-agents in multi-agent workflows.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📊</div>
+          <div class="rule-text">When you hit ~200K tokens, performance starts to visibly degrade (confirmed by <code>/context</code> usage). A handoff file lets you start fresh without losing progress.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔄</div>
+          <div class="rule-text">The <code>/handoff</code> command creates a structured summary: what was completed, what's in progress, known issues, next steps.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">If you've needed 2+ compactions in one session,</span> that session is too bloated. Use /handoff to start fresh instead of compacting again.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✓ Write Summary</div>
+      <p>Log key decisions in git. Split planning from implementation into separate context windows. Create handoff docs when sessions get long. <em>Every token saved at session start is a token that stays available for actual work.</em></p>
+    </div>
+
+  </div><!-- /write -->
+
+
+  <!-- ============================================================
+       I — ISOLATE
+       ============================================================ -->
+  <div class="section" id="tab-isolate">
+
+    <div class="hero" style="border-left-color: var(--accent3); box-shadow: var(--shadow), inset 0 0 60px var(--accent3-glow);">
+      <div class="section-pill I"><span class="letter">I</span> Isolate — Sub-agents for Clean Context</div>
+      <p style="margin-top:8px;">Run research in isolated context windows. Sub-agents can burn through hundreds of thousands of tokens exploring codebases and the web — only the distilled summary returns to your main session.</p>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">The Research Sub-agent Pattern</div>
+      <div class="stat-row" style="margin-bottom:14px;">
+        <div class="stat">
+          <div class="stat-val green">90.2%</div>
+          <div class="stat-label">performance improvement vs single-agent on Anthropic's internal research eval <span class="source-tag">ANTHROPIC</span></div>
+        </div>
+        <div class="stat">
+          <div class="stat-val amber">~4%</div>
+          <div class="stat-label">of context window used — vs hundreds of thousands tokens if done inline</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">80%</div>
+          <div class="stat-label">of performance variance explained by token budget alone <span class="source-tag">RESEARCH</span></div>
+        </div>
+      </div>
+      <div style="font-size:12px; color:var(--text-muted); line-height:1.7; border-top:1px solid var(--border); padding-top:12px;">
+        Anthropic's own multi-agent research system (Claude Opus 4 lead + Claude Sonnet 4 sub-agents) outperformed single-agent Opus 4 by <strong style="color:var(--accent3);">90.2%</strong> on complex research tasks. Token usage alone explained 80% of performance variance — sub-agents let you spend more total tokens without degrading the main context window.
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card green">
+        <div class="card-title green">Use Sub-agents For</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔎</div>
+            <div class="rule-text"><strong>Codebase research</strong> — "explore the entire auth module and summarize how sessions are managed"</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🌐</div>
+            <div class="rule-text"><strong>Web research</strong> — best practices, library comparisons, relevant docs</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Parallel exploration</strong> — spin up 2–5 sub-agents simultaneously; they run concurrently, not sequentially</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📁</div>
+            <div class="rule-text"><strong>Documentation scouting</strong> — decide <em>whether</em> to load a large doc before loading it (the Scout Pattern)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">Don't Use Sub-agents For</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">❌</div>
+            <div class="rule-text"><span class="neg">Implementation work</span> — you want full context of what was done during execution, not a summary</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">❌</div>
+            <div class="rule-text"><span class="neg">Tightly interdependent tasks</span> — sub-agents work in isolation; they can't share real-time state mid-task</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><strong>Cost warning:</strong> multi-agent systems consume ~15× more tokens than standard chat. Only worthwhile when value outweighs cost.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">The Scout Pattern</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Identify candidate context</strong> — docs in Confluence, Google Drive, <code>.claude/docs/</code>, markdown deep-dives. Files you might want but aren't sure about.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Send a scout</strong> — "spin up a sub-agent to read everything in <code>.claude/docs/</code> and tell me which files are relevant to planning a workflow builder"
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Scout decides</strong> — returns a recommendation: load this doc, skip that one. Main context only grows by ~500 tokens for the scout call.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Load selectively</strong> — only bring in what the scout confirmed is relevant.
+            <span class="tip">💡 Use this before any planning session involving large or infrequently-needed documentation.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✓ Isolate Summary</div>
+      <p>Sub-agents for research, always. They give you the benefit of broad exploration while returning only the concentrated insight. <em>Use them heavily in planning — not at all in implementation.</em></p>
+    </div>
+
+  </div><!-- /isolate -->
+
+
+  <!-- ============================================================
+       S — SELECT
+       ============================================================ -->
+  <div class="section" id="tab-select">
+
+    <div class="hero" style="border-left-color: var(--accent4); box-shadow: var(--shadow), inset 0 0 60px rgba(247,162,62,0.08);">
+      <div class="section-pill S"><span class="letter">S</span> Select — Just-in-Time Context Loading</div>
+      <p style="margin-top:8px;">A four-layer model for what gets loaded, when, and how. The goal: every token in context is there because it's needed right now — not just in case.</p>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">The Four Layers</div>
+      <div class="layer-stack">
+        <div class="layer-row" style="background: var(--bg-code);">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted);">#</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted);">Layer</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted);">What / When</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-num">1</div>
+          <div class="layer-label">Global Rules<small>Always loaded</small></div>
+          <div class="layer-desc">
+            <code>CLAUDE.md</code> — architecture, conventions, testing strategy, logging patterns, commands to run. Applies to <em>every</em> session, every task.<br>
+            <span class="note">Target: 500–700 lines. Some advocate even less. Keep it lean — these tokens are always present.</span>
+          </div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-num">2</div>
+          <div class="layer-label">On-Demand Context<small>Task-specific</small></div>
+          <div class="layer-desc">
+            Rules that apply only to specific subsystems — frontend conventions, API endpoint patterns, workflow YAML spec. Load manually when you know you're working in that area.<br>
+            <span class="note">Not in global rules because you're not always working on the frontend / that module.</span>
+          </div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-num">3</div>
+          <div class="layer-label">Skills<small>Lazy-loaded</small></div>
+          <div class="layer-desc">
+            A skill description (small) is in global rules. The full <code>SKILL.md</code> is only read when the agent decides it needs that capability. Skills can also reference scripts and additional docs.<br>
+            <span class="note">Example: agent browser skill for end-to-end testing — loaded only when you're actually running tests.</span>
+          </div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-num">4</div>
+          <div class="layer-label">Prime Commands<small>Session start</small></div>
+          <div class="layer-desc">
+            Dynamic codebase exploration at the start of a planning session. Sub-agents explore live files so the agent's understanding is current, not stale.<br>
+            <span class="note">Specialized primes for different areas: <code>/prime</code> (general), <code>/prime-workflows</code>, etc. Run once at the top of planning — not during implementation.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card yellow">
+        <div class="card-title yellow">Loading Decision Rule</div>
+        <div class="callout yellow" style="margin-top:0; border-radius:6px;">
+          <div class="callout-label">The Test</div>
+          <p>If you are not <em>100% confident</em> that a piece of information is important to the agent right now — <em>don't load it.</em></p>
+        </div>
+        <div class="rule-list" style="margin-top:12px;">
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">Load it</span> — you are about to work on the frontend and have frontend rules</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">❌</div>
+            <div class="rule-text"><span class="neg">Skip it</span> — "it might be relevant" or "just in case" — leave it out</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔍</div>
+            <div class="rule-text"><strong>Unsure?</strong> Use a scout sub-agent to check relevance before loading</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Global Rules Sizing</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📏</div>
+            <div class="rule-text">Target <strong>500–700 lines</strong> for global <code>CLAUDE.md</code>. These tokens are loaded into every single session.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✂️</div>
+            <div class="rule-text">Things that belong here: architecture overview, conventions, commands, testing + logging strategy.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🚫</div>
+            <div class="rule-text">Things that don't: deep-dives into specific modules, rarely-needed reference docs, subsystem specifics.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">✓ Select Summary</div>
+      <p>Global rules always. On-demand context when you know the task domain. Skills lazy-load themselves. Prime commands orient the agent at session start. <em>Every layer adds tokens — load each one only when it earns its place.</em></p>
+    </div>
+
+  </div><!-- /select -->
+
+
+  <!-- ============================================================
+       C — COMPRESS
+       ============================================================ -->
+  <div class="section" id="tab-compress">
+
+    <div class="hero" style="border-left-color: var(--accent2); box-shadow: var(--shadow), inset 0 0 60px var(--accent2-glow);">
+      <div class="section-pill C"><span class="letter">C</span> Compress — Last Resort Only</div>
+      <p style="margin-top:8px;">If W, I, and S are working well, you should rarely need this. Compression is a signal that something upstream broke down. When you must compress: two options — <code>/handoff</code> or <code>/compact</code>.</p>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠ The Best Compression Strategy</div>
+      <p><em>Not needing compression.</em> If you're compressing regularly, you have a context hygiene problem, not a compression problem. Fix W, I, and S first.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card red">
+        <div class="card-title red">/handoff — Structured Summary</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📤</div>
+            <div class="rule-text">Produces a structured markdown doc: what was completed, what's in progress, known issues, next steps. You define the format.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔄</div>
+            <div class="rule-text">Works for: agent-to-agent handoffs, same-agent fresh sessions, sub-agent team coordination.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><span class="pos">Preferred</span> when you've hit 2+ compactions — start a fully fresh session with this doc instead.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>You control the format</strong> — document what actually matters for continuity, not just a generic summary.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">/compact — Built-in Compaction</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Run with instructions</strong> — always provide focus guidance: <code>/compact focus on the edge cases we just tested</code>
+              <span class="note">⚠ Without instructions, the summary may emphasize the wrong things.</span>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Conversation is wiped</strong> — summary goes to top of new context window. Tool calls and intermediate results are cleared.
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>Verify retention</strong> — immediately ask the agent to summarize what it remembers. Don't assume compaction preserved the right things.
+              <span class="tip">💡 "What do you remember about what we just did?" is a mandatory post-compact step.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title red">Compression Decision Tree</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">?</div>
+          <div class="step-body">
+            <strong>Context is getting bloated — which to use?</strong>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            <strong>First compaction of this session:</strong> use <code>/compact</code> with focus instructions, then verify retention.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            <strong>Second+ compaction:</strong> the session is too bloated. Run <code>/handoff</code>, start a fresh context window, paste the handoff doc as your only input.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">→</div>
+          <div class="step-body">
+            <strong>Compacting regularly:</strong> stop and fix upstream. Are you loading too much in global rules? Skipping the planning/implementation split? Not using sub-agents for research?
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠ Compaction Caveat</div>
+      <p><em>Overly aggressive compaction loses subtle context</em> — edge cases, constraints, failure modes that seemed minor but matter later. This is why /handoff (where you control what's preserved) is preferred over /compact when sessions get truly bloated.</p>
+    </div>
+
+  </div><!-- /compress -->
+
+
+  <!-- ============================================================
+       COMMANDS
+       ============================================================ -->
+  <div class="section" id="tab-commands">
+
+    <div class="hero">
+      <h2>Command Reference</h2>
+      <p>The WHISK framework is implemented through a set of slash commands stored in <strong>.claude/commands/</strong>. These are starting points — customize them to your codebase and workflow.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Core Commands</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Layer</th>
+            <th>What It Does</th>
+            <th>When to Run</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>/prime</td>
+            <td>S — Select</td>
+            <td>Orients agent on codebase: reads key files, git log, architecture docs. Spawns sub-agents for live exploration.</td>
+            <td>Start of every planning session</td>
+          </tr>
+          <tr>
+            <td>/prime-[area]</td>
+            <td>S — Select</td>
+            <td>Specialized prime for a specific subsystem (e.g. <code>/prime-workflows</code>). Same as prime but scoped.</td>
+            <td>Start of planning when you know the focus area</td>
+          </tr>
+          <tr>
+            <td>/plan</td>
+            <td>W — Write</td>
+            <td>Produces a structured markdown spec from the current planning conversation. Defines what to build and how to validate.</td>
+            <td>End of planning session, before starting implementation</td>
+          </tr>
+          <tr>
+            <td>/execute</td>
+            <td>W — Write</td>
+            <td>Takes a path to a spec doc and begins implementation. No other context loaded.</td>
+            <td>Start of a fresh implementation session</td>
+          </tr>
+          <tr>
+            <td>/commit</td>
+            <td>W — Write</td>
+            <td>Creates a standardized commit: what was built + how AI layer (rules/commands) improved. Two-part format.</td>
+            <td>End of each implementation session</td>
+          </tr>
+          <tr>
+            <td>/handoff</td>
+            <td>W — Write / C — Compress</td>
+            <td>Creates a structured progress doc: completed work, in-progress, blockers, next steps.</td>
+            <td>Context getting large; 2nd+ compaction needed; handing off to another agent</td>
+          </tr>
+          <tr>
+            <td>/compact [instructions]</td>
+            <td>C — Compress</td>
+            <td>Built-in: wipes conversation, puts summary at top. Use focus instructions to control what's preserved.</td>
+            <td>First compaction of a session (with instructions)</td>
+          </tr>
+          <tr>
+            <td>/context</td>
+            <td>Diagnostic</td>
+            <td>Shows current token usage vs. limit. Useful for monitoring context growth.</td>
+            <td>Any time you want to check context health</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Session Workflow Patterns</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">A</div>
+          <div class="step-body">
+            <strong>Standard feature build</strong>
+            <pre><span class="cm"># Session 1: Planning</span>
+<span class="kw">/prime</span>                        <span class="cm"># orient agent</span>
+<span class="cm"># discuss feature, load on-demand context if needed</span>
+<span class="cm"># use sub-agents for any research</span>
+<span class="kw">/plan</span>                         <span class="cm"># output: feature-spec.md</span>
+
+<span class="cm"># Session 2: Implementation (fresh context)</span>
+<span class="kw">/execute</span> .claude/specs/feature-spec.md
+<span class="cm"># implement + validate</span>
+<span class="kw">/commit</span>                       <span class="cm"># log to git</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">B</div>
+          <div class="step-body">
+            <strong>Long testing session (e.g. end-to-end browser testing)</strong>
+            <pre><span class="cm"># Load agent browser skill (Layer 3)</span>
+<span class="cm"># Run test suites...</span>
+<span class="kw">/context</span>                      <span class="cm"># check usage</span>
+<span class="cm"># At ~200K tokens, performance starts to degrade</span>
+<span class="kw">/compact</span> focus on failed edge cases from last run
+<span class="cm"># Verify: "what do you remember about what we tested?"</span>
+<span class="cm"># If compacting a second time:</span>
+<span class="kw">/handoff</span>                      <span class="cm"># create progress doc</span>
+<span class="cm"># Start fresh session with handoff doc as only context</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">C</div>
+          <div class="step-body">
+            <strong>Research-heavy planning with sub-agents</strong>
+            <pre><span class="cm"># Spin up 2 sub-agents in parallel:</span>
+<span class="li">"Spin up one sub-agent to research the codebase for X,</span>
+<span class="li"> another to web-search best practices for Y"</span>
+
+<span class="cm"># Both run in parallel, synthesize back to main agent</span>
+<span class="cm"># Main context used: ~44K tokens vs ~400K inline</span>
+<span class="cm"># Then optionally scout docs:</span>
+<span class="li">"Spin up a sub-agent to check .claude/docs/ and tell</span>
+<span class="li"> me which files are relevant to load for planning"</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title yellow">File Layout</div>
+        <pre><span class="hd">.claude/</span>
+<span class="li">├── CLAUDE.md</span>          <span class="cm"># Layer 1: global rules (500–700 lines)</span>
+<span class="li">├── commands/</span>
+<span class="li">│   ├── prime.md</span>       <span class="cm"># codebase orientation</span>
+<span class="li">│   ├── prime-X.md</span>     <span class="cm"># subsystem-specific primes</span>
+<span class="li">│   ├── plan.md</span>        <span class="cm"># spec generation</span>
+<span class="li">│   ├── execute.md</span>     <span class="cm"># implementation runner</span>
+<span class="li">│   ├── commit.md</span>      <span class="cm"># standardized git commit</span>
+<span class="li">│   └── handoff.md</span>     <span class="cm"># progress doc generator</span>
+<span class="li">├── docs/</span>              <span class="cm"># Layer 2: on-demand context</span>
+<span class="li">│   ├── frontend-rules.md</span>
+<span class="li">│   └── workflow-yaml-ref.md</span>
+<span class="li">└── skills/</span>            <span class="cm"># Layer 3: lazy-loaded capabilities</span>
+<span class="li">    └── agent-browser/</span>
+<span class="li">        ├── SKILL.md</span>
+<span class="li">        └── scripts/</span></pre>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">Warning Signs</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔴</div>
+            <div class="rule-text"><span class="neg">Agent makes confident wrong changes</span> — probably pulling the wrong file/pattern from a bloated context (distractor effect)</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔴</div>
+            <div class="rule-text"><span class="neg">Needing /compact more than once per session</span> — session is too long; restructure your workflow</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔴</div>
+            <div class="rule-text"><span class="neg">Planning and implementing in the same window</span> — exploratory research is polluting the implementation context</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔴</div>
+            <div class="rule-text"><span class="neg">Loading all docs "just in case"</span> — every optional token is a potential distractor</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /commands -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

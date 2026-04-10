@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archon — Harness Builder Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; color: var(--accent); letter-spacing: -0.02em; }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em; }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle { width: 44px; height: 24px; background: var(--toggle-bg); border: 1px solid var(--border-accent); border-radius: 12px; cursor: pointer; position: relative; appearance: none; outline: none; transition: background 0.3s; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: var(--accent); border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s; }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; overflow-x: auto; }
+  nav button { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.2s; letter-spacing: 0.04em; text-transform: uppercase; }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; box-shadow: var(--shadow); transition: background 0.3s, border 0.3s; }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+  .card-title.red::before   { background: var(--accent2); }
+  .card-title.green::before { background: var(--accent3); }
+  .card-title.yellow::before{ background: var(--accent4); }
+
+  .hero { background: var(--bg-card); border: 1px solid var(--border-accent); border-left: 3px solid var(--accent); border-radius: 8px; padding: 24px; box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow); }
+  .hero h2 { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em; }
+  .hero p { color: var(--text); font-size: 15px; max-width: 720px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row { display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos { color: var(--accent3); font-weight: 600; }
+  .rule-text code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row { display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: flex-start; padding: 12px 16px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); text-align: center; margin-top: 1px; }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip  { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--text); margin-top: 10px; }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent); }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .str { color: var(--accent3); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); text-align: left; padding: 8px 12px; background: var(--bg-code); border-bottom: 1px solid var(--border); }
+  .ref-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); white-space: nowrap; }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header { padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item { padding: 9px 16px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .stat { display: flex; flex-direction: column; align-items: center; background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px; flex: 1; min-width: 120px; }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent2); }
+  .stat-val.green { color: var(--accent3); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  .callout { background: var(--bg-code); border: 1px solid var(--border-accent); border-radius: 6px; padding: 16px 20px; }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* DAG flow diagram */
+  .dag-flow { display: flex; flex-direction: column; gap: 0; }
+  .dag-node { display: flex; align-items: stretch; gap: 0; }
+  .dag-node-inner { flex: 1; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; transition: border-color 0.2s; }
+  .dag-node-inner:hover { border-color: var(--border-accent); }
+  .dag-connector { display: flex; align-items: center; justify-content: center; width: 40px; flex-shrink: 0; }
+  .dag-arrow { width: 2px; height: 100%; background: var(--border-accent); position: relative; margin: 0 auto; }
+  .dag-arrow::after { content: '▼'; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); font-size: 8px; color: var(--accent); }
+  .dag-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--accent4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+  .dag-desc  { font-size: 12px; color: var(--text-muted); }
+  .dag-model-tag { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 1px 6px; border-radius: 3px; margin-left: 6px; }
+  .dag-model-tag.haiku { background: rgba(62,207,142,0.12); color: var(--accent3); border: 1px solid rgba(62,207,142,0.2); }
+  .dag-model-tag.sonnet { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.2); }
+  .dag-branch { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 8px 0; }
+  .dag-branch-col { border-left: 2px solid var(--border-accent); padding-left: 10px; }
+  .dag-branch-col.left  { border-color: var(--accent2); }
+  .dag-branch-col.right { border-color: var(--accent3); }
+  .dag-branch-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .dag-branch-col.left  .dag-branch-label { color: var(--accent2); }
+  .dag-branch-col.right .dag-branch-label { color: var(--accent3); }
+
+  .arch-layer { border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; margin-bottom: 8px; background: var(--bg-code); }
+  .arch-layer-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px; }
+  .arch-layer-items { display: flex; flex-wrap: wrap; gap: 8px; }
+  .arch-tag { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 3px 10px; border-radius: 4px; }
+  .arch-tag.blue   { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.25); }
+  .arch-tag.green  { background: var(--accent3-glow); color: var(--accent3); border: 1px solid rgba(62,207,142,0.2); }
+  .arch-tag.amber  { background: rgba(247,162,62,0.1); color: var(--accent4); border: 1px solid rgba(247,162,62,0.2); }
+  .arch-tag.red    { background: var(--accent2-glow); color: var(--accent2); border: 1px solid rgba(224,95,122,0.2); }
+  .arch-tag.dim    { background: var(--tag-bg); color: var(--text-muted); border: 1px solid var(--border); }
+  .arch-arrow { text-align: center; font-size: 16px; color: var(--text-dim); margin: 4px 0; }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * { animation: fadeUp 0.25s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">ARCHON<span> — Harness Builder Reference</span></div>
+    <div class="badge">BETA</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="concepts">Harness Concepts</button>
+  <button data-tab="setup">Setup</button>
+  <button data-tab="workflows">Workflows</button>
+  <button data-tab="custom">Custom Workflows</button>
+  <button data-tab="arch">Architecture</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Archon — The Open-Source Harness Builder</h2>
+      <p>Archon is a <strong>workflow engine for AI coding agents</strong>. Define your entire development process — planning, implementation, validation, review, PR creation — as YAML workflows that run deterministically across any codebase. Like what Dockerfiles did for infrastructure and GitHub Actions did for CI/CD, Archon does for AI coding.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">Core Properties</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text"><strong>Repeatable</strong> — same workflow, same sequence, every time. Eliminates model-mood variance.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚙️</div>
+            <div class="rule-text"><strong>Deterministic steps</strong> — validation, tests, context curation are enforced by the harness, not left to the agent.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🪢</div>
+            <div class="rule-text"><strong>Multi-session orchestration</strong> — chains many Claude Code sessions across a single workflow with full log visibility.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Parallel execution</strong> — run multiple workflows simultaneously via git worktree isolation, one branch per run.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧩</div>
+            <div class="rule-text"><strong>Per-node model selection</strong> — use Haiku for classification, Sonnet for implementation. Token-efficient by design.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🤝</div>
+            <div class="rule-text"><strong>Human-in-the-loop</strong> — pause at any node for your approval before proceeding.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">The Problem It Solves</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">😤</div>
+            <div class="rule-text"><span class="neg">AI shepherding</span> — you're still manually running skills → review → implement → test in sequence, remembering what comes next.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎲</div>
+            <div class="rule-text"><span class="neg">Non-determinism</span> — when you ask an agent to "fix this bug", it might skip planning, forget tests, or write a bad PR description. Every run differs.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📉</div>
+            <div class="rule-text"><span class="neg">6.7% PR acceptance rate</span> — baseline for unstructured AI coding. Harnesses like the RLEF loop can push this to ~70%.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💸</div>
+            <div class="rule-text"><span class="neg">Monolithic context</span> — planning and implementation in the same session creates bias. Archon enforces separate sessions per phase.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="grid-3">
+      <div class="stat">
+        <div class="stat-val">6.7%</div>
+        <div class="stat-label">Baseline PR acceptance rate (no harness)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val green">~70%</div>
+        <div class="stat-label">PR acceptance with structured harness (RLEF loop)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">1,300</div>
+        <div class="stat-label">AI-only PRs shipped weekly by Stripe Minions</div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">🔑 Key Analogy</div>
+      <p>Think <em>n8n, but for software development</em>. Archon wraps above Claude Code and Codex the same way GitHub Actions wraps above your scripts — defining the structure, sequence, and gates so the agent just fills in the intelligence at each step.</p>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">📦 V1 vs V2 — Important Distinction</div>
+      <p>The <em>original Python-based Archon</em> (RAG + task management MCP server) is fully preserved on the <code style="font-family:IBM Plex Mono;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">archive/v1-task-management-rag</code> branch. The new Archon is a TypeScript workflow engine — <em>completely different product</em>, no migration path. Don't confuse them.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- HARNESS CONCEPTS -->
+  <div class="section" id="tab-concepts">
+
+    <div class="hero">
+      <h2>The Evolution: Prompt → Context → Harness</h2>
+      <p>Three generations of working with AI. Each one unlocks a larger scope of reliable work.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Three Engineering Paradigms</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">1️⃣</div>
+          <div class="rule-text"><strong>Prompt Engineering (2022–2024)</strong> — craft the single best prompt to get the best one-shot output. Scope: one turn.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">2️⃣</div>
+          <div class="rule-text"><strong>Context Engineering (2024)</strong> — curate perfect context for a single agent session so it can handle a larger set of work. Scope: one session.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">3️⃣</div>
+          <div class="rule-text"><strong>Harness Engineering (now)</strong> — orchestrate many coding agent sessions through a structured harness. Scope: entire SDLC.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">What a Harness Is</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🧱</div>
+            <div class="rule-text">The tooling, prompting, and chaining of different coding agent sessions to <strong>elevate a single LLM's capabilities</strong>.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔧</div>
+            <div class="rule-text"><strong>Hybrid architecture</strong> — some nodes are AI prompts (creative, reasoning), some are deterministic commands (test runs, context curation). Both types live in the workflow.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text"><strong>Two node types:</strong> <code>prompt</code> (sent to an agent session) and <code>command</code> (deterministic CLI/bash action).</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📂</div>
+            <div class="rule-text">Workflows live in <code>.archon/workflows/</code>, commands in <code>.archon/commands/</code>. Commit them — your whole team runs the same process.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title yellow">The Hybrid Secret</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🤖</div>
+            <div class="rule-text"><span class="pos">AI nodes</span> — planning, implementation, investigation, code review. The agent fills in the intelligence here.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚙️</div>
+            <div class="rule-text"><span class="neg">Deterministic nodes</span> — test runners, context curation scripts, branch creation. You <em>don't</em> want the agent deciding whether to run tests.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔐</div>
+            <div class="rule-text"><strong>Human approval gates</strong> — pause any node in the workflow to review before proceeding. Optionally loop on feedback until satisfied.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💡</div>
+            <div class="rule-text">This is exactly what <strong>Stripe Minions</strong> does — 1,300 AI-only PRs/week via enforced context curation + validation at specific steps.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">Key Harness Principles</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🔀</div>
+          <div class="rule-text"><strong>Plan and implement in separate sessions.</strong> Doing both in one context window introduces bias. Always use a fresh context for implementation after planning.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🌿</div>
+          <div class="rule-text"><strong>Git worktree isolation.</strong> Every workflow run gets its own isolated worktree and branch. Run 5 fixes simultaneously without conflicts.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">💰</div>
+          <div class="rule-text"><strong>Per-node model selection.</strong> Use Haiku for classification/routing (cheap, fast). Use Sonnet for implementation and review (smarter). Never burn Opus tokens on trivial steps.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🪄</div>
+          <div class="rule-text"><strong>Skills are the bridge.</strong> Install the Archon skill into your target repo so the agent knows how and when to invoke the Archon CLI automatically.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔄</div>
+          <div class="rule-text"><strong>Retry loops are first-class.</strong> If tests fail, the workflow can automatically retry fixing and re-validating before escalating or stopping.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">📊 Why This Works — The Numbers</div>
+      <p>Anthropic's own Claude Code source code is <em>40% harness code</em> — agent teams, sub-agent features, and orchestration logic. That's the signal for how central harness engineering has become.</p>
+    </div>
+
+  </div><!-- /concepts -->
+
+
+  <!-- SETUP -->
+  <div class="section" id="tab-setup">
+
+    <div class="hero">
+      <h2>Installation &amp; Setup</h2>
+      <p>Get Archon running in under 5 minutes. The setup wizard handles prerequisites, credentials, platform integrations, and skill installation in one guided flow.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Full Setup (Recommended)</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Clone the Archon repo</strong><br>
+            Clone into a local directory separate from your projects.
+            <pre><span class="fn">git</span> <span class="kw">clone</span> <span class="str">https://github.com/coleam00/Archon</span>
+<span class="fn">cd</span> Archon
+<span class="fn">bun</span> install</pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Open Claude Code inside the Archon repo</strong><br>
+            The Archon skill lives here and guides the entire setup.
+            <pre><span class="fn">claude</span></pre>
+            <span class="tip">💡 Simply say: <code>set up archon</code> — that's all. The skill loads automatically.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Register your first target project</strong><br>
+            Specify the local path to the codebase you want to run workflows on. Archon auto-registers any new repo the first time it runs a workflow there.
+            <span class="note">⚠ Enter your project repo path, NOT the Archon repo itself.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Select platforms</strong><br>
+            Choose which interfaces to enable: CLI (default), GitHub, Slack, Telegram, Discord. Claude opens a separate terminal for credential entry — your API keys never pass through the coding agent.
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Configure database and AI assistant</strong><br>
+            Choose SQLite (easy) or PostgreSQL. Select Claude as the AI assistant. Authenticate via your Anthropic subscription — allowed for local use via the Claude Agent SDK.
+            <span class="tip">💡 Codex support is nearly complete. Poe agent SDK and OpenCode coming later.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <strong>Install the Archon skill into your target repo</strong><br>
+            Say yes when asked. Paste your target repo path. This copies the Archon skill so any Claude Code session there knows how to invoke the Archon CLI.
+            <span class="note">⚠ Without this step, the agent won't know to load the workflow on your behalf.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">7</div>
+          <div class="step-body">
+            <strong>Return to the first Claude session and say "done"</strong><br>
+            Archon verifies all credentials, lists all default workflows, and runs a test workflow to confirm the CLI is working end-to-end.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Quick Install (CLI Only)</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            Already have Claude Code? Install the standalone Archon CLI binary directly — skip the wizard.
+            <pre><span class="cm"># Install Archon CLI globally</span>
+<span class="fn">archon</span> setup    <span class="cm"># run from any terminal after install</span></pre>
+            <span class="tip">💡 After install, <code>archon</code> is a globally recognized command on your machine.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Copy the Archon skill to your target repo manually</strong><br>
+            Find it at <code>.archon/skills/</code> in the Archon repo. Copy to your project root.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Web Dashboard</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🖥️</div>
+          <div class="rule-text">Start the dashboard from the Archon repo by asking Claude Code to <strong>spin up the front end and back end</strong>, or run <code>bun run dev</code> manually.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🌐</div>
+          <div class="rule-text">Accessible at <code>localhost:5178</code> by default. View active workflows, full node-by-node logs, tool calls, and DAG visualization.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">➕</div>
+          <div class="rule-text">Use the <strong>Add Project</strong> button in the UI to register additional repos by GitHub URL or local path at any time.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">💬</div>
+          <div class="rule-text">The web chat agent has all registered projects and available workflows pre-injected into its context — just say "fix GitHub issue #3" and it routes automatically.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">Setup Gotchas</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Wrong repo location:</span> Always open Claude Code in your <em>target project</em> repo, not in the Archon repo, when running workflows.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Missing skill:</span> Without the Archon skill copied into your project, the agent won't know to invoke the Archon CLI when you ask it to fix issues.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">VPS / headless setup:</span> The credential wizard tries to open a new terminal automatically. On remote servers, you may need to open a new session manually and run <code>archon setup</code>.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">V1 confusion:</span> The old Python Archon (RAG/MCP tool) is archived on <code>archive/v1-task-management-rag</code>. There is no migration path to V2.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /setup -->
+
+
+  <!-- WORKFLOWS -->
+  <div class="section" id="tab-workflows">
+
+    <div class="hero">
+      <h2>Default Workflows</h2>
+      <p>Archon ships with production-ready workflows that are immediately usable on any codebase. They're also bundled into the CLI — no local file required.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pre-Packaged Workflow Library</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Workflow</th>
+            <th>What It Does</th>
+            <th>Use When</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>archon-assist</td>
+            <td>General Q&A, debugging, exploration — full Claude Code agent with all tools</td>
+            <td>Open-ended tasks</td>
+          </tr>
+          <tr>
+            <td>archon-fix-github-issue</td>
+            <td>Classify → investigate/plan → implement → validate → PR → smart review → self-fix</td>
+            <td>Bug fixes &amp; feature issues</td>
+          </tr>
+          <tr>
+            <td>archon-idea-to-pr</td>
+            <td>Feature idea → plan → implement → validate → PR → 5 parallel reviewers → self-fix</td>
+            <td>New features from scratch</td>
+          </tr>
+          <tr>
+            <td>archon-plan-to-pr</td>
+            <td>Execute existing plan → implement → validate → PR → review → self-fix</td>
+            <td>When you already have a plan</td>
+          </tr>
+          <tr>
+            <td>archon-issue-review-full</td>
+            <td>Comprehensive fix + full multi-agent review pipeline for GitHub issues</td>
+            <td>Critical issues needing thoroughness</td>
+          </tr>
+          <tr>
+            <td>archon-smart-pr-review</td>
+            <td>Classify PR complexity → targeted review agents → synthesize findings</td>
+            <td>Reviewing incoming PRs</td>
+          </tr>
+          <tr>
+            <td>archon-comprehensive-pr-review</td>
+            <td>Multi-agent PR review (5 parallel reviewers) with automatic fixes</td>
+            <td>High-stakes PR reviews</td>
+          </tr>
+          <tr>
+            <td>archon-create-issue</td>
+            <td>Classify problem → gather context → investigate → create GitHub issue</td>
+            <td>Documenting bugs &amp; features</td>
+          </tr>
+          <tr>
+            <td>archon-validate-pr</td>
+            <td>Thorough PR validation testing both main and feature branches</td>
+            <td>Pre-merge validation</td>
+          </tr>
+          <tr>
+            <td>archon-resolve-conflicts</td>
+            <td>Detect and resolve merge conflicts</td>
+            <td>Merge conflict cleanup</td>
+          </tr>
+          <tr>
+            <td>archon-interactive-prd</td>
+            <td>Human-in-the-loop PRD creation — ideate with agent until spec is complete</td>
+            <td>Planning new applications</td>
+          </tr>
+          <tr>
+            <td>archon-rlef-loop</td>
+            <td>The RLEF (Reinforcement Learning from Execution Feedback) loop as a harness</td>
+            <td>Iterative quality optimization</td>
+          </tr>
+          <tr>
+            <td>archon-adversarial-dev</td>
+            <td>GAN-inspired: generator agent vs adversarial evaluator with quality gates</td>
+            <td>Maximum code quality</td>
+          </tr>
+          <tr>
+            <td>archon-workflow-builder</td>
+            <td>Meta-workflow that interviews you and generates a new custom YAML workflow</td>
+            <td>Building your own workflows</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Fix GitHub Issue — Node-by-Node Walkthrough</div>
+      <div class="dag-flow">
+
+        <div class="dag-node">
+          <div class="dag-node-inner">
+            <div class="dag-label">Node 1 — Extract <span class="dag-model-tag haiku">haiku</span></div>
+            <div class="dag-desc">Parse the issue number from the incoming prompt. Cheap classification task.</div>
+          </div>
+        </div>
+        <div style="text-align:center;padding:4px 0;color:var(--text-dim);font-size:13px;">↓</div>
+
+        <div class="dag-node">
+          <div class="dag-node-inner">
+            <div class="dag-label">Node 2 — Classify <span class="dag-model-tag haiku">haiku</span></div>
+            <div class="dag-desc">Is this a bug to fix or a feature to build? Determines the downstream branch.</div>
+          </div>
+        </div>
+        <div style="text-align:center;padding:4px 0;color:var(--text-dim);font-size:13px;">↓</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
+          <div style="border-left:3px solid var(--accent2);padding-left:12px;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Bug Path</div>
+            <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:10px 14px;">
+              <div class="dag-label">Node 3A — Investigate <span class="dag-model-tag sonnet">sonnet</span></div>
+              <div class="dag-desc">Research phase using web search + codebase investigation. Uses archon-web-research command.</div>
+            </div>
+          </div>
+          <div style="border-left:3px solid var(--accent3);padding-left:12px;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Feature Path</div>
+            <div style="background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:10px 14px;">
+              <div class="dag-label">Node 3B — Plan <span class="dag-model-tag sonnet">sonnet</span></div>
+              <div class="dag-desc">Feature planning and task decomposition in a dedicated planning session.</div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;padding:4px 0;color:var(--text-dim);font-size:13px;">↓</div>
+
+        <div class="dag-node">
+          <div class="dag-node-inner">
+            <div class="dag-label">Node 4 — Implement <span class="dag-model-tag sonnet">sonnet</span></div>
+            <div class="dag-desc">Fresh context window. Implementation only. No planning bias carried over.</div>
+          </div>
+        </div>
+        <div style="text-align:center;padding:4px 0;color:var(--text-dim);font-size:13px;">↓</div>
+
+        <div class="dag-node">
+          <div class="dag-node-inner">
+            <div class="dag-label">Node 5 — Validate (deterministic)</div>
+            <div class="dag-desc">Run tests automatically. Not left to the agent. If tests fail → retry loop. If pass → continue.</div>
+          </div>
+        </div>
+        <div style="text-align:center;padding:4px 0;color:var(--text-dim);font-size:13px;">↓</div>
+
+        <div class="dag-node">
+          <div class="dag-node-inner">
+            <div class="dag-label">Node 6 — Review <span class="dag-model-tag sonnet">sonnet</span></div>
+            <div class="dag-desc">Code review pass. Self-fixes issues before PR creation.</div>
+          </div>
+        </div>
+        <div style="text-align:center;padding:4px 0;color:var(--text-dim);font-size:13px;">↓</div>
+
+        <div class="dag-node">
+          <div class="dag-node-inner">
+            <div class="dag-label">Node 7 — Open Pull Request (deterministic)</div>
+            <div class="dag-desc">Creates the PR with final implementation. Title and body follow your repo template.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">⚡ Running Workflows in Parallel</div>
+      <p>From Claude Code in your project, say: <em>"Use archon to fix GitHub issues 5, 7, 8, 9, 10, and 11"</em> — Archon invokes the CLI 6 times simultaneously. Each run gets its own git worktree. Monitor all of them from the web UI or ask Claude for a status update. Use <code>/loop</code> to auto-check every N minutes.</p>
+    </div>
+
+  </div><!-- /workflows -->
+
+
+  <!-- CUSTOM WORKFLOWS -->
+  <div class="section" id="tab-custom">
+
+    <div class="hero">
+      <h2>Building Custom Workflows</h2>
+      <p>Any development process — GSD, BMAD, BEADS, your own SDLC — can be encoded as an Archon workflow. Defined once, run forever, reusable across all projects.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Using the Workflow Builder</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Open Claude Code in the Archon repo</strong> (not your project repo).<br>
+            Say: <em>"Use the workflow builder workflow to help me make an Archon workflow."</em>
+            <span class="tip">💡 The skill loads automatically, asks you to describe the workflow, then generates the full YAML.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Describe your workflow</strong> — paste a repo URL, describe a framework (BEADS, BMAD, etc.), or explain your custom SDLC steps.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Archon generates the YAML</strong> — a full workflow file with description, provider, default model, and all nodes defined.
+            <span class="tip">💡 The generated workflow appears in the web UI as a visual DAG immediately.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Workflow is immediately runnable</strong> on any registered codebase. No additional setup.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">YAML Workflow Anatomy</div>
+      <pre><span class="hd">description:</span> <span class="str">"Use this workflow when the user asks to fix a GitHub issue."</span>
+<span class="cm"># ^ This is what Claude reads first to decide IF to run this workflow</span>
+
+<span class="hd">provider:</span> <span class="str">claude</span>
+<span class="hd">default_model:</span> <span class="str">sonnet</span>
+
+<span class="hd">nodes:</span>
+  - <span class="kw">name:</span> classify
+    <span class="kw">model:</span> <span class="str">haiku</span>          <span class="cm"># override per node — cheap for routing</span>
+    <span class="kw">prompt:</span> <span class="str">|
+      Classify this issue as bug or feature: {issue}</span>
+
+  - <span class="kw">name:</span> investigate
+    <span class="kw">command:</span> <span class="str">archon-web-research</span>  <span class="cm"># reference a commands/ markdown file</span>
+    <span class="kw">session:</span> <span class="str">new</span>             <span class="cm"># fresh context window</span>
+
+  - <span class="kw">name:</span> implement
+    <span class="kw">session:</span> <span class="str">new</span>             <span class="cm"># separate from planning — removes bias</span>
+    <span class="kw">prompt:</span> <span class="str">"Implement the fix..."</span>
+
+  - <span class="kw">name:</span> validate
+    <span class="kw">type:</span> <span class="str">deterministic</span>      <span class="cm"># runs shell command, not AI</span>
+    <span class="kw">command:</span> <span class="str">"bun test"</span>
+    <span class="kw">on_failure:</span> <span class="str">retry</span>        <span class="cm"># loop on test failure</span>
+
+  - <span class="kw">name:</span> human_approval
+    <span class="kw">type:</span> <span class="str">gate</span>               <span class="cm"># pause for human review</span>
+
+  - <span class="kw">name:</span> open_pr
+    <span class="kw">type:</span> <span class="str">deterministic</span>
+    <span class="kw">command:</span> <span class="str">archon-pr-skill</span></pre>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">Session Control</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🆕</div>
+            <div class="rule-text"><code>session: new</code> — start a fresh Claude Code session for this node. Use for implementation after planning.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">➡️</div>
+            <div class="rule-text"><code>session: continue</code> (default) — continue the same conversation. Use for tightly related steps.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💰</div>
+            <div class="rule-text">New sessions = clean context = no token bloat from earlier steps. Use strategically for token efficiency.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Overriding Defaults</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📁</div>
+            <div class="rule-text">Default workflows are bundled in the CLI. Override any by placing a same-named YAML in <code>.archon/workflows/</code> in your repo.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📝</div>
+            <div class="rule-text">Commands are markdown prompts in <code>.archon/commands/</code>. Same override rule — your repo file wins over the bundled default.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">👥</div>
+            <div class="rule-text">Commit your custom workflows and commands — the whole team runs the same process.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Good Custom Workflow Candidates</div>
+        <div class="decision-item"><span class="di">✅</span>Your team's specific code review checklist baked into a review node.</div>
+        <div class="decision-item"><span class="di">✅</span>Importing a framework (BMAD, GSD) as a structured SDLC harness.</div>
+        <div class="decision-item"><span class="di">✅</span>BEADS-style persistent memory: exploration → decompose → implement loop with progress tracking.</div>
+        <div class="decision-item"><span class="di">✅</span>Domain-specific workflows (data migrations, infra changes, security audits).</div>
+        <div class="decision-item"><span class="di">✅</span>Any multi-step process you currently run manually and wish was automatic.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Don't Put These in Workflows</div>
+        <div class="decision-item"><span class="di">❌</span>One-off tasks that don't repeat — just use Claude Code directly.</div>
+        <div class="decision-item"><span class="di">❌</span>Steps that inherently require human judgment at every decision — use human gates or stay manual.</div>
+        <div class="decision-item"><span class="di">❌</span>Overly granular prompts that fragment naturally flowing work into too many context switches.</div>
+        <div class="decision-item"><span class="di">❌</span>Credentials or secrets inline in YAML — use environment variables or the credential wizard.</div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">🛠️ Workflow Builder Shortcut</div>
+      <p>Rather than writing YAML by hand, use the meta-workflow: <em>"Use the workflow builder workflow to create a workflow that does X"</em>. Describe the repo or framework you want to model. Archon researches it, decomposes the steps, and writes the full YAML for you.</p>
+    </div>
+
+  </div><!-- /custom -->
+
+
+  <!-- ARCHITECTURE -->
+  <div class="section" id="tab-arch">
+
+    <div class="hero">
+      <h2>System Architecture</h2>
+      <p>How Archon sits above your coding agents, routes messages, and manages state across workflow runs and platform integrations.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Layer Stack</div>
+
+      <div class="arch-layer">
+        <div class="arch-layer-label">Platform Adapters (entry points)</div>
+        <div class="arch-layer-items">
+          <span class="arch-tag blue">Web UI</span>
+          <span class="arch-tag blue">CLI</span>
+          <span class="arch-tag blue">GitHub</span>
+          <span class="arch-tag blue">Telegram</span>
+          <span class="arch-tag blue">Slack</span>
+          <span class="arch-tag blue">Discord</span>
+        </div>
+      </div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">Orchestrator</div>
+        <div class="arch-layer-items">
+          <span class="arch-tag amber">Message Routing</span>
+          <span class="arch-tag amber">Context Management</span>
+          <span class="arch-tag amber">Session Lifecycle</span>
+        </div>
+      </div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-layer" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div>
+          <div class="arch-layer-label">Command Handler</div>
+          <div class="arch-layer-items"><span class="arch-tag green">Slash Commands</span></div>
+        </div>
+        <div>
+          <div class="arch-layer-label">Workflow Executor</div>
+          <div class="arch-layer-items"><span class="arch-tag green">YAML DAG Runner</span></div>
+        </div>
+        <div>
+          <div class="arch-layer-label">AI Clients</div>
+          <div class="arch-layer-items"><span class="arch-tag green">Claude Code</span><span class="arch-tag green" style="margin-top:4px">Codex</span></div>
+        </div>
+      </div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">Persistence (SQLite / PostgreSQL — 7 tables)</div>
+        <div class="arch-layer-items">
+          <span class="arch-tag dim">Codebases</span>
+          <span class="arch-tag dim">Conversations</span>
+          <span class="arch-tag dim">Sessions</span>
+          <span class="arch-tag dim">Workflow Runs</span>
+          <span class="arch-tag dim">Isolation Environments</span>
+          <span class="arch-tag dim">Messages</span>
+          <span class="arch-tag dim">Workflow Events</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-title">File Layout</div>
+        <pre><span class="hd">.archon/</span>
+<span class="li">├── workflows/</span>
+<span class="li">│   ├── defaults/</span>        <span class="cm"># bundled defaults</span>
+<span class="li">│   └── my-workflow.yaml</span> <span class="cm"># your custom ones</span>
+<span class="li">├── commands/</span>
+<span class="li">│   └── my-command.md</span>   <span class="cm"># prompt extensions</span>
+<span class="li">└── skills/</span>
+<span class="li">    └── ARCHON.md</span>       <span class="cm"># skill for your coding agent</span></pre>
+        <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">Same-named files in your repo override bundled defaults. Commit them for team consistency.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Supported Integrations</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🤖</div>
+            <div class="rule-text"><strong>AI Assistants:</strong> Claude Code (primary), Codex (near-complete), more planned (Poe agent SDK, OpenCode).</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💬</div>
+            <div class="rule-text"><strong>Chat Platforms:</strong> Telegram, Slack, Discord — trigger and monitor workflows remotely.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🐙</div>
+            <div class="rule-text"><strong>GitHub:</strong> Native integration for issue reading, branch management, PR creation via GitHub CLI.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🗄️</div>
+            <div class="rule-text"><strong>Database:</strong> SQLite (default, zero config) or PostgreSQL for production/team deployments.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">Key Design Decisions</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🌿</div>
+          <div class="rule-text"><strong>Git worktree isolation per run.</strong> Every workflow execution creates its own branch and worktree. Parallel runs never conflict. Branch naming is handled automatically.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>YAML as the workflow definition format.</strong> Declarative, version-controllable, diff-able. The same philosophy as GitHub Actions or Docker Compose.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔍</div>
+          <div class="rule-text"><strong>Description-first routing.</strong> The workflow's <code>description</code> field is what the coding agent reads to decide which workflow to invoke — not the filename. Write it like a skill trigger.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔌</div>
+          <div class="rule-text"><strong>Skill-based agent bridge.</strong> The Archon skill (ARCHON.md) teaches the coding agent how and when to call the CLI. Without it, the agent won't self-invoke workflows.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📊</div>
+          <div class="rule-text"><strong>Full observability.</strong> Every node, tool call, and session is logged. View as a DAG in the web UI or stream logs via Claude Code. The web UI is a direct visualization of the YAML graph.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">🗺️ Documentation</div>
+      <p>Full docs at <em>archon.diy</em>. Includes a 10-chapter narrative tutorial ("The Book of Archon"), CLI reference, workflow authoring guide, deployment (Docker/VPS), and architecture deep-dive. GitHub: <em>github.com/coleam00/Archon</em></p>
+    </div>
+
+  </div><!-- /arch -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

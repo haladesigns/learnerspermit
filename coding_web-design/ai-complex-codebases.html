@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building Complex Codebases with AI — Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 12px; }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+  }
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 780px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent);  }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td     { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* ── PIV pipeline bar ── */
+  .piv-bar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .piv-step {
+    flex: 1;
+    text-align: center;
+    padding: 12px 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .piv-step:not(:last-child)::after {
+    content: '→';
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 14px;
+    z-index: 1;
+  }
+  .piv-step.p { background: rgba(79,142,247,0.1); color: var(--accent); border-right: 1px solid var(--border); }
+  .piv-step.i { background: rgba(247,162,62,0.1); color: var(--accent4); border-right: 1px solid var(--border); }
+  .piv-step.v { background: rgba(62,207,142,0.1); color: var(--accent3); border-right: 1px solid var(--border); }
+  .piv-step.r { background: rgba(224,95,122,0.1); color: var(--accent2); }
+  .piv-label { font-size: 10px; font-weight: 400; color: var(--text-muted); display: block; margin-top: 2px; letter-spacing: 0.03em; }
+
+  /* ── context engineering venn ── */
+  .venn-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .venn-item {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+  }
+  .venn-item-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+  }
+  .venn-item-title.blue   { color: var(--accent);  }
+  .venn-item-title.amber  { color: var(--accent4); }
+  .venn-item-title.green  { color: var(--accent3); }
+  .venn-item-title.red    { color: var(--accent2); }
+  .venn-item p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── golden rule cards ── */
+  .golden-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .golden-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1;
+    opacity: 0.25;
+  }
+  .golden-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+  .golden-body { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .golden-body strong { color: var(--text); font-weight: 500; }
+  .golden-body code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  /* ── flow diagram ── */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .flow-node {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border-accent);
+    background: var(--bg-code);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .flow-node.blue  { background: var(--accent-glow);  border-color: rgba(79,142,247,0.4);  color: var(--accent);  }
+  .flow-node.green { background: var(--accent3-glow); border-color: rgba(62,207,142,0.4); color: var(--accent3); }
+  .flow-node.amber { background: var(--accent4-glow); border-color: rgba(247,162,62,0.4); color: var(--accent4); }
+  .flow-node.red   { background: var(--accent2-glow); border-color: rgba(224,95,122,0.4); color: var(--accent2); }
+  .flow-arrow { color: var(--text-dim); font-size: 14px; flex-shrink: 0; }
+
+  /* ── layer comparison ── */
+  .layer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .layer-box {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .layer-header {
+    padding: 10px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+  .layer-header.l1 { background: rgba(79,142,247,0.1); color: var(--accent); }
+  .layer-header.l2 { background: rgba(247,162,62,0.1); color: var(--accent4); }
+  .layer-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .layer-item { font-size: 12px; color: var(--text-muted); display: flex; align-items: flex-start; gap: 6px; }
+  .layer-item::before { content: '—'; color: var(--text-dim); flex-shrink: 0; }
+
+  /* ── validation split ── */
+  .val-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .val-col { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .val-header { padding: 10px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; border-bottom: 1px solid var(--border); }
+  .val-header.human { background: rgba(62,207,142,0.1); color: var(--accent3); }
+  .val-header.ai    { background: rgba(79,142,247,0.1); color: var(--accent); }
+  .val-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .val-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--tag-bg);
+    color: var(--text-muted);
+    width: fit-content;
+  }
+
+  /* ── rules architecture diagram ── */
+  .arch-wrap {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text-muted);
+  }
+  .arch-folder { color: var(--accent4); }
+  .arch-file   { color: var(--accent3); }
+  .arch-note   { color: var(--text-dim); font-style: italic; }
+  .arch-loaded { color: var(--accent); }
+
+  /* ── prime command chain ── */
+  .cmd-chain {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .cmd-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: var(--tag-bg);
+    border: 1px solid var(--border-accent);
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .cmd-arrow { color: var(--text-dim); font-size: 12px; }
+
+  /* ── subagent diagram ── */
+  .agent-diagram {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    flex-wrap: wrap;
+  }
+  .agent-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .agent-node {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid;
+    text-align: center;
+  }
+  .agent-node.main { background: rgba(79,142,247,0.15); border-color: rgba(79,142,247,0.4); color: var(--accent); }
+  .agent-node.sub  { background: rgba(247,162,62,0.1);  border-color: rgba(247,162,62,0.4); color: var(--accent4); }
+  .agent-caption { font-size: 10px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; max-width: 120px; text-align: center; line-height: 1.3; }
+  .agent-arrow { font-size: 20px; color: var(--text-dim); }
+  .agent-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── context reset diagram ── */
+  .reset-diagram {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .reset-phase {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .reset-box {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 5px;
+    border: 1px solid;
+  }
+  .reset-box.plan { background: rgba(79,142,247,0.15); border-color: rgba(79,142,247,0.4); color: var(--accent); }
+  .reset-box.doc  { background: rgba(247,162,62,0.1);  border-color: rgba(247,162,62,0.4); color: var(--accent4); }
+  .reset-box.exec { background: rgba(62,207,142,0.1);  border-color: rgba(62,207,142,0.4); color: var(--accent3); }
+  .reset-sub { font-size: 10px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
+  .reset-sep {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .reset-sep-line { width: 1px; height: 30px; background: var(--border-accent); }
+  .reset-sep-label { font-size: 9px; color: var(--accent2); font-family: 'IBM Plex Mono', monospace; writing-mode: vertical-lr; transform: rotate(180deg); letter-spacing: 0.1em; }
+
+  /* ── evolution loop ── */
+  .evolution-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    flex-wrap: wrap;
+  }
+  .evo-node {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--tag-bg);
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .evo-node.trigger { border-color: rgba(224,95,122,0.4); color: var(--accent2); background: rgba(224,95,122,0.1); }
+  .evo-node.action  { border-color: rgba(79,142,247,0.4);  color: var(--accent);  background: rgba(79,142,247,0.1); }
+  .evo-node.result  { border-color: rgba(62,207,142,0.4);  color: var(--accent3); background: rgba(62,207,142,0.1); }
+  .evo-arrow { color: var(--text-dim); font-size: 14px; }
+
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">AI Codebase Framework<span> — complex projects</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="planning">Planning</button>
+  <button data-tab="piv">PIV Loop</button>
+  <button data-tab="rules">Rules &amp; Context</button>
+  <button data-tab="golden">4 Golden Rules</button>
+  <button data-tab="commands">Commands</button>
+</nav>
+
+<main>
+
+  <!-- ═══════════════════════════════════════════
+       OVERVIEW
+       ═══════════════════════════════════════════ -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Building Complex Codebases with AI</h2>
+      <p>A framework for using AI coding assistants on real, production-scale projects — not just toy scripts. The key insight: <strong>AI amplifies existing craft</strong>. You still own planning, architecture decisions, and validation. The framework gives AI the context it needs to execute reliably.</p>
+    </div>
+
+    <!-- PIV bar — always visible as mental model anchor -->
+    <div class="card">
+      <div class="card-title">Primary Mental Model</div>
+      <div class="piv-bar">
+        <div class="piv-step p">PLANNING<span class="piv-label">PRD + research</span></div>
+        <div class="piv-step i">IMPLEMENTATION<span class="piv-label">execute plan</span></div>
+        <div class="piv-step v">VALIDATION<span class="piv-label">trust but verify</span></div>
+        <div class="piv-step r">ITERATING<span class="piv-label">repeat per task</span></div>
+      </div>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted)">Each feature/task runs its own PIV loop. The loop is not optional — skipping validation is how AI-assisted projects accumulate hidden debt.</div>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">Three Pillars</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📄</div>
+            <div class="rule-text"><strong>PRD-First:</strong> Document before you code. The PRD is source of truth for every AI conversation and each granular feature.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📐</div>
+            <div class="rule-text"><strong>Modular Rules:</strong> Split rules by domain — agents, references, components. Load only what's relevant per conversation.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text"><strong>PIV Loop:</strong> Plan → Implement → Validate per feature. Context resets between planning and execution conversations.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">System Evolution Mindset</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🐛</div>
+            <div class="rule-text">Every bug is an opportunity to evolve your <strong>system rules</strong> — not just fix the immediate issue.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📝</div>
+            <div class="rule-text">When AI makes a mistake, ask: <strong>"How do I prevent this class of mistake forever?"</strong> Then encode the answer into rules.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📈</div>
+            <div class="rule-text">Your SYSTEM improves over time. Each project leaves you with better rules, commands, and context that compound on the next.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Core Principle</div>
+      <p><em>AI doesn't replace engineering judgment — it amplifies it.</em> The framework exists to give AI enough structured context that it can act reliably, while keeping humans in control of architecture, goals, and validation.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ═══════════════════════════════════════════
+       PLANNING
+       ═══════════════════════════════════════════ -->
+  <div class="section" id="tab-planning">
+
+    <div class="hero">
+      <h2>Greenfield Project Planning</h2>
+      <p>Before writing any code, build the <strong>AI layer</strong> for your codebase. This means creating the PRD, rules architecture, and prime command that will guide every subsequent conversation.</p>
+    </div>
+
+    <!-- PRD First -->
+    <div class="card blue">
+      <div class="card-title">PRD-First Development</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>Start every project with a PRD, not code.</strong> The PRD becomes the source of truth for every AI conversation and each granular feature breakdown.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🆕</div>
+          <div class="rule-text"><strong>New projects:</strong> Fart the PRD with features, then break it into phases. Use AI to help flesh it out from your vibe plan.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔍</div>
+          <div class="rule-text"><strong>Existing codebases:</strong> Document existing code first. AI makes assumptions — the PRD corrects them and keeps all conversations aligned.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Context drift is real.</span> Without a PRD, each new conversation forgets prior decisions. The PRD is persistent memory across sessions.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modular Rules Architecture -->
+    <div class="card yellow">
+      <div class="card-title yellow">Modular Rules Architecture</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">Stop dumping everything into one massive rules file. Split by content, load only what's relevant per conversation via <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">@path/to/file</code> imports.</p>
+
+      <div class="arch-wrap">
+<span class="arch-folder">.claude/</span>
+├── <span class="arch-folder">agents/</span>       <span class="arch-note">← agent-specific rules (e.g. AGENTS.md)</span>
+├── <span class="arch-folder">references/</span>   <span class="arch-note">← stable docs, API specs, architecture notes</span>
+├── <span class="arch-file">components.md</span>  <span class="arch-note">← UI component conventions and patterns</span>
+└── <span class="arch-file">api.md</span>         <span class="arch-note">← API integration rules and gotchas</span>
+
+<span class="arch-file">CLAUDE.md</span>        <span class="arch-note">← auto-loaded; pointers to other files</span>
+      </div>
+
+      <div class="rule-list" style="margin-top:12px">
+        <div class="rule-row">
+          <div class="rule-icon">✂️</div>
+          <div class="rule-text"><strong>Working on frontend?</strong> Load <code>components.md</code> + relevant references. <span class="pos">Don't load API rules</span> — they add noise.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🤖</div>
+          <div class="rule-text"><strong>Working with agents?</strong> Load <code>agents/AGENTS.md</code> with your main context. Context pollution is a real failure mode.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subagents for Context Isolation -->
+    <div class="card green">
+      <div class="card-title green">Subagents for Context Isolation</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">Delegate research to subagents. They explore everything (files, web, git), but only summarize results back to your main context. Keeps your main conversation focused.</p>
+
+      <div class="agent-diagram">
+        <div class="agent-box">
+          <div class="agent-node main">MAIN AGENT</div>
+          <div class="agent-caption">Owns high-level task. Stays focused.</div>
+        </div>
+        <div class="agent-arrow">→</div>
+        <div class="agent-box">
+          <div class="agent-node sub">Subagent</div>
+          <div class="agent-caption">Explores codebase / web / git</div>
+        </div>
+        <div class="agent-arrow">→</div>
+        <div class="agent-box">
+          <div class="agent-node sub">Subagent</div>
+          <div class="agent-caption">Explores another concern</div>
+        </div>
+        <div class="agent-arrow">→</div>
+        <div class="agent-box">
+          <div class="agent-node main">Summary back</div>
+          <div class="agent-caption">Distilled insights only — not raw findings</div>
+        </div>
+      </div>
+
+      <div class="rule-list" style="margin-top:12px">
+        <div class="rule-row">
+          <div class="rule-icon">🎯</div>
+          <div class="rule-text"><strong>Subagent outputs are summaries, not dumps.</strong> The main agent only sees distilled, recommendation-ready context.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔒</div>
+          <div class="rule-text"><strong>Context isolation prevents hallucination cascade.</strong> Unrelated explorations that pollute the main context cause compounding errors.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /planning -->
+
+
+  <!-- ═══════════════════════════════════════════
+       PIV LOOP
+       ═══════════════════════════════════════════ -->
+  <div class="section" id="tab-piv">
+
+    <div class="hero">
+      <h2>The PIV Loop — Core Feature Development</h2>
+      <p>Every feature runs through Plan → Implement → Validate. Planning and execution are <strong>separate conversations</strong> (see Golden Rules). The goal of planning is to front-load context so implementation is execution, not exploration.</p>
+    </div>
+
+    <!-- PIV bar -->
+    <div class="piv-bar">
+      <div class="piv-step p">PLAN<span class="piv-label">structured context</span></div>
+      <div class="piv-step i">IMPLEMENT<span class="piv-label">execute task by task</span></div>
+      <div class="piv-step v">VALIDATE<span class="piv-label">trust but verify</span></div>
+      <div class="piv-step r">ITERATE<span class="piv-label">next task / bugfix</span></div>
+    </div>
+
+    <!-- Planning steps -->
+    <div class="card blue">
+      <div class="card-title">Steps to Planning</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>"Vibe plan" — explore before structuring</strong><br>
+            Explore ideas, architecture, concepts, tech stack, etc. with the AI assistant. <em>Not structured yet.</em>
+            For <span style="color:var(--accent4)">new projects</span>: research online resources, previous projects.<br>
+            For <span style="color:var(--accent4)">existing projects</span>: research/analyze the existing codebase.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Create a structured plan using Context Engineering</strong><br>
+            Transform the vibe plan into a formal plan of attack. This is what you hand to the AI for implementation.
+            <span class="tip">💡 The goal: produce a plan so complete that the AI has the context it needs — most of the structure is already in place before execution starts.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Context Engineering -->
+    <div class="card">
+      <div class="card-title yellow">Context Engineering — What Goes in the Plan</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">Context Engineering = RAG + Memory + Task Management + Prompt Engineering. A complete plan covers all four zones.</p>
+
+      <div class="venn-grid">
+        <div class="venn-item">
+          <div class="venn-item-title blue">RAG</div>
+          <p>External knowledge pulled in: docs, API specs, existing codebase analysis, architecture references.</p>
+        </div>
+        <div class="venn-item">
+          <div class="venn-item-title amber">Memory</div>
+          <p>What the AI should know about prior decisions, project history, constraints already established.</p>
+        </div>
+        <div class="venn-item">
+          <div class="venn-item-title green">Task Management</div>
+          <p>Ordered task list, dependencies, what "done" looks like, validation criteria per task.</p>
+        </div>
+        <div class="venn-item">
+          <div class="venn-item-title red">Prompt Engineering</div>
+          <p>How you frame the problem, persona, output format, constraints on behavior during execution.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <div class="card-title">Plan Components (Can Include)</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text"><strong>Goal(s)</strong> — what success looks like for this feature</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text"><strong>Success criteria</strong> — measurable, testable outcomes</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📚</div>
+            <div class="rule-text"><strong>Documentation to reference</strong> — which files, specs, or APIs are in scope</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📋</div>
+            <div class="rule-text"><strong>Task list</strong> — ordered steps the AI will execute</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔬</div>
+            <div class="rule-text"><strong>Validation strategy</strong> — how each task gets verified</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🏗️</div>
+            <div class="rule-text"><strong>Desired codebase structure</strong> — file layout, naming conventions, patterns</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layer 1 vs Layer 2 -->
+    <div class="card">
+      <div class="card-title">Two Layers of Planning</div>
+      <div class="layer-grid">
+        <div class="layer-box">
+          <div class="layer-header l1">Layer 1 — Project Planning</div>
+          <div class="layer-body">
+            <div style="font-size:11px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; margin-bottom:4px">Done once, updated rarely</div>
+            <div class="layer-item">Tech stack decisions</div>
+            <div class="layer-item">Architecture patterns</div>
+            <div class="layer-item">Constraints &amp; conventions</div>
+            <div class="layer-item">Creating stable resources (PRD, global rules)</div>
+          </div>
+        </div>
+        <div class="layer-box">
+          <div class="layer-header l2">Layer 2 — Task Planning</div>
+          <div class="layer-body">
+            <div style="font-size:11px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; margin-bottom:4px">Done per feature/task</div>
+            <div class="layer-item">Codebase analysis for this feature</div>
+            <div class="layer-item">Documentation analysis</div>
+            <div class="layer-item">Integration points</div>
+            <div class="layer-item">Task-specific rules</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Implementation & Validation -->
+    <div class="card green">
+      <div class="card-title green">Steps to Implementing / Validating</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Execute the implementation plan task by task</strong><br>
+            Most structure is already in place from planning. Execution is about building, not exploring.
+            <span class="tip">💡 At this point the AI has the context it needs — the plan already contains most of the structure required.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Validate the produced code — Trust but verify</strong><br>
+            Let the AI run, but actively check that it:
+            <ul style="margin-top:6px; padding-left:16px; font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:3px">
+              <li>Uses its tools correctly</li>
+              <li>Is reading/editing the right files</li>
+              <li>Is managing its tasks properly</li>
+              <li>Produces "thinking" tokens that show it understands the plan of attack</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validation split -->
+    <div class="card">
+      <div class="card-title">Validation Split — Human + AI</div>
+      <div class="val-grid">
+        <div class="val-col">
+          <div class="val-header human">👤 Human Validation</div>
+          <div class="val-body">
+            <div class="val-tag">Code Review</div>
+            <div class="val-tag">Manual Tests</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:8px">Performs high-judgment validation — architectural sanity, edge case intuition, product correctness.</div>
+          </div>
+        </div>
+        <div class="val-col">
+          <div class="val-header ai">🤖 AI Coding Assistant Validation</div>
+          <div class="val-body">
+            <div class="val-tag">Unit Tests</div>
+            <div class="val-tag">Integration Tests</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:8px">Runs exhaustive automated tests. Better at systematic coverage than humans but needs human-defined scope.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠️ Critical — Iterate Until Complete</div>
+      <p>The PIV loop repeats <em>per task</em>, not just per feature. Don't batch multiple tasks into a single implementation + validation pass. Compounding unvalidated work is how AI projects lose coherence.</p>
+    </div>
+
+  </div><!-- /piv -->
+
+
+  <!-- ═══════════════════════════════════════════
+       RULES & CONTEXT
+       ═══════════════════════════════════════════ -->
+  <div class="section" id="tab-rules">
+
+    <div class="hero">
+      <h2>Global Rules + On-Demand Context</h2>
+      <p>Rules are the AI's long-term memory between sessions. <strong>Global rules</strong> live in <code style="background:var(--tag-bg);padding:1px 6px;border-radius:3px;color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:13px">CLAUDE.md</code> and load automatically. <strong>On-demand context</strong> loads only when relevant via <code style="background:var(--tag-bg);padding:1px 6px;border-radius:3px;color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:13px">@file</code> imports.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Global Rules (CLAUDE.md)</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Auto-loaded</strong> at the start of every conversation. Don't put volatile or feature-specific rules here.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔗</div>
+            <div class="rule-text">Use CLAUDE.md as a <strong>pointer file</strong> — reference other rule files rather than stuffing everything into one place.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📌</div>
+            <div class="rule-text">Good global rules: coding conventions, project structure, test patterns, commit message format, never-do-X constraints.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">On-Demand Context</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📂</div>
+            <div class="rule-text">Load context explicitly with <code>@.claude/references/api.md</code> when working on API features.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text"><strong>Load only what's relevant.</strong> Every extra file in context is noise that degrades precision.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📦</div>
+            <div class="rule-text">Good on-demand files: component libraries, API specs, agent rules, feature-specific conventions.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The Prime Command -->
+    <div class="card green">
+      <div class="card-title green">The Prime Command / Skill</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">A single boot command that builds a complete mental model of the codebase before starting any task. Replaces fragmented "look at X, now look at Y" context-building.</p>
+
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; margin-bottom:8px; letter-spacing:0.06em">EXECUTION CHAIN</div>
+        <div class="cmd-chain">
+          <div class="cmd-pill">/plan</div>
+          <div class="cmd-arrow">→</div>
+          <div class="cmd-pill">/read back</div>
+          <div class="cmd-arrow">→</div>
+          <div class="cmd-pill">/explore structure</div>
+          <div class="cmd-arrow">→</div>
+          <div class="cmd-pill">/check git log</div>
+          <div class="cmd-arrow">→</div>
+          <div class="cmd-pill">/build mental model</div>
+        </div>
+      </div>
+
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🧭</div>
+          <div class="rule-text"><strong>Reading back</strong> the PRD and recent context primes the AI on goals before it touches any file.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🗂️</div>
+          <div class="rule-text"><strong>Exploring structure</strong> maps the codebase — which files exist, how modules relate, where things live.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📜</div>
+          <div class="rule-text"><strong>Checking git log</strong> surfaces recent changes, ongoing work, and decisions that aren't in the PRD yet.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🧠</div>
+          <div class="rule-text"><strong>Building a mental model</strong> — the AI summarizes its understanding before acting. This surfaces misunderstandings early.</div>
+        </div>
+      </div>
+
+      <pre style="margin-top:12px"><span class="cm"># Example prime command usage</span>
+<span class="hd">User:</span> <span class="li">/plan</span>
+
+<span class="cm"># The prime skill then executes the full chain:</span>
+<span class="kw">1.</span> Read PRD.md and recent CLAUDE.md context
+<span class="kw">2.</span> Explore project structure (file tree + key modules)
+<span class="kw">3.</span> Check git log (last 10–20 commits)
+<span class="kw">4.</span> Produce written mental model summary before acting</pre>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">📐 Architecture principle</div>
+      <p>Commands become your <em>reusable interface to AI workflows</em>. Once a command works well, it's free to use forever. Your workflow sophistication compounds across projects.</p>
+    </div>
+
+  </div><!-- /rules -->
+
+
+  <!-- ═══════════════════════════════════════════
+       FOUR GOLDEN RULES
+       ═══════════════════════════════════════════ -->
+  <div class="section" id="tab-golden">
+
+    <div class="hero">
+      <h2>The Four Golden Rules</h2>
+      <p>These are the highest-leverage operating principles — the ones that prevent the most common failure modes when building complex systems with AI assistants.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <!-- Rule 1 -->
+      <div class="golden-card" style="border-left: 3px solid var(--accent);">
+        <div>
+          <div class="golden-num" style="color:var(--accent)">01</div>
+          <div class="golden-title" style="color:var(--accent)">THE CONTEXT RESET</div>
+        </div>
+        <div class="golden-body">
+          <strong>Planning and execution are SEPARATE conversations.</strong> Context window degradation is real — fresh starts matter.
+        </div>
+
+        <div class="reset-diagram">
+          <div class="reset-phase">
+            <div class="reset-box plan">PLAN</div>
+            <div class="reset-sub">research, design</div>
+          </div>
+          <div class="reset-sep">
+            <div class="reset-sep-line"></div>
+            <div class="reset-sep-label">NEW CHAT</div>
+            <div class="reset-sep-line"></div>
+          </div>
+          <div class="reset-phase">
+            <div class="reset-box doc">AI context</div>
+            <div class="reset-sub">load PRD + plan</div>
+          </div>
+          <div style="color:var(--text-dim); font-size:18px">→</div>
+          <div class="reset-phase">
+            <div class="reset-box exec">EXEC</div>
+            <div class="reset-sub">clean context</div>
+          </div>
+        </div>
+
+        <div class="callout red" style="padding:12px 14px">
+          <div class="callout-label">⚠️ The Failure Mode</div>
+          <p style="font-size:12px">After many messages, agents get <em>overwhelmed</em> and make repeated mistakes. Context reset is the fix — not prompt tweaking.</p>
+        </div>
+      </div>
+
+      <!-- Rule 2 -->
+      <div class="golden-card" style="border-left: 3px solid var(--accent4);">
+        <div>
+          <div class="golden-num" style="color:var(--accent4)">02</div>
+          <div class="golden-title" style="color:var(--accent4)">COMMAND-IFY EVERYTHING</div>
+        </div>
+        <div class="golden-body">
+          If you're doing something more than twice, <strong>make it a command (aka skill).</strong> Your workflows become reusable, shareable tools.
+        </div>
+
+        <div style="margin-top:8px">
+          <div style="font-size:11px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; margin-bottom:8px">EXAMPLE COMMANDS</div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px">
+            <div class="cmd-pill">/commit</div>
+            <div class="cmd-pill">/review</div>
+            <div class="cmd-pill">/test</div>
+            <div class="cmd-pill">/fix-types</div>
+            <div class="cmd-pill">/add-feature</div>
+            <div class="cmd-pill">/optimize</div>
+          </div>
+        </div>
+
+        <div class="golden-body">
+          One command can encode thousands of tokens of context and instructions. Running <code>/commit</code> beats typing the same instructions every session.
+        </div>
+
+        <div class="callout yellow" style="padding:12px 14px; margin-top:4px">
+          <div class="callout-label">💡 Compounding</div>
+          <p style="font-size:12px">Commands accumulate across projects. Your toolkit grows. Each new project starts with a richer set of battle-tested workflows.</p>
+        </div>
+      </div>
+
+      <!-- Rule 3 -->
+      <div class="golden-card" style="border-left: 3px solid var(--accent3);">
+        <div>
+          <div class="golden-num" style="color:var(--accent3)">03</div>
+          <div class="golden-title" style="color:var(--accent3)">GIT LOG AS MEMORY</div>
+        </div>
+        <div class="golden-body">
+          Your commit history is your <strong>long-term memory.</strong> Standardized commit messages communicate intent to future coding agent sessions.
+        </div>
+
+        <div style="margin-top:10px; background:var(--bg-code); border:1px solid var(--border); border-radius:6px; overflow:hidden">
+          <div style="padding:8px 12px; background:rgba(62,207,142,0.08); border-bottom:1px solid var(--border); font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent3)">GIT LOG — as AI context</div>
+          <div style="padding:12px; font-family:'IBM Plex Mono',monospace; font-size:11px; display:flex; flex-direction:column; gap:4px">
+            <div><span style="color:var(--text-dim)">a3f2d1</span> <span style="color:var(--accent3)">feat:</span> <span style="color:var(--text-muted)">add OAuth flow for GitHub</span></div>
+            <div><span style="color:var(--text-dim)">b9e1c4</span> <span style="color:var(--accent4)">fix:</span> <span style="color:var(--text-muted)">token refresh race condition</span></div>
+            <div><span style="color:var(--text-dim)">c7a0f2</span> <span style="color:var(--accent)">refactor:</span> <span style="color:var(--text-muted)">split agent into subagents</span></div>
+            <div><span style="color:var(--text-dim)">d5e3b1</span> <span style="color:var(--accent2)">chore:</span> <span style="color:var(--text-muted)">update rules per session learnings</span></div>
+          </div>
+        </div>
+
+        <div class="golden-body" style="margin-top:8px">
+          The prime command reads the git log to reconstruct what happened since the last session. <strong>Bad commit messages = lost context.</strong>
+        </div>
+      </div>
+
+      <!-- Rule 4 -->
+      <div class="golden-card" style="border-left: 3px solid var(--accent2);">
+        <div>
+          <div class="golden-num" style="color:var(--accent2)">04</div>
+          <div class="golden-title" style="color:var(--accent2)">SYSTEM EVOLUTION MINDSET</div>
+        </div>
+        <div class="golden-body">
+          Every bug is an opportunity to evolve your <strong>SYSTEM</strong> for AI coding. Not just fix the bug — improve the rules that prevent the bug class.
+        </div>
+
+        <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px">
+          <div class="evolution-row">
+            <div class="evo-node trigger">BUG / mistake</div>
+            <div class="evo-arrow">→</div>
+            <div class="evo-node action">Ask: "Why did AI do this?"</div>
+            <div class="evo-arrow">→</div>
+            <div class="evo-node action">Add rule to prevent it</div>
+            <div class="evo-arrow">→</div>
+            <div class="evo-node result">+ RULE in CLAUDE.md</div>
+          </div>
+        </div>
+
+        <div class="golden-body" style="margin-top:8px">
+          Example: AI keeps ignoring type safety → add rule: <code>"Always run tsc before committing"</code>. Now that error never recurs.
+        </div>
+
+        <div class="callout yellow" style="padding:12px 14px; margin-top:4px">
+          <div class="callout-label">📈 Flywheel Effect</div>
+          <p style="font-size:12px">More rules → fewer mistakes → more trust → bigger delegation → faster shipping. The system compounds.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /golden -->
+
+
+  <!-- ═══════════════════════════════════════════
+       COMMANDS REFERENCE
+       ═══════════════════════════════════════════ -->
+  <div class="section" id="tab-commands">
+
+    <div class="hero">
+      <h2>Commands Quick Reference</h2>
+      <p>Commands (skills) are the reusable unit of AI workflow. Each one encodes a repeatable process. Build your library incrementally — every project adds to it.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Core Commands</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>What It Does</th>
+            <th>When to Use</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>/plan</td>
+            <td>Prime command — reads back PRD, explores structure, checks git log, builds mental model</td>
+            <td>Start of every implementation conversation</td>
+          </tr>
+          <tr>
+            <td>/commit</td>
+            <td>Stages changes, generates a standardized commit message, pushes — following your git conventions</td>
+            <td>After each validated task</td>
+          </tr>
+          <tr>
+            <td>/review</td>
+            <td>Reviews current diff for correctness, style, security, and compliance with project rules</td>
+            <td>Before human code review or merge</td>
+          </tr>
+          <tr>
+            <td>/test</td>
+            <td>Runs the appropriate test suite for the changed code and reports results</td>
+            <td>Validation step of the PIV loop</td>
+          </tr>
+          <tr>
+            <td>/fix-types</td>
+            <td>Runs TypeScript compiler, identifies type errors, applies targeted fixes</td>
+            <td>After any TS refactor or new API integration</td>
+          </tr>
+          <tr>
+            <td>/add-feature</td>
+            <td>Kicks off Layer 2 planning for a new feature — codebase analysis, task breakdown, context setup</td>
+            <td>Start of any new feature PIV cycle</td>
+          </tr>
+          <tr>
+            <td>/optimize</td>
+            <td>Profiles and refactors a specified module for performance, following project optimization rules</td>
+            <td>Post-validation performance pass</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Command Design Principles</div>
+      <div class="decision-grid">
+        <div class="decision-col">
+          <div class="decision-col-header use">✓ Good Commands</div>
+          <div class="decision-item"><span class="di">✅</span>Encode a repeatable, multi-step process you'd otherwise re-explain every session.</div>
+          <div class="decision-item"><span class="di">✅</span>Reference specific project files, conventions, or standards by path.</div>
+          <div class="decision-item"><span class="di">✅</span>Have a clear output — a commit, a test report, a diff, a plan doc.</div>
+          <div class="decision-item"><span class="di">✅</span>Are idempotent — running twice doesn't break things.</div>
+        </div>
+        <div class="decision-col">
+          <div class="decision-col-header skip">✗ Bad Commands</div>
+          <div class="decision-item"><span class="di">❌</span>Vague instructions with no defined output ("be more helpful").</div>
+          <div class="decision-item"><span class="di">❌</span>Commands that combine unrelated concerns in one shot.</div>
+          <div class="decision-item"><span class="di">❌</span>Commands that assume context without loading it explicitly.</div>
+          <div class="decision-item"><span class="di">❌</span>Commands you've only needed once — don't over-engineer your toolkit.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Prime Command — Full Anatomy</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">The prime command is the most important one to get right. Here's the full structure it follows when invoked:</p>
+      <pre><span class="cm"># PRIME COMMAND — /plan</span>
+<span class="hd">Step 1 — Read back context</span>
+  <span class="li">@PRD.md</span>                     <span class="cm">← product requirements</span>
+  <span class="li">@CLAUDE.md</span>                  <span class="cm">← global rules + pointers</span>
+  <span class="li">@.claude/references/*.md</span>    <span class="cm">← relevant on-demand context</span>
+
+<span class="hd">Step 2 — Explore structure</span>
+  <span class="fn">list</span> top-level directories
+  <span class="fn">read</span> key entry points (main, index, app)
+  <span class="fn">map</span> module relationships
+
+<span class="hd">Step 3 — Check git log</span>
+  <span class="fn">git log --oneline -20</span>        <span class="cm">← what changed recently</span>
+  <span class="fn">git diff HEAD~3</span>             <span class="cm">← recent diffs if needed</span>
+
+<span class="hd">Step 4 — Build mental model</span>
+  <span class="li">Output written summary</span> before acting:
+  - Current state of the codebase
+  - What was done recently
+  - What the plan is for this session
+  - Any risks or blockers identified</pre>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">🚀 Getting Started</div>
+      <p>Start with just three commands: <em>/plan</em>, <em>/commit</em>, and <em>/test</em>. These cover the core PIV loop. Add more only when you notice yourself re-explaining the same thing twice.</p>
+    </div>
+
+  </div><!-- /commands -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

@@ -447,6 +447,12 @@
       },
       {
         "type": "file",
+        "name": "ai-complex-codebases.html",
+        "label": "Ai Complex Codebases",
+        "path": "coding_web-design/ai-complex-codebases.html"
+      },
+      {
+        "type": "file",
         "name": "animated-websites-reference.html",
         "label": "Animated Websites Reference",
         "path": "coding_web-design/animated-websites-reference.html"

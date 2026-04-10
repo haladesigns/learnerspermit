@@ -708,7 +708,7 @@
 
     <div class="hero">
       <h2>Building Complex Codebases with AI</h2>
-      <p>A framework for using AI coding assistants on real, production-scale projects — not just toy scripts. The key insight: <strong>AI amplifies existing craft</strong>. You still own planning, architecture decisions, and validation. The framework gives AI the context it needs to execute reliably.</p>
+      <p>A dead-simple, greenfield-focused framework for AI coding assistants. The goal is something <strong>simple, yours, and evolvable</strong> — not an overengineered multi-agent system. You can adapt this starter kit faster than you could learn BMAD or the GitHub spec kit, and it'll compound across every project you build.</p>
     </div>
 
     <!-- PIV bar — always visible as mental model anchor -->
@@ -783,89 +783,141 @@
 
     <!-- PRD First -->
     <div class="card blue">
-      <div class="card-title">PRD-First Development</div>
-      <div class="rule-list">
-        <div class="rule-row">
-          <div class="rule-icon">📋</div>
-          <div class="rule-text"><strong>Start every project with a PRD, not code.</strong> The PRD becomes the source of truth for every AI conversation and each granular feature breakdown.</div>
+      <div class="card-title">PRD-First Development — The Creation Flow</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Brain dump — start completely unstructured</strong><br>
+            Tell the agent your idea, rough tech stack ideas, anything you have in mind. Use speech-to-text for speed. Don't worry about structure yet — the goal is to get context into the conversation.
+            <span class="tip">💡 Use speech-to-text (Whisper, AquaVoice, etc.) to dump ideas fast. Raw is fine here.</span>
+          </div>
         </div>
-        <div class="rule-row">
-          <div class="rule-icon">🆕</div>
-          <div class="rule-text"><strong>New projects:</strong> Fart the PRD with features, then break it into phases. Use AI to help flesh it out from your vibe plan.</div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Spin up subagents for research</strong><br>
+            Ask the agent to spin off subagents to research best practices, relevant libraries, and architecture patterns. You only get back the distilled summary — not the raw exploration.
+          </div>
         </div>
-        <div class="rule-row">
-          <div class="rule-icon">🔍</div>
-          <div class="rule-text"><strong>Existing codebases:</strong> Document existing code first. AI makes assumptions — the PRD corrects them and keeps all conversations aligned.</div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Ask the agent to ask YOU questions</strong><br>
+            Explicitly prompt: <em>"Come back to me with a bunch of questions so we can get on the same page on the details."</em> This is the single most powerful assumption-reduction technique. With Claude Code's multi-choice question tool, you can blitz through 20–25 questions quickly.
+            <span class="note">⚠️ One line of a bad PRD could be 1,000 lines of bad code. Every question answered removes one assumption.</span>
+          </div>
         </div>
-        <div class="rule-row">
-          <div class="rule-icon">⚠️</div>
-          <div class="rule-text"><span class="neg">Context drift is real.</span> Without a PRD, each new conversation forgets prior decisions. The PRD is persistent memory across sessions.</div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Run <code>/create-prd</code> to produce the structured document</strong><br>
+            The entire conversation becomes context for the PRD. The command has a fixed template with sections: MVP scope, out-of-scope, directory structure, tech stack, and <strong>phases of work</strong>.
+            <span class="tip">💡 The conversation context is temporary. Only what's captured in the PRD survives to future sessions.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Read through and validate alignment</strong><br>
+            Don't skip this. Every misalignment here multiplies into bad code later. Confirm MVP scope, out-of-scope items, phases, and directory structure all match your intent.
+            <span class="note">⚠️ For existing codebases: research/document the existing code first before generating the PRD. Brownfield is a different flow.</span>
+          </div>
         </div>
       </div>
     </div>
 
+    <div class="callout red">
+      <div class="callout-label">⚠️ The Assumption Cascade</div>
+      <p>One line of bad code = one line of bad code. One line of a bad plan = ~100 lines of bad code. <em>One bad line in a PRD = ~1,000 lines of bad code</em> — because misalignment in the spec propagates through the entire implementation.</p>
+    </div>
+
     <!-- Modular Rules Architecture -->
     <div class="card yellow">
-      <div class="card-title yellow">Modular Rules Architecture</div>
-      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">Stop dumping everything into one massive rules file. Split by content, load only what's relevant per conversation via <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">@path/to/file</code> imports.</p>
+      <div class="card-title yellow">Modular Rules Architecture — Progressive Disclosure</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">Stop dumping everything into one massive rules file. Use <strong>progressive disclosure</strong>: CLAUDE.md auto-loads and stays concise (~233 lines), then points to deeper files the agent loads only when it needs them.</p>
 
       <div class="arch-wrap">
 <span class="arch-folder">.claude/</span>
-├── <span class="arch-folder">agents/</span>       <span class="arch-note">← agent-specific rules (e.g. AGENTS.md)</span>
-├── <span class="arch-folder">references/</span>   <span class="arch-note">← stable docs, API specs, architecture notes</span>
-├── <span class="arch-file">components.md</span>  <span class="arch-note">← UI component conventions and patterns</span>
-└── <span class="arch-file">api.md</span>         <span class="arch-note">← API integration rules and gotchas</span>
+├── <span class="arch-folder">agents/</span>            <span class="arch-note">← agent-specific rules (e.g. AGENTS.md)</span>
+├── <span class="arch-folder">references/</span>        <span class="arch-note">← on-demand context (loaded when relevant)</span>
+│   ├── <span class="arch-file">components.md</span>  <span class="arch-note">← UI component layout conventions</span>
+│   ├── <span class="arch-file">api.md</span>         <span class="arch-note">← API endpoint rules and gotchas</span>
+│   └── <span class="arch-file">styles.md</span>      <span class="arch-note">← Tailwind/CSS style guide (added via evolution)</span>
+└── <span class="arch-file">commands/</span>            <span class="arch-note">← /prime, /create-prd, /plan-feature, /commit, etc.</span>
 
-<span class="arch-file">CLAUDE.md</span>        <span class="arch-note">← auto-loaded; pointers to other files</span>
+<span class="arch-file">CLAUDE.md</span> (or AGENTS.md)  <span class="arch-note">← auto-loaded; pointers only; keep &lt;250 lines</span>
       </div>
 
-      <div class="rule-list" style="margin-top:12px">
+      <div style="margin-top:12px; margin-bottom:10px; font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--text-dim); letter-spacing:0.06em; text-transform:uppercase">What CLAUDE.md should contain</div>
+      <div class="rule-list">
         <div class="rule-row">
-          <div class="rule-icon">✂️</div>
-          <div class="rule-text"><strong>Working on frontend?</strong> Load <code>components.md</code> + relevant references. <span class="pos">Don't load API rules</span> — they add noise.</div>
+          <div class="rule-icon">⚙️</div>
+          <div class="rule-text"><strong>Tech stack</strong> — frameworks, DB, ORM, auth library</div>
         </div>
         <div class="rule-row">
-          <div class="rule-icon">🤖</div>
-          <div class="rule-text"><strong>Working with agents?</strong> Load <code>agents/AGENTS.md</code> with your main context. Context pollution is a real failure mode.</div>
+          <div class="rule-icon">▶️</div>
+          <div class="rule-text"><strong>Commands to run/test the app</strong> — dev server, migrations, test runner</div>
         </div>
+        <div class="rule-row">
+          <div class="rule-icon">🗂️</div>
+          <div class="rule-text"><strong>Project structure index</strong> — where things live in the codebase</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📐</div>
+          <div class="rule-text"><strong>Code patterns</strong> — naming conventions, architecture decisions, never-do-X rules</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔗</div>
+          <div class="rule-text"><strong>On-demand context pointers</strong> — "If working on front end, read <code>references/components.md</code>. If building API routes, read <code>references/api.md</code>."</div>
+        </div>
+      </div>
+
+      <div class="callout blue" style="margin-top:12px; padding:12px 14px">
+        <div class="callout-label">🔧 /create-rules command</div>
+        <p style="font-size:12px">Run <code>/create-rules</code> after your PRD is done. It reads the PRD for tech stack context, does web research on testing/logging best practices for that stack, and generates the initial CLAUDE.md + reference files using your template structure.</p>
       </div>
     </div>
 
     <!-- Subagents for Context Isolation -->
     <div class="card green">
       <div class="card-title green">Subagents for Context Isolation</div>
-      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">Delegate research to subagents. They explore everything (files, web, git), but only summarize results back to your main context. Keeps your main conversation focused.</p>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">Delegate research to subagents. They explore everything (files, web, git) and load tens or hundreds of thousands of tokens — but only their summary returns to your main context.</p>
 
       <div class="agent-diagram">
         <div class="agent-box">
           <div class="agent-node main">MAIN AGENT</div>
-          <div class="agent-caption">Owns high-level task. Stays focused.</div>
+          <div class="agent-caption">Owns high-level task. Context stays clean.</div>
         </div>
         <div class="agent-arrow">→</div>
         <div class="agent-box">
           <div class="agent-node sub">Subagent</div>
-          <div class="agent-caption">Explores codebase / web / git</div>
+          <div class="agent-caption">Web research, best practices</div>
         </div>
-        <div class="agent-arrow">→</div>
+        <div class="agent-arrow">+</div>
         <div class="agent-box">
           <div class="agent-node sub">Subagent</div>
-          <div class="agent-caption">Explores another concern</div>
+          <div class="agent-caption">Codebase exploration</div>
         </div>
         <div class="agent-arrow">→</div>
         <div class="agent-box">
-          <div class="agent-node main">Summary back</div>
-          <div class="agent-caption">Distilled insights only — not raw findings</div>
+          <div class="agent-node main">Summaries only</div>
+          <div class="agent-caption">Distilled findings — not raw token dumps</div>
         </div>
       </div>
 
       <div class="rule-list" style="margin-top:12px">
         <div class="rule-row">
-          <div class="rule-icon">🎯</div>
-          <div class="rule-text"><strong>Subagent outputs are summaries, not dumps.</strong> The main agent only sees distilled, recommendation-ready context.</div>
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">Use subagents for:</span> PRD research, architecture exploration, documentation lookup, codebase analysis before planning.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">❌</div>
+          <div class="rule-text"><span class="neg">Don't use subagents for implementation.</span> Implementation needs the full file-editing context in the main agent. Subagents for implementation leads to hallucinations — this is why Claude Code's built-in subagents are research-only.</div>
         </div>
         <div class="rule-row">
           <div class="rule-icon">🔒</div>
-          <div class="rule-text"><strong>Context isolation prevents hallucination cascade.</strong> Unrelated explorations that pollute the main context cause compounding errors.</div>
+          <div class="rule-text"><strong>Context isolation is the point.</strong> Research loads massive token counts — if that all hits your main context, it drowns your actual task with noise.</div>
         </div>
       </div>
     </div>
@@ -893,23 +945,44 @@
 
     <!-- Planning steps -->
     <div class="card blue">
-      <div class="card-title">Steps to Planning</div>
+      <div class="card-title">Steps to Planning (per PIV Loop)</div>
       <div class="step-list">
         <div class="step-row">
           <div class="step-num">1</div>
           <div class="step-body">
-            <strong>"Vibe plan" — explore before structuring</strong><br>
-            Explore ideas, architecture, concepts, tech stack, etc. with the AI assistant. <em>Not structured yet.</em>
-            For <span style="color:var(--accent4)">new projects</span>: research online resources, previous projects.<br>
-            For <span style="color:var(--accent4)">existing projects</span>: research/analyze the existing codebase.
+            <strong>Run <code>/prime</code> to start the session</strong><br>
+            Always begin a new conversation with <code>/prime</code>. It reads the PRD, explores the codebase structure, checks the git log, and outputs a mental model summary. Validates the agent knows where things stand before it touches anything.
           </div>
         </div>
         <div class="step-row">
           <div class="step-num">2</div>
           <div class="step-body">
-            <strong>Create a structured plan using Context Engineering</strong><br>
-            Transform the vibe plan into a formal plan of attack. This is what you hand to the AI for implementation.
-            <span class="tip">💡 The goal: produce a plan so complete that the AI has the context it needs — most of the structure is already in place before execution starts.</span>
+            <strong>"Vibe planning" — unstructured exploration for this feature</strong><br>
+            Explore the specific feature: architecture, edge cases, sub-tasks. Spin off subagents for codebase analysis and relevant documentation. Keep it conversational — not structured yet.
+            <span class="tip">💡 For phase 1 of a new project this is very lightweight. Gets more detailed as the codebase grows.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Run <code>/plan-feature</code> to create a structured plan document</strong><br>
+            Converts the conversation into a structured plan with: problem statement, context/references, ordered task list, and — most importantly — a detailed <strong>validation strategy</strong> defined <em>before any code is written</em>.
+            <span class="tip">💡 Validation strategy = test-driven development thinking. Define success criteria before execution. Forces both you and the agent to be specific about what "done" means.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Set up environment variables in parallel</strong><br>
+            Create a <code>.env.example</code> and set your real <code>.env</code> values before handing off to execution.
+            <span class="note">⚠️ Critical gotcha: if env vars aren't set, the agent will mock-test and report everything as passing when it isn't. It looks validated but it's not. Set them up during planning, not after.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Validate the plan before executing</strong><br>
+            Read through the structured plan. Confirm task list matches PRD phase scope. Verify the validation strategy is specific enough — if the success criteria are vague, push back before running <code>/execute</code>.
           </div>
         </div>
       </div>
@@ -1053,6 +1126,26 @@
       <p>The PIV loop repeats <em>per task</em>, not just per feature. Don't batch multiple tasks into a single implementation + validation pass. Compounding unvalidated work is how AI projects lose coherence.</p>
     </div>
 
+    <!-- Regression testing -->
+    <div class="card yellow">
+      <div class="card-title yellow">After Foundation — Set Up Regression Testing</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px">Once the first phase is validated and committed, create a command that re-runs all end-to-end tests. This protects past work as you build future PIV loops.</p>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🔁</div>
+          <div class="rule-text"><strong>Ask the agent to list all E2E tests it ran.</strong> Convert that list into a reusable <code>/test-regression</code> command so you can re-run the full suite after any future feature.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🐛</div>
+          <div class="rule-text"><strong>When a regression test fails,</strong> create a new test that captures the failure, fix the bug, then confirm the test passes. Now that failure class is permanently covered.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📈</div>
+          <div class="rule-text"><strong>Three parallel tracks compound together:</strong> as you build out your codebase, you're simultaneously evolving your <em>test base</em> and your <em>AI layer</em>. All three grow in parallel.</div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /piv -->
 
 
@@ -1068,38 +1161,57 @@
 
     <div class="grid-2">
       <div class="card blue">
-        <div class="card-title">Global Rules (CLAUDE.md)</div>
+        <div class="card-title">Global Rules (CLAUDE.md / AGENTS.md)</div>
         <div class="rule-list">
           <div class="rule-row">
             <div class="rule-icon">⚡</div>
-            <div class="rule-text"><strong>Auto-loaded</strong> at the start of every conversation. Don't put volatile or feature-specific rules here.</div>
+            <div class="rule-text"><strong>Auto-loaded</strong> at the start of every conversation. Keep it concise — target under 250 lines. If it's too long, you're overloading context on every task.</div>
           </div>
           <div class="rule-row">
             <div class="rule-icon">🔗</div>
-            <div class="rule-text">Use CLAUDE.md as a <strong>pointer file</strong> — reference other rule files rather than stuffing everything into one place.</div>
+            <div class="rule-text">Use as a <strong>pointer file</strong> — include an "on-demand context" section that tells the agent which reference files to load for which task types.</div>
           </div>
           <div class="rule-row">
             <div class="rule-icon">📌</div>
-            <div class="rule-text">Good global rules: coding conventions, project structure, test patterns, commit message format, never-do-X constraints.</div>
+            <div class="rule-text">Good global rules: tech stack summary, dev commands, project structure index, naming conventions, testing strategy, never-do-X constraints.</div>
           </div>
         </div>
       </div>
 
       <div class="card yellow">
-        <div class="card-title yellow">On-Demand Context</div>
+        <div class="card-title yellow">On-Demand Context (References)</div>
         <div class="rule-list">
           <div class="rule-row">
             <div class="rule-icon">📂</div>
-            <div class="rule-text">Load context explicitly with <code>@.claude/references/api.md</code> when working on API features.</div>
+            <div class="rule-text">Files like <code>references/components.md</code>, <code>references/api.md</code>, <code>references/styles.md</code> — larger, deeper, loaded only when working on that domain.</div>
           </div>
           <div class="rule-row">
             <div class="rule-icon">🎯</div>
-            <div class="rule-text"><strong>Load only what's relevant.</strong> Every extra file in context is noise that degrades precision.</div>
+            <div class="rule-text"><strong>Progressive disclosure.</strong> The agent discovers and loads these files as needed, guided by the pointers in CLAUDE.md. It's good at following these references when CLAUDE.md is concise.</div>
           </div>
           <div class="rule-row">
             <div class="rule-icon">📦</div>
-            <div class="rule-text">Good on-demand files: component libraries, API specs, agent rules, feature-specific conventions.</div>
+            <div class="rule-text">These files can be large — that's fine, because they only enter context when their domain is the active task.</div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Commands vs Skills -->
+    <div class="card">
+      <div class="card-title">Commands vs Skills — The Distinction</div>
+      <div class="decision-grid">
+        <div class="decision-col">
+          <div class="decision-col-header use">Commands — you invoke</div>
+          <div class="decision-item"><span class="di">⚡</span>You decide to run them explicitly: <code>/commit</code>, <code>/prime</code>, <code>/plan-feature</code>, <code>/create-prd</code>.</div>
+          <div class="decision-item"><span class="di">⚡</span>Encode a multi-step process you'd otherwise re-type every session.</div>
+          <div class="decision-item"><span class="di">⚡</span>Examples: <code>/create-prd</code>, <code>/create-rules</code>, <code>/plan-feature</code>, <code>/execute</code>, <code>/commit</code>, <code>/test</code>.</div>
+        </div>
+        <div class="decision-col">
+          <div class="decision-col-header skip" style="background:rgba(79,142,247,0.1); color:var(--accent); border-bottom-color:rgba(79,142,247,0.2)">Skills — agent decides to read</div>
+          <div class="decision-item"><span class="di">📖</span>Context files the agent reads autonomously to learn how to do something — like a guide it discovers when it needs it.</div>
+          <div class="decision-item"><span class="di">📖</span>Examples: <code>references/components.md</code>, <code>references/api.md</code> — the agent loads these when working on that domain.</div>
+          <div class="decision-item"><span class="di">📖</span>Note: Claude Code recently merged commands and skills — but the distinction in how you <em>think about them</em> still helps.</div>
         </div>
       </div>
     </div>
@@ -1274,28 +1386,46 @@
           <div class="golden-title" style="color:var(--accent2)">SYSTEM EVOLUTION MINDSET</div>
         </div>
         <div class="golden-body">
-          Every bug is an opportunity to evolve your <strong>SYSTEM</strong> for AI coding. Not just fix the bug — improve the rules that prevent the bug class.
+          Every bug, style mismatch, or hallucination is an opportunity to evolve your <strong>AI layer</strong> — not just fix the immediate issue. The question isn't "how do I fix this?" but "how do I prevent this <em>class</em> of mistake forever?"
         </div>
 
         <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px">
           <div class="evolution-row">
-            <div class="evo-node trigger">BUG / mistake</div>
+            <div class="evo-node trigger">bug / mismatch</div>
             <div class="evo-arrow">→</div>
-            <div class="evo-node action">Ask: "Why did AI do this?"</div>
+            <div class="evo-node action">ask: "why did AI do this?"</div>
             <div class="evo-arrow">→</div>
-            <div class="evo-node action">Add rule to prevent it</div>
+            <div class="evo-node action">update rules / add reference file</div>
             <div class="evo-arrow">→</div>
-            <div class="evo-node result">+ RULE in CLAUDE.md</div>
+            <div class="evo-node result">+ rule in CLAUDE.md</div>
           </div>
         </div>
 
-        <div class="golden-body" style="margin-top:8px">
-          Example: AI keeps ignoring type safety → add rule: <code>"Always run tsc before committing"</code>. Now that error never recurs.
+        <div class="golden-body" style="margin-top:10px">
+          <strong>Real example from the transcript:</strong> AI generated styles that didn't match the intended look. Root cause: no style guide in the AI layer. Fix: <em>don't just restyle — ask the agent to reason about what should change in the rules</em>. Then add <code>references/styles.md</code> (Tailwind conventions, component visual patterns) to prevent recurrence.
+        </div>
+
+        <div style="margin-top:10px; background:var(--bg-code); border:1px solid var(--border); border-radius:6px; padding:12px 14px">
+          <div style="font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--text-dim); margin-bottom:8px; letter-spacing:0.05em">EVOLVING IN PARALLEL</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap">
+            <div style="flex:1; min-width:100px; text-align:center; padding:8px; background:rgba(79,142,247,0.1); border-radius:4px; border:1px solid rgba(79,142,247,0.2)">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); font-weight:600">CODEBASE</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:4px">features, phases</div>
+            </div>
+            <div style="flex:1; min-width:100px; text-align:center; padding:8px; background:rgba(62,207,142,0.1); border-radius:4px; border:1px solid rgba(62,207,142,0.2)">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent3); font-weight:600">TEST BASE</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:4px">regression coverage</div>
+            </div>
+            <div style="flex:1; min-width:100px; text-align:center; padding:8px; background:rgba(247,162,62,0.1); border-radius:4px; border:1px solid rgba(247,162,62,0.2)">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent4); font-weight:600">AI LAYER</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:4px">rules, commands, context</div>
+            </div>
+          </div>
         </div>
 
         <div class="callout yellow" style="padding:12px 14px; margin-top:4px">
-          <div class="callout-label">📈 Flywheel Effect</div>
-          <p style="font-size:12px">More rules → fewer mistakes → more trust → bigger delegation → faster shipping. The system compounds.</p>
+          <div class="callout-label">⚠️ Don't skip the meta-reasoning step</div>
+          <p style="font-size:12px">When something goes wrong: tell the agent <em>"don't change anything yet — help me reason about what we should add to our rules or on-demand context to prevent this."</em> Own the change to the AI layer yourself. Don't just let the agent patch it and move on.</p>
         </div>
       </div>
 
@@ -1326,14 +1456,34 @@
         </thead>
         <tbody>
           <tr>
-            <td>/plan</td>
-            <td>Prime command — reads back PRD, explores structure, checks git log, builds mental model</td>
-            <td>Start of every implementation conversation</td>
+            <td>/prime</td>
+            <td>Reads PRD + CLAUDE.md, explores codebase structure, checks git log, outputs mental model summary</td>
+            <td>Start of every new implementation conversation</td>
+          </tr>
+          <tr>
+            <td>/create-prd</td>
+            <td>Converts the current conversation (brain dump + Q&amp;A) into a structured PRD with MVP scope, out-of-scope, directory structure, and phases</td>
+            <td>After brain dump + agent Q&amp;A, before any code</td>
+          </tr>
+          <tr>
+            <td>/create-rules</td>
+            <td>Reads PRD for tech stack context, researches testing/logging best practices, generates CLAUDE.md + reference files from your template</td>
+            <td>After PRD is created, before first PIV loop</td>
+          </tr>
+          <tr>
+            <td>/plan-feature</td>
+            <td>Converts vibe planning conversation into a structured plan doc: problem statement, task list, references, and validation strategy</td>
+            <td>Planning phase of each PIV loop</td>
+          </tr>
+          <tr>
+            <td>/execute</td>
+            <td>Takes the structured plan as its only context (fresh conversation), delegates all coding to the agent, runs validation automatically</td>
+            <td>Implementation phase — always a new context window</td>
           </tr>
           <tr>
             <td>/commit</td>
-            <td>Stages changes, generates a standardized commit message, pushes — following your git conventions</td>
-            <td>After each validated task</td>
+            <td>Stages changes and generates a standardized commit message following your project conventions</td>
+            <td>After each validated task — git log = long-term memory</td>
           </tr>
           <tr>
             <td>/review</td>
@@ -1344,21 +1494,6 @@
             <td>/test</td>
             <td>Runs the appropriate test suite for the changed code and reports results</td>
             <td>Validation step of the PIV loop</td>
-          </tr>
-          <tr>
-            <td>/fix-types</td>
-            <td>Runs TypeScript compiler, identifies type errors, applies targeted fixes</td>
-            <td>After any TS refactor or new API integration</td>
-          </tr>
-          <tr>
-            <td>/add-feature</td>
-            <td>Kicks off Layer 2 planning for a new feature — codebase analysis, task breakdown, context setup</td>
-            <td>Start of any new feature PIV cycle</td>
-          </tr>
-          <tr>
-            <td>/optimize</td>
-            <td>Profiles and refactors a specified module for performance, following project optimization rules</td>
-            <td>Post-validation performance pass</td>
           </tr>
         </tbody>
       </table>
@@ -1411,8 +1546,8 @@
     </div>
 
     <div class="callout green">
-      <div class="callout-label">🚀 Getting Started</div>
-      <p>Start with just three commands: <em>/plan</em>, <em>/commit</em>, and <em>/test</em>. These cover the core PIV loop. Add more only when you notice yourself re-explaining the same thing twice.</p>
+      <div class="callout-label">🚀 The Minimal Viable Starter Set</div>
+      <p>Start with: <em>/prime</em>, <em>/create-prd</em>, <em>/create-rules</em>, <em>/plan-feature</em>, <em>/execute</em>, and <em>/commit</em>. These six commands cover the entire greenfield loop. Everything else you build as you encounter repeated manual steps. The goal is a starter kit you can bring into any new project and evolve — not a framework you learn once and never touch.</p>
     </div>
 
   </div><!-- /commands -->

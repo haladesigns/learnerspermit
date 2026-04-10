@@ -453,6 +453,12 @@
       },
       {
         "type": "file",
+        "name": "archon-reference.html",
+        "label": "Archon Reference",
+        "path": "coding_web-design/archon-reference.html"
+      },
+      {
+        "type": "file",
         "name": "cc-github-repos.html",
         "label": "Cc Github Repos",
         "path": "coding_web-design/cc-github-repos.html"
@@ -498,6 +504,12 @@
         "name": "Web Design.md",
         "label": "Web Design",
         "path": "coding_web-design/Web Design.md"
+      },
+      {
+        "type": "file",
+        "name": "wisc-framework.html",
+        "label": "Wisc Framework",
+        "path": "coding_web-design/wisc-framework.html"
       }
     ]
   },

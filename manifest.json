@@ -620,6 +620,12 @@
     "children": [
       {
         "type": "file",
+        "name": "udm_field_explorer.html",
+        "label": "Udm Field Explorer",
+        "path": "Yara/udm_field_explorer.html"
+      },
+      {
+        "type": "file",
         "name": "yara-l-complete-reference.html",
         "label": "Yara L Complete Reference",
         "path": "Yara/yara-l-complete-reference.html"

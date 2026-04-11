@@ -386,7 +386,7 @@ html[data-theme="dark"] .clear-btn.clear-all:hover{background:#2e1a1a}
       </div>
     </div>
     <div class="search-wrap">
-      <input type="text" id="search" placeholder="Search fields, paths, descriptions..." autocomplete="off" spellcheck="false" oninput="wakeTimer();onSearch()">
+      <input type="text" id="search" placeholder="Search fields, paths, descriptions..." autocomplete="off" spellcheck="false" oninput="if(window.wakeTimer)wakeTimer();onSearch()">
     </div>
     <div class="type-filter-row">
       <button class="tf ts" onclick="toggleType('string',this)" title="string">str</button>
@@ -4483,6 +4483,7 @@ function wakeTimer(){
     resetClearTimer();
   }
 }
+window.wakeTimer = wakeTimer;
 
 window.runClearNow = function(){
   if(_clearScopes.history){ saveHistory([]); renderHistory(); }

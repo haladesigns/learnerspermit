@@ -96,6 +96,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 
 /* NOUN LIST */
 .noun-list{overflow-y:auto;flex:1;padding:6px 0}
+.all-btn{display:flex;align-items:center;gap:6px;width:100%;padding:6px 14px 4px;border:none;background:transparent;cursor:pointer;font-size:11px;font-family:var(--font-sans);color:var(--text3);text-align:left;border-left:2px solid transparent;transition:all .12s;border-bottom:0.5px solid var(--border);margin-bottom:4px;-webkit-tap-highlight-color:transparent}
+.all-btn:hover{background:var(--bg3);color:var(--text2)}
+.all-btn.active{color:var(--accent);border-left-color:var(--accent);font-weight:500}
+.all-btn-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);flex-shrink:0}
 .noun-btn{display:flex;align-items:center;gap:8px;width:100%;padding:7px 14px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:var(--font-sans);color:var(--text2);text-align:left;border-left:2px solid transparent;transition:all .12s;-webkit-tap-highlight-color:transparent}
 .noun-btn:hover{background:var(--bg3);color:var(--text)}
 .noun-btn.active{background:var(--bg3);color:var(--text);font-weight:500;border-left-color:var(--accent)}
@@ -345,6 +349,29 @@ html[data-theme="dark"] .pin-btn.pinned{color:#e0a040;border-color:#854F0B;backg
 .compare-btn:hover{border-color:var(--border2);background:var(--bg3);color:var(--text2)}
 .compare-btn.in-tray{color:#0F6E56;border-color:#5DCAA5;background:#E1F5EE}
 html[data-theme="dark"] .compare-btn.in-tray{color:#5DCAA5;border-color:#0F6E56;background:#04342c}
+
+/* ── AUTO-CLEAR TIMER ── */
+.clear-bar{border-top:0.5px solid var(--border);padding:8px 14px;flex-shrink:0}
+.clear-bar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.clear-bar-label{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.clear-bar-time{font-size:11px;font-family:var(--font-mono);color:var(--text3);transition:color .3s}
+.clear-bar-time.urgent{color:#A32D2D}
+html[data-theme="dark"] .clear-bar-time.urgent{color:#f09595}
+.clear-bar-track{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:6px;cursor:pointer;position:relative}
+.clear-bar-track:hover::after{content:'click to reset';position:absolute;right:0;top:-18px;font-size:9px;color:var(--text3);white-space:nowrap}
+.clear-bar-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .5s linear,background .3s}
+.clear-bar-fill.urgent{background:#E24B4A}
+.clear-bar-actions{display:flex;gap:6px}
+.clear-btn{flex:1;font-size:10px;padding:4px 0;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--font-sans);transition:all .12s;-webkit-tap-highlight-color:transparent}
+.clear-btn:hover{background:var(--bg3);color:var(--text)}
+.clear-btn.clear-all{border-color:#F09595;color:#A32D2D}
+.clear-btn.clear-all:hover{background:#FCEBEB}
+html[data-theme="dark"] .clear-btn.clear-all{border-color:#7a2f2f;color:#f09595}
+html[data-theme="dark"] .clear-btn.clear-all:hover{background:#2e1a1a}
+.clear-scope-row{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap}
+.cs-pill{font-size:9px;padding:2px 6px;border-radius:20px;border:0.5px solid var(--border2);cursor:pointer;background:transparent;color:var(--text3);font-family:var(--font-mono);transition:all .12s}
+.cs-pill:hover{background:var(--bg3);color:var(--text2)}
+.cs-pill.on{background:var(--bg3);color:var(--text);border-color:var(--border2)}
 </style>
 </head>
 <body>
@@ -359,7 +386,7 @@ html[data-theme="dark"] .compare-btn.in-tray{color:#5DCAA5;border-color:#0F6E56;
       </div>
     </div>
     <div class="search-wrap">
-      <input type="text" id="search" placeholder="Search fields, paths, descriptions..." autocomplete="off" spellcheck="false" oninput="onSearch()">
+      <input type="text" id="search" placeholder="Search fields, paths, descriptions..." autocomplete="off" spellcheck="false" oninput="wakeTimer();onSearch()">
     </div>
     <div class="type-filter-row">
       <button class="tf ts" onclick="toggleType('string',this)" title="string">str</button>
@@ -391,6 +418,25 @@ html[data-theme="dark"] .compare-btn.in-tray{color:#5DCAA5;border-color:#0F6E56;
     </div>
   </div>
 
+  <div class="clear-bar" id="clear-bar">
+    <div class="clear-bar-head">
+      <span class="clear-bar-label">Auto-clear</span>
+      <span class="clear-bar-time" id="clear-countdown">30:00</span>
+    </div>
+    <div class="clear-bar-track" onclick="resetClearTimer()" title="Click to reset timer">
+      <div class="clear-bar-fill" id="clear-fill" style="width:100%"></div>
+    </div>
+    <div class="clear-scope-row">
+      <button class="cs-pill on" id="cs-history" onclick="toggleClearScope('history',this)">history</button>
+      <button class="cs-pill on" id="cs-pinned"  onclick="toggleClearScope('pinned',this)">pinned</button>
+      <button class="cs-pill on" id="cs-compare"  onclick="toggleClearScope('compare',this)">compare</button>
+    </div>
+    <div class="clear-bar-actions">
+      <button class="clear-btn" onclick="resetClearTimer()">reset timer</button>
+      <button class="clear-btn clear-all" onclick="runClearNow()">clear now</button>
+    </div>
+  </div>
+
 </aside>
 
 <!-- COMPARE TRAY -->
@@ -413,15 +459,15 @@ html[data-theme="dark"] .compare-btn.in-tray{color:#5DCAA5;border-color:#0F6E56;
 (function(){
 
 const NOUNS = [
-  { id:'metadata', label:'metadata', color:'#888780', desc:'Event metadata — timestamp, type, source, ingestion info. Available on every event.' },
-  { id:'principal', label:'principal', color:'#185FA5', desc:'The acting entity — the user, device or process that initiated the activity described in the event.' },
-  { id:'target', label:'target', color:'#854F0B', desc:'The object being acted upon — destination device, file, URL, or user that the principal acted on.' },
-  { id:'src', label:'src', color:'#0F6E56', desc:'Explicit source object when principal is ambiguous (e.g. proxy logs). Holds the machine where a source file resides.' },
-  { id:'intermediary', label:'intermediary', color:'#993556', desc:'Middle entity — proxy, NAT device, SMTP relay, or load balancer between source and destination.' },
-  { id:'observer', label:'observer', color:'#534AB7', desc:'The sensor or security device that observed the event — IDS, packet sniffer, vulnerability scanner.' },
-  { id:'about', label:'about', color:'#A32D2D', desc:'Additional entities referenced in the event not covered by other nouns — threat intel, file objects, URLs.' },
-  { id:'network', label:'network', color:'#3B6D11', desc:'Network-layer data — HTTP, DNS, DHCP, email, IP protocol details.' },
-  { id:'security_result', label:'security_result', color:'#854F0B', desc:'Security classification and action — verdict, severity, risk score, threat category, action taken.' },
+  { id:'metadata', label:'metadata', color:'#888780', desc:'Event metadata such as timestamp, source product, etc.' },
+  { id:'principal', label:'principal', color:'#185FA5', desc:'Represents the source of activity in the event. The principal must include at least one machine-related (hostname, MAC, IP, port, EDR asset ID) or user-related detail. It can include process details but must not include a domain name, email, files, registry keys, or values.' },
+  { id:'target', label:'target', color:'#854F0B', desc:'Represents a target entity being referenced by the event or an object on the target entity. For example, in a firewall connection from A to B, A is the principal and B is the target. For process injection by C into D, C is the principal and D is the target.' },
+  { id:'src', label:'src', color:'#0F6E56', desc:'Represents a source entity being acted upon by the participant, along with the device or process context for the source object (the machine where the source object resides). For example, if user U copies file A on machine X to file B on machine Y, both file A and machine X are specified in src.' },
+  { id:'intermediary', label:'intermediary', color:'#993556', desc:'Represents details on one or more intermediate entities processing the event — proxy server, SMTP relay, firewall. Intermediaries can impact the overall action (e.g. blocking or modifying a request). A connection A->B blocked by firewall C looks the same in principal/target regardless of the firewall action.' },
+  { id:'observer', label:'observer', color:'#534AB7', desc:'Represents an observer entity (for example, a packet sniffer or network-based vulnerability scanner), which is not a direct intermediary, but which observes and reports on the event in question.' },
+  { id:'about', label:'about', color:'#A32D2D', desc:'Represents entities referenced by the event that are not otherwise described in principal, src, target, intermediary or observer. For example, email file attachments, domains/URLs/IPs embedded in an email body, and DLLs loaded during a PROCESS_LAUNCH event.' },
+  { id:'network', label:'network', color:'#3B6D11', desc:'All network details go here, including sub-messages with details on each protocol (for example, DHCP, DNS, or HTTP).' },
+  { id:'security_result', label:'security_result', color:'#854F0B', desc:'A list of security results — verdict, severity, risk score, threat category, action taken, MITRE ATT&CK details.' },
 ];
 
 // Field schema — [name, type, description, children?]
@@ -3939,28 +3985,31 @@ function countFields(fields){
 // ── BUILD TREE PANEL ──
 
 // ── NOUN-AWARE DESCRIPTION OVERRIDES ──
-// Top-level Noun fields whose generic description is misleading in context.
-// Keyed as nounId.fieldName → corrected description.
+// Contextual clarifications for top-level Noun fields whose generic description
+// is ambiguous or misleading depending on which noun you are looking at.
+// These are editorial additions — the official UDM doc uses one generic description
+// for each Noun field regardless of noun context. The port field overrides are
+// accurate by UDM convention (source port on principal, destination port on target).
+// Keyed as nounId.fieldName → clarified description.
 const NOUN_DESCS = {
-  // principal — the acting entity (source of the action)
+  // principal — the acting entity, source of the activity
   'principal.hostname':    'Hostname of the machine initiating the activity',
   'principal.ip':          'IP address(es) of the machine initiating the activity',
   'principal.mac':         'MAC address(es) of the machine initiating the activity',
-  'principal.port':        'Source port used by the principal in the connection',
+  'principal.port':        'Source port used by the principal — by UDM convention, port is the source port on principal',
   'principal.nat_ip':      'NAT IP address(es) of the principal machine',
   'principal.nat_port':    'NAT external port of the principal machine',
   'principal.asset_id':    'Vendor-specific asset identifier for the principal machine',
-  'principal.namespace':   'Network namespace of the principal (e.g. VPC, VLAN)',
+  'principal.namespace':   'Network namespace of the principal (e.g. AD forest, VPC, VLAN)',
   // target — the object being acted upon
   'target.hostname':       'Hostname of the destination or target machine',
   'target.ip':             'IP address(es) of the destination or target machine',
   'target.mac':            'MAC address(es) of the target machine',
-  'target.port':           'Destination port on the target machine',
+  'target.port':           'Destination port on the target machine — by UDM convention, port is the destination port on target',
   'target.nat_ip':         'NAT IP address(es) of the target machine',
   'target.nat_port':       'NAT external port of the target machine',
   'target.asset_id':       'Vendor-specific asset identifier for the target machine',
-  'target.url':            'URL being accessed or acted upon by the principal',
-  // src — explicit source when principal is ambiguous
+  // src — explicit source when principal is ambiguous (e.g. proxy logs, file copy)
   'src.hostname':          'Hostname of the source machine (used when principal is ambiguous, e.g. proxy logs)',
   'src.ip':                'IP address(es) of the source machine',
   'src.mac':               'MAC address(es) of the source machine',
@@ -3968,31 +4017,31 @@ const NOUN_DESCS = {
   'src.nat_ip':            'NAT IP address(es) of the source machine',
   'src.nat_port':          'NAT external port of the source machine',
   'src.asset_id':          'Vendor-specific asset identifier for the source machine',
-  'src.user':              'User on the source machine (e.g. owner of a source file)',
-  'src.process':           'Process on the source machine (e.g. process reading a source file)',
-  'src.file':              'Source file being copied, moved, or read',
-  // intermediary — middle device (proxy, NAT, relay)
-  'intermediary.hostname': 'Hostname of the intermediary device (proxy, firewall, relay)',
+  'src.user':              'User on the source machine (e.g. owner of a file being copied)',
+  'src.process':           'Process on the source machine (e.g. process reading the source file)',
+  'src.file':              'The source file (e.g. file A on machine X in a copy operation)',
+  // intermediary — middle device: proxy, firewall, SMTP relay, NAT device
+  'intermediary.hostname': 'Hostname of the intermediary device (proxy, firewall, SMTP relay)',
   'intermediary.ip':       'IP address(es) of the intermediary device',
   'intermediary.mac':      'MAC address(es) of the intermediary device',
   'intermediary.port':     'Port on the intermediary device',
   'intermediary.nat_ip':   'NAT IP address(es) assigned by the intermediary',
   'intermediary.user':     'User or service identity on the intermediary device',
   'intermediary.application': 'Application running on the intermediary device',
-  // observer — sensor or monitoring device
-  'observer.hostname':     'Hostname of the sensor or observer device (IDS, packet sniffer, scanner)',
+  // observer — passive sensor: IDS, packet sniffer, vulnerability scanner
+  'observer.hostname':     'Hostname of the observer device (IDS, packet sniffer, vulnerability scanner)',
   'observer.ip':           'IP address(es) of the observer device',
   'observer.mac':          'MAC address(es) of the observer device',
   'observer.asset_id':     'Vendor-specific identifier for the observer/sensor device',
   'observer.application':  'Monitoring application running on the observer device',
-  // about — additional referenced entities (threat intel, attachments, embedded URLs)
-  'about.hostname':        'Hostname of a referenced entity (e.g. domain in email body, embedded URL host)',
-  'about.ip':              'IP address of a referenced entity (e.g. IP embedded in email body)',
-  'about.file':            'A file referenced in the event (e.g. email attachment, loaded DLL)',
-  'about.url':             'A URL referenced in the event (e.g. URL embedded in email body)',
-  'about.domain':          'A domain referenced in the event (e.g. domain from threat intel)',
-  'about.user':            'A user referenced in the event (e.g. target of a privilege escalation)',
-  'about.process':         'A process referenced in the event (e.g. injected-into process)',
+  // about — additional referenced entities not covered by other nouns
+  'about.hostname':        'Hostname of a referenced entity (e.g. host in embedded URL, domain in email body)',
+  'about.ip':              'IP address of a referenced entity (e.g. IP embedded in email body, threat intel IP)',
+  'about.file':            'A file referenced in the event (e.g. email attachment, DLL loaded at PROCESS_LAUNCH)',
+  'about.domain':          'A domain referenced in the event (e.g. domain from threat intel, domain in email body)',
+  'about.user':            'A user referenced in the event (e.g. account targeted in a privilege escalation)',
+  'about.process':         'A process referenced in the event (e.g. the process being injected into)',
+  'about.email':           'Email address. Per the UDM spec, this field is only populated for security_result.about',
 };
 
 function buildRows(fields, prefix, nounId){
@@ -4087,7 +4136,7 @@ const nounList=document.getElementById('noun-list');
 const mainEl=document.getElementById('main');
 let lastNoun='metadata';
 
-let navHTML='';
+let navHTML='<button class="all-btn active" id="all-btn" onclick="showAll(this)"><span class="all-btn-dot"></span><span>all nouns</span></button>';
 for(const noun of NOUNS){
   const count=countFields(FIELDS[noun.id]||[]);
   navHTML+=`<button class="noun-btn" onclick="showNoun('${noun.id}',this)">
@@ -4127,13 +4176,26 @@ function showPanel(id){
 
 window.showNoun=function(id,btn){
   lastNoun=id;
-  scopeNoun=id;
+  // Option C: browsing a noun does NOT set search scope — scope stays as-is
+  // Search box is preserved so user can immediately type to search
   document.querySelectorAll('.noun-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('all-btn').classList.remove('active');
   if(btn) btn.classList.add('active');
   showPanel('panel_'+id);
-  document.getElementById('search').value='';
-  activeTypes.clear();
-  document.querySelectorAll('.tf').forEach(b=>b.classList.remove('on'));
+};
+
+window.showAll=function(btn){
+  scopeNoun='all';
+  lastNoun='metadata';
+  document.querySelectorAll('.noun-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('all-btn').classList.add('active');
+  // If there's an active search, re-run it scoped to all
+  var q=document.getElementById('search').value.trim();
+  if(q){
+    renderSearch(q);
+  } else {
+    showPanel('panel_metadata');
+  }
 };
 
 window.toggleKids=function(uid){
@@ -4374,6 +4436,93 @@ window.onSearch_path=function(path){
 renderPinned();
 renderHistory();
 renderTray();
+
+
+// ── AUTO-CLEAR TIMER ──
+var CLEAR_DURATION   = 10 * 60;  // 10 min active countdown
+var SLEEP_AFTER      = 30 * 60;  // sleep after 30 min keyboard inactivity (seconds)
+var _clearRemaining  = CLEAR_DURATION;
+var _clearInterval   = null;
+var _clearSleeping   = false;     // true = timer is paused waiting for keypress
+var _lastKeyTime     = Date.now();
+var _clearScopes     = {history: true, pinned: true, compare: true};
+
+function startClearTimer(){
+  if(_clearInterval) return;
+  _clearInterval = setInterval(function(){
+    var idleSecs = (Date.now() - _lastKeyTime) / 1000;
+    if(idleSecs >= SLEEP_AFTER){
+      // Go to sleep — pause the countdown
+      if(!_clearSleeping){
+        _clearSleeping = true;
+        updateClearUI();
+      }
+      return;
+    }
+    // Active — count down
+    _clearSleeping = false;
+    _clearRemaining--;
+    updateClearUI();
+    if(_clearRemaining <= 0){
+      runClearNow();
+    }
+  }, 1000);
+}
+
+function resetClearTimer(){
+  _clearRemaining = CLEAR_DURATION;
+  _clearSleeping  = false;
+  updateClearUI();
+}
+
+// Called on every keypress in the search box — wakes the timer and resets to 10:00
+function wakeTimer(){
+  _lastKeyTime   = Date.now();
+  if(_clearSleeping){
+    // Was sleeping — wake with a fresh 10:00
+    resetClearTimer();
+  }
+}
+
+window.runClearNow = function(){
+  if(_clearScopes.history){ saveHistory([]); renderHistory(); }
+  if(_clearScopes.pinned){ savePinned([]); renderPinned(); syncAllPinButtons('',false); }
+  if(_clearScopes.compare){ saveTray([]); renderTray(); }
+  resetClearTimer();
+};
+
+window.resetClearTimer = resetClearTimer;
+
+window.toggleClearScope = function(scope, btn){
+  _clearScopes[scope] = !_clearScopes[scope];
+  btn.classList.toggle('on', _clearScopes[scope]);
+};
+
+function updateClearUI(){
+  var fill     = document.getElementById('clear-fill');
+  var countdown = document.getElementById('clear-countdown');
+  if(!fill || !countdown) return;
+  if(_clearSleeping){
+    fill.style.width = '100%';
+    fill.classList.remove('urgent');
+    countdown.classList.remove('urgent');
+    countdown.textContent = 'zz';
+    return;
+  }
+  var pct    = (_clearRemaining / CLEAR_DURATION) * 100;
+  var urgent = _clearRemaining <= 120;
+  fill.style.width = pct + '%';
+  fill.classList.toggle('urgent', urgent);
+  countdown.classList.toggle('urgent', urgent);
+  var mins = Math.floor(_clearRemaining / 60);
+  var secs = _clearRemaining % 60;
+  countdown.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  startClearTimer();
+  updateClearUI();
+});
 
 // ── THEME TOGGLE ──
 function applyThemeUI(theme){

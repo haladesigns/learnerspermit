@@ -523,7 +523,8 @@
   <button data-tab="select">S — Select</button>
   <button data-tab="compress">C — Compress</button>
   <button data-tab="commands">Commands</button>
-<button data-tab="resources">Resources</button>
+  <button data-tab="cmdfiles">Command Files</button>
+  <button data-tab="resources">Resources</button>
 </nav>
 
 <main>
@@ -1569,6 +1570,290 @@
     </div>
 
   </div><!-- /commands -->
+
+  <!-- ============================================================
+       COMMAND FILES TAB
+       ============================================================ -->
+  <div class="section" id="tab-cmdfiles">
+
+    <div class="hero">
+      <h2>Command File Contents</h2>
+      <p>The actual <code>.md</code> files that power WISC slash commands. Copy these into <strong>.claude/commands/</strong> in your project and customize to your codebase. Each file is the instruction set Claude reads when you run that command.</p>
+    </div>
+
+    <!-- generate-prp.md -->
+    <div class="card blue">
+      <div class="card-title">generate-prp.md — Create a PRP from a feature file</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Run as: <code>/generate-prp INITIAL.md</code> · Saves to: <code>PRPs/{feature-name}.md</code></div>
+      <pre><span class="hd"># Create PRP</span>
+
+<span class="hd">## Feature file: $ARGUMENTS</span>
+
+Generate a complete PRP for general feature implementation with thorough research.
+Ensure context is passed to the AI agent to enable self-validation and iterative
+refinement. Read the feature file first to understand what needs to be created,
+how the examples provided help, and any other considerations.
+
+The AI agent only gets the context you append to the PRP and training data.
+Assume the AI agent has access to the codebase and the same knowledge cutoff
+as you, so it's important that your research findings are included or referenced
+in the PRP. The Agent has WebSearch capabilities, so pass URLs to documentation
+and examples.
+
+<span class="hd">## Research Process</span>
+
+<span class="li">1. **Codebase Analysis**</span>
+<span class="li">   - Search for similar features/patterns in the codebase</span>
+<span class="li">   - Identify files to reference in PRP</span>
+<span class="li">   - Note existing conventions to follow</span>
+<span class="li">   - Check test patterns for validation approach</span>
+
+<span class="li">2. **External Research**</span>
+<span class="li">   - Search for similar features/patterns online</span>
+<span class="li">   - Library documentation (include specific URLs)</span>
+<span class="li">   - Implementation examples (GitHub/StackOverflow/blogs)</span>
+<span class="li">   - Best practices and common pitfalls</span>
+
+<span class="li">3. **User Clarification** (if needed)</span>
+<span class="li">   - Specific patterns to mirror and where to find them?</span>
+<span class="li">   - Integration requirements and where to find them?</span>
+
+<span class="hd">## PRP Generation</span>
+
+Using PRPs/templates/prp_base.md as template:
+
+<span class="hd">### Critical Context to Include</span>
+
+<span class="li">- **Documentation**: URLs with specific sections</span>
+<span class="li">- **Code Examples**: Real snippets from codebase</span>
+<span class="li">- **Gotchas**: Library quirks, version issues</span>
+<span class="li">- **Patterns**: Existing approaches to follow</span>
+
+<span class="hd">### Implementation Blueprint</span>
+
+<span class="li">- Start with pseudocode showing approach</span>
+<span class="li">- Reference real files for patterns</span>
+<span class="li">- Include error handling strategy</span>
+<span class="li">- List tasks in the order they should be completed</span>
+
+<span class="hd">### Validation Gates (Must be Executable)</span>
+
+<span class="cm"># Syntax/Style</span>
+<span class="fn">ruff check --fix && mypy .</span>
+<span class="cm"># Unit Tests</span>
+<span class="fn">uv run pytest tests/ -v</span>
+
+*** CRITICAL: BEFORE WRITING THE PRP — ULTRATHINK ABOUT YOUR APPROACH ***
+
+<span class="hd">## Output</span>
+
+Save as: <span class="li">PRPs/{feature-name}.md</span>
+
+<span class="hd">## Quality Checklist</span>
+
+<span class="li">- [ ] All necessary context included</span>
+<span class="li">- [ ] Validation gates are executable by AI</span>
+<span class="li">- [ ] References existing patterns</span>
+<span class="li">- [ ] Clear implementation path</span>
+<span class="li">- [ ] Error handling documented</span>
+
+Score the PRP on a scale of 1-10 (confidence level to succeed in one-pass
+implementation). Goal: one-pass implementation success through comprehensive context.</pre>
+    </div>
+
+    <!-- execute-prp.md -->
+    <div class="card blue">
+      <div class="card-title">execute-prp.md — Implement a feature from a PRP</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Run as: <code>/execute-prp PRPs/feature-name.md</code> · Always run in a <strong>fresh context window</strong></div>
+      <pre><span class="hd"># Execute PRP</span>
+
+Implement a feature using the PRP file.
+
+<span class="hd">## PRP File: $ARGUMENTS</span>
+
+<span class="hd">## Execution Process</span>
+
+<span class="li">1. **Load PRP**</span>
+<span class="li">   - Read the specified PRP file</span>
+<span class="li">   - Understand all context and requirements</span>
+<span class="li">   - Follow all instructions in the PRP and extend the research if needed</span>
+<span class="li">   - Ensure you have all needed context to implement the PRP fully</span>
+<span class="li">   - Do more web searches and codebase exploration as needed</span>
+
+<span class="li">2. **ULTRATHINK**</span>
+<span class="li">   - Think hard before you execute the plan.</span>
+<span class="li">   - Create a comprehensive plan addressing all requirements.</span>
+<span class="li">   - Break down complex tasks into smaller, manageable steps using todos tools.</span>
+<span class="li">   - Use the TodoWrite tool to create and track your implementation plan.</span>
+<span class="li">   - Identify implementation patterns from existing code to follow.</span>
+
+<span class="li">3. **Execute the plan**</span>
+<span class="li">   - Execute the PRP</span>
+<span class="li">   - Implement all the code</span>
+
+<span class="li">4. **Validate**</span>
+<span class="li">   - Run each validation command</span>
+<span class="li">   - Fix any failures</span>
+<span class="li">   - Re-run until all pass</span>
+
+<span class="li">5. **Complete**</span>
+<span class="li">   - Ensure all checklist items done</span>
+<span class="li">   - Run final validation suite</span>
+<span class="li">   - Report completion status</span>
+<span class="li">   - Read the PRP again to ensure you have implemented everything</span>
+
+<span class="li">6. **Reference the PRP**</span>
+<span class="li">   - You can always reference the PRP again if needed</span>
+
+Note: If validation fails, use error patterns in PRP to fix and retry.</pre>
+    </div>
+
+    <!-- WISC-specific commands -->
+    <div class="card yellow">
+      <div class="card-title yellow">WISC-Specific Commands — .claude/commands/</div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">The five commands from the <code>ai-coding-wisc-framework</code> use-case. These are described in the repo README — copy the structure and fill in your project specifics.</p>
+
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num" style="color:var(--accent3);">prime</div>
+          <div class="step-body">
+            <strong>prime.md (+ prime-[area].md variants)</strong>
+            <span class="tip">💡 What it does: loads focused codebase context at session start. Instead of exploring the entire codebase (~30K+ tokens), each prime variant explores only the relevant subsystem.</span>
+            <pre style="margin-top:8px;"><span class="hd"># Prime — Load Codebase Context</span>
+
+<span class="cm"># Customize: replace subsystem names with your own</span>
+
+<span class="hd">## Steps</span>
+<span class="li">1. Read CLAUDE.md for project rules and conventions</span>
+<span class="li">2. Run: git log --oneline -20  (recent work = long-term memory)</span>
+<span class="li">3. Read the top-level directory structure</span>
+<span class="li">4. Read key architecture files: [list your core files here]</span>
+<span class="li">5. Summarize what you've learned — confirm understanding before planning</span>
+
+<span class="cm"># For prime-[area].md, scope step 4 to that subsystem only</span>
+<span class="cm"># e.g., prime-auth.md reads src/auth/* only</span></pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num" style="color:var(--accent);">plan</div>
+          <div class="step-body">
+            <strong>plan-feature.md</strong>
+            <span class="tip">💡 What it does: spawns sub-agents to research the codebase, then writes a detailed implementation plan to a file. The plan becomes the spec for a fresh implementation session.</span>
+            <pre style="margin-top:8px;"><span class="hd"># Plan Feature — Research + Write Spec</span>
+
+<span class="hd">## Feature: $ARGUMENTS</span>
+
+<span class="hd">## Phase 1: Research (use sub-agents in parallel)</span>
+<span class="li">- Spin up sub-agent 1: search codebase for patterns related to $ARGUMENTS</span>
+<span class="li">  Tools: Read, Grep, Glob — return summary only, no raw file dumps</span>
+<span class="li">- Spin up sub-agent 2: web search for best practices / relevant docs</span>
+<span class="li">  Return: 3-5 specific findings with URLs</span>
+
+<span class="hd">## Phase 2: Scout (if large docs exist)</span>
+<span class="li">- Spin up scout sub-agent: read headers of .claude/docs/*.md</span>
+<span class="li">  Decide which docs are relevant to load — report back, don't auto-load</span>
+
+<span class="hd">## Phase 3: Write Plan</span>
+<span class="li">Save to: specs/$ARGUMENTS.md</span>
+<span class="li">Include: goal, files to create/modify, implementation steps,</span>
+<span class="li">         validation commands, edge cases, patterns to follow</span>
+<span class="li">Do NOT include: raw research output, full file contents</span></pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num" style="color:var(--accent);">exec</div>
+          <div class="step-body">
+            <strong>execute.md</strong>
+            <span class="tip">💡 What it does: reads a plan file and implements it step-by-step. Runs in a fresh session with only the plan as context — no planning conversation baggage.</span>
+            <pre style="margin-top:8px;"><span class="hd"># Execute Plan</span>
+
+<span class="hd">## Plan file: $ARGUMENTS</span>
+
+<span class="li">1. Read $ARGUMENTS — this is your only context. It must be self-contained.</span>
+<span class="li">   If anything is missing, stop and ask before writing code.</span>
+<span class="li">2. ULTRATHINK: plan your implementation approach before touching files</span>
+<span class="li">3. Use TodoWrite to track each step</span>
+<span class="li">4. Implement step by step — run validation commands after each major change</span>
+<span class="li">5. Run final validation suite — do not mark complete until all pass</span>
+<span class="li">6. Report: what was built, what was skipped, any decisions made</span></pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num" style="color:var(--accent2);">hand</div>
+          <div class="step-body">
+            <strong>handoff.md</strong>
+            <span class="tip">💡 What it does: gathers git state, writes HANDOFF.md with completed work, key decisions, dead ends, and recommended next action. The next session reads this file and picks up immediately.</span>
+            <pre style="margin-top:8px;"><span class="hd"># Create Handoff Document</span>
+
+<span class="li">1. Run: git log --oneline -10 (capture recent commits)</span>
+<span class="li">2. Run: git diff --stat HEAD (capture uncommitted changes)</span>
+<span class="li">3. Run: git status</span>
+
+<span class="li">Write HANDOFF.md with these sections:</span>
+
+<span class="hd">## Session Summary</span>
+<span class="li">[What was the goal of this session]</span>
+
+<span class="hd">## Completed</span>
+<span class="li">[What was finished — be specific about files changed]</span>
+
+<span class="hd">## Key Decisions</span>
+<span class="li">[Why things were done the way they were — critical for next session]</span>
+
+<span class="hd">## Dead Ends</span>
+<span class="li">[What was tried and didn't work — so next session doesn't repeat it]</span>
+
+<span class="hd">## Next Action</span>
+<span class="li">[Specific recommended first step for the next session]</span>
+
+<span class="hd">## Blockers</span>
+<span class="li">[Anything that needs human input before continuing]</span></pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num" style="color:var(--accent);">com</div>
+          <div class="step-body">
+            <strong>commit.md</strong>
+            <span class="tip">💡 What it does: creates an enriched commit with conventional tags, a WHY-focused body, and a Context: section that logs changes to rules, commands, or docs alongside code changes.</span>
+            <pre style="margin-top:8px;"><span class="hd"># Create Enriched Commit</span>
+
+<span class="li">1. Run: git diff --staged (review what's staged)</span>
+<span class="li">   If nothing staged, run: git add -p  (interactive staging)</span>
+<span class="li">2. Analyze changes and write commit message in this format:</span>
+
+<span class="hd">Format:</span>
+<span class="li">{type}({scope}): {what was done}</span>
+
+<span class="li">{WHY this was built — not what, but why it matters}</span>
+<span class="li">{Key implementation decisions made}</span>
+
+<span class="li">Context:</span>
+<span class="li">- Rules: {any changes to .claude/rules/ or CLAUDE.md}</span>
+<span class="li">- Commands: {any new or updated slash commands}</span>
+<span class="li">- Docs: {any new on-demand context files added}</span>
+
+<span class="cm"># Types: feat, fix, refactor, test, docs, chore</span>
+<span class="cm"># Context section is omitted if no AI layer changes</span>
+<span class="cm"># This message becomes long-term memory via /prime git log</span>
+
+<span class="li">3. Run: git commit -m "{message}"</span></pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">📁 Command File Template Structure</div>
+      <p>Every command file follows the same pattern: <em>title → $ARGUMENTS declaration → numbered steps → output/format spec</em>. The content is plain markdown — Claude reads it as its instruction set when you invoke the slash command. Keep instructions concrete and reference real file paths from your project.</p>
+    </div>
+
+  </div><!-- /cmdfiles -->
 
   <!-- ============================================================
        RESOURCES

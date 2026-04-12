@@ -166,6 +166,19 @@
   },
   {
     "type": "folder",
+    "name": "claude-code",
+    "label": "Claude Code",
+    "children": [
+      {
+        "type": "file",
+        "name": "readme",
+        "label": "Readme",
+        "path": "claude-code/readme"
+      }
+    ]
+  },
+  {
+    "type": "folder",
     "name": "coding_web-design",
     "label": "Coding Web Design",
     "children": [

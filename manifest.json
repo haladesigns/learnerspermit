@@ -635,6 +635,12 @@
         "name": "systems-rule-builder.html",
         "label": "Systems Rule Builder",
         "path": "systems/systems-rule-builder.html"
+      },
+      {
+        "type": "file",
+        "name": "systems-theory-reference.html",
+        "label": "Systems Theory Reference",
+        "path": "systems/systems-theory-reference.html"
       }
     ]
   },

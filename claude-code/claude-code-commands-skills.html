@@ -175,9 +175,10 @@
   .decision-col-header { padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
   .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
   .decision-col-header.skip { background: var(--accent-glow); color: var(--accent); border-bottom: 1px solid rgba(79,142,247,0.2); }
-  .decision-item { padding: 9px 16px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; }
+  .decision-item { padding: 9px 16px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
   .decision-item:last-child { border-bottom: none; }
-  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; color: var(--text-dim); }
+  .decision-item code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent); white-space: nowrap; }
 
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -227,49 +228,45 @@
       <p>Claude Code <em>merged commands and skills</em> into a single system. A file at <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">.claude/commands/deploy.md</code> and a skill at <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">.claude/skills/deploy/SKILL.md</code> both create <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">/deploy</code> and work identically. The old <code>.claude/commands/</code> path still works — Skills are recommended because they support supporting files and live-reload.</p>
     </div>
 
-    <div class="grid-2">
-
-      <div class="card blue">
-        <div class="card-title">What a Command/Skill Does</div>
-        <div class="rule-list">
-          <div class="rule-row">
-            <div class="rule-icon">📄</div>
-            <div class="rule-text">A Markdown file with YAML frontmatter. The filename (or <code>name</code> field) becomes the <code>/slash-command</code>.</div>
-          </div>
-          <div class="rule-row">
-            <div class="rule-icon">⚡</div>
-            <div class="rule-text">Claude follows the instructions inside when the command is invoked — by you with <code>/name</code>, or automatically by Claude when the description matches the task.</div>
-          </div>
-          <div class="rule-row">
-            <div class="rule-icon">💰</div>
-            <div class="rule-text"><strong>Lazy loading:</strong> the skill body only enters context when it's actually used. Long reference material costs zero tokens until invoked.</div>
-          </div>
-          <div class="rule-row">
-            <div class="rule-icon">🔁</div>
-            <div class="rule-text">Version-controllable, shareable, evolvable. Check them into your repo and they're available to everyone on the project.</div>
-          </div>
+    <div class="card blue">
+      <div class="card-title">What a Command/Skill Does</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📄</div>
+          <div class="rule-text">A Markdown file with YAML frontmatter. The filename (or <code>name</code> field) becomes the <code>/slash-command</code>.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚡</div>
+          <div class="rule-text">Claude follows the instructions inside when the command is invoked — by you with <code>/name</code>, or automatically by Claude when the description matches the task.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">💰</div>
+          <div class="rule-text"><strong>Lazy loading:</strong> the skill body only enters context when it's actually used. Long reference material costs zero tokens until invoked.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔁</div>
+          <div class="rule-text">Version-controllable, shareable, evolvable. Check them into your repo and they're available to everyone on the project.</div>
         </div>
       </div>
+    </div>
 
-      <div class="card yellow">
-        <div class="card-title yellow">Commands vs Skills — Mental Model</div>
-        <div class="decision-grid" style="margin-top:0">
-          <div class="decision-col">
-            <div class="decision-col-header use">Commands — you invoke</div>
-            <div class="decision-item"><span class="di">⚡</span>You type <code>/commit</code>, <code>/prime</code>, <code>/deploy</code> — you decide when to run them.</div>
-            <div class="decision-item"><span class="di">⚡</span>Multi-step workflows: deployments, commits, test runs, code generation.</div>
-            <div class="decision-item"><span class="di">⚡</span>Use <code>disable-model-invocation: true</code> to prevent Claude from auto-running them.</div>
-          </div>
-          <div class="decision-col">
-            <div class="decision-col-header skip">Skills — Claude decides</div>
-            <div class="decision-item"><span class="di">📖</span>Claude reads the description and loads the skill automatically when it's relevant.</div>
-            <div class="decision-item"><span class="di">📖</span>Reference content: conventions, patterns, style guides, API playbooks.</div>
-            <div class="decision-item"><span class="di">📖</span>Omit <code>disable-model-invocation</code> (default <code>false</code>) to let Claude decide.</div>
-          </div>
+    <div class="card yellow">
+      <div class="card-title yellow">Commands vs Skills — Mental Model</div>
+      <div class="decision-grid">
+        <div class="decision-col">
+          <div class="decision-col-header use">⚡ Commands — you invoke</div>
+          <div class="decision-item"><span class="di">→</span>You type <code style="word-break:keep-all">/commit</code>, <code>/prime</code>, <code>/deploy</code> — you decide when to run them.</div>
+          <div class="decision-item"><span class="di">→</span>Multi-step workflows: deployments, commits, test runs, code generation.</div>
+          <div class="decision-item"><span class="di">→</span>Set <code style="word-break:keep-all">disable-model-invocation: true</code> to prevent Claude from auto-running them.</div>
         </div>
-        <div style="margin-top:10px; font-size:12px; color:var(--text-muted)">Both are the same file format. The distinction is in how you <em>think about</em> what triggers them.</div>
+        <div class="decision-col">
+          <div class="decision-col-header skip">📖 Skills — Claude decides</div>
+          <div class="decision-item"><span class="di">→</span>Claude reads the description and loads the skill automatically when relevant.</div>
+          <div class="decision-item"><span class="di">→</span>Reference content: conventions, patterns, style guides, API playbooks.</div>
+          <div class="decision-item"><span class="di">→</span>Omit <code style="word-break:keep-all">disable-model-invocation</code> (default: false) to let Claude decide.</div>
+        </div>
       </div>
-
+      <div style="margin-top:12px; font-size:12px; color:var(--text-muted)">Both are the same file format. The distinction is in how you <em>think about</em> what triggers them.</div>
     </div>
 
     <!-- Where skills live -->

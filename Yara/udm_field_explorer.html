@@ -78,10 +78,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 
 /* SEARCH */
 .search-wrap{position:relative;margin-bottom:6px}
-.search-wrap input{width:100%;padding:6px 10px 6px 28px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);font-size:12px;font-family:var(--font-sans);outline:none;transition:border-color .12s}
+.search-wrap input{width:100%;padding:6px 26px 6px 28px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);font-size:12px;font-family:var(--font-sans);outline:none;transition:border-color .12s}
 .search-wrap input:focus{border-color:var(--accent)}
 .search-wrap::before{content:'';position:absolute;left:9px;top:50%;transform:translateY(-50%);width:11px;height:11px;border:1.5px solid var(--text3);border-radius:50%}
 .search-wrap::after{content:'';position:absolute;left:17px;top:60%;width:4px;height:1.5px;background:var(--text3);transform:rotate(45deg)}
+.search-clear{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;border:none;background:var(--bg4);color:var(--text3);font-size:11px;line-height:1;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;transition:all .12s;font-family:var(--font-sans)}
+.search-clear:hover{background:var(--border2);color:var(--text)}
+.search-clear.visible{display:flex}
 
 /* TYPE FILTERS */
 .type-filter-row{display:flex;flex-wrap:wrap;gap:3px;padding-bottom:8px;border-bottom:0.5px solid var(--border)}
@@ -128,7 +131,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 
 /* FIELD TREE */
 .group-label{font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);padding:10px 0 4px;margin-top:4px}
-.field-row{display:grid;grid-template-columns:minmax(0,1fr) 78px minmax(0,1.2fr);gap:0;border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:3px;overflow:hidden;transition:border-color .12s}
+.field-row{display:grid;grid-template-columns:minmax(180px,1fr) 72px 78px minmax(0,1.4fr);gap:0;border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:3px;overflow:hidden;transition:border-color .12s}
+.field-row.browse-row{grid-template-columns:minmax(120px,1fr) 78px minmax(0,1.4fr)}
+.noun-col-hidden .noun-badge-cell{display:none}
+.noun-col-hidden.field-row{grid-template-columns:minmax(180px,1fr) 78px minmax(0,1.4fr)}
+.noun-badge-cell{padding:5px 8px;background:var(--bg2);border-right:0.5px solid var(--border);display:flex;align-items:center;justify-content:center}
+.noun-badge{font-size:9px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap;font-family:var(--font-mono);border:0.5px solid rgba(255,255,255,0.15);color:#fff;letter-spacing:0.01em}
 .field-row:hover{border-color:var(--border2)}
 .field-row.has-children{cursor:pointer}
 .field-row.has-children .field-name::after{content:' ›';color:var(--text3);font-weight:400}
@@ -221,7 +229,8 @@ html[data-theme="dark"] mark{background:rgba(106,171,247,0.2)}
   }
   .noun-dot{width:6px;height:6px}
   .main{padding:14px 12px;overflow-y:auto}
-  .field-row{grid-template-columns:minmax(0,1fr) 62px}
+  .field-row{grid-template-columns:minmax(100px,1fr) 40px 62px}
+  .field-row.browse-row{grid-template-columns:minmax(100px,1fr) 62px}
   .field-desc{display:none}
   .sidebar-head{padding:10px 12px 6px}
   .type-filter-row{padding-bottom:6px}
@@ -239,7 +248,8 @@ html[data-theme="dark"] mark{background:rgba(106,171,247,0.2)}
   .sidebar-title-row h1{font-size:12px}
   .type-filter-row{gap:3px}
   .tf{font-size:10px;padding:3px 7px}
-  .field-row{grid-template-columns:minmax(0,1fr) 58px}
+  .field-row{grid-template-columns:minmax(80px,1fr) 36px 58px}
+  .field-row.browse-row{grid-template-columns:minmax(80px,1fr) 58px}
   .field-name{font-size:10px;padding:5px 8px}
   .field-type-cell{padding:5px 4px}
   .type-tag{font-size:9px;padding:1px 5px}
@@ -271,7 +281,8 @@ html[data-theme="dark"] mark{background:rgba(106,171,247,0.2)}
   .noun-btn{font-size:9px;padding:4px 6px}
   .sidebar-head{padding:8px 8px 6px}
   .main{padding:8px 6px}
-  .field-row{grid-template-columns:1fr 54px}
+  .field-row{grid-template-columns:minmax(60px,1fr) 32px 54px}
+  .field-row.browse-row{grid-template-columns:minmax(60px,1fr) 54px}
   .type-tag{font-size:8px;padding:1px 4px}
 }
 
@@ -302,6 +313,8 @@ html[data-theme="dark"] .pin-btn.pinned{color:#e0a040;border-color:#854F0B;backg
 .sfi-time{font-size:9px;color:var(--text3);font-family:var(--font-mono);flex-shrink:0}
 
 /* ── COMPARE TRAY ── */
+.tray-overlay{position:fixed;inset:0;z-index:99;display:none;background:transparent}
+.tray-overlay.active{display:block}
 .compare-tray{
   position:fixed;bottom:0;left:0;right:0;
   background:var(--bg2);
@@ -386,7 +399,8 @@ html[data-theme="dark"] .clear-btn.clear-all:hover{background:#2e1a1a}
       </div>
     </div>
     <div class="search-wrap">
-      <input type="text" id="search" placeholder="Search fields, paths, descriptions..." autocomplete="off" spellcheck="false" oninput="if(window.wakeTimer)wakeTimer();onSearch()">
+      <input type="text" id="search" placeholder="Search fields, paths, descriptions..." autocomplete="off" spellcheck="false" oninput="if(window.wakeTimer)wakeTimer();onSearch();updateClearBtn()">
+      <button class="search-clear" id="search-clear" onclick="clearSearch()" title="Clear search">&#x2715;</button>
     </div>
     <div class="type-filter-row">
       <button class="tf ts" onclick="toggleType('string',this)" title="string">str</button>
@@ -440,6 +454,7 @@ html[data-theme="dark"] .clear-btn.clear-all:hover{background:#2e1a1a}
 </aside>
 
 <!-- COMPARE TRAY -->
+<div class="tray-overlay" id="tray-overlay" onclick="closeTray()"></div>
 <div class="compare-tray" id="compare-tray">
   <div class="tray-head">
     <span class="tray-title">Compare fields</span>
@@ -3914,12 +3929,16 @@ function rowHTML(f, q, isTop, isNav){
   const inTray=loadTray().indexOf(f.path)>=0;
   const pinLabel=pinned?'⊖ pin':'⊕ pin';
   const cmpLabel=inTray?'⊟ compare':'⊞ compare';
-  return `<div class="field-row${isTop&&q&&!isNav?' top-match':''}">
+  const nounColor=NOUNS.find(n=>n.id===f.noun)?.color||'#888';
+  const nounLabel=f.noun||'';
+  const hideNounCol=scopeNoun!=='all';
+  return `<div class="field-row${isTop&&q&&!isNav?' top-match':''}${hideNounCol?' noun-col-hidden':''}">
     <div class="field-name"><span class="score-dot ${dot}"></span>${pathHl}${badge}
       <span class="copy-path" onclick="copyPath('${f.path}',this)">copy</span>
       <span class="pin-btn${pinned?' pinned':''}" data-path="${f.path}" onclick="togglePin('${f.path}',this)">${pinLabel}</span>
       <span class="compare-btn${inTray?' in-tray':''}" data-path="${f.path}" onclick="toggleCompare('${f.path}',this)">${cmpLabel}</span>
     </div>
+    <div class="noun-badge-cell"><span class="noun-badge" style="background:${nounColor}" title="${nounLabel}">${nounLabel}</span></div>
     <div class="field-type-cell">${typeTag(f.type)}</div>
     <div class="field-desc">${f.desc}</div>
   </div>`;
@@ -3935,16 +3954,33 @@ function renderScopePills(active, counts){
   var row=document.getElementById('scope-row');
   if(!row) return;
   var allCount=counts?Object.values(counts).reduce(function(a,b){return a+b;},0):null;
-  var all=[{id:'all',label:'all'}].concat(NOUNS.map(function(n){return {id:n.id,label:n.label};}));
+  var all=[{id:'all',label:'all',color:null}].concat(NOUNS.map(function(n){return {id:n.id,label:n.label,color:n.color};}));
   row.innerHTML=all.map(function(n){
     var c=counts?(n.id==='all'?allCount:(counts[n.id]||0)):null;
     var countStr=c!==null?' <strong>'+c+'</strong>':'';
     var dim=counts&&c===0;
-    var cls='ns-pill'+(n.id===active?' on':'');
+    var hasResults=counts&&c>0;
+    var isActive=n.id===active;
+    var cls='ns-pill'+(isActive?' on':'');
     var btn=document.createElement('button');
     btn.className=cls;
     btn.innerHTML=n.label+countStr;
-    if(dim){btn.style.opacity='0.35';btn.style.pointerEvents='none';}
+    if(dim){
+      btn.style.opacity='0.35';
+      btn.style.pointerEvents='none';
+    } else if(n.color&&hasResults){
+      // Apply noun color when pill has results
+      // Active: solid color background; inactive: colored border + subtle tint
+      if(isActive){
+        btn.style.background=n.color;
+        btn.style.borderColor=n.color;
+        btn.style.color='#ffffff';
+        btn.style.fontWeight='500';
+      } else {
+        btn.style.borderColor=n.color;
+        btn.style.color=n.color;
+      }
+    }
     btn.addEventListener('click',function(){window.setScope(n.id);});
     return btn.outerHTML;
   }).join('');
@@ -4053,7 +4089,7 @@ function buildRows(fields, prefix, nounId){
     // Use noun-aware description override if available (top-level fields only)
     const overrideKey=nounId?`${nounId}.${name}`:null;
     const displayDesc=overrideKey&&NOUN_DESCS[overrideKey]?NOUN_DESCS[overrideKey]:desc;
-    html+=`<div class="field-row${hasKids?' has-children':''}" ${hasKids?`onclick="toggleKids('${uid}')" id="row_${uid}"`:''}>`+
+    html+=`<div class="field-row browse-row${hasKids?' has-children':''}" ${hasKids?`onclick="toggleKids('${uid}')" id="row_${uid}"`:''}>`+
       `<div class="field-name"><span>${name}</span><span class="copy-path" onclick="event.stopPropagation();copyPath('${path}',this)">copy</span></div>`+
       `<div class="field-type-cell">${typeTag(type)}</div>`+
       `<div class="field-desc">${displayDesc}</div>`+
@@ -4392,14 +4428,32 @@ window.clearTray=function(){
 window.openTray=function(){
   var tray=document.getElementById('compare-tray');
   var fab=document.getElementById('tray-fab');
-  if(tray){tray.classList.add('open');if(fab)fab.classList.add('tray-open');}
+  var overlay=document.getElementById('tray-overlay');
+  if(tray){tray.classList.add('open');if(fab)fab.classList.add('tray-open');if(overlay)overlay.classList.add('active');}
 };
 
 window.closeTray=function(){
   var tray=document.getElementById('compare-tray');
   var fab=document.getElementById('tray-fab');
-  if(tray){tray.classList.remove('open');if(fab)fab.classList.remove('tray-open');}
+  var overlay=document.getElementById('tray-overlay');
+  if(tray){tray.classList.remove('open');if(fab)fab.classList.remove('tray-open');if(overlay)overlay.classList.remove('active');}
 };
+
+window.clearSearch=function(){
+  var inp=document.getElementById('search');
+  if(!inp) return;
+  inp.value='';
+  onSearch();
+  updateClearBtn();
+  inp.focus();
+};
+
+function updateClearBtn(){
+  var inp=document.getElementById('search');
+  var btn=document.getElementById('search-clear');
+  if(inp&&btn) btn.classList.toggle('visible', inp.value.length>0);
+}
+window.updateClearBtn=updateClearBtn;
 
 function syncAllCompareButtons(){
   var tray=loadTray();

@@ -441,6 +441,8 @@ function renderEntries(entries, ul) {
     if (entry.type === 'file') {
       const a = document.createElement('a');
       a.href = entry.path;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
       a.className = 'dir-link';
       a.innerHTML = `<span style="font-size:10px;line-height:1;margin-right:0.4rem;opacity:0.28;vertical-align:middle;display:inline-block;">${fileIcon(entry.name)}</span><span>${entry.label}</span>`;
       li.appendChild(a);

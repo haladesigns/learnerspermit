@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Commands & Skills — Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.6; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+
+  header { position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; color: var(--accent); letter-spacing: -0.02em; }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 3px; background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em; }
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle { width: 44px; height: 24px; background: var(--toggle-bg); border: 1px solid var(--border-accent); border-radius: 12px; cursor: pointer; position: relative; appearance: none; outline: none; transition: background 0.3s; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: var(--accent); border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s; }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; overflow-x: auto; }
+  nav button { font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.2s; letter-spacing: 0.04em; text-transform: uppercase; }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; box-shadow: var(--shadow); transition: background 0.3s, border 0.3s; }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  .hero { background: var(--bg-card); border: 1px solid var(--border-accent); border-left: 3px solid var(--accent); border-radius: 8px; padding: 24px; box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow); }
+  .hero h2 { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em; }
+  .hero p { color: var(--text); font-size: 15px; max-width: 780px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row { display: grid; grid-template-columns: 20px 1fr; gap: 12px; align-items: flex-start; padding: 10px 14px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg  { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos  { color: var(--accent3); font-weight: 600; }
+  .rule-text code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent); }
+
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row { display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: flex-start; padding: 12px 16px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; transition: border-color 0.2s; }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); text-align: center; margin-top: 1px; }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip  { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.8; color: var(--text); margin-top: 10px; }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent); }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .st { color: #b5cea8; }
+
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); text-align: left; padding: 8px 12px; background: var(--bg-code); border-bottom: 1px solid var(--border); }
+  .ref-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); white-space: nowrap; }
+  .ref-table td code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent3); }
+
+  .callout { background: var(--bg-code); border: 1px solid var(--border-accent); border-radius: 6px; padding: 16px 20px; }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* ── scope pill ── */
+  .scope-pill { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 3px; letter-spacing: 0.05em; margin-left: 6px; vertical-align: middle; }
+  .scope-project  { background: rgba(79,142,247,0.15);  color: var(--accent);  border: 1px solid rgba(79,142,247,0.3); }
+  .scope-personal { background: rgba(62,207,142,0.12);  color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .scope-legacy   { background: rgba(247,162,62,0.12);  color: var(--accent4); border: 1px solid rgba(247,162,62,0.3); }
+  .scope-builtin  { background: rgba(224,95,122,0.12);  color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+
+  /* ── file tree ── */
+  .filetree { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.9; white-space: pre; overflow-x: auto; }
+  .ft-folder { color: var(--accent4); }
+  .ft-file   { color: var(--accent3); }
+  .ft-note   { color: var(--text-dim); font-style: italic; }
+  .ft-cmd    { color: var(--accent);  }
+
+  /* ── frontmatter table ── */
+  .fm-table { width: 100%; border-collapse: collapse; }
+  .fm-table th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); text-align: left; padding: 8px 12px; background: var(--bg-code); border-bottom: 1px solid var(--border); }
+  .fm-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 12px; vertical-align: top; }
+  .fm-table tr:last-child td { border-bottom: none; }
+  .fm-table tr:hover td { background: var(--accent-glow); }
+  .fm-table td:first-child { font-family: 'IBM Plex Mono', monospace; color: var(--accent3); white-space: nowrap; }
+  .fm-table td:nth-child(2) { color: var(--accent4); font-family: 'IBM Plex Mono', monospace; font-size: 11px; white-space: nowrap; }
+  .fm-table td:nth-child(3) { color: var(--text-muted); font-size: 12px; }
+
+  /* ── decision grid ── */
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header { padding: 10px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent-glow); color: var(--accent); border-bottom: 1px solid rgba(79,142,247,0.2); }
+  .decision-item { padding: 9px 16px; font-size: 13px; color: var(--text); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px; }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  .section.active > * { animation: fadeUp 0.25s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Commands &amp; Skills<span> — Claude Code</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="anatomy">Anatomy</button>
+  <button data-tab="frontmatter">Frontmatter</button>
+  <button data-tab="patterns">Patterns</button>
+  <button data-tab="builtin">Built-in Commands</button>
+  <button data-tab="examples">Example Library</button>
+</nav>
+
+<main>
+
+  <!-- ═══════════════════════════════════════════
+       OVERVIEW
+       ═══════════════════════════════════════════ -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Claude Code Commands &amp; Skills</h2>
+      <p>Commands and Skills are the same thing — <strong>Markdown files that become /slash-commands</strong>. Write instructions once, invoke them forever. They're how you stop re-typing the same multi-step workflows and start building a reusable AI toolkit that compounds across every project.</p>
+    </div>
+
+    <!-- The merge note -->
+    <div class="callout yellow">
+      <div class="callout-label">⚠️ Terminology Update (2025)</div>
+      <p>Claude Code <em>merged commands and skills</em> into a single system. A file at <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">.claude/commands/deploy.md</code> and a skill at <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">.claude/skills/deploy/SKILL.md</code> both create <code style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">/deploy</code> and work identically. The old <code>.claude/commands/</code> path still works — Skills are recommended because they support supporting files and live-reload.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">What a Command/Skill Does</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📄</div>
+            <div class="rule-text">A Markdown file with YAML frontmatter. The filename (or <code>name</code> field) becomes the <code>/slash-command</code>.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text">Claude follows the instructions inside when the command is invoked — by you with <code>/name</code>, or automatically by Claude when the description matches the task.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💰</div>
+            <div class="rule-text"><strong>Lazy loading:</strong> the skill body only enters context when it's actually used. Long reference material costs zero tokens until invoked.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text">Version-controllable, shareable, evolvable. Check them into your repo and they're available to everyone on the project.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Commands vs Skills — Mental Model</div>
+        <div class="decision-grid" style="margin-top:0">
+          <div class="decision-col">
+            <div class="decision-col-header use">Commands — you invoke</div>
+            <div class="decision-item"><span class="di">⚡</span>You type <code>/commit</code>, <code>/prime</code>, <code>/deploy</code> — you decide when to run them.</div>
+            <div class="decision-item"><span class="di">⚡</span>Multi-step workflows: deployments, commits, test runs, code generation.</div>
+            <div class="decision-item"><span class="di">⚡</span>Use <code>disable-model-invocation: true</code> to prevent Claude from auto-running them.</div>
+          </div>
+          <div class="decision-col">
+            <div class="decision-col-header skip">Skills — Claude decides</div>
+            <div class="decision-item"><span class="di">📖</span>Claude reads the description and loads the skill automatically when it's relevant.</div>
+            <div class="decision-item"><span class="di">📖</span>Reference content: conventions, patterns, style guides, API playbooks.</div>
+            <div class="decision-item"><span class="di">📖</span>Omit <code>disable-model-invocation</code> (default <code>false</code>) to let Claude decide.</div>
+          </div>
+        </div>
+        <div style="margin-top:10px; font-size:12px; color:var(--text-muted)">Both are the same file format. The distinction is in how you <em>think about</em> what triggers them.</div>
+      </div>
+
+    </div>
+
+    <!-- Where skills live -->
+    <div class="card">
+      <div class="card-title">Where to Put Them — Scope</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Scope</th><th>Path</th><th>Available To</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Project <span class="scope-pill scope-project">PROJECT</span></td>
+            <td><code>.claude/skills/&lt;name&gt;/SKILL.md</code><br><small style="color:var(--text-dim)">or legacy: .claude/commands/&lt;name&gt;.md</small></td>
+            <td>Anyone working in this repo</td>
+          </tr>
+          <tr>
+            <td>Personal <span class="scope-pill scope-personal">PERSONAL</span></td>
+            <td><code>~/.claude/skills/&lt;name&gt;/SKILL.md</code><br><small style="color:var(--text-dim)">or legacy: ~/.claude/commands/&lt;name&gt;.md</small></td>
+            <td>You, across all your projects</td>
+          </tr>
+          <tr>
+            <td>Enterprise <span class="scope-pill scope-legacy">ENTERPRISE</span></td>
+            <td>Managed settings (admin configured)</td>
+            <td>All users in the organization</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted)">When names conflict: <strong style="color:var(--accent2)">Enterprise > Personal > Project</strong>. Plugin skills use a <code>plugin-name:skill-name</code> namespace and never conflict.</div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">💡 When to Create a Command</div>
+      <p>When you keep pasting the same playbook into chat — or when a section of CLAUDE.md has grown into a procedure rather than a fact — <em>extract it into a command</em>. If you do something more than twice, it should be a command.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ═══════════════════════════════════════════
+       ANATOMY
+       ═══════════════════════════════════════════ -->
+  <div class="section" id="tab-anatomy">
+
+    <div class="hero">
+      <h2>Anatomy of a Command File</h2>
+      <p>Every command is a Markdown file. The YAML block at the top controls behavior. Everything below it is the prompt Claude follows. That's it.</p>
+    </div>
+
+    <!-- File structure -->
+    <div class="card blue">
+      <div class="card-title">Skills Directory Structure</div>
+      <div class="filetree"><span class="ft-folder">.claude/</span>
+└── <span class="ft-folder">skills/</span>
+    └── <span class="ft-folder">commit/</span>              <span class="ft-note">← skill name = /commit command</span>
+        ├── <span class="ft-file">SKILL.md</span>           <span class="ft-note">← required — instructions + frontmatter</span>
+        ├── <span class="ft-file">template.md</span>        <span class="ft-note">← optional — template for Claude to fill in</span>
+        ├── <span class="ft-file">examples/output.md</span> <span class="ft-note">← optional — expected output format</span>
+        └── <span class="ft-file">scripts/validate.sh</span> <span class="ft-note">← optional — script Claude can execute</span>
+
+<span class="ft-note">Legacy (still works):</span>
+<span class="ft-folder">.claude/commands/</span>
+└── <span class="ft-file">commit.md</span>               <span class="ft-note">← same as above, no supporting files</span></div>
+    </div>
+
+    <!-- Full anatomy with inline code -->
+    <div class="card">
+      <div class="card-title green">Complete SKILL.md Anatomy</div>
+      <pre><span class="fn">---</span>                                    <span class="cm">← YAML frontmatter block start</span>
+<span class="kw">name:</span> <span class="st">commit</span>                           <span class="cm">← becomes /commit (or use dirname)</span>
+<span class="kw">description:</span> <span class="st">Create a standardized git commit with conventional message format.</span>
+                                       <span class="cm">↑ Claude reads this to decide when to auto-load</span>
+<span class="kw">argument-hint:</span> <span class="st">[message-prefix]</span>       <span class="cm">← shown in autocomplete hint</span>
+<span class="kw">disable-model-invocation:</span> <span class="st">true</span>        <span class="cm">← prevent Claude from auto-running this</span>
+<span class="kw">allowed-tools:</span> <span class="st">Bash(git *) Read</span>       <span class="cm">← tools pre-approved, no per-use prompt</span>
+<span class="fn">---</span>                                    <span class="cm">← frontmatter block end</span>
+
+<span class="hd"># Commit Command</span>
+
+<span class="cm">## Everything below this is the prompt Claude follows.</span>
+
+Stage all changes and create a commit following conventional commits format:
+- Use <span class="li">feat:</span>, <span class="li">fix:</span>, <span class="li">chore:</span>, <span class="li">refactor:</span>, <span class="li">docs:</span> prefixes
+- Keep subject line under 72 characters
+- If <span class="fn">$ARGUMENTS</span> is provided, use it as the scope: feat($ARGUMENTS): ...
+
+Run:
+1. <span class="kw">git status</span> — confirm what will be staged
+2. <span class="kw">git add -A</span>
+3. <span class="kw">git commit -m "&lt;generated message&gt;"</span>
+4. Output the final commit hash and message</pre>
+      <div style="margin-top:12px; font-size:12px; color:var(--text-muted)">The body is plain Markdown. Numbered lists, headers, code blocks — all valid. Claude follows it as a step-by-step procedure.</div>
+    </div>
+
+    <!-- How args work -->
+    <div class="card yellow">
+      <div class="card-title yellow">Arguments — How to Pass and Use Them</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📥</div>
+          <div class="rule-text"><code>$ARGUMENTS</code> — captures everything typed after the command name as a single string. <code>/commit feat</code> → <code>$ARGUMENTS = "feat"</code></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📥</div>
+          <div class="rule-text"><code>$1</code>, <code>$2</code>, <code>$3</code> — positional arguments. <code>/fix-issue 42 high</code> → <code>$1 = "42"</code>, <code>$2 = "high"</code></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text">Use <code>argument-hint</code> in frontmatter to show a hint in autocomplete: <code>argument-hint: [issue-number] [priority]</code></div>
+        </div>
+      </div>
+      <pre style="margin-top:12px"><span class="cm"># Example: fix-issue.md</span>
+<span class="fn">---</span>
+<span class="kw">argument-hint:</span> <span class="st">[issue-number] [priority]</span>
+<span class="fn">---</span>
+Fix GitHub issue #<span class="fn">$1</span> with priority <span class="fn">$2</span>.
+1. Read the issue details
+2. Implement the fix
+3. Write a test that covers it
+4. Run /commit fix: resolve issue #<span class="fn">$1</span></pre>
+    </div>
+
+    <!-- Dynamic context injection -->
+    <div class="card green">
+      <div class="card-title green">Dynamic Context Injection — Live Bash Output in Prompts</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">Prefix a line with <code>!</code> to run a bash command and embed its output directly into the skill prompt at invocation time. Requires <code>allowed-tools: Bash</code> in frontmatter.</p>
+      <pre><span class="fn">---</span>
+<span class="kw">allowed-tools:</span> <span class="st">Bash(git diff:*) Read Grep Glob</span>
+<span class="fn">---</span>
+<span class="hd">## Changed Files</span>
+<span class="fn">!</span><span class="kw">`git diff --name-only HEAD~1`</span>
+
+<span class="hd">## Detailed Diff</span>
+<span class="fn">!</span><span class="kw">`git diff HEAD~1`</span>
+
+<span class="hd">## Review Checklist</span>
+Review the above changes for:
+<span class="li">1.</span> Code quality and readability
+<span class="li">2.</span> Security vulnerabilities
+<span class="li">3.</span> Performance implications
+<span class="li">4.</span> Test coverage</pre>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted)">The <code>!</code> lines execute at invocation — Claude sees the actual diff output, not the command string.</div>
+    </div>
+
+  </div><!-- /anatomy -->
+
+
+  <!-- ═══════════════════════════════════════════
+       FRONTMATTER REFERENCE
+       ═══════════════════════════════════════════ -->
+  <div class="section" id="tab-frontmatter">
+
+    <div class="hero">
+      <h2>Frontmatter Reference</h2>
+      <p>All fields are optional. Only <code style="background:var(--tag-bg);padding:1px 6px;border-radius:3px;color:var(--accent);font-family:'IBM Plex Mono',monospace">description</code> is strongly recommended — it's how Claude knows when to load the skill automatically.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">All Frontmatter Fields</div>
+      <table class="fm-table">
+        <thead>
+          <tr><th>Field</th><th>Type / Default</th><th>What It Does</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>name</td>
+            <td>string / dirname</td>
+            <td>The <code>/slash-command</code> name. If omitted, uses the directory name. Lowercase, hyphens, numbers only. Max 64 chars.</td>
+          </tr>
+          <tr>
+            <td>description</td>
+            <td>string / first paragraph</td>
+            <td><strong>Strongly recommended.</strong> Claude uses this to decide when to auto-load the skill. Front-load the key use case. Truncated at 250 chars in the skill listing.</td>
+          </tr>
+          <tr>
+            <td>argument-hint</td>
+            <td>string / none</td>
+            <td>Shown during autocomplete to hint what arguments are expected. Example: <code>[filename] [format]</code> or <code>[issue-number]</code></td>
+          </tr>
+          <tr>
+            <td>disable-model-invocation</td>
+            <td>bool / false</td>
+            <td>Set <code>true</code> to prevent Claude from auto-loading this skill. Use for commands you always want to trigger manually (deployments, commits, etc.).</td>
+          </tr>
+          <tr>
+            <td>user-invocable</td>
+            <td>bool / true</td>
+            <td>Set <code>false</code> to hide from the <code>/</code> menu. Use for background knowledge skills that users shouldn't invoke directly.</td>
+          </tr>
+          <tr>
+            <td>allowed-tools</td>
+            <td>string or list / none</td>
+            <td>Tools Claude can use without asking permission when this skill runs. Space-separated string or YAML list. Example: <code>Read Grep Bash(git *)</code></td>
+          </tr>
+          <tr>
+            <td>context</td>
+            <td>string / inline</td>
+            <td>Set <code>fork</code> to run the skill in a subagent with its own context window. Results are summarized back to the main conversation.</td>
+          </tr>
+          <tr>
+            <td>agent</td>
+            <td>string / general-purpose</td>
+            <td>Which subagent to use when <code>context: fork</code>. Options: <code>Explore</code>, <code>Plan</code>, <code>general-purpose</code>, or any custom agent name from <code>.claude/agents/</code>.</td>
+          </tr>
+          <tr>
+            <td>model</td>
+            <td>string / default</td>
+            <td>Override the model for this skill. Example: <code>claude-opus-4-6</code> for complex reasoning tasks.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Allowed tools reference -->
+    <div class="card yellow">
+      <div class="card-title yellow">allowed-tools Syntax</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🔧</div>
+          <div class="rule-text"><code>Read</code> <code>Write</code> <code>Edit</code> <code>Grep</code> <code>Glob</code> — core file tools, no restrictions</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔧</div>
+          <div class="rule-text"><code>Bash(git *)</code> — allow any git command. <code>Bash(npm run:*)</code> — allow npm scripts only. Wildcards scope bash access.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔧</div>
+          <div class="rule-text"><code>Skill(commit)</code> — allow invoking a specific other skill. <code>Skill(review-pr *)</code> — prefix match.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🚫</div>
+          <div class="rule-text">Your permission settings still govern everything else. <code>allowed-tools</code> only <em>pre-approves</em> — it doesn't grant access beyond your baseline permissions.</div>
+        </div>
+      </div>
+      <pre style="margin-top:12px"><span class="cm"># Space-separated string</span>
+<span class="kw">allowed-tools:</span> <span class="st">Read Grep Bash(git diff:*)</span>
+
+<span class="cm"># YAML list</span>
+<span class="kw">allowed-tools:</span>
+  <span class="li">- Read</span>
+  <span class="li">- Grep</span>
+  <span class="li">- Bash(git diff:*)</span></pre>
+    </div>
+
+    <!-- Context budget note -->
+    <div class="callout red">
+      <div class="callout-label">⚠️ Description Budget</div>
+      <p>Skill descriptions are loaded into context so Claude knows what's available. The budget scales at <em>2% of the context window</em> (fallback: 16,000 chars). If you have many skills and hit the limit, run <code>/context</code> to see a warning about excluded skills. Set <code>SLASH_COMMAND_TOOL_CHAR_BUDGET</code> env var to override.</p>
+    </div>
+
+  </div><!-- /frontmatter -->
+
+
+  <!-- ═══════════════════════════════════════════
+       PATTERNS
+       ═══════════════════════════════════════════ -->
+  <div class="section" id="tab-patterns">
+
+    <div class="hero">
+      <h2>Patterns &amp; Advanced Usage</h2>
+      <p>Beyond simple single-file commands — subagent delegation, supporting files, permission control, and the three content archetypes.</p>
+    </div>
+
+    <!-- Three content types -->
+    <div class="card blue">
+      <div class="card-title">Three Skill Content Archetypes</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Reference content</strong> — knowledge Claude applies to your current work<br>
+            Conventions, patterns, style guides, domain knowledge. Runs inline alongside conversation context. Let Claude auto-load (no <code>disable-model-invocation</code>).
+            <pre style="margin-top:8px"><span class="fn">---</span>
+<span class="kw">description:</span> <span class="st">API design conventions for this codebase. Use when writing endpoints.</span>
+<span class="fn">---</span>
+When writing API endpoints:
+<span class="li">- Use RESTful naming conventions</span>
+<span class="li">- Return consistent error formats</span>
+<span class="li">- Include request validation</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Task content</strong> — step-by-step instructions for a specific action<br>
+            Deployments, commits, code generation, migrations. These should be manually invoked — use <code>disable-model-invocation: true</code>.
+            <pre style="margin-top:8px"><span class="fn">---</span>
+<span class="kw">disable-model-invocation:</span> <span class="st">true</span>
+<span class="kw">description:</span> <span class="st">Deploy to production</span>
+<span class="fn">---</span>
+<span class="li">1.</span> Run the test suite
+<span class="li">2.</span> Build the application
+<span class="li">3.</span> Push to production</pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Research content</strong> — subagent-powered exploration<br>
+            Use <code>context: fork</code> to run in an isolated subagent. The research agent can load 100k+ tokens; only its summary returns to your main context.
+            <pre style="margin-top:8px"><span class="fn">---</span>
+<span class="kw">context:</span> <span class="st">fork</span>
+<span class="kw">agent:</span> <span class="st">Explore</span>
+<span class="kw">allowed-tools:</span> <span class="st">Read Grep Glob Bash(git log:*)</span>
+<span class="fn">---</span>
+Research the codebase for patterns related to: <span class="fn">$ARGUMENTS</span>
+Return a concise summary of findings only.</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supporting files -->
+    <div class="card green">
+      <div class="card-title green">Supporting Files — Beyond the Single SKILL.md</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">Skills (not legacy commands) support a full directory with optional supporting files. Reference them from SKILL.md so Claude knows what they contain.</p>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>template.md</strong> — a document template Claude fills in. Reference with: <em>"Fill in the template at template.md with the following information..."</em></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🖼️</div>
+          <div class="rule-text"><strong>examples/output.md</strong> — expected output format showing Claude exactly what the result should look like. Few-shot examples in file form.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚙️</div>
+          <div class="rule-text"><strong>scripts/validate.sh</strong> — a script Claude can execute (requires <code>Bash</code> in allowed-tools). Powerful for validation steps that need real shell output.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📚</div>
+          <div class="rule-text"><strong>reference.md</strong> — detailed reference documentation too large for SKILL.md itself. Claude loads it only when executing this specific skill.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controlling invocation -->
+    <div class="card yellow">
+      <div class="card-title yellow">Controlling Who Invokes a Skill</div>
+      <table class="ref-table">
+        <thead><tr><th>Setting</th><th>Effect</th><th>Use Case</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>(default)</td>
+            <td>Claude auto-loads AND you can invoke manually</td>
+            <td>Reference content, context-aware patterns</td>
+          </tr>
+          <tr>
+            <td><code>disable-model-invocation: true</code></td>
+            <td>Manual /invoke only — Claude never auto-loads</td>
+            <td>Deployments, commits, dangerous operations</td>
+          </tr>
+          <tr>
+            <td><code>user-invocable: false</code></td>
+            <td>Hidden from / menu — background knowledge only</td>
+            <td>Internal context Claude reads but users don't trigger</td>
+          </tr>
+          <tr>
+            <td><code>context: fork</code></td>
+            <td>Runs in subagent — isolated context window</td>
+            <td>Heavy research, large codebase analysis</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Permission control -->
+    <div class="card red">
+      <div class="card-title red">Restricting Skill Access via Permissions</div>
+      <pre><span class="cm"># Allow only specific skills</span>
+<span class="kw">Skill(commit)</span>
+<span class="kw">Skill(review-pr *)</span>     <span class="cm">← prefix match with any arguments</span>
+
+<span class="cm"># Deny specific skills</span>
+<span class="fn">Skill(deploy *)</span>        <span class="cm">← block all deploy variants
+
+# Deny the entire Skill tool (disable all skills)
+# In /permissions: deny the Skill tool</span></pre>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted)">Use <code>Skill(name)</code> for exact match, <code>Skill(name *)</code> for prefix match with any arguments. Built-in commands like <code>/compact</code> and <code>/init</code> are NOT available through the Skill tool.</div>
+    </div>
+
+  </div><!-- /patterns -->
+
+
+  <!-- ═══════════════════════════════════════════
+       BUILT-IN COMMANDS
+       ═══════════════════════════════════════════ -->
+  <div class="section" id="tab-builtin">
+
+    <div class="hero">
+      <h2>Built-in Commands Reference</h2>
+      <p>Claude Code ships with built-in commands (fixed logic) and bundled skills (prompt-based). Both invoked with <code>/name</code>. You can't override built-in commands — but you can complement them with custom skills of different names.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Built-in Commands</div>
+      <table class="ref-table">
+        <thead><tr><th>Command</th><th>What It Does</th></tr></thead>
+        <tbody>
+          <tr><td>/help</td><td>Lists all available commands including your custom ones</td></tr>
+          <tr><td>/clear</td><td>Clears conversation history — use between tasks to protect context</td></tr>
+          <tr><td>/compact</td><td>Summarizes conversation to free up context window</td></tr>
+          <tr><td>/context</td><td>Shows context window usage and any excluded skills</td></tr>
+          <tr><td>/init</td><td>Initializes Claude Code in a new project, creates CLAUDE.md</td></tr>
+          <tr><td>/model</td><td>Switches the active model (Opus, Sonnet, Haiku)</td></tr>
+          <tr><td>/permissions</td><td>Opens the permissions management interface</td></tr>
+          <tr><td>/hooks</td><td>Configure hooks through an interactive menu</td></tr>
+          <tr><td>/install-github-app</td><td>Sets up Claude to auto-review pull requests on GitHub</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card green">
+      <div class="card-title green">Bundled Skills (Prompt-Based, Shipped with Claude Code)</div>
+      <table class="ref-table">
+        <thead><tr><th>Skill</th><th>What It Does</th></tr></thead>
+        <tbody>
+          <tr><td>/debug</td><td>Structured debugging playbook — reproduces, diagnoses, and fixes bugs systematically</td></tr>
+          <tr><td>/simplify</td><td>Refactors selected code for readability following clean code principles</td></tr>
+          <tr><td>/batch</td><td>Runs the same operation across multiple files in parallel</td></tr>
+          <tr><td>/loop</td><td>Repeatedly executes a task until a condition is met</td></tr>
+          <tr><td>/claude-api</td><td>Generates Anthropic API integration code for the current codebase</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px; font-size:12px; color:var(--text-muted)">Bundled skills are prompt-based — Claude orchestrates the work using its tools. They're invoked the same way as your custom skills.</div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">📐 Namespace tip</div>
+      <p>Use namespacing for related commands: <em>/project:deploy</em>, <em>/project:rollback</em>, or <em>/git:commit</em>, <em>/git:pr</em>. Claude Code supports this natively via subdirectories in <code>.claude/skills/</code>.</p>
+    </div>
+
+  </div><!-- /builtin -->
+
+
+  <!-- ═══════════════════════════════════════════
+       EXAMPLE LIBRARY
+       ═══════════════════════════════════════════ -->
+  <div class="section" id="tab-examples">
+
+    <div class="hero">
+      <h2>Example Command Library</h2>
+      <p>Production-ready examples covering the most common use cases. Each shows the complete SKILL.md — copy, adapt, and add to your <code>.claude/skills/</code> directory.</p>
+    </div>
+
+    <!-- /prime -->
+    <div class="card blue">
+      <div class="card-title">📍 /prime — Session Boot Command</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px">Run at the start of every new implementation conversation. Reads PRD + rules, explores structure, checks git log, outputs mental model.</p>
+      <pre><span class="fn">---</span>
+<span class="kw">name:</span> <span class="st">prime</span>
+<span class="kw">description:</span> <span class="st">Boot command for a new coding session. Reads PRD, explores structure, checks git log, builds mental model.</span>
+<span class="kw">disable-model-invocation:</span> <span class="st">true</span>
+<span class="kw">allowed-tools:</span> <span class="st">Read Grep Glob Bash(git log:*) Bash(git diff:*)</span>
+<span class="fn">---</span>
+
+<span class="hd">## Prime — Session Initialization</span>
+
+<span class="li">1.</span> Read <span class="kw">PRD.md</span> and <span class="kw">CLAUDE.md</span> (global rules + on-demand context pointers)
+<span class="li">2.</span> Explore the top-level directory structure
+<span class="li">3.</span> Read key entry points (main, index, app, etc.)
+<span class="li">4.</span> Run: <span class="fn">!</span><span class="kw">`git log --oneline -20`</span>
+<span class="li">5.</span> Run: <span class="fn">!</span><span class="kw">`git diff HEAD~3 --stat`</span>
+
+Output a written mental model summary:
+- Current state of the codebase
+- What was done recently (from git log)
+- What the PRD says to build next
+- Any risks or blockers you've identified</pre>
+    </div>
+
+    <!-- /create-prd -->
+    <div class="card green">
+      <div class="card-title green">📋 /create-prd — Generate Product Requirements Doc</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px">Converts a brain-dump conversation into a structured PRD. Run after the Q&amp;A session.</p>
+      <pre><span class="fn">---</span>
+<span class="kw">name:</span> <span class="st">create-prd</span>
+<span class="kw">description:</span> <span class="st">Convert the current conversation into a structured PRD document.</span>
+<span class="kw">disable-model-invocation:</span> <span class="st">true</span>
+<span class="kw">allowed-tools:</span> <span class="st">Write Read</span>
+<span class="fn">---</span>
+
+Using the full conversation as context, create <span class="fn">PRD.md</span> with these sections:
+
+<span class="hd">## Required Sections</span>
+<span class="li">1.</span> **Overview** — what we're building and why
+<span class="li">2.</span> **MVP Scope** — features included in v1
+<span class="li">3.</span> **Out of Scope** — explicitly what we are NOT building
+<span class="li">4.</span> **Tech Stack** — chosen technologies and rationale
+<span class="li">5.</span> **Architecture** — high-level structure and key decisions
+<span class="li">6.</span> **Directory Structure** — planned file/folder layout
+<span class="li">7.</span> **Phases of Work** — ordered implementation phases, each as a PIV loop
+<span class="li">8.</span> **Open Questions** — anything still unresolved
+
+Write to <span class="fn">PRD.md</span>. Be comprehensive — the conversation context is temporary, only the PRD survives.</pre>
+    </div>
+
+    <!-- /plan-feature -->
+    <div class="card yellow">
+      <div class="card-title yellow">🗺️ /plan-feature — Feature Planning Document</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px">Converts a vibe-planning conversation into a structured execution plan for a single PIV loop.</p>
+      <pre><span class="fn">---</span>
+<span class="kw">name:</span> <span class="st">plan-feature</span>
+<span class="kw">argument-hint:</span> <span class="st">[feature-name]</span>
+<span class="kw">description:</span> <span class="st">Create a structured feature plan document for the next PIV loop.</span>
+<span class="kw">disable-model-invocation:</span> <span class="st">true</span>
+<span class="kw">allowed-tools:</span> <span class="st">Write Read Grep</span>
+<span class="fn">---</span>
+
+Feature: <span class="fn">$ARGUMENTS</span> (or infer from conversation if not provided)
+
+Create <span class="fn">plans/&lt;feature-name&gt;.md</span> with:
+
+<span class="li">1.</span> **Problem Statement** — what we're solving
+<span class="li">2.</span> **Context &amp; References** — relevant docs, files, or APIs to load
+<span class="li">3.</span> **Implementation Plan** — ordered task list, specific enough to include filenames
+<span class="li">4.</span> **Validation Strategy** — exact steps to verify success before execution completes
+    - Type checking / linting
+    - Unit tests
+    - Integration tests
+    - End-to-end user journeys (be specific: list each flow)
+<span class="li">5.</span> **Environment Variables** — any new env vars required (add to .env.example)</pre>
+    </div>
+
+    <!-- /commit -->
+    <div class="card">
+      <div class="card-title">💾 /commit — Standardized Git Commit</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px">Creates a conventional commit message. Consistency = better git log = better /prime context.</p>
+      <pre><span class="fn">---</span>
+<span class="kw">name:</span> <span class="st">commit</span>
+<span class="kw">argument-hint:</span> <span class="st">[scope]</span>
+<span class="kw">description:</span> <span class="st">Stage all changes and create a conventional commit message.</span>
+<span class="kw">disable-model-invocation:</span> <span class="st">true</span>
+<span class="kw">allowed-tools:</span> <span class="st">Bash(git *)</span>
+<span class="fn">---</span>
+
+<span class="li">1.</span> Run <span class="kw">git status</span> to see what will be staged
+<span class="li">2.</span> Run <span class="kw">git add -A</span>
+<span class="li">3.</span> Analyze the diff and choose the right prefix:
+   - <span class="li">feat:</span>     new feature
+   - <span class="fn">fix:</span>      bug fix
+   - <span class="kw">refactor:</span> code change, no feature/fix
+   - <span class="cm">chore:</span>    maintenance, deps, config
+   - <span class="cm">docs:</span>     documentation only
+<span class="li">4.</span> If <span class="fn">$ARGUMENTS</span> provided, use as scope: <span class="li">feat($ARGUMENTS): ...</span>
+<span class="li">5.</span> Subject line: under 72 chars, imperative mood
+<span class="li">6.</span> Run <span class="kw">git commit -m "&lt;message&gt;"</span>
+<span class="li">7.</span> Output the commit hash and message</pre>
+    </div>
+
+    <!-- /review -->
+    <div class="card red">
+      <div class="card-title red">🔍 /review — Code Review</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px">Injects the actual diff at invocation time, then runs a structured review checklist.</p>
+      <pre><span class="fn">---</span>
+<span class="kw">name:</span> <span class="st">review</span>
+<span class="kw">description:</span> <span class="st">Code review of current changes: quality, security, performance, tests.</span>
+<span class="kw">disable-model-invocation:</span> <span class="st">true</span>
+<span class="kw">allowed-tools:</span> <span class="st">Read Grep Glob Bash(git diff:*)</span>
+<span class="fn">---</span>
+
+<span class="hd">## Changed Files</span>
+<span class="fn">!</span><span class="kw">`git diff --name-only HEAD~1`</span>
+
+<span class="hd">## Full Diff</span>
+<span class="fn">!</span><span class="kw">`git diff HEAD~1`</span>
+
+<span class="hd">## Review Checklist</span>
+Provide specific, actionable feedback organized by priority:
+
+<span class="li">1.</span> **Code quality** — readability, naming, structure
+<span class="li">2.</span> **Security** — injection risks, exposed secrets, auth bypasses
+<span class="li">3.</span> **Performance** — unnecessary queries, missing indexes, N+1s
+<span class="li">4.</span> **Test coverage** — are the changed paths tested?
+<span class="li">5.</span> **Compliance** — does this follow CLAUDE.md conventions?
+
+Format: group by severity (Critical / Warning / Suggestion)</pre>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">🔗 Community Resources</div>
+      <p>The <em>awesome-claude-code</em> repo on GitHub maintains a curated list of production-ready skills and commands from the community. Start from the examples above, then explore community patterns for things like PR creation, security scanning, and multi-agent orchestration workflows.</p>
+    </div>
+
+  </div><!-- /examples -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

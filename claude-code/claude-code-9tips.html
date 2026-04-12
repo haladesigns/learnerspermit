@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — 9 High-Leverage Tips</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+    --tip-num-bg:    rgba(79,142,247,0.12);
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+    --tip-num-bg:    rgba(37,99,235,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* HEADER */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600; font-size: 15px;
+    color: var(--accent); letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; padding: 2px 8px; border-radius: 3px;
+    background: var(--accent-glow); color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em;
+  }
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg); border: 1px solid var(--border-accent);
+    border-radius: 12px; cursor: pointer;
+    position: relative; appearance: none; outline: none; transition: background 0.3s;
+  }
+  .toggle::after {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; background: var(--accent);
+    border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  /* NAV */
+  nav {
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    padding: 0 32px; display: flex; overflow-x: auto;
+  }
+  nav button {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    padding: 10px 16px; background: none; border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted); cursor: pointer;
+    white-space: nowrap; transition: all 0.2s;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN */
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  /* HERO */
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px; font-weight: 600; color: var(--accent);
+    margin-bottom: 8px; letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 680px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px 24px;
+    box-shadow: var(--shadow); transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-muted); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title::before {
+    content: ''; display: inline-block; width: 3px; height: 12px;
+    background: var(--accent); border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+
+  /* TIP CARDS — the main overview grid items */
+  .tip-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 900px) { .tip-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .tip-grid { grid-template-columns: 1fr; } }
+
+  .tip-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 18px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    position: relative;
+  }
+  .tip-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+    transform: translateY(-2px);
+  }
+  .tip-num-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    color: var(--accent);
+    background: var(--tip-num-bg);
+    border: 1px solid rgba(79,142,247,0.25);
+    border-radius: 4px; padding: 2px 7px;
+    display: inline-block; margin-bottom: 10px;
+    letter-spacing: 0.06em;
+  }
+  .tip-card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    margin-bottom: 6px;
+  }
+  .tip-card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .tip-card-cmd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--accent);
+    margin-top: 10px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 4px; padding: 4px 8px;
+    display: inline-block;
+  }
+
+  /* RULE LIST */
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row {
+    display: grid; grid-template-columns: 20px 1fr;
+    gap: 12px; align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 6px; transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    background: var(--tag-bg); padding: 1px 5px;
+    border-radius: 3px; color: var(--accent);
+  }
+
+  /* STEP LIST */
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row {
+    display: grid; grid-template-columns: 28px 1fr;
+    gap: 14px; align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 6px; transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+    font-weight: 600; color: var(--accent); text-align: center; margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip  { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+
+  /* CODE BLOCKS */
+  pre {
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 6px; padding: 14px; overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    line-height: 1.7; color: var(--text); margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent); }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+
+  /* TABLE */
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); text-align: left;
+    padding: 8px 12px; background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px; border-bottom: 1px solid var(--border);
+    font-size: 13px; vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    color: var(--accent); white-space: nowrap;
+  }
+  .ref-table td:last-child { color: var(--text-muted); font-size: 12px; }
+
+  /* GRID HELPERS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* CALLOUT */
+  .callout {
+    background: var(--bg-code); border: 1px solid var(--border-accent);
+    border-radius: 6px; padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+
+  /* DECISION GRID */
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item {
+    padding: 9px 16px; font-size: 13px; color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  /* STAT PILLS */
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .stat {
+    display: flex; flex-direction: column; align-items: center;
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 20px; flex: 1; min-width: 120px;
+  }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 600; color: var(--accent2); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  /* LINK TAG */
+  .link-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    padding: 2px 8px; border-radius: 3px;
+    background: var(--tag-bg); color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.25);
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .link-tag:hover { background: var(--accent-glow); }
+
+  /* SECTION ENTRANCE */
+  .section.active > * {
+    animation: fadeUp 0.25s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">claude<span>code</span> — <span>9 High-Leverage Tips</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="context">Context Window</button>
+  <button data-tab="slash">Slash Commands</button>
+  <button data-tab="agents">Agents &amp; Skills</button>
+  <button data-tab="workflow">Workflow</button>
+  <button data-tab="quickref">Quick Ref</button>
+</nav>
+
+<main>
+
+  <!-- ===== OVERVIEW ===== -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>9 High-Leverage Claude Code Tips</h2>
+      <p>Dead-simple, high-impact techniques that vault you past most Claude Code users. Every tip here trades <strong>minimal setup cost</strong> for <strong>disproportionate daily gains</strong> in speed, token efficiency, and output quality.</p>
+    </div>
+
+    <div class="tip-grid">
+
+      <div class="tip-card" onclick="switchTab('slash')">
+        <div class="tip-num-badge">TIP 01</div>
+        <div class="tip-card-title">CLI over MCP</div>
+        <div class="tip-card-desc">Swap MCPs for CLI tools when a terminal interface exists. Fewer tokens, less overhead, often more functionality. Pair with skills.</div>
+        <div class="tip-card-cmd">$ claude-tool --flag</div>
+      </div>
+
+      <div class="tip-card" onclick="switchTab('slash')">
+        <div class="tip-num-badge">TIP 02</div>
+        <div class="tip-card-title">/btw — Sidebar Chat</div>
+        <div class="tip-card-desc">Ask a side question mid-task without touching the context window. Full conversation visibility, ephemeral answer, zero history cost.</div>
+        <div class="tip-card-cmd">/btw What does X return?</div>
+      </div>
+
+      <div class="tip-card" onclick="switchTab('slash')">
+        <div class="tip-num-badge">TIP 03</div>
+        <div class="tip-card-title">/hook — Sound Alert</div>
+        <div class="tip-card-desc">Play a subtle ding when Claude finishes. Stop babysitting multiple windows. Saves hours per week through better attention management.</div>
+        <div class="tip-card-cmd">/hook play sound on stop</div>
+      </div>
+
+      <div class="tip-card" onclick="switchTab('context')">
+        <div class="tip-num-badge">TIP 04</div>
+        <div class="tip-card-title">/clear — Early &amp; Often</div>
+        <div class="tip-card-desc">Reset the context window before it degrades. At 1M tokens, Claude Opus accuracy drops to 65%. Clear at 20–25% for best results.</div>
+        <div class="tip-card-cmd">/clear</div>
+      </div>
+
+      <div class="tip-card" onclick="switchTab('context')">
+        <div class="tip-num-badge">TIP 05</div>
+        <div class="tip-card-title">/statusline — Stay Oriented</div>
+        <div class="tip-card-desc">Always-visible status bar showing directory, model, and context %. No more guessing. Set it up once with a single command.</div>
+        <div class="tip-card-cmd">/statusline</div>
+      </div>
+
+      <div class="tip-card" onclick="switchTab('agents')">
+        <div class="tip-num-badge">TIP 06</div>
+        <div class="tip-card-title">Skill Creator</div>
+        <div class="tip-card-desc">Anthropic's most powerful skill. Creates, modifies, and benchmarks other skills with quantifiable scores. The meta-skill for skill management.</div>
+        <div class="tip-card-cmd">skill-creator</div>
+      </div>
+
+      <div class="tip-card" onclick="switchTab('agents')">
+        <div class="tip-num-badge">TIP 07</div>
+        <div class="tip-card-title">Agent Teams</div>
+        <div class="tip-card-desc">Experimental: sub-agents that talk to each other, not just to Claude. Parallel, coordinated work. Enable via env var, invoke explicitly.</div>
+        <div class="tip-card-cmd">CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1</div>
+      </div>
+
+      <div class="tip-card" onclick="switchTab('workflow')">
+        <div class="tip-num-badge">TIP 08</div>
+        <div class="tip-card-title">Open-Ended Plan Mode</div>
+        <div class="tip-card-desc">Ask "What am I not thinking about?" in plan mode. Forces deeper questions, surfaces unknown unknowns, and educates you along the way.</div>
+        <div class="tip-card-cmd">plan mode → open questions</div>
+      </div>
+
+      <div class="tip-card" onclick="switchTab('workflow')">
+        <div class="tip-num-badge">TIP 09</div>
+        <div class="tip-card-title">Claude + Obsidian</div>
+        <div class="tip-card-desc">Open Claude Code inside an Obsidian vault. Claude writes .md files, Obsidian gives you a visual knowledge graph. Free, symbiotic setup.</div>
+        <div class="tip-card-cmd">cd ~/vault && claude</div>
+      </div>
+
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Core Philosophy</div>
+      <p><em>Every tip here shares two traits: they're high leverage and dead simple.</em> You don't need all nine at once — pick whichever addresses your biggest current friction and implement it today.</p>
+    </div>
+
+  </div>
+
+  <!-- ===== CONTEXT WINDOW ===== -->
+  <div class="section" id="tab-context">
+
+    <div class="hero">
+      <h2>Context Window Hygiene</h2>
+      <p>The more tokens you accumulate, the worse Claude gets. Understanding <strong>context rot</strong> and building habits around it is the single biggest performance lever in Claude Code.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card red">
+        <div class="card-title red">Context Rot — The Numbers</div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-val">91%</div>
+            <div class="stat-label">Accuracy at 256k tokens</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">65%</div>
+            <div class="stat-label">Accuracy at 1M tokens (Opus)</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-muted);line-height:1.6">
+          Claude Sonnet drops even further — to 78.3% at 1M. These numbers come from Anthropic's own long-context retrieval benchmarks. The degradation is not a bug; it's physics. Manage around it.
+        </div>
+      </div>
+
+      <div class="card blue">
+        <div class="card-title">The 20–25% Rule</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📊</div>
+            <div class="rule-text">Clear whenever you hit <strong>20–25% context usage</strong> — unless you have a specific reason to preserve history.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔄</div>
+            <div class="rule-text"><code>/clear</code> resets the context window entirely. Input history resets too, but the prior session is preserved for <code>/resume</code>.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💊</div>
+            <div class="rule-text"><code>/compact</code> compresses instead of clearing — useful mid-task when you can't afford a full reset.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">👁️</div>
+            <div class="rule-text">Use <code>/context</code> at any point to see current usage. Or just set up the status line (Tip 05) for always-on visibility.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Line -->
+    <div class="card green">
+      <div class="card-title green">TIP 05 — /statusline Setup</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Run the built-in command</strong><br>
+            Type <code>/statusline</code> in any Claude Code session and describe exactly what you want displayed.
+            <span class="tip">💡 Example prompt: "Show my directory, current model, and context window % at all times."</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Claude writes the script</strong><br>
+            It creates <code>~/.claude/statusline.sh</code>, makes it executable, and wires it into <code>~/.claude/settings.json</code> automatically.
+            <pre><span class="hd"># settings.json entry Claude adds:</span>
+<span class="li">"statusLine": { "type": "command", "command": "~/.claude/statusline.sh" }</span></pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>The status line refreshes on every message</strong><br>
+            Available data fields from the JSON stdin: <code>model.display_name</code>, <code>context_window.used_percentage</code>, <code>workspace.current_dir</code>, <code>cost.total_cost_usd</code>, <code>rate_limits.five_hour</code>, <code>worktree.name</code>
+            <span class="note">⚠ Values may be null before the first API response — add <code>// 0</code> fallbacks in jq.</span>
+          </div>
+        </div>
+      </div>
+
+      <pre style="margin-top:14px"><span class="cm"># Minimal bash statusline script (~/.claude/statusline.sh)</span>
+<span class="kw">input</span>=$(cat)
+<span class="kw">MODEL</span>=$(echo "$input" | jq -r '.model.display_name')
+<span class="kw">PCT</span>=$(echo "$input" | jq -r '.context_window.used_percentage // 0' | cut -d. -f1)
+<span class="kw">DIR</span>=$(echo "$input" | jq -r '.workspace.current_dir')
+echo <span class="li">"[$MODEL] 📁 ${DIR##*/} | ${PCT}% ctx"</span></pre>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">🔗 Community Status Line Tools</div>
+      <p>
+        <a class="link-tag" href="https://github.com/sirmalloc/ccstatusline" target="_blank">⭐ ccstatusline</a>
+        &nbsp;
+        <a class="link-tag" href="https://github.com/Haleclipse/CCometixLine" target="_blank">⭐ CCometixLine (Rust)</a>
+        &nbsp;
+        <a class="link-tag" href="https://claudefa.st/blog/tools/statusline-guide" target="_blank">📄 Statusline Guide</a>
+      </p>
+    </div>
+
+  </div>
+
+  <!-- ===== SLASH COMMANDS ===== -->
+  <div class="section" id="tab-slash">
+
+    <div class="hero">
+      <h2>Slash Commands &amp; CLI-First</h2>
+      <p>Three of the nine tips live entirely in slash commands. The philosophy: <strong>anything that can be a CLI should be a CLI</strong> — Claude Code is a terminal tool and there's zero overhead for native shell execution.</p>
+    </div>
+
+    <!-- TIP 1: CLI over MCP -->
+    <div class="card blue">
+      <div class="card-title">TIP 01 — CLI over MCP</div>
+      <div class="decision-grid">
+        <div class="decision-col">
+          <div class="decision-col-header use">✓ Prefer CLI</div>
+          <div class="decision-item"><span class="di">✅</span>Tool has a terminal interface? Use the CLI directly.</div>
+          <div class="decision-item"><span class="di">✅</span>Always pair a new CLI with a skill that teaches Claude how to use it.</div>
+          <div class="decision-item"><span class="di">✅</span>Native shell calls = no protocol overhead, lower token costs.</div>
+          <div class="decision-item"><span class="di">✅</span>CLIs often expose more functionality than their MCP wrapper.</div>
+        </div>
+        <div class="decision-col">
+          <div class="decision-col-header skip">✗ Keep MCP for...</div>
+          <div class="decision-item"><span class="di">❌</span>Services with no CLI (web APIs, SaaS platforms only).</div>
+          <div class="decision-item"><span class="di">❌</span>Auth-heavy integrations where MCP handles credentials cleanly.</div>
+          <div class="decision-item"><span class="di">❌</span>Cases where the MCP skill already works perfectly.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIP 2: /btw -->
+    <div class="card green">
+      <div class="card-title green">TIP 02 — /btw (By The Way)</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">💬</div>
+          <div class="rule-text"><strong>What it does:</strong> Spawns an ephemeral side query with full session context. The answer appears in a dismissible overlay. <span class="pos">Zero history impact.</span></div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔒</div>
+          <div class="rule-text"><strong>Read-only mode:</strong> <code>/btw</code> has no tools — it can't run commands or edit files. It's purely a knowledge lookup against your current session.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚡</div>
+          <div class="rule-text"><strong>Token cost:</strong> Minimal — reuses the parent conversation's prompt cache. Side question + answer never enter the main thread's token count.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔄</div>
+          <div class="rule-text"><strong>Works while Claude is running:</strong> You can fire <code>/btw</code> mid-task without interrupting the main agent loop. Available since Claude Code v2.1.72 (March 10, 2026).</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🆚</div>
+          <div class="rule-text"><strong>vs Subagent:</strong> <code>/btw</code> sees your full conversation but has no tools. Subagents have full tools but start with empty context. Use <code>/btw</code> to ask about what Claude already knows; use a subagent to go find something new.</div>
+        </div>
+      </div>
+      <div class="callout blue" style="margin-top:14px">
+        <div class="callout-label">Dismiss Keys</div>
+        <p>Press <em>Space</em>, <em>Enter</em>, or <em>Escape</em> to dismiss the /btw overlay and return to your prompt.</p>
+      </div>
+    </div>
+
+    <!-- TIP 3: /hook -->
+    <div class="card yellow">
+      <div class="card-title yellow">TIP 03 — /hook Sound Notifications</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Quick setup via slash command</strong><br>
+            Run <code>/hook</code> and say "Play a sound when you complete a task." Claude configures the Stop hook automatically.
+            <span class="tip">💡 You can point it at any audio file, or use system sounds.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Manual setup via settings.json</strong><br>
+            Add to <code>~/.claude/settings.json</code>:
+            <pre><span class="li">"hooks"</span>: {
+  <span class="kw">"Stop"</span>: [{ <span class="li">"matcher"</span>: "", <span class="li">"hooks"</span>: [{ <span class="li">"type"</span>: <span class="fn">"command"</span>,
+    <span class="cm">// macOS:</span>
+    <span class="li">"command"</span>: <span class="fn">"afplay /System/Library/Sounds/Glass.aiff"</span>
+    <span class="cm">// Linux: "aplay ~/done.wav"</span>
+    <span class="cm">// Windows: "powershell ... Media.SoundPlayer ..."</span>
+  }]}]
+}</pre>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Hook event types</strong><br>
+            <code>Stop</code> — main task complete · <code>SubagentStop</code> — background task done · <code>Notification</code> — Claude needs your input / permission prompt
+            <span class="note">⚠ Stop fires when Claude finishes responding, not on user interrupts. Use & to run in background so sound doesn't block Claude.</span>
+          </div>
+        </div>
+      </div>
+      <div class="callout green" style="margin-top:14px">
+        <div class="callout-label">🔗 Audio Hook Resources</div>
+        <p>
+          <a class="link-tag" href="https://github.com/ChanMeng666/claude-code-audio-hooks" target="_blank">⭐ claude-code-audio-hooks</a>
+          &nbsp;
+          <a class="link-tag" href="https://gist.github.com/abhagsain/7fa112780034a5341368d87bf2bacbb1" target="_blank">📄 Simple play-sound.sh</a>
+          &nbsp;
+          <a class="link-tag" href="https://code.claude.com/docs/en/hooks-guide" target="_blank">📖 Official Hooks Docs</a>
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== AGENTS & SKILLS ===== -->
+  <div class="section" id="tab-agents">
+
+    <div class="hero">
+      <h2>Agents &amp; Skills</h2>
+      <p>Two of the most powerful (and underused) features: <strong>Skill Creator</strong> for meta-skill management, and <strong>Agent Teams</strong> for true parallel multi-agent coordination.</p>
+    </div>
+
+    <!-- TIP 6: Skill Creator -->
+    <div class="card blue">
+      <div class="card-title">TIP 06 — Skill Creator (Anthropic's Meta-Skill)</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🏗️</div>
+          <div class="rule-text"><strong>Creates skills:</strong> Guides you through building a new SKILL.md from scratch — asks for concrete examples, identifies reusable resources, generates the frontmatter.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✏️</div>
+          <div class="rule-text"><strong>Modifies skills:</strong> Iterates on existing SKILL.md files based on feedback. Understands what another Claude instance needs (not what you want to say).</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📊</div>
+          <div class="rule-text"><strong>Benchmarks skills:</strong> Runs parallel test cases against your skill, grades outputs, generates an HTML eval viewer. Gives you <span class="pos">actual quantifiable numbers</span> before and after changes.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📦</div>
+          <div class="rule-text"><strong>Packages skills:</strong> Validates and zips the skill directory into a distributable file, maintaining the proper structure for sharing.</div>
+        </div>
+      </div>
+
+      <div class="callout yellow" style="margin-top:14px">
+        <div class="callout-label">Skill Directory Structure</div>
+        <p>Every skill is a folder with at minimum a <em>SKILL.md</em> file containing YAML frontmatter (<code>name</code>, <code>description</code>) and markdown instructions. Optional: <code>scripts/</code>, <code>references/</code>, <code>assets/</code> subdirectories.</p>
+      </div>
+
+      <div class="callout green" style="margin-top:10px">
+        <div class="callout-label">🔗 Skill Resources</div>
+        <p>
+          <a class="link-tag" href="https://github.com/anthropics/skills" target="_blank">⭐ anthropics/skills (official)</a>
+          &nbsp;
+          <a class="link-tag" href="https://github.com/travisvn/awesome-claude-skills" target="_blank">⭐ awesome-claude-skills</a>
+          &nbsp;
+          <a class="link-tag" href="https://code.claude.com/docs/en/skills" target="_blank">📖 Official Skills Docs</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- TIP 7: Agent Teams -->
+    <div class="card yellow">
+      <div class="card-title yellow">TIP 07 — Agent Teams (Experimental)</div>
+
+      <div class="grid-2">
+        <div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.06em;">Enable</div>
+          <pre><span class="cm"># Option A: Environment variable</span>
+<span class="kw">export</span> CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=<span class="li">1</span>
+claude
+
+<span class="cm"># Option B: settings.json</span>
+{
+  <span class="li">"env"</span>: {
+    <span class="fn">"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"</span>: <span class="li">"1"</span>
+  }
+}</pre>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.06em;">Invoke</div>
+          <pre><span class="cm"># Must be EXPLICIT — it won't auto-spawn</span>
+<span class="cm"># Wrong: just ask it to do parallel work</span>
+<span class="cm"># Right:</span>
+<span class="fn">"Create an agent team to..."</span>
+  <span class="li">one teammate on UX</span>
+  <span class="li">one on technical architecture</span>
+  <span class="li">one playing devil's advocate</span></pre>
+        </div>
+      </div>
+
+      <div class="rule-list" style="margin-top:14px">
+        <div class="rule-row">
+          <div class="rule-icon">🆚</div>
+          <div class="rule-text"><strong>vs Sub-agents:</strong> Normal sub-agents only report back to the main Claude. Agent teammates can <span class="pos">message each other directly</span>, share a task list, and coordinate without the lead as intermediary.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🏗️</div>
+          <div class="rule-text"><strong>Architecture:</strong> One session = team lead. Teammates each have their own 1M-token context window. Communication via a shared mailbox system at <code>~/.claude/teams/{team}/inboxes/</code>.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✅</div>
+          <div class="rule-text"><span class="pos">Best for:</span> Research from multiple angles · New modules (each teammate owns a piece) · Debugging competing hypotheses · Cross-layer work (frontend / backend / tests).</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">❌</div>
+          <div class="rule-text"><span class="neg">Avoid for:</span> Sequential tasks with dependencies · Same-file edits · Simple tasks where overhead isn't worth it. Costs significantly more tokens than a single session.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Known limitations:</span> No session resumption for in-process teammates · Task status can lag · Shutdown can be slow · One team per session · No nested teams. Requires v2.1.32+.</div>
+        </div>
+      </div>
+
+      <div class="callout blue" style="margin-top:14px">
+        <div class="callout-label">🔗 Agent Teams Resources</div>
+        <p>
+          <a class="link-tag" href="https://code.claude.com/docs/en/agent-teams" target="_blank">📖 Official Agent Teams Docs</a>
+          &nbsp;
+          <a class="link-tag" href="https://github.com/FlorianBruniaux/claude-code-ultimate-guide/blob/main/guide/workflows/agent-teams.md" target="_blank">⭐ Ultimate Guide: Agent Teams</a>
+          &nbsp;
+          <a class="link-tag" href="https://github.com/cs50victor/claude-code-teams-mcp" target="_blank">🔧 claude-code-teams-mcp</a>
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== WORKFLOW ===== -->
+  <div class="section" id="tab-workflow">
+
+    <div class="hero">
+      <h2>Workflow Upgrades</h2>
+      <p>Tips 08 and 09 are about <strong>how you think with Claude Code</strong>, not just what commands you run. One is a mindset shift, the other is a tool pairing that turns Claude Code into a genuine second brain.</p>
+    </div>
+
+    <!-- TIP 8: Plan Mode -->
+    <div class="card blue">
+      <div class="card-title">TIP 08 — Open-Ended Questions in Plan Mode</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🧠</div>
+          <div class="rule-text"><strong>The core problem:</strong> If you're non-technical, you don't know what you don't know. Plan mode's default questions are surface-level. Push deeper.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">❓</div>
+          <div class="rule-text"><strong>High-leverage prompts in plan mode:</strong>
+            <ul style="margin-top:6px;margin-left:16px;font-size:12px;color:var(--text-muted);line-height:1.7">
+              <li><em>"What am I not thinking about?"</em></li>
+              <li><em>"What are the unintended consequences?"</em></li>
+              <li><em>"What would an expert in [domain] be thinking about right now?"</em></li>
+              <li><em>"What assumptions am I making that might be wrong?"</em></li>
+            </ul>
+          </div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📈</div>
+          <div class="rule-text"><strong>Why it works:</strong> Forces Claude to surface domain-specific risks and edge cases it would otherwise skip. You get better outputs <span class="pos">and</span> educate yourself in the process.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIP 9: Obsidian -->
+    <div class="card green">
+      <div class="card-title green">TIP 09 — Claude Code + Obsidian</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Install Obsidian (free)</strong><br>
+            Download from obsidian.md. Create a vault — just a designated folder anywhere on your computer.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Open Claude Code inside the vault</strong><br>
+            <pre><span class="kw">cd</span> ~/vault   <span class="cm"># or wherever your vault lives</span>
+<span class="fn">claude</span></pre>
+            That's the entire setup.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Have Claude write markdown files</strong><br>
+            Tell Claude Code to save all notes, plans, and documentation as <code>.md</code> files in Obsidian format. Obsidian auto-indexes them.
+            <span class="tip">💡 Obsidian's graph view shows how all your Claude-generated docs connect to each other.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>The symbiotic loop</strong><br>
+            Claude builds files in the terminal → Obsidian renders and links them → You navigate visually → You pass context back to Claude. Best for projects with large, growing bodies of text (personal assistant, research, docs) — not traditional code projects.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">⚠ Obsidian Best Fit</div>
+      <p>The Obsidian pairing shines when there's a <em>massive and growing body of markdown files</em>. Think personal assistant workflows, research projects, or documentation-heavy products — not standard coding projects where a file tree works fine.</p>
+    </div>
+
+  </div>
+
+  <!-- ===== QUICK REF ===== -->
+  <div class="section" id="tab-quickref">
+
+    <div class="hero">
+      <h2>Quick Reference</h2>
+      <p>All nine tips at a glance — commands, thresholds, and gotchas in one place.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">All 9 Tips — Command Reference</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>#</th><th>Command / Action</th><th>What It Does</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>01</td>
+            <td>CLI over MCP</td>
+            <td>Use terminal tools directly instead of MCP wrappers</td>
+            <td>Always pair new CLIs with a teaching skill</td>
+          </tr>
+          <tr>
+            <td>02</td>
+            <td>/btw [question]</td>
+            <td>Ephemeral sidebar question; full context, zero history cost</td>
+            <td>Read-only; dismiss with Space/Enter/Esc</td>
+          </tr>
+          <tr>
+            <td>03</td>
+            <td>/hook</td>
+            <td>Configure hooks; ask to play sound on task completion</td>
+            <td>Stop, SubagentStop, Notification events</td>
+          </tr>
+          <tr>
+            <td>04</td>
+            <td>/clear</td>
+            <td>Reset entire context window</td>
+            <td>Clear at 20–25%; use /compact mid-task instead</td>
+          </tr>
+          <tr>
+            <td>05</td>
+            <td>/statusline</td>
+            <td>Generate a script for always-visible status bar</td>
+            <td>Shows model, dir, context %; reads JSON stdin</td>
+          </tr>
+          <tr>
+            <td>06</td>
+            <td>skill-creator</td>
+            <td>Anthropic's meta-skill: create, modify, and benchmark skills</td>
+            <td>Provides quantifiable benchmark scores</td>
+          </tr>
+          <tr>
+            <td>07</td>
+            <td>CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1</td>
+            <td>Enable inter-communicating sub-agent teams</td>
+            <td>Must explicitly say "create an agent team to..."</td>
+          </tr>
+          <tr>
+            <td>08</td>
+            <td>Plan mode + open questions</td>
+            <td>"What am I not thinking about?" in plan mode</td>
+            <td>Works best at the start of a complex plan</td>
+          </tr>
+          <tr>
+            <td>09</td>
+            <td>cd ~/vault && claude</td>
+            <td>Open Claude Code inside an Obsidian vault</td>
+            <td>Best for doc-heavy projects, not pure coding</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">Gotchas &amp; Common Mistakes</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Agent Teams won't spawn automatically.</span> You must enable the env var AND explicitly say "create an agent team." Neither step alone is enough.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">/btw answers disappear when dismissed.</span> They are not saved to history. If you get a useful answer, copy it before pressing Escape.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Sound hooks need & to run in background.</span> Without the ampersand, <code>afplay</code> blocks Claude until the sound finishes playing.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Statusline values can be null early in a session.</span> Add <code>// 0</code> fallbacks in all jq expressions. The script fails silently if null isn't handled.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">CLI tools need a companion skill.</span> The CLI is just an executable. Without a skill that teaches Claude its interface, usage flags, and best patterns, it won't use it well.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Agent Teams have session resumption issues.</span> <code>/resume</code> and <code>/rewind</code> do not restore in-process teammates. If a team goes missing after resume, spawn new teammates manually.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="callout blue">
+        <div class="callout-label">📖 Official Docs</div>
+        <p>
+          <a class="link-tag" href="https://code.claude.com/docs/en/interactive-mode" target="_blank">Interactive Mode (/btw)</a><br><br>
+          <a class="link-tag" href="https://code.claude.com/docs/en/hooks-guide" target="_blank">Hooks Guide</a><br><br>
+          <a class="link-tag" href="https://code.claude.com/docs/en/statusline" target="_blank">Status Line</a><br><br>
+          <a class="link-tag" href="https://code.claude.com/docs/en/agent-teams" target="_blank">Agent Teams</a><br><br>
+          <a class="link-tag" href="https://code.claude.com/docs/en/skills" target="_blank">Skills</a>
+        </p>
+      </div>
+      <div class="callout green">
+        <div class="callout-label">⭐ Community Resources</div>
+        <p>
+          <a class="link-tag" href="https://github.com/anthropics/skills" target="_blank">anthropics/skills (official)</a><br><br>
+          <a class="link-tag" href="https://github.com/FlorianBruniaux/claude-code-ultimate-guide" target="_blank">claude-code-ultimate-guide</a><br><br>
+          <a class="link-tag" href="https://github.com/ChanMeng666/claude-code-audio-hooks" target="_blank">claude-code-audio-hooks</a><br><br>
+          <a class="link-tag" href="https://github.com/sirmalloc/ccstatusline" target="_blank">ccstatusline</a><br><br>
+          <a class="link-tag" href="https://github.com/Cranot/claude-code-guide" target="_blank">claude-code-guide (auto-updated)</a>
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+  // Tab switching
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  function switchTab(target) {
+    tabs.forEach(b => b.classList.remove('active'));
+    sections.forEach(s => s.classList.remove('active'));
+    const btn = document.querySelector(`nav button[data-tab="${target}"]`);
+    if (btn) btn.classList.add('active');
+    const sec = document.getElementById('tab-' + target);
+    if (sec) sec.classList.add('active');
+  }
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Theme toggle
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

@@ -2481,10 +2481,16 @@ canvas.addEventListener('touchstart', e => {
     e.preventDefault(); selectNode(nodeId); return;
   }
 
-  // tapping background while peeking → collapse drawer, don't pan
-  if (drawerState === 'peek') {
+  // tapping canvas background → deselect node + close drawer, then pan
+  if (drawerState === 'peek' || drawerState === 'full') {
+    clearMultiSelect();
+    deselectAll();
     setDrawerState('closed');
     e.preventDefault(); return;
+  }
+  if (selected) {
+    clearMultiSelect();
+    deselectAll();
   }
   touchPanActive = true;
   touchPanStartX=t.clientX; touchPanStartY=t.clientY;

@@ -236,6 +236,7 @@
   <button data-tab="workflows">Workflows</button>
   <button data-tab="custom">Custom Workflows</button>
   <button data-tab="arch">Architecture</button>
+  <button data-tab="patterns">Patterns &amp; Gotchas</button>
 </nav>
 
 <main>
@@ -327,6 +328,11 @@
     <div class="callout blue">
       <div class="callout-label">📦 V1 vs V2 — Important Distinction</div>
       <p>The <em>original Python-based Archon</em> (RAG + task management MCP server) is fully preserved on the <code style="font-family:IBM Plex Mono;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent)">archive/v1-task-management-rag</code> branch. The new Archon is a TypeScript workflow engine — <em>completely different product</em>, no migration path. Don't confuse them.</p>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✅ Subscription ToS — You're Clear</div>
+      <p>Boris Churnney (creator of Claude Code) has publicly confirmed: using your Anthropic subscription with the <em>Claude Agent SDK for personal local use</em> is allowed. Archon qualifies — it runs on your machine and uses the SDK natively. <em>OpenClaw and OpenCode are banned</em> because they use workarounds that violate ToS. Running Archon with your subscription is safe.</p>
     </div>
 
   </div><!-- /overview -->
@@ -435,6 +441,50 @@
     <div class="callout green">
       <div class="callout-label">📊 Why This Works — The Numbers</div>
       <p>Anthropic's own Claude Code source code is <em>40% harness code</em> — agent teams, sub-agent features, and orchestration logic. That's the signal for how central harness engineering has become.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Parallel Nodes Within a Single Workflow</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚡</div>
+          <div class="rule-text"><strong>Not just parallel workflows</strong> — individual nodes inside a single workflow can run in parallel. Example: 4 research agents investigating different concerns simultaneously before a synthesis node merges results.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔗</div>
+          <div class="rule-text"><strong>Dependency gates</strong> — parallel nodes declare dependencies. The synthesis node waits until all 4 research nodes are done before firing. The DAG structure handles this automatically.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🌿</div>
+          <div class="rule-text"><strong>Separate from parallel workflows</strong> — running 4 workflows in parallel means 4 isolated worktrees working on 4 different tasks. Parallel nodes within a workflow means multiple agents collaborating on the <em>same</em> task in the same run.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">💡</div>
+          <div class="rule-text">Use intra-workflow parallelism for research/investigation phases where different focus areas can be covered simultaneously, then synthesized into a single artifact.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Archon vs Existing Harnesses (BMAD, GSD, SpecKit, RLEF)</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🧱</div>
+          <div class="rule-text"><strong>Those are harnesses. Archon is a harness builder.</strong> BMAD, GSD, SpecKit, and the RLEF loop are opinionated workflows. Archon lets you build any of them — or your own — as a reusable YAML workflow.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">✂️</div>
+          <div class="rule-text"><strong>They require changing how you work.</strong> Adopting BMAD means changing your SDLC to fit BMAD's opinions. Archon lets you encode <em>your existing process</em> and enforce it deterministically.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔁</div>
+          <div class="rule-text"><strong>Use them as inspiration, not replacement.</strong> Point Archon at the GSD or BMAD repo. Have it analyze the phases and translate them into an Archon workflow. You get the ideas without the lock-in.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🏢</div>
+          <div class="rule-text"><strong>Enterprise-friendly.</strong> If your team already has a defined SDLC, Archon wraps it rather than replacing it — making adoption far easier than asking a whole team to adopt BMAD.</div>
+        </div>
+      </div>
     </div>
 
   </div><!-- /concepts -->
@@ -758,6 +808,11 @@
       <p>From Claude Code in your project, say: <em>"Use archon to fix GitHub issues 5, 7, 8, 9, 10, and 11"</em> — Archon invokes the CLI 6 times simultaneously. Each run gets its own git worktree. Monitor all of them from the web UI or ask Claude for a status update. Use <code>/loop</code> to auto-check every N minutes.</p>
     </div>
 
+    <div class="callout green">
+      <div class="callout-label">💰 Token Efficiency — Real Numbers</div>
+      <p>Running 4 parallel fix-GitHub-issue workflows (each including investigation, implementation, validation, and PR creation) consumed roughly <em>20% of a 5-hour Claude limit</em>. The key lever: use Haiku for classification and routing nodes, Sonnet for implementation and review, and reserve Opus only for the most complex implementation nodes. A well-tuned harness on Sonnet can outperform unstructured Opus usage while costing significantly less.</p>
+    </div>
+
   </div><!-- /workflows -->
 
 
@@ -900,6 +955,37 @@
       <p>Rather than writing YAML by hand, use the meta-workflow: <em>"Use the workflow builder workflow to create a workflow that does X"</em>. Describe the repo or framework you want to model. Archon researches it, decomposes the steps, and writes the full YAML for you.</p>
     </div>
 
+    <div class="card">
+      <div class="card-title">Context Persistence Between Nodes</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🗂️</div>
+          <div class="rule-text"><strong>The artifact directory</strong> — each workflow execution has a dedicated artifact dir. Nodes can write markdown/JSON files here (e.g. a plan, a research summary) for downstream nodes to read.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔀</div>
+          <div class="rule-text"><strong>Session: continue</strong> — pass context by continuing the same Claude Code conversation. The agent retains full history from the prior node. Use for tightly coupled, sequential steps.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🆕</div>
+          <div class="rule-text"><strong>Session: new + artifact read</strong> — start a fresh context window (removes planning bias) but prompt the agent to read the artifact from the prior node. This is the recommended pattern for plan → implement transitions.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📋</div>
+          <div class="rule-text"><strong>Parallel node outputs</strong> — when multiple nodes run in parallel, each writes its output to a named artifact. A subsequent synthesis node reads all of them and combines into a single document before the workflow continues.</div>
+        </div>
+      </div>
+      <pre style="margin-top:12px"><span class="cm"># Plan node writes artifact</span>
+<span class="hd">- name:</span> <span class="str">plan</span>
+  <span class="kw">session:</span> <span class="str">new</span>
+  <span class="kw">output:</span> <span class="str">artifacts/plan.md</span>
+
+<span class="cm"># Implement node reads it in a fresh session (no bias)</span>
+<span class="hd">- name:</span> <span class="str">implement</span>
+  <span class="kw">session:</span> <span class="str">new</span>
+  <span class="kw">command:</span> <span class="str">archon-fix-issue</span>   <span class="cm"># prompt references {artifact_path}</span></pre>
+    </div>
+
   </div><!-- /custom -->
 
 
@@ -1030,12 +1116,166 @@
       </div>
     </div>
 
+    <div class="card">
+      <div class="card-title">Adding New Coding Agents</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🔌</div>
+          <div class="rule-text"><strong>Interface-first architecture.</strong> Every adapter and every coding agent implements a clean generic interface. Adding a new agent means following the existing Claude or Codex pattern — the codebase is designed so a coding agent can nearly one-shot it.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔑</div>
+          <div class="rule-text"><strong>SDK requirement.</strong> Archon calls agents programmatically via their SDK (not headless CLI mode). Supported today: Claude Agent SDK, Codex SDK. Planned: Pi agent SDK, OpenCode. Gemini CLI has no SDK yet — use Pi SDK with Gemini as a workaround.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">💡</div>
+          <div class="rule-text"><strong>GitHub Copilot</strong> does have a TypeScript SDK — a community PR adding support would likely one-shot given the existing patterns. Same for AMP.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🌐</div>
+          <div class="rule-text"><strong>Use any model through Claude Code.</strong> You can configure Claude Code to use Ollama, MiniMax, GLM, or other providers via its provider config. Archon inherits this — you're not locked to Anthropic's models even when using Claude Code as the agent.</div>
+        </div>
+      </div>
+    </div>
+
     <div class="callout blue">
       <div class="callout-label">🗺️ Documentation</div>
       <p>Full docs at <em>archon.diy</em>. Includes a 10-chapter narrative tutorial ("The Book of Archon"), CLI reference, workflow authoring guide, deployment (Docker/VPS), and architecture deep-dive. GitHub: <em>github.com/coleam00/Archon</em></p>
     </div>
 
   </div><!-- /arch -->
+
+  <!-- PATTERNS & GOTCHAS -->
+  <div class="section" id="tab-patterns">
+
+    <div class="hero">
+      <h2>Patterns &amp; Operational Gotchas</h2>
+      <p>Hard-won lessons from real Archon usage — workflow iteration, token management, the Dark Factory concept, and common traps to avoid.</p>
+    </div>
+
+    <div class="card red">
+      <div class="card-title red">Workflow First-Run Reality Check</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">First runs won't be perfect.</span> Even auto-generated workflows need iteration. Watch the human approval gates closely — if the workflow pauses without surfacing the artifact path or right context, that's a prompting gap to fix.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Approval gates should surface artifacts explicitly.</span> Add a line to your pause-step prompt: "Tell the user the exact file path of the artifact before asking for approval." Otherwise you're left asking for it manually.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Open questions may not be for you.</span> A planning node's "open questions" might be things the agent should research, not things for you to answer. In your prompts: "If questions require web research, answer them yourself. Only ask the human for strategic decisions."</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Inline prompts get unwieldy.</span> Auto-generated workflows put all prompts inline in YAML. For production use, extract long prompts to <code>.archon/commands/</code> markdown files — keeps the YAML readable and prompts independently editable.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">No model CLI flag yet.</span> You can't override the model at runtime without editing YAML. Workaround: ask your coding agent to update the YAML before running and revert it after.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Token Management Patterns</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">💰</div>
+          <div class="rule-text"><strong>Haiku for routing/classification, Sonnet for implementation/review.</strong> Reserve Opus for the single most complex implementation node if needed — and only that node.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📊</div>
+          <div class="rule-text"><strong>Real benchmark:</strong> 4 parallel full fix+validate workflows consumed ~20% of a 5-hour Anthropic limit. That's roughly 20 complete fix-issue cycles per 5h window with efficient model selection.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔄</div>
+          <div class="rule-text"><strong>Harness on Sonnet beats bare Opus.</strong> A well-structured workflow with Sonnet produces better PR acceptance rates than unstructured single-session Opus. Structure matters more than model tier.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🚫</div>
+          <div class="rule-text"><strong>No token budget cap per node yet</strong> — open issue. Workaround: if a node runs excessively long, ask your agent to check workflow logs and abandon/restart.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚡</div>
+          <div class="rule-text"><strong>Use <code>/loop</code> for self-healing parallel runs.</strong> "Every 10 minutes, check on the workflows and restart any that have failed." Keeps parallel runs healthy without manual babysitting.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Workflow Patterns That Work</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">📂</div>
+          <div class="rule-text"><strong>GitHub issues as task management.</strong> File everything — bugs, features, refactors — as GitHub issues. Git log + GitHub issues = the long-term memory your agents use to understand the codebase history and what's coming next.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🤝</div>
+          <div class="rule-text"><strong>Second brain + Archon = delegation at scale.</strong> Add the Archon skill to your second brain repo. Your second brain learns how you work over time and can autonomously decide which workflows to invoke for a given task.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">📐</div>
+          <div class="rule-text"><strong>Translate, don't replicate, other harnesses.</strong> Point Archon at the GSD or BMAD repo and say "take inspiration from this." You get the philosophy without the lock-in or the complexity tax.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔗</div>
+          <div class="rule-text"><strong>Ask questions before building.</strong> Prompt: "Ask me questions to make sure we're aligned on what this workflow does before you create it." Reduces assumptions and cuts iteration cycles significantly.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🛠️</div>
+          <div class="rule-text"><strong>Bring your existing skills, commands, and MCPs.</strong> Linear MCP, Confluence skill, Playwright validation scripts — all work as nodes. Archon doesn't replace your context engineering stack; it packages it.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">The Dark Factory Pattern</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">🏭</div>
+          <div class="rule-text"><strong>What it is:</strong> a codebase where AI handles 100% of writing, reviewing, and merging. Humans only provide issues. No human approval gates — PRs merge automatically. Originally a manufacturing concept (robots run factories with the lights off), now applied to AI-run codebases.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔁</div>
+          <div class="rule-text"><strong>Archon as the harness:</strong> define workflows for issue triage, implementation, validation, PR review, and release. Archon enforces the entire lifecycle deterministically — AI writes, AI reviews, AI merges.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🧪</div>
+          <div class="rule-text"><strong>Precedent:</strong> StrongDM built an internal dark factory pushing thousands of lines to production without human review. Stripe Minions is a partial version — humans still review final PRs before merging.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">⚠️</div>
+          <div class="rule-text"><span class="neg">Requires comprehensive automated testing.</span> Without human review, your test suite is the only reliability gate. Use browser automation (Playwright CLI) for end-to-end validation on every merge.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">💡</div>
+          <div class="rule-text"><strong>Smaller models become viable</strong> when the harness is strong enough. MiniMax M2.7, Gemma 4, and other cheaper models can drive a dark factory effectively — the workflow structure compensates for model capability gaps.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Workflow Resumption &amp; Interruption</div>
+      <div class="rule-list">
+        <div class="rule-row">
+          <div class="rule-icon">⏸️</div>
+          <div class="rule-text"><strong>No "pause all" button yet.</strong> Ask your coding agent to interrupt and stop specific workflows by workflow ID. Resume: <code>archon workflow resume &lt;id&gt;</code> or ask your agent to do it.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔁</div>
+          <div class="rule-text"><strong>Resume behavior:</strong> retries the last interrupted node from scratch, then continues from there. Agent retains workflow IDs in the same session — useful for batch restart after a rate limit pause.</div>
+        </div>
+        <div class="rule-row">
+          <div class="rule-icon">🔮</div>
+          <div class="rule-text"><strong>Subworkflow nesting</strong> (one workflow calling another) is planned but not yet supported. Chain workflows manually: ask your agent to run B after A completes, or combine them into a single larger workflow.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /patterns -->
 
 </main>
 

@@ -435,7 +435,7 @@ html[data-theme="dark"] .clear-btn.clear-all:hover{background:#2e1a1a}
   <div class="clear-bar" id="clear-bar">
     <div class="clear-bar-head">
       <span class="clear-bar-label">Auto-clear</span>
-      <span class="clear-bar-time" id="clear-countdown">30:00</span>
+      <span class="clear-bar-time" id="clear-countdown">10:00</span>
     </div>
     <div class="clear-bar-track" onclick="resetClearTimer()" title="Click to reset timer">
       <div class="clear-bar-fill" id="clear-fill" style="width:100%"></div>
@@ -4255,6 +4255,7 @@ window.copyPath=function(path,el){
 var LS_PIN='udm-pinned';
 var LS_HIST='udm-history';
 var LS_TRAY='udm-compare';
+var LS_DEADLINE='udm-clear-deadline'; // persisted timer deadline
 
 // ── PINNED FIELDS ──
 function loadPinned(){try{return JSON.parse(localStorage.getItem(LS_PIN)||'[]');}catch(e){return[];}}
@@ -4493,48 +4494,81 @@ renderTray();
 
 
 // ── AUTO-CLEAR TIMER ──
-var CLEAR_DURATION   = 10 * 60;  // 10 min active countdown
+var CLEAR_DURATION   = 10 * 60;  // 10 min active countdown in seconds
 var SLEEP_AFTER      = 30 * 60;  // sleep after 30 min keyboard inactivity (seconds)
-var _clearRemaining  = CLEAR_DURATION;
 var _clearInterval   = null;
-var _clearSleeping   = false;     // true = timer is paused waiting for keypress
+var _clearSleeping   = false;
 var _lastKeyTime     = Date.now();
 var _clearScopes     = {history: true, pinned: true, compare: true};
 
+// ── PERSISTENT DEADLINE ──
+// Instead of tracking seconds remaining in memory, we store the absolute
+// deadline timestamp in localStorage. This survives tab duplication,
+// refreshes, and multiple open tabs — all see the same countdown.
+var LS_DEADLINE = 'udm-clear-deadline';
+
+function getDeadline(){
+  try{ var d=localStorage.getItem(LS_DEADLINE); return d?parseInt(d,10):null; }catch(e){ return null; }
+}
+function setDeadline(ms){
+  try{ localStorage.setItem(LS_DEADLINE, String(ms)); }catch(e){}
+}
+function clearDeadline(){
+  try{ localStorage.removeItem(LS_DEADLINE); }catch(e){}
+}
+function getRemainingSeconds(){
+  var d=getDeadline();
+  if(!d) return CLEAR_DURATION;
+  var rem=Math.round((d - Date.now()) / 1000);
+  return Math.max(0, rem);
+}
+
 function startClearTimer(){
   if(_clearInterval) return;
+  // Set deadline on first start if not already set
+  if(!getDeadline()) setDeadline(Date.now() + CLEAR_DURATION * 1000);
   _clearInterval = setInterval(function(){
     var idleSecs = (Date.now() - _lastKeyTime) / 1000;
     if(idleSecs >= SLEEP_AFTER){
-      // Go to sleep — pause the countdown
+      // Sleeping — pause countdown by pushing deadline forward by 1s each tick
+      // so the deadline doesn't expire while we're genuinely idle
       if(!_clearSleeping){
         _clearSleeping = true;
         updateClearUI();
       }
+      // Extend deadline to keep it from firing while asleep
+      var d=getDeadline();
+      if(d) setDeadline(d + 1000);
       return;
     }
-    // Active — count down
     _clearSleeping = false;
-    _clearRemaining--;
+    var rem = getRemainingSeconds();
     updateClearUI();
-    if(_clearRemaining <= 0){
+    if(rem <= 0){
       runClearNow();
     }
   }, 1000);
 }
 
 function resetClearTimer(){
-  _clearRemaining = CLEAR_DURATION;
-  _clearSleeping  = false;
+  setDeadline(Date.now() + CLEAR_DURATION * 1000);
+  _clearSleeping = false;
   updateClearUI();
 }
 
 // Called on every keypress in the search box — wakes the timer and resets to 10:00
 function wakeTimer(){
-  _lastKeyTime   = Date.now();
+  _lastKeyTime = Date.now();
   if(_clearSleeping){
     // Was sleeping — wake with a fresh 10:00
     resetClearTimer();
+    return;
+  }
+  // Start the timer on first ever keystroke if not already running
+  if(!_clearInterval){
+    setDeadline(Date.now() + CLEAR_DURATION * 1000);
+    startClearTimer();
+    updateClearUI();
   }
 }
 window.wakeTimer = wakeTimer;
@@ -4554,7 +4588,7 @@ window.toggleClearScope = function(scope, btn){
 };
 
 function updateClearUI(){
-  var fill     = document.getElementById('clear-fill');
+  var fill      = document.getElementById('clear-fill');
   var countdown = document.getElementById('clear-countdown');
   if(!fill || !countdown) return;
   if(_clearSleeping){
@@ -4564,19 +4598,35 @@ function updateClearUI(){
     countdown.textContent = 'zz';
     return;
   }
-  var pct    = (_clearRemaining / CLEAR_DURATION) * 100;
-  var urgent = _clearRemaining <= 120;
+  var rem    = getRemainingSeconds();
+  var pct    = (rem / CLEAR_DURATION) * 100;
+  var urgent = rem <= 120;
   fill.style.width = pct + '%';
   fill.classList.toggle('urgent', urgent);
   countdown.classList.toggle('urgent', urgent);
-  var mins = Math.floor(_clearRemaining / 60);
-  var secs = _clearRemaining % 60;
+  var mins = Math.floor(rem / 60);
+  var secs = rem % 60;
   countdown.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
 }
 
 document.addEventListener('DOMContentLoaded', function(){
-  startClearTimer();
-  updateClearUI();
+  // Timer does NOT start automatically on load.
+  // It starts on the first keystroke in the search box (via wakeTimer).
+  // On load: if a persisted deadline exists from a previous/duplicated tab,
+  // resume from it immediately.
+  if(getDeadline() !== null){
+    var rem = getRemainingSeconds();
+    if(rem <= 0){
+      // Deadline already passed — clear and reset, but don't start yet
+      window.runClearNow();
+      clearDeadline();
+    } else {
+      // Resume from existing deadline
+      startClearTimer();
+      updateClearUI();
+    }
+  }
+  // No deadline = first time open, wait for first keypress
 });
 
 // ── THEME TOGGLE ──

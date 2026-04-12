@@ -613,6 +613,12 @@
     "children": [
       {
         "type": "file",
+        "name": "cosine_similarity.html",
+        "label": "Cosine Similarity",
+        "path": "neural-nets/cosine_similarity.html"
+      },
+      {
+        "type": "file",
         "name": "dot_product_cosine_full_journey.html",
         "label": "Dot Product Cosine Full Journey",
         "path": "neural-nets/dot_product_cosine_full_journey.html"

@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Systems Theory — Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --accent5:       #b07ef7;
+    --accent5-glow:  rgba(176,126,247,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --accent5:       #7c3aed;
+    --accent5-glow:  rgba(124,58,237,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ── HEADER ──────────────────────────────────────── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    letter-spacing: 0.05em;
+  }
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle {
+    width: 44px; height: 24px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    appearance: none;
+    outline: none;
+    transition: background 0.3s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  /* ── NAV ─────────────────────────────────────────── */
+  nav {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── MAIN ────────────────────────────────────────── */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+  .section.active > * { animation: fadeUp 0.25s ease both; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── CARDS ───────────────────────────────────────── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+  .card.purple { border-left: 3px solid var(--accent5); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+  .card-title.purple::before { background: var(--accent5); }
+
+  /* ── HERO ────────────────────────────────────────── */
+  .hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 720px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  /* ── GRID ────────────────────────────────────────── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* ── RULE ROWS ───────────────────────────────────── */
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg   { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos   { color: var(--accent3); font-weight: 600; }
+  .rule-text .pur   { color: var(--accent5); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  /* ── STEP ROWS ───────────────────────────────────── */
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .pro   { color: var(--accent3); font-size: 12px; display: block; margin-top: 4px; }
+
+  /* ── CODE BLOCKS ─────────────────────────────────── */
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent); }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .pu { color: var(--accent5); }
+
+  /* ── TABLES ──────────────────────────────────────── */
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .ref-table .col-desc { color: var(--text); font-size: 12px; }
+  .ref-table .col-note { color: var(--text-muted); font-size: 12px; }
+  .ref-table .col-arch { color: var(--accent4); font-size: 12px; font-style: italic; }
+
+  /* ── CALLOUTS ────────────────────────────────────── */
+  .callout {
+    background: var(--bg-code);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout.purple { border-left: 3px solid var(--accent5); }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout.purple .callout-label { color: var(--accent5); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+  .callout.purple p em { color: var(--accent5); }
+
+  /* ── DECISION COLUMNS ────────────────────────────── */
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item {
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  /* ── NODE TYPE PILLS ─────────────────────────────── */
+  .node-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+  .np {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    flex: 1;
+    min-width: 130px;
+    border: 1px solid;
+  }
+  .np-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .np-desc { font-size: 12px; line-height: 1.5; }
+
+  .np.state     { background: rgba(123,110,246,0.10); border-color: rgba(123,110,246,0.35); }
+  .np.state     .np-label { color: #a59dff; }
+  .np.trans     { background: rgba(52,199,138,0.10); border-color: rgba(52,199,138,0.35); }
+  .np.trans     .np-label { color: #34c78a; }
+  .np.input     { background: rgba(77,166,255,0.10); border-color: rgba(77,166,255,0.35); }
+  .np.input     .np-label { color: #4da6ff; }
+  .np.output    { background: rgba(255,122,92,0.10); border-color: rgba(255,122,92,0.35); }
+  .np.output    .np-label { color: #ff7a5c; }
+  .np.feedback  { background: rgba(240,98,146,0.10); border-color: rgba(240,98,146,0.35); }
+  .np.feedback  .np-label { color: #f06292; }
+  .np.boundary  { background: rgba(144,160,176,0.08); border-color: rgba(144,160,176,0.30); }
+  .np.boundary  .np-label { color: #90a0b0; }
+  .np.subsystem { background: rgba(86,201,109,0.10); border-color: rgba(86,201,109,0.35); }
+  .np.subsystem .np-label { color: #56c96d; }
+
+  /* ── LEVERAGE BARS ───────────────────────────────── */
+  .lev-list { display: flex; flex-direction: column; gap: 8px; }
+  .lev-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 180px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s;
+  }
+  .lev-row:hover { border-color: var(--border-accent); }
+  .lev-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+  .lev-body { font-size: 13px; }
+  .lev-name { font-weight: 600; color: var(--text); }
+  .lev-detail { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .lev-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .lev-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .lev-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .lev-power {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    width: 32px;
+    text-align: right;
+  }
+  .lev-row.high .lev-name  { color: var(--accent3); }
+  .lev-row.high .lev-bar-fill { background: var(--accent3); }
+  .lev-row.mid  .lev-bar-fill { background: var(--accent4); }
+  .lev-row.low  .lev-bar-fill { background: var(--accent2); }
+
+  /* ── ARCHETYPE CARDS ─────────────────────────────── */
+  .arch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 700px) { .arch-grid { grid-template-columns: 1fr; } }
+  .arch-card {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+  .arch-card:hover { border-color: var(--border-accent); }
+  .arch-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent4);
+    margin-bottom: 5px;
+  }
+  .arch-alt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+  .arch-desc { font-size: 12px; color: var(--text); line-height: 1.5; margin-bottom: 8px; }
+  .arch-loops { display: flex; gap: 6px; flex-wrap: wrap; }
+  .loop-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.03em;
+  }
+  .loop-r { background: rgba(224,95,122,0.15); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+  .loop-b { background: rgba(79,142,247,0.12); color: var(--accent);  border: 1px solid rgba(79,142,247,0.2); }
+  .loop-d { background: rgba(247,162,62,0.12); color: var(--accent4); border: 1px solid rgba(247,162,62,0.2); }
+  .arch-fix { font-size: 12px; color: var(--accent3); margin-top: 8px; line-height: 1.5; }
+  .arch-fix::before { content: '↳ '; }
+
+  /* ── STAT PILLS ──────────────────────────────────── */
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 100px;
+  }
+  .stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: var(--accent2); }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+
+  /* ── HIERARCHY TABLE ─────────────────────────────── */
+  .hierarchy { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .hier-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 180px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .hier-row:last-child { border-bottom: none; }
+  .hier-row:hover { background: var(--accent-glow); }
+  .hier-row.header { background: var(--bg-code); font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); cursor: default; }
+  .hier-num  { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); text-align: center; }
+  .hier-name { font-size: 13px; color: var(--text); }
+  .hier-name strong { color: var(--accent4); }
+  .priority-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+  }
+  .p-high { background: rgba(62,207,142,0.15); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .p-mid  { background: rgba(247,162,62,0.12); color: var(--accent4); border: 1px solid rgba(247,162,62,0.2); }
+  .p-low  { background: rgba(224,95,122,0.15); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+
+  /* ── TIMELINE ────────────────────────────────────── */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .tl-item {
+    display: grid;
+    grid-template-columns: 80px 1px 1fr;
+    gap: 0 16px;
+    padding-bottom: 16px;
+  }
+  .tl-item:last-child { padding-bottom: 0; }
+  .tl-year {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    text-align: right;
+    padding-top: 2px;
+  }
+  .tl-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .tl-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .tl-connector {
+    flex: 1;
+    width: 1px;
+    background: var(--border);
+    min-height: 16px;
+  }
+  .tl-item:last-child .tl-connector { display: none; }
+  .tl-body { padding-top: 2px; }
+  .tl-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .tl-desc  { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── SCROLLBAR ───────────────────────────────────── */
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════════ -->
+<header>
+  <div class="header-left">
+    <div class="logo">SYSTEMS THEORY<span> — Reference</span></div>
+    <div class="badge">RULE BUILDER COMPANION</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════
+     NAV
+══════════════════════════════════════════════════ -->
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="nodes">Node Types</button>
+  <button data-tab="feedback">Feedback Loops</button>
+  <button data-tab="archetypes">Archetypes</button>
+  <button data-tab="leverage">Leverage Points</button>
+  <button data-tab="fsm">State Machines</button>
+  <button data-tab="history">History</button>
+  <button data-tab="glossary">Glossary</button>
+</nav>
+
+<main>
+
+  <!-- ══════════════════════════════════════════════
+       OVERVIEW
+  ══════════════════════════════════════════════ -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>What is Systems Theory?</h2>
+      <p>An interdisciplinary framework for understanding how <strong>interconnected components</strong> produce behavior that no single part could generate alone. Every rule graph you build in the Rule Builder is a formalization of systems theory concepts — states, transitions, inputs, outputs, feedback, and boundaries are the grammar of every system.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Core Insight</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🌐</div>
+            <div class="rule-text"><strong>Wholeness</strong> — a system's behavior emerges from <em>structure</em>, not from the properties of individual parts in isolation.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔄</div>
+            <div class="rule-text"><strong>Feedback</strong> — outputs loop back as inputs, meaning systems often cause their own behavior. The Slinky bounces because of the Slinky, not the hand.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📦</div>
+            <div class="rule-text"><strong>Stocks &amp; Flows</strong> — all systems accumulate things (stocks) and change them over time (flows). Everything else is information connecting them.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🏔️</div>
+            <div class="rule-text"><strong>Hierarchy</strong> — systems nest inside systems. A subsystem has its own goals and feedback loops that may conflict with the larger system.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⏰</div>
+            <div class="rule-text"><strong>Delays</strong> — information and physical flows take time. Delays cause oscillation, overshoot, and the perception that actions have no effect.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title yellow">Three Pillars of System Behavior</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">💪</div>
+            <div class="rule-text"><strong>Resilience</strong> — the ability to survive and recover from perturbations. Built through multiple redundant feedback loops.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✨</div>
+            <div class="rule-text"><strong>Self-organization</strong> — the capacity to evolve new structures without external direction. Appears as biological evolution, market emergence, cultural change.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📊</div>
+            <div class="rule-text"><strong>Hierarchy</strong> — larger systems are composed of subsystems that serve the larger system while maintaining their own integrity and goals.</div>
+          </div>
+        </div>
+
+        <div class="card-title yellow" style="margin-top:16px">Open vs. Closed Systems</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔓</div>
+            <div class="rule-text"><span class="pos">Open system</span> — exchanges matter and energy with environment. All living systems are open. Defined by Bertalanffy (1950).</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔒</div>
+            <div class="rule-text"><span class="neg">Closed system</span> — no exchange with environment. Tends toward equilibrium and maximum entropy. Idealized/theoretical.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card green">
+        <div class="card-title green">Key Founders</div>
+        <div class="rule-list" style="gap:7px">
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">🧬</div>
+            <div class="rule-text" style="font-size:12px"><strong>Ludwig von Bertalanffy</strong> — General Systems Theory (GST), 1950. Biological roots, open systems, holism.</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">🤖</div>
+            <div class="rule-text" style="font-size:12px"><strong>Norbert Wiener</strong> — Cybernetics, 1948. Feedback, control, communication in machines and organisms.</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">📐</div>
+            <div class="rule-text" style="font-size:12px"><strong>W. Ross Ashby</strong> — Law of Requisite Variety, 1956. System control requires matching internal complexity to environment.</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">🌱</div>
+            <div class="rule-text" style="font-size:12px"><strong>Donella Meadows</strong> — Thinking in Systems, stocks/flows, leverage points, archetypes.</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">🏭</div>
+            <div class="rule-text" style="font-size:12px"><strong>Jay Forrester</strong> — System Dynamics (MIT, 1950s). Mathematical simulation of feedback systems.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">Why Systems Fail</div>
+        <div class="rule-list" style="gap:7px">
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text" style="font-size:12px"><span class="neg">Wrong goal:</span> the system optimizes for the measured variable, not the actual objective.</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text" style="font-size:12px"><span class="neg">Missing feedback:</span> actors don't receive signals about their impact on the system.</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text" style="font-size:12px"><span class="neg">Delay mismatch:</span> response loops are too slow or too fast relative to the disturbance.</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text" style="font-size:12px"><span class="neg">Bounded rationality:</span> each actor optimizes their local goal, producing globally undesired behavior.</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text" style="font-size:12px"><span class="neg">Policy resistance:</span> every actor pushes toward their goal; together they lock the system where nobody wants it.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card purple">
+        <div class="card-title purple">Rule Builder Connection</div>
+        <div class="rule-list" style="gap:7px">
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">🔵</div>
+            <div class="rule-text" style="font-size:12px"><span class="pur">STATE</span> nodes represent stocks — accumulations of matter, energy, or information.</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">🟢</div>
+            <div class="rule-text" style="font-size:12px"><span class="pur">TRANSITION</span> nodes are flows — the rules governing rates of change between states.</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">🟠</div>
+            <div class="rule-text" style="font-size:12px"><span class="pur">FEEDBACK</span> nodes are explicit loop paths — identify them as balancing (−) or reinforcing (+).</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">⚪</div>
+            <div class="rule-text" style="font-size:12px"><span class="pur">BOUNDARY</span> separates the system from its environment — defines what is endogenous vs. exogenous.</div>
+          </div>
+          <div class="rule-row" style="padding:8px 12px">
+            <div class="rule-icon">🟣</div>
+            <div class="rule-text" style="font-size:12px"><span class="pur">SUBSYSTEM</span> is a nested system with its own dynamics — hierarchical encapsulation.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 The Central Insight</div>
+      <p><em>System behavior is generated by system structure.</em> Change the people, and the structure will shape new people to produce the same behavior. Change the structure — the feedback loops, goals, delays, and rules — and behavior changes permanently.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ══════════════════════════════════════════════
+       NODE TYPES
+  ══════════════════════════════════════════════ -->
+  <div class="section" id="tab-nodes">
+
+    <div class="hero">
+      <h2>Node Types — Systems Vocabulary</h2>
+      <p>The 7 node types in the Rule Builder map directly to core systems theory primitives. Understanding the theoretical meaning of each type improves the quality of your rule graphs.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">All 7 Node Types</div>
+      <div class="node-pills">
+        <div class="np state">
+          <div class="np-label">STATE</div>
+          <div class="np-desc">A stable condition the system occupies. Corresponds to a <strong>stock</strong> in systems dynamics — a measurable quantity at a point in time (water level, population, job queue depth). Stocks change slowly and act as buffers.</div>
+        </div>
+        <div class="np trans">
+          <div class="np-label">TRANSITION</div>
+          <div class="np-desc">A rule that governs how the system moves from one state to another. Corresponds to a <strong>flow</strong> — a rate of change. Defined by a guard condition (<code>when:</code>) and an action (<code>then:</code>).</div>
+        </div>
+        <div class="np input">
+          <div class="np-label">INPUT</div>
+          <div class="np-desc">Exogenous signals that drive the system from outside the boundary. Pure inputs are not affected by the system's own outputs. Examples: user requests, sensor readings, external events.</div>
+        </div>
+        <div class="np output">
+          <div class="np-label">OUTPUT</div>
+          <div class="np-desc">Observable results the system produces. When outputs feed back in as inputs, a feedback loop is formed. Distinguish: outputs that leave the system vs. outputs that become inputs.</div>
+        </div>
+        <div class="np feedback">
+          <div class="np-label">FEEDBACK</div>
+          <div class="np-desc">A causal loop from output back to a stock or flow. Must be labeled with polarity: <strong>negative/balancing</strong> (stabilizing, goal-seeking) or <strong>positive/reinforcing</strong> (self-amplifying, exponential).</div>
+        </div>
+        <div class="np boundary">
+          <div class="np-label">BOUNDARY</div>
+          <div class="np-desc">Defines what is inside vs. outside the system. Boundaries are analytical choices — drawn based on the purpose of the model. The same real-world entity belongs to multiple overlapping systems depending on the question being asked.</div>
+        </div>
+        <div class="np subsystem">
+          <div class="np-label">SUBSYSTEM</div>
+          <div class="np-desc">A nested system with its own states, transitions, and feedback loops. Subsystems have their own goals that may partially conflict with the parent system's goal — the source of policy resistance and unexpected behavior.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Stock vs. Flow (State vs. Transition)</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📦</div>
+            <div class="rule-text"><strong>Stocks (States)</strong> are the memory of a system. They take time to change because flows take time to flow. This is why you can't instantly solve a housing shortage by building houses — the stock of houses changes slowly.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💧</div>
+            <div class="rule-text"><strong>Flows (Transitions)</strong> are the rates of change. A flow can change instantly, but the stock it fills only changes gradually. In your rule graph, transition guards are the policy decisions controlling flows.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧲</div>
+            <div class="rule-text"><strong>Inflows vs. outflows:</strong> every stock has both. A job queue STATE grows via <code>job_received</code> transition (inflow) and shrinks via <code>job_processed</code> transition (outflow).</div>
+          </div>
+        </div>
+        <pre><span class="cm"># Example: Job Queue System</span>
+<span class="hd">STATE</span>  <span class="kw">idle</span>         <span class="cm"># stock = 0 jobs</span>
+<span class="hd">STATE</span>  <span class="kw">processing</span>   <span class="cm"># stock = N jobs in flight</span>
+<span class="hd">TRANS</span>  <span class="fn">receive</span>      <span class="cm"># inflow: idle → processing</span>
+<span class="hd">TRANS</span>  <span class="fn">complete</span>     <span class="cm"># outflow: processing → idle</span>
+<span class="hd">FEED</span>   <span class="li">error_retry</span>  <span class="cm"># polarity: negative</span></pre>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">Feedback Polarity — How to Identify</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">➖</div>
+            <div class="rule-text"><span class="pos">Negative / Balancing (B):</span> the feedback opposes change. "The more the system deviates from goal, the stronger the correction." Thermostats, immune responses, error retry with backoff. Stable, goal-seeking.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">➕</div>
+            <div class="rule-text"><span class="neg">Positive / Reinforcing (R):</span> the feedback amplifies change. "The more X, the more X." Compound interest, viral growth, network effects. Leads to exponential growth <em>or</em> exponential collapse.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔍</div>
+            <div class="rule-text"><strong>Quick test:</strong> trace the loop and count sign changes. If the total sign of the loop is negative → balancing. If positive → reinforcing.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Caution:</span> real systems have multiple loops. Behavior is determined by whichever loop <em>dominates</em> at a given time. Loops can switch dominance as variables hit thresholds.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Guard Conditions &amp; Actions — Systems Theory Meaning</div>
+      <div class="grid-2">
+        <div>
+          <div class="rule-list">
+            <div class="rule-row">
+              <div class="rule-icon">🛡️</div>
+              <div class="rule-text"><strong>Guard condition (<code>when:</code>)</strong> — the information signal that enables a transition. In systems terms, this is a threshold or sensor value that triggers a flow. It represents the <em>discrepancy</em> between current state and goal state.</div>
+            </div>
+            <div class="rule-row">
+              <div class="rule-icon">⚡</div>
+              <div class="rule-text"><strong>Action (<code>then:</code>)</strong> — the corrective flow initiated when the guard fires. This is the system's response to the gap. The delay between guard detection and action completion is a critical systems parameter.</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <pre><span class="cm"># Guard + Action = Gap-closing mechanism</span>
+<span class="kw">TRANSITION</span>  <span class="fn">throttle_requests</span>
+  <span class="hd">when:</span>  <span class="li">queue.depth > 100</span>
+  <span class="hd">then:</span>  <span class="fn">rateLimit.apply(0.5x)</span>
+
+<span class="cm"># Polarity of the FEEDBACK node</span>
+<span class="cm"># connecting output → this transition:</span>
+<span class="kw">FEEDBACK</span>  <span class="li">load_balancer</span>
+  <span class="hd">polarity:</span> <span class="fn">negative</span>  <span class="cm"># balancing</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠️ Common Mistake</div>
+      <p>Marking all FEEDBACK nodes as "negative" by default. A retry loop that increases load on a failing service is a <em>positive</em> (reinforcing) feedback loop — it amplifies the failure. Always trace the causal chain to determine true polarity.</p>
+    </div>
+
+  </div><!-- /nodes -->
+
+
+  <!-- ══════════════════════════════════════════════
+       FEEDBACK LOOPS
+  ══════════════════════════════════════════════ -->
+  <div class="section" id="tab-feedback">
+
+    <div class="hero">
+      <h2>Feedback Loops</h2>
+      <p>The <strong>engine of all system behavior</strong>. Every surprising, self-correcting, or runaway behavior in a system can be traced to feedback loop structure. The Rule Builder's FEEDBACK nodes and connection arrows are your causal loop diagram.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card green">
+        <div class="card-title green">Balancing Loops (Negative Feedback)</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text"><strong>Also called:</strong> B loops, regulatory loops, negative feedback, goal-seeking loops.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚖️</div>
+            <div class="rule-text"><strong>Mechanism:</strong> detects a gap between current state and goal, then initiates corrective flow to close the gap.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🌡️</div>
+            <div class="rule-text"><strong>Behavior:</strong> equilibrium-seeking. With no delays → smooth convergence. With delays → oscillation around goal.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📌</div>
+            <div class="rule-text"><strong>Examples:</strong> thermostat, immune system, price signals in markets, error-correction in retry logic, PID controllers.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><strong>Can fail if:</strong> goal is set incorrectly (measuring wrong metric), feedback is too slow, or corrective flow is too weak.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">Reinforcing Loops (Positive Feedback)</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🚀</div>
+            <div class="rule-text"><strong>Also called:</strong> R loops, virtuous/vicious circles, positive feedback, self-amplifying loops.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📈</div>
+            <div class="rule-text"><strong>Mechanism:</strong> a change in one variable is fed back to amplify that same change. The more you have, the more you get.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💥</div>
+            <div class="rule-text"><strong>Behavior:</strong> exponential growth or collapse. No natural endpoint — always constrained eventually by a balancing loop or resource limit.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📌</div>
+            <div class="rule-text"><strong>Examples:</strong> compound interest, viral spread, network effects, cascade failures, bank runs, arms races.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🛑</div>
+            <div class="rule-text"><strong>To control:</strong> Meadows recommends slowing a reinforcing loop rather than speeding up a balancing loop — less risk of overshoot.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Combined Loop Behaviors</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Loop Structure</th>
+            <th>Behavior Pattern</th>
+            <th>Example</th>
+            <th>Archetype</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Single B loop</td>
+            <td class="col-desc">Convergence toward goal</td>
+            <td class="col-note">Thermostat, backpressure</td>
+            <td class="col-arch">—</td>
+          </tr>
+          <tr>
+            <td>Single B loop + delay</td>
+            <td class="col-desc">Oscillation around goal</td>
+            <td class="col-note">Inventory overshoot, shower temp</td>
+            <td class="col-arch">Balancing with delay</td>
+          </tr>
+          <tr>
+            <td>Single R loop</td>
+            <td class="col-desc">Exponential growth or collapse</td>
+            <td class="col-note">Compound interest, viral spread</td>
+            <td class="col-arch">—</td>
+          </tr>
+          <tr>
+            <td>R loop + B loop (B dominates)</td>
+            <td class="col-desc">S-curve growth to limit</td>
+            <td class="col-note">Population with resources</td>
+            <td class="col-arch">Limits to Growth</td>
+          </tr>
+          <tr>
+            <td>R loop + B loop (R dominates)</td>
+            <td class="col-desc">Overshoot and collapse</td>
+            <td class="col-note">Overfishing, bubble markets</td>
+            <td class="col-arch">Tragedy of Commons</td>
+          </tr>
+          <tr>
+            <td>Two B loops competing</td>
+            <td class="col-desc">Oscillation; symptomatic fixes</td>
+            <td class="col-note">Drug addiction, debt cycle</td>
+            <td class="col-arch">Shifting the Burden</td>
+          </tr>
+          <tr>
+            <td>Two R loops competing</td>
+            <td class="col-desc">Winner-take-all dynamic</td>
+            <td class="col-note">Market monopolies, arms races</td>
+            <td class="col-arch">Success to Successful</td>
+          </tr>
+          <tr>
+            <td>B loop + eroding goal</td>
+            <td class="col-desc">Gradual decline, boiled frog</td>
+            <td class="col-note">Performance metrics drift</td>
+            <td class="col-arch">Drifting Goals</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Delays — The Hidden Driver of Pathological Behavior</div>
+      <div class="grid-2">
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⏳</div>
+            <div class="rule-text"><strong>Information delays:</strong> the time between a change in a stock and when that change is perceived by decision-makers. Causes under/overreaction.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔧</div>
+            <div class="rule-text"><strong>Physical delays:</strong> the time to actually change a stock once the decision is made. A factory takes years to build.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🌊</div>
+            <div class="rule-text"><strong>Overshoot:</strong> when the corrective flow continues past the goal because the feedback arrives late. Larger delay → larger overshoot.</div>
+          </div>
+        </div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📉</div>
+            <div class="rule-text"><strong>Oscillation:</strong> the system repeatedly overshoots and undershoots the goal. A B loop with long delay will oscillate rather than converge.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💡</div>
+            <div class="rule-text"><strong>Rule Builder tip:</strong> when a FEEDBACK node has a long delay, mark it in the description. This is Leverage Point #9 — "the length of delays relative to the rate of change in the stocks."</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Healthy Feedback Design</div>
+        <div class="decision-item"><span class="di">✅</span>Feedback reaches decision-makers quickly and accurately.</div>
+        <div class="decision-item"><span class="di">✅</span>Goal state is the actual desired outcome, not a proxy metric.</div>
+        <div class="decision-item"><span class="di">✅</span>Corrective flow is proportional to the discrepancy.</div>
+        <div class="decision-item"><span class="di">✅</span>Reinforcing loops are identified and monitored for runaway.</div>
+        <div class="decision-item"><span class="di">✅</span>Delays are accounted for; forecasting compensates for them.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Feedback Failure Modes</div>
+        <div class="decision-item"><span class="di">❌</span>Feedback is delayed so long that actors perceive no response to actions.</div>
+        <div class="decision-item"><span class="di">❌</span>The metric being optimized diverges from the actual goal (Goodhart's Law).</div>
+        <div class="decision-item"><span class="di">❌</span>Feedback is given to the wrong actor (the polluter doesn't pay).</div>
+        <div class="decision-item"><span class="di">❌</span>Positive loops go unchecked until collapse — no balancing loop in place.</div>
+        <div class="decision-item"><span class="di">❌</span>Feedback signal is noisy or distorted beyond recognition.</div>
+      </div>
+    </div>
+
+  </div><!-- /feedback -->
+
+
+  <!-- ══════════════════════════════════════════════
+       ARCHETYPES
+  ══════════════════════════════════════════════ -->
+  <div class="section" id="tab-archetypes">
+
+    <div class="hero">
+      <h2>System Archetypes</h2>
+      <p>Recurring structural patterns that generate characteristic behaviors across all domains — organizations, ecosystems, software, societies. Identified by Forrester, Meadows, and Senge (The Fifth Discipline, 1990). Each archetype has a <strong>structural cause</strong>, a <strong>dynamic signature</strong>, and a <strong>leverage intervention</strong>.</p>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">📖 How to Use Archetypes</div>
+      <p>When building a rule graph, ask: <em>"Which archetype does this resemble?"</em> The archetype tells you which feedback loops will dominate, what behavior to expect over time, and where the highest-leverage intervention point is. Archetypes are diagnostics, not predictions.</p>
+    </div>
+
+    <div class="arch-grid">
+
+      <div class="arch-card">
+        <div class="arch-name">Fixes That Fail</div>
+        <div class="arch-alt">aka "The Squeaky Wheel"</div>
+        <div class="arch-desc">A quick fix solves a problem symptom but creates an unintended consequence that makes the original problem worse over time. The "fix" gets re-applied in an ever-worsening cycle.</div>
+        <div class="arch-loops">
+          <span class="loop-tag loop-b">B: quick fix</span>
+          <span class="loop-tag loop-r">R: unintended consequence</span>
+          <span class="loop-tag loop-d">delay</span>
+        </div>
+        <div class="arch-fix">Find the root cause and apply a fundamental solution. Avoid the symptomatic fix, or if unavoidable, cap its use.</div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-name">Shifting the Burden</div>
+        <div class="arch-alt">aka "Addiction" / "Helen Keller Loops"</div>
+        <div class="arch-desc">A symptomatic solution diverts attention from the fundamental solution. Over time, the fundamental solution capacity atrophies and dependency on the symptom fix deepens. A "Shifting the Burden to the Intervenor" variant creates external dependency.</div>
+        <div class="arch-loops">
+          <span class="loop-tag loop-b">B1: symptomatic fix</span>
+          <span class="loop-tag loop-b">B2: fundamental fix (weak)</span>
+          <span class="loop-tag loop-r">R: side-effect erodes B2</span>
+        </div>
+        <div class="arch-fix">Strengthen the fundamental solution loop. Explicitly weaken or phase out the symptomatic solution.</div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-name">Limits to Growth (Success)</div>
+        <div class="arch-alt">aka "S-curve" / "Reinforce then Constrain"</div>
+        <div class="arch-desc">A reinforcing growth process runs into a balancing constraint that slows or stops growth. The harder you push the growth loop, the stronger the constraining loop responds. Pushing growth harder is the wrong intervention.</div>
+        <div class="arch-loops">
+          <span class="loop-tag loop-r">R: growth engine</span>
+          <span class="loop-tag loop-b">B: limiting condition</span>
+        </div>
+        <div class="arch-fix">Identify and address the limiting factor before the constraint kicks in. Don't push harder on the growth loop.</div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-name">Drifting Goals</div>
+        <div class="arch-alt">aka "Eroding Goals" / "The Boiled Frog"</div>
+        <div class="arch-desc">When closing a gap between goal and performance is difficult, the goal itself is lowered instead. Each lowering makes the next lowering easier. Standards drift down over time, often imperceptibly.</div>
+        <div class="arch-loops">
+          <span class="loop-tag loop-b">B1: corrective action (hard)</span>
+          <span class="loop-tag loop-b">B2: goal erosion (easy)</span>
+        </div>
+        <div class="arch-fix">Hold the original goal or set an absolute minimum. Make goal erosion visible. Report actual vs. original benchmark.</div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-name">Escalation</div>
+        <div class="arch-alt">aka "Arms Race" / "One-upping"</div>
+        <div class="arch-desc">Two parties perceive each other as threatening. Each responds with defensive or offensive action, which the other interprets as escalation requiring a stronger response. Neither party can win; both lose.</div>
+        <div class="arch-loops">
+          <span class="loop-tag loop-r">R: mutual escalation loop</span>
+        </div>
+        <div class="arch-fix">One party must unilaterally stop or de-escalate. Agree on a non-competitive variable. Identify a higher shared goal.</div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-name">Success to the Successful</div>
+        <div class="arch-alt">aka "Competitive Exclusion" / "Matthew Effect"</div>
+        <div class="arch-desc">Two activities or agents compete for the same finite resource. The more successful one receives a disproportionate allocation, making it even more successful. Creates winner-take-all monopolies.</div>
+        <div class="arch-loops">
+          <span class="loop-tag loop-r">R1: winner's reinforcing loop</span>
+          <span class="loop-tag loop-r">R2: loser's decay loop</span>
+        </div>
+        <div class="arch-fix">Diversify resource allocation. Decouple the activities. Set rules limiting winner advantage. Introduce randomness.</div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-name">Tragedy of the Commons</div>
+        <div class="arch-alt">aka "Common Resource Depletion"</div>
+        <div class="arch-desc">Multiple actors each extract maximum benefit from a shared resource, acting rationally from their own perspective. The resource is depleted because no actor accounts for their impact on the whole. A collective action problem.</div>
+        <div class="arch-loops">
+          <span class="loop-tag loop-r">R: individual extraction loop</span>
+          <span class="loop-tag loop-b">B: resource depletion (slow)</span>
+          <span class="loop-tag loop-d">delay between extraction and collapse</span>
+        </div>
+        <div class="arch-fix">Regulate access to the commons. Privatize or communalize with agreed rules. Make individual impact on commons visible to each actor.</div>
+      </div>
+
+      <div class="arch-card">
+        <div class="arch-name">Growth and Underinvestment</div>
+        <div class="arch-alt">aka "Playing With a Wooden Racket"</div>
+        <div class="arch-desc">Growth approaches a limit that could be avoided with investment in capacity. The decision is made not to invest (performance dip is seen as market contraction, not capacity gap), demand falls, validating the non-investment. A self-fulfilling constraint.</div>
+        <div class="arch-loops">
+          <span class="loop-tag loop-r">R: growth</span>
+          <span class="loop-tag loop-b">B: capacity limit</span>
+          <span class="loop-tag loop-b">B: demand erosion (from poor performance)</span>
+        </div>
+        <div class="arch-fix">Invest in capacity before performance degrades. Set explicit performance standards that trigger mandatory investment.</div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">Archetype → Rule Graph Mapping</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Archetype</th>
+            <th>Key Nodes to Model</th>
+            <th>Critical Connections</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Fixes That Fail</td>
+            <td class="col-desc">Problem STATE → Fix TRANSITION → Symptom FEEDBACK → Consequence FEEDBACK</td>
+            <td class="col-note">Mark consequence FEEDBACK as positive/reinforcing with delay</td>
+          </tr>
+          <tr>
+            <td>Shifting the Burden</td>
+            <td class="col-desc">Fundamental TRANSITION, Symptomatic TRANSITION, Side-Effect FEEDBACK</td>
+            <td class="col-note">Show side-effect weakening fundamental solution capacity</td>
+          </tr>
+          <tr>
+            <td>Limits to Growth</td>
+            <td class="col-desc">Growth TRANSITION + Constraint BOUNDARY or SUBSYSTEM</td>
+            <td class="col-note">Model both the R loop and the B limiting loop explicitly</td>
+          </tr>
+          <tr>
+            <td>Escalation</td>
+            <td class="col-desc">Two SUBSYSTEM nodes with mirroring R FEEDBACK loops</td>
+            <td class="col-note">Both feedback loops reinforce; no natural stopping state</td>
+          </tr>
+          <tr>
+            <td>Tragedy of Commons</td>
+            <td class="col-desc">Shared resource STATE, multiple SUBSYSTEM nodes</td>
+            <td class="col-note">Each subsystem connects to shared resource with no feedback about impact</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /archetypes -->
+
+
+  <!-- ══════════════════════════════════════════════
+       LEVERAGE POINTS
+  ══════════════════════════════════════════════ -->
+  <div class="section" id="tab-leverage">
+
+    <div class="hero">
+      <h2>Leverage Points</h2>
+      <p>Donella Meadows' 12 places to intervene in a system, ranked from <strong>least effective</strong> (12) to <strong>most effective</strong> (1). The counterintuitive truth: the most powerful leverage points are the hardest to change, and most people push them in the wrong direction.</p>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Key Insight from Meadows</div>
+      <p>"People know intuitively where leverage points are. Time after time I've analyzed a company and found a leverage point — then gone there and discovered everyone is already pushing it <em>in the wrong direction.</em>" — Jay Forrester (paraphrased by Meadows)</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">12 Leverage Points — Increasing Order of Effectiveness</div>
+      <div class="lev-list">
+
+        <div class="lev-row low">
+          <div class="lev-num">12</div>
+          <div class="lev-body">
+            <div class="lev-name">Constants, Parameters, Numbers</div>
+            <div class="lev-detail">Subsidies, taxes, standards, rates. Most popular intervention; rarely changes system behavior. Congress fights endlessly over these.</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:8%"></div></div>
+            <div class="lev-power">Low</div>
+          </div>
+        </div>
+
+        <div class="lev-row low">
+          <div class="lev-num">11</div>
+          <div class="lev-body">
+            <div class="lev-name">Sizes of Buffers (Stabilizing Stocks)</div>
+            <div class="lev-detail">Big buffers stabilize; small buffers make systems volatile. Often physically locked in and expensive to change (e.g. reservoir size).</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:16%"></div></div>
+            <div class="lev-power">Low</div>
+          </div>
+        </div>
+
+        <div class="lev-row low">
+          <div class="lev-num">10</div>
+          <div class="lev-body">
+            <div class="lev-name">Structure of Material Stock &amp; Flows</div>
+            <div class="lev-detail">Physical infrastructure: transport networks, age structures. Enormous effect but very hard and expensive to change.</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:24%"></div></div>
+            <div class="lev-power">Low</div>
+          </div>
+        </div>
+
+        <div class="lev-row mid">
+          <div class="lev-num">9</div>
+          <div class="lev-body">
+            <div class="lev-name">Length of Delays</div>
+            <div class="lev-detail">Delays determine reaction speed, accuracy, and oscillation. A slow feedback loop that should be fast is a major source of dysfunction. Changing delay lengths is often feasible and highly impactful.</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:34%"></div></div>
+            <div class="lev-power">Mid</div>
+          </div>
+        </div>
+
+        <div class="lev-row mid">
+          <div class="lev-num">8</div>
+          <div class="lev-body">
+            <div class="lev-name">Strength of Negative Feedback Loops</div>
+            <div class="lev-detail">How fast and accurately a balancing loop corrects deviations. Includes accuracy of information, speed of correction, and size of corrective flows.</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:44%"></div></div>
+            <div class="lev-power">Mid</div>
+          </div>
+        </div>
+
+        <div class="lev-row mid">
+          <div class="lev-num">7</div>
+          <div class="lev-body">
+            <div class="lev-name">Gain Around Positive Feedback Loops</div>
+            <div class="lev-detail">How fast a reinforcing loop self-amplifies. Slowing a runaway R loop is usually better than speeding up a B loop — lower risk of overshoot.</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:52%"></div></div>
+            <div class="lev-power">Mid</div>
+          </div>
+        </div>
+
+        <div class="lev-row mid">
+          <div class="lev-num">6</div>
+          <div class="lev-body">
+            <div class="lev-name">Structure of Information Flows</div>
+            <div class="lev-detail">Who has access to what information. Missing feedback is the most common cause of system malfunction. Adding or restoring information flows is often cheaper than rebuilding physical structure.</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:60%"></div></div>
+            <div class="lev-power">Mid</div>
+          </div>
+        </div>
+
+        <div class="lev-row high">
+          <div class="lev-num">5</div>
+          <div class="lev-body">
+            <div class="lev-name">Rules of the System</div>
+            <div class="lev-detail">Incentives, constraints, regulations. Pay close attention to rules and who makes them. Rules define what the system can and cannot do.</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:68%"></div></div>
+            <div class="lev-power">High</div>
+          </div>
+        </div>
+
+        <div class="lev-row high">
+          <div class="lev-num">4</div>
+          <div class="lev-body">
+            <div class="lev-name">Power to Add, Change, Evolve System Structure</div>
+            <div class="lev-detail">Self-organization: the ability to create new feedback loops, new rules, new structures. Biological evolution; open source; market innovation. Highly powerful but often suppressed.</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:76%"></div></div>
+            <div class="lev-power">High</div>
+          </div>
+        </div>
+
+        <div class="lev-row high">
+          <div class="lev-num">3</div>
+          <div class="lev-body">
+            <div class="lev-name">Goals of the System</div>
+            <div class="lev-detail">The purpose or function of the system. Changing goals changes everything above: parameters, feedback loops, information flows. A dictator who changes a nation's goal changes the entire system.</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:84%"></div></div>
+            <div class="lev-power">High</div>
+          </div>
+        </div>
+
+        <div class="lev-row high">
+          <div class="lev-num">2</div>
+          <div class="lev-body">
+            <div class="lev-name">Mindset or Paradigm</div>
+            <div class="lev-detail">The shared assumptions, values, and worldview from which the system arises. Paradigms are very hard to change — but there are no limits to paradigm change. They can shift suddenly when anomalies accumulate.</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:92%"></div></div>
+            <div class="lev-power">High</div>
+          </div>
+        </div>
+
+        <div class="lev-row high">
+          <div class="lev-num">1</div>
+          <div class="lev-body">
+            <div class="lev-name">Transcend Paradigms</div>
+            <div class="lev-detail">The ability to operate outside <em>any</em> paradigm — holding all worldviews with equanimity, choosing among them fluidly. No fixed perspective. The ultimate flexibility. Extremely rare; extremely powerful.</div>
+          </div>
+          <div class="lev-bar-wrap">
+            <div class="lev-bar-bg"><div class="lev-bar-fill" style="width:100%"></div></div>
+            <div class="lev-power">Max</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="callout red">
+        <div class="callout-label">⚠️ The Leverage Trap</div>
+        <p>The higher the leverage point, the <em>more the system resists changing it.</em> Societies often suppress — and sometimes eliminate — actors who push on Level 1–2 leverage points. Knowing the lever is not the same as being able to use it.</p>
+      </div>
+      <div class="callout green">
+        <div class="callout-label">🔍 Practical Rule Builder Application</div>
+        <p>When you export a rule graph as a prompt and send it to Claude, ask it to identify which of Meadows' 12 leverage points each node corresponds to. This reveals where small changes in your TRANSITION guards could produce large changes in system behavior.</p>
+      </div>
+    </div>
+
+  </div><!-- /leverage -->
+
+
+  <!-- ══════════════════════════════════════════════
+       FINITE STATE MACHINES
+  ══════════════════════════════════════════════ -->
+  <div class="section" id="tab-fsm">
+
+    <div class="hero">
+      <h2>Finite State Machines (FSM)</h2>
+      <p>The formal computational model underlying the Rule Builder. An FSM is defined by a 5-tuple: <strong>states, alphabet, transitions, initial state, accepting states</strong>. Systems theory and FSMs converge here — every state machine is a formal system with boundaries, states, and transition rules.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">FSM Formal Definition</div>
+        <pre><span class="cm"># An FSM is defined as a 5-tuple:</span>
+<span class="hd">F</span> = (<span class="kw">Σ</span>, <span class="kw">S</span>, <span class="kw">s₀</span>, <span class="kw">δ</span>, <span class="kw">F</span>)
+
+<span class="kw">Σ</span>  = finite input alphabet (valid inputs)
+<span class="kw">S</span>  = finite set of states
+<span class="kw">s₀</span> = initial state (s₀ ∈ S)
+<span class="kw">δ</span>  = transition function: S × Σ → S
+<span class="kw">F</span>  = set of accepting/terminal states (F ⊆ S)
+
+<span class="cm"># Example: Door lock FSM</span>
+<span class="hd">Σ</span>  = { insert_coin, push, coin_return }
+<span class="hd">S</span>  = { Locked, Unlocked }
+<span class="hd">s₀</span> = Locked
+<span class="hd">δ</span>  = Locked + insert_coin → Unlocked
+       Unlocked + push      → Locked
+<span class="hd">F</span>  = { Unlocked }</pre>
+      </div>
+
+      <div class="card">
+        <div class="card-title">FSM Types</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔷</div>
+            <div class="rule-text"><strong>Deterministic (DFA):</strong> for every state and input, exactly one next state. Predictable, verifiable. The Rule Builder uses deterministic FSMs.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔀</div>
+            <div class="rule-text"><strong>Non-deterministic (NFA):</strong> multiple valid next states for the same input. Used in pattern matching; equivalent in power to DFA but exponentially more compact.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎛️</div>
+            <div class="rule-text"><strong>Mealy machine:</strong> output depends on <em>both</em> current state AND input. Fewer states needed; output is tied to transitions.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔘</div>
+            <div class="rule-text"><strong>Moore machine:</strong> output depends <em>only</em> on current state. Simpler reasoning; outputs are stable within a state. The Rule Builder's STATE nodes are Moore-style.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📐</div>
+            <div class="rule-text"><strong>Harel Statechart:</strong> extends FSM with hierarchical nested states, parallel regions, history states, guards, and entry/exit actions. UML statecharts are based on this.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Rule Builder → FSM Mapping</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Rule Builder Node</th>
+            <th>FSM Concept</th>
+            <th>Formal Symbol</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>STATE</td>
+            <td class="col-desc">FSM State</td>
+            <td class="col-note"><code>s ∈ S</code></td>
+            <td class="col-note">Moore-style: behavior defined by being in the state</td>
+          </tr>
+          <tr>
+            <td>TRANSITION</td>
+            <td class="col-desc">Transition function</td>
+            <td class="col-note"><code>δ(s, σ) → s'</code></td>
+            <td class="col-note">Guard = input condition; Action = output during transition</td>
+          </tr>
+          <tr>
+            <td>INPUT</td>
+            <td class="col-desc">Input symbol / event</td>
+            <td class="col-note"><code>σ ∈ Σ</code></td>
+            <td class="col-note">External stimulus that drives the transition function</td>
+          </tr>
+          <tr>
+            <td>OUTPUT</td>
+            <td class="col-desc">Output function</td>
+            <td class="col-note"><code>λ(s)</code> or <code>λ(s, σ)</code></td>
+            <td class="col-note">Moore: output = f(state). Mealy: output = f(state, input)</td>
+          </tr>
+          <tr>
+            <td>FEEDBACK</td>
+            <td class="col-desc">Output-to-input arc</td>
+            <td class="col-note">loop in δ</td>
+            <td class="col-note">Makes an FSM a closed-loop control system. FSMs alone are open-loop.</td>
+          </tr>
+          <tr>
+            <td>BOUNDARY</td>
+            <td class="col-desc">System boundary</td>
+            <td class="col-note">defines Σ and S</td>
+            <td class="col-note">Determines what is inside vs. outside the formal model</td>
+          </tr>
+          <tr>
+            <td>SUBSYSTEM</td>
+            <td class="col-desc">Composite/nested state</td>
+            <td class="col-note">Harel hierarchy</td>
+            <td class="col-note">A state that is itself an FSM — Statechart concept</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card yellow">
+        <div class="card-title yellow">Guard Conditions — Formal Semantics</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🛡️</div>
+            <div class="rule-text"><strong>Boolean guard:</strong> the transition fires <em>only if</em> the guard evaluates to true. Extends pure FSM with conditional logic.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Enabled transition:</strong> an event arrives <em>and</em> the guard is true. Both conditions must be satisfied.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔀</div>
+            <div class="rule-text"><strong>Extended FSM:</strong> FSMs with guard conditions and internal variables. Every non-trivial software system uses extended FSMs.</div>
+          </div>
+        </div>
+        <pre><span class="cm"># Turnstile FSM with guard</span>
+<span class="hd">STATE</span>  locked
+<span class="hd">STATE</span>  unlocked
+<span class="fn">TRANS</span>  insert_coin
+  <span class="kw">when:</span> <span class="li">coin.valid == true</span>
+  <span class="kw">then:</span> <span class="fn">arms.unlock()</span>
+<span class="fn">TRANS</span>  push
+  <span class="kw">when:</span> <span class="li">state == unlocked</span>
+  <span class="kw">then:</span> <span class="fn">arms.lock()</span></pre>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">When FSMs Are Not Enough</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📈</div>
+            <div class="rule-text"><strong>Continuous dynamics:</strong> when variables change continuously over time, use system dynamics (differential equations) rather than FSMs, which model discrete jumps.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🌊</div>
+            <div class="rule-text"><strong>State explosion:</strong> as system complexity grows, FSM state count can explode exponentially. Harel Statecharts solve this with hierarchy and parallel regions.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧩</div>
+            <div class="rule-text"><strong>Infinite memory:</strong> FSMs cannot count arbitrarily. For unbounded queues, stacks, or memory, a pushdown automaton or Turing machine is needed.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔬</div>
+            <div class="rule-text"><strong>Concurrent systems:</strong> multiple processes running in parallel. Use Petri nets or process algebras (CSP, CCS) for true concurrent modeling.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">FSM Formal Verification Concepts</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Meaning</th>
+            <th>How to Check in Rule Builder</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Reachability</td>
+            <td class="col-desc">Can state X be reached from the initial state?</td>
+            <td class="col-note">Every STATE should have at least one incoming connection path from an INPUT or initial state</td>
+          </tr>
+          <tr>
+            <td>Liveness</td>
+            <td class="col-desc">Will the system eventually progress (not deadlock)?</td>
+            <td class="col-note">Check for STATE nodes with no outgoing TRANSITION — potential deadlock traps</td>
+          </tr>
+          <tr>
+            <td>Safety</td>
+            <td class="col-desc">The system never enters a bad state</td>
+            <td class="col-note">TRANSITION guards are your safety invariants — ensure no path leads to forbidden STATE</td>
+          </tr>
+          <tr>
+            <td>Determinism</td>
+            <td class="col-desc">No ambiguity: same input always produces same next state</td>
+            <td class="col-note">Two TRANSITIONs from the same STATE with overlapping guards create non-determinism</td>
+          </tr>
+          <tr>
+            <td>Completeness</td>
+            <td class="col-desc">Every (state, input) pair has a defined transition</td>
+            <td class="col-note">STATES should handle all relevant inputs, even if the handler is "ignore"</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /fsm -->
+
+
+  <!-- ══════════════════════════════════════════════
+       HISTORY
+  ══════════════════════════════════════════════ -->
+  <div class="section" id="tab-history">
+
+    <div class="hero">
+      <h2>Historical Timeline</h2>
+      <p>Systems theory emerged from biology, engineering, mathematics, and cybernetics simultaneously. Each lineage contributed different concepts — the convergence produced one of the 20th century's most powerful analytical frameworks.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Key Milestones</div>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-year">1920s</div>
+            <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Bertalanffy begins Organismic Biology</div>
+              <div class="tl-desc">First articulates need for a general theory beyond reductionism. Argues living systems are open, maintaining order against entropy.</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">1948</div>
+            <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Wiener — Cybernetics</div>
+              <div class="tl-desc">Formalizes feedback, information, and control as universal engineering/biological concepts. Homeostasis, negative feedback loops.</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">1950</div>
+            <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Bertalanffy — General System Theory published</div>
+              <div class="tl-desc">GST published in Science. Proposes isomorphic laws applying across all systems regardless of domain. Foundation of cross-disciplinary modeling.</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">1955</div>
+            <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Ashby — Introduction to Cybernetics</div>
+              <div class="tl-desc">Law of Requisite Variety: a controller must have at least as much variety (complexity) as the system it controls. Foundational for rule design.</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">1961</div>
+            <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Forrester — Industrial Dynamics (MIT)</div>
+              <div class="tl-desc">System Dynamics: stock-and-flow mathematical modeling with feedback. Simulates industrial systems; discovers counterintuitive behaviors.</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">1972</div>
+            <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Limits to Growth — Club of Rome</div>
+              <div class="tl-desc">Meadows team applies system dynamics to global resource modeling. Demonstrates overshoot-and-collapse scenarios. World3 model.</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">1987</div>
+            <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Harel Statecharts</div>
+              <div class="tl-desc">David Harel extends FSMs with hierarchy, concurrency, and history. Becomes UML statecharts — standard for software and systems engineering.</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">1990</div>
+            <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Senge — The Fifth Discipline</div>
+              <div class="tl-desc">Popularizes systems thinking for organizational learning. Introduces the 8 archetypes to business audiences. Learning organization concept.</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">1997</div>
+            <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Meadows — Leverage Points</div>
+              <div class="tl-desc">Seminal essay identifying 12 places to intervene in a system. Inspired by observing ineffective NAFTA design. Widely cited in energy, ecology, and policy.</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">2008</div>
+            <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Meadows — Thinking in Systems: A Primer</div>
+              <div class="tl-desc">Posthumously published. Definitive accessible introduction to stocks, flows, feedback, archetypes, and leverage points. The reference book for systems thinking.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card red">
+          <div class="card-title red">Two Founding Lineages</div>
+          <div class="rule-list">
+            <div class="rule-row">
+              <div class="rule-icon">🧬</div>
+              <div class="rule-text"><strong>General Systems Theory (GST)</strong> — from biology. Focus on open systems, wholeness, holism, isomorphism across domains. Bertalanffy.</div>
+            </div>
+            <div class="rule-row">
+              <div class="rule-icon">⚙️</div>
+              <div class="rule-text"><strong>Cybernetics</strong> — from engineering. Focus on feedback, control, information, communication. Wiener, Ashby, Shannon.</div>
+            </div>
+            <div class="rule-row">
+              <div class="rule-icon">🔗</div>
+              <div class="rule-text"><strong>Convergence:</strong> both study organization and purposeful behavior. GST asks "what is the structure?"; Cybernetics asks "how does it self-regulate?"</div>
+            </div>
+            <div class="rule-row">
+              <div class="rule-icon">🌿</div>
+              <div class="rule-text"><strong>Complexity science</strong> — emerged 1980s–90s from both. Santa Fe Institute, Holland, Kauffman. Complex Adaptive Systems (CAS).</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card yellow" style="margin-top:20px">
+          <div class="card-title yellow">Influential Books</div>
+          <table class="ref-table">
+            <thead>
+              <tr>
+                <th>Author / Year</th>
+                <th>Title</th>
+                <th>Key Contribution</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Bertalanffy, 1968</td>
+                <td class="col-desc">General System Theory</td>
+                <td class="col-note">GST foundations, open systems, isomorphism</td>
+              </tr>
+              <tr>
+                <td>Wiener, 1948</td>
+                <td class="col-desc">Cybernetics</td>
+                <td class="col-note">Feedback, control, information theory</td>
+              </tr>
+              <tr>
+                <td>Ashby, 1956</td>
+                <td class="col-desc">Introduction to Cybernetics</td>
+                <td class="col-note">Requisite variety, homeostasis</td>
+              </tr>
+              <tr>
+                <td>Forrester, 1961</td>
+                <td class="col-desc">Industrial Dynamics</td>
+                <td class="col-note">System dynamics, stock-flow simulation</td>
+              </tr>
+              <tr>
+                <td>Meadows et al., 1972</td>
+                <td class="col-desc">Limits to Growth</td>
+                <td class="col-note">Global modeling, overshoot scenarios</td>
+              </tr>
+              <tr>
+                <td>Senge, 1990</td>
+                <td class="col-desc">The Fifth Discipline</td>
+                <td class="col-note">Archetypes, learning organization</td>
+              </tr>
+              <tr>
+                <td>Meadows, 2008</td>
+                <td class="col-desc">Thinking in Systems</td>
+                <td class="col-note">Accessible primer; leverage points</td>
+              </tr>
+              <tr>
+                <td>Holland, 1992</td>
+                <td class="col-desc">Adaptation in Natural/Artificial Systems</td>
+                <td class="col-note">Complex Adaptive Systems (CAS)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card green" style="margin-top:20px">
+          <div class="card-title green">Ashby's Law of Requisite Variety</div>
+          <div class="callout blue" style="border-left-color:var(--accent3); margin-bottom:0">
+            <div class="callout-label">Core Principle</div>
+            <p><em>"Only variety can absorb variety."</em> A controller must match the complexity of the system it regulates. An oversimplified rule set will always be defeated by system variety it cannot handle.</p>
+          </div>
+          <div class="rule-list" style="margin-top:10px">
+            <div class="rule-row">
+              <div class="rule-icon">📐</div>
+              <div class="rule-text"><strong>For rule design:</strong> if your system has 50 distinct failure modes, your rule graph must have at least 50 distinct responses to be fully effective. Simplified rules produce policy gaps.</div>
+            </div>
+            <div class="rule-row">
+              <div class="rule-icon">💡</div>
+              <div class="rule-text"><strong>Practical implication:</strong> when building TRANSITION guards, enumerate the full state space of the INPUT. Missing guards = missing variety = system surprises.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /history -->
+
+
+  <!-- ══════════════════════════════════════════════
+       GLOSSARY
+  ══════════════════════════════════════════════ -->
+  <div class="section" id="tab-glossary">
+
+    <div class="hero">
+      <h2>Glossary</h2>
+      <p>Core vocabulary of systems theory, system dynamics, and finite state machines — mapped to Rule Builder concepts where applicable.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Systems Theory Terms — A to M</div>
+        <table class="ref-table">
+          <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+          <tbody>
+            <tr><td>Archetype</td><td class="col-desc">Recurring structural pattern of feedback loops producing characteristic behavior. Eight canonical types identified by Senge.</td></tr>
+            <tr><td>Balancing loop</td><td class="col-desc">Negative feedback loop that opposes change and seeks equilibrium with a goal. Regulatory, stabilizing.</td></tr>
+            <tr><td>Boundary</td><td class="col-desc">The analytical line separating a system from its environment. Drawn based on modeling purpose, not reality.</td></tr>
+            <tr><td>Bounded rationality</td><td class="col-desc">Each actor optimizes locally with limited information; collectively produces globally undesired behavior.</td></tr>
+            <tr><td>Buffer</td><td class="col-desc">A large stock that stabilizes a system by absorbing inflow/outflow mismatches. (Leverage Point #11)</td></tr>
+            <tr><td>Causal loop diagram (CLD)</td><td class="col-desc">A diagram showing variables and causal arrows with + or − polarity. The Rule Builder canvas is a CLD.</td></tr>
+            <tr><td>Closed system</td><td class="col-desc">Exchanges no matter or energy with its environment. Tends toward equilibrium. Idealized — no real-world system is fully closed.</td></tr>
+            <tr><td>Complex Adaptive System (CAS)</td><td class="col-desc">A system of adaptive agents that learns and evolves. Exhibits emergence, self-organization. Coined by Holland (1992).</td></tr>
+            <tr><td>Cybernetics</td><td class="col-desc">The study of regulatory systems and communication in machines and living things. Wiener (1948). Foundation of control theory.</td></tr>
+            <tr><td>Delay</td><td class="col-desc">Time between cause and observed effect. Delays create oscillation, overshoot, and policy resistance.</td></tr>
+            <tr><td>Dynamic equilibrium</td><td class="col-desc">Steady state where all inflows equal all outflows; stock level is constant despite ongoing change.</td></tr>
+            <tr><td>Emergence</td><td class="col-desc">Properties or behaviors that arise from system interaction and are not present in any individual component.</td></tr>
+            <tr><td>Endogenous</td><td class="col-desc">Originating from within the system. Endogenous variables are both cause and effect inside the boundary.</td></tr>
+            <tr><td>Exogenous</td><td class="col-desc">Originating from outside the system boundary. Inputs are exogenous.</td></tr>
+            <tr><td>Flow</td><td class="col-desc">A rate of change affecting a stock. Can change instantaneously. Maps to TRANSITION in Rule Builder.</td></tr>
+            <tr><td>Goodhart's Law</td><td class="col-desc">"When a measure becomes a target, it ceases to be a good measure." — a drifting goals / wrong goal archetype.</td></tr>
+            <tr><td>Homeostasis</td><td class="col-desc">A balancing feedback process maintaining internal stability despite external change. Thermoregulation; pH buffering.</td></tr>
+            <tr><td>Inflow</td><td class="col-desc">A flow that adds to a stock. In Rule Builder: TRANSITION that moves into a STATE.</td></tr>
+            <tr><td>Leverage point</td><td class="col-desc">A place in a system where a small change can produce large effects on system behavior. Meadows (1997) identified 12.</td></tr>
+            <tr><td>Limiting factor</td><td class="col-desc">The single input or resource that is currently constraining system activity. Changing the limiting factor shifts the constraint.</td></tr>
+            <tr><td>Mental model</td><td class="col-desc">An individual's internal representation of how a system works. Often incomplete, often wrong. Source of policy error.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Systems Theory Terms — N to Z</div>
+        <table class="ref-table">
+          <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+          <tbody>
+            <tr><td>Nonlinearity</td><td class="col-desc">Cause does not produce proportional effect. Nonlinearities shift which feedback loop dominates.</td></tr>
+            <tr><td>Open system</td><td class="col-desc">Exchanges matter, energy, and information with its environment. All living systems. Bertalanffy (1950).</td></tr>
+            <tr><td>Outflow</td><td class="col-desc">A flow that removes from a stock. In Rule Builder: TRANSITION that moves out of a STATE.</td></tr>
+            <tr><td>Overshoot</td><td class="col-desc">When a system exceeds its goal before correcting, due to delay in the balancing loop.</td></tr>
+            <tr><td>Paradigm</td><td class="col-desc">The shared assumptions and worldview from which a system is created. Leverage Point #2 — the hardest to change.</td></tr>
+            <tr><td>Policy resistance</td><td class="col-desc">System's tendency to counteract interventions. Each actor adjusts to maintain their own goal; interventions are absorbed.</td></tr>
+            <tr><td>Reinforcing loop</td><td class="col-desc">Positive feedback loop that amplifies whatever change is imposed. "The more X, the more X." Leads to exponential growth or collapse.</td></tr>
+            <tr><td>Requisite variety</td><td class="col-desc">Ashby's Law: a controller must have at least as many response options as the system has states. "Only variety absorbs variety."</td></tr>
+            <tr><td>Resilience</td><td class="col-desc">The ability of a system to recover from disturbances. Built through multiple feedback loops and redundancy.</td></tr>
+            <tr><td>Self-organization</td><td class="col-desc">The ability of a system to create new structures and rules without external direction. Leverage Point #4.</td></tr>
+            <tr><td>Stock</td><td class="col-desc">Any quantity that accumulates or depletes over time. Measurable at a given instant. Maps to STATE in Rule Builder.</td></tr>
+            <tr><td>Subsystem</td><td class="col-desc">A nested system within a larger system. Has its own states, goals, and feedback loops that may partially conflict with the parent.</td></tr>
+            <tr><td>System</td><td class="col-desc">A set of interconnected elements producing its own pattern of behavior over time. Structure → behavior is the key insight.</td></tr>
+            <tr><td>System dynamics</td><td class="col-desc">Forrester's methodology for modeling feedback systems using differential equations. Stock-flow diagrams as the language.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="card-title" style="margin-top:20px">FSM-Specific Terms</div>
+        <table class="ref-table">
+          <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+          <tbody>
+            <tr><td>Alphabet (Σ)</td><td class="col-desc">The set of all valid input symbols an FSM can process. Maps to the set of all possible INPUT nodes.</td></tr>
+            <tr><td>Accepting state</td><td class="col-desc">A terminal state indicating the input sequence was valid. Marked with double circle in diagrams.</td></tr>
+            <tr><td>DFA</td><td class="col-desc">Deterministic Finite Automaton. Exactly one transition per (state, input) pair. Predictable, verifiable.</td></tr>
+            <tr><td>Guard</td><td class="col-desc">A boolean condition on a transition. Fires only when both the triggering event occurs AND the guard is true.</td></tr>
+            <tr><td>Mealy machine</td><td class="col-desc">FSM where output depends on current state AND input symbol. Output associated with transitions.</td></tr>
+            <tr><td>Moore machine</td><td class="col-desc">FSM where output depends only on current state. Output associated with states.</td></tr>
+            <tr><td>NFA</td><td class="col-desc">Non-deterministic Finite Automaton. Multiple valid next states for same input. Equivalent in power to DFA.</td></tr>
+            <tr><td>Reachability</td><td class="col-desc">Whether a given state can be reached from the initial state via valid transition sequences.</td></tr>
+            <tr><td>State explosion</td><td class="col-desc">Exponential growth in state count as system complexity increases. Solved by Harel Statecharts (hierarchy).</td></tr>
+            <tr><td>Statechart</td><td class="col-desc">Harel's hierarchical FSM extension with nested states, parallel regions, history, guards, entry/exit actions.</td></tr>
+            <tr><td>Transition function (δ)</td><td class="col-desc">Maps (current state × input) → next state. The core of an FSM. Maps to TRANSITION nodes.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="callout purple">
+      <div class="callout-label">🔗 Connecting It All</div>
+      <p>Systems theory gives you the <em>conceptual vocabulary</em> (stocks, flows, feedback, archetypes, leverage points). Finite state machines give you the <em>formal model</em> (states, transitions, guards, alphabets). The Rule Builder is where these two frameworks meet — every node you place and every connection you draw is both a systems theory assertion and a formal state machine specification.</p>
+    </div>
+
+  </div><!-- /glossary -->
+
+</main>
+
+<script>
+  // Tab navigation
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  // Theme toggle
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

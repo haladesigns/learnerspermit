@@ -364,7 +364,8 @@ html[data-theme="dark"] .pin-btn.pinned{color:#e0a040;border-color:#854F0B;backg
 html[data-theme="dark"] .compare-btn.in-tray{color:#5DCAA5;border-color:#0F6E56;background:#04342c}
 
 /* ── AUTO-CLEAR TIMER ── */
-.clear-bar{border-top:0.5px solid var(--border);padding:8px 14px;flex-shrink:0}
+.clear-bar{border-top:0.5px solid var(--border);padding:8px 14px;flex-shrink:0;transition:opacity .3s}
+.clear-bar.dormant{opacity:0.45}
 .clear-bar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .clear-bar-label{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
 .clear-bar-time{font-size:11px;font-family:var(--font-mono);color:var(--text3);transition:color .3s}
@@ -372,7 +373,10 @@ html[data-theme="dark"] .compare-btn.in-tray{color:#5DCAA5;border-color:#0F6E56;
 html[data-theme="dark"] .clear-bar-time.urgent{color:#f09595}
 .clear-bar-track{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:6px;cursor:pointer;position:relative}
 .clear-bar-track:hover::after{content:'click to reset';position:absolute;right:0;top:-18px;font-size:9px;color:var(--text3);white-space:nowrap}
-.clear-bar-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .5s linear,background .3s}
+.clear-bar.dormant .clear-bar-track{cursor:default}
+.clear-bar.dormant .clear-bar-track:hover::after{display:none}
+.clear-bar-fill{height:100%;border-radius:2px;background:var(--border2);transition:width .5s linear,background .3s}
+.clear-bar.running .clear-bar-fill{background:var(--accent)}
 .clear-bar-fill.urgent{background:#E24B4A}
 .clear-bar-actions{display:flex;gap:6px}
 .clear-btn{flex:1;font-size:10px;padding:4px 0;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--font-sans);transition:all .12s;-webkit-tap-highlight-color:transparent}
@@ -432,10 +436,10 @@ html[data-theme="dark"] .clear-btn.clear-all:hover{background:#2e1a1a}
     </div>
   </div>
 
-  <div class="clear-bar" id="clear-bar">
+  <div class="clear-bar dormant" id="clear-bar">
     <div class="clear-bar-head">
       <span class="clear-bar-label">Auto-clear</span>
-      <span class="clear-bar-time" id="clear-countdown">10:00</span>
+      <span class="clear-bar-time" id="clear-countdown">30:00</span>
     </div>
     <div class="clear-bar-track" onclick="resetClearTimer()" title="Click to reset timer">
       <div class="clear-bar-fill" id="clear-fill" style="width:100%"></div>
@@ -4499,7 +4503,23 @@ var SLEEP_AFTER      = 30 * 60;  // sleep after 30 min keyboard inactivity (seco
 var _clearInterval   = null;
 var _clearSleeping   = false;
 var _lastKeyTime     = Date.now();
-var _clearScopes     = {history: true, pinned: true, compare: true};
+// Persist scope selection so it survives refresh, tab duplication, etc.
+var LS_SCOPES = 'udm-clear-scopes';
+function loadScopes(){
+  try{
+    var s=JSON.parse(localStorage.getItem(LS_SCOPES));
+    if(s&&typeof s==='object') return {
+      history: s.history!==false,
+      pinned:  s.pinned!==false,
+      compare: s.compare!==false
+    };
+  }catch(e){}
+  return {history:true, pinned:true, compare:true};
+}
+function saveScopes(){
+  try{ localStorage.setItem(LS_SCOPES, JSON.stringify(_clearScopes)); }catch(e){}
+}
+var _clearScopes = loadScopes();
 
 // ── PERSISTENT DEADLINE ──
 // Instead of tracking seconds remaining in memory, we store the absolute
@@ -4521,6 +4541,12 @@ function getRemainingSeconds(){
   if(!d) return CLEAR_DURATION;
   var rem=Math.round((d - Date.now()) / 1000);
   return Math.max(0, rem);
+}
+
+function stopClearTimer(){
+  if(_clearInterval){ clearInterval(_clearInterval); _clearInterval=null; }
+  clearDeadline();
+  _clearSleeping=false;
 }
 
 function startClearTimer(){
@@ -4577,7 +4603,14 @@ window.runClearNow = function(){
   if(_clearScopes.history){ saveHistory([]); renderHistory(); }
   if(_clearScopes.pinned){ savePinned([]); renderPinned(); syncAllPinButtons('',false); }
   if(_clearScopes.compare){ saveTray([]); renderTray(); }
-  resetClearTimer();
+  // After clearing, check what remains across ALL categories (not just scoped ones).
+  // If something was excluded and still has data, keep the timer running.
+  // Only stop if nothing remains to protect.
+  var hasData = loadHistory().length > 0 || loadPinned().length > 0 || loadTray().length > 0;
+  if(!hasData){
+    stopClearTimer();
+  }
+  updateClearUI();
 };
 
 window.resetClearTimer = resetClearTimer;
@@ -4585,12 +4618,36 @@ window.resetClearTimer = resetClearTimer;
 window.toggleClearScope = function(scope, btn){
   _clearScopes[scope] = !_clearScopes[scope];
   btn.classList.toggle('on', _clearScopes[scope]);
+  saveScopes();
 };
 
 function updateClearUI(){
   var fill      = document.getElementById('clear-fill');
   var countdown = document.getElementById('clear-countdown');
+  var bar       = document.getElementById('clear-bar');
   if(!fill || !countdown) return;
+  // Dormant — timer not running AND nothing to protect
+  // Active-standby — timer not running BUT data exists (waiting for first keystroke)
+  if(!_clearInterval){
+    var hasData = loadHistory().length > 0 || loadPinned().length > 0 || loadTray().length > 0;
+    if(!hasData){
+      // Nothing to protect — full gray dormant state
+      if(bar){ bar.classList.add('dormant'); bar.classList.remove('running'); }
+      fill.style.width = '100%';
+      fill.classList.remove('urgent');
+      countdown.classList.remove('urgent');
+      countdown.textContent = '--:--';
+    } else {
+      // Data present — show bar normally (full, colored) awaiting first keystroke
+      if(bar){ bar.classList.remove('dormant'); bar.classList.add('running'); }
+      fill.style.width = '100%';
+      fill.classList.remove('urgent');
+      countdown.classList.remove('urgent');
+      countdown.textContent = '10:00';
+    }
+    return;
+  }
+  if(bar){ bar.classList.remove('dormant'); bar.classList.add('running'); }
   if(_clearSleeping){
     fill.style.width = '100%';
     fill.classList.remove('urgent');
@@ -4610,6 +4667,11 @@ function updateClearUI(){
 }
 
 document.addEventListener('DOMContentLoaded', function(){
+  // Sync scope pills visual state from persisted _clearScopes
+  ['history','pinned','compare'].forEach(function(scope){
+    var btn=document.getElementById('cs-'+scope);
+    if(btn) btn.classList.toggle('on', _clearScopes[scope]);
+  });
   // Timer does NOT start automatically on load.
   // It starts on the first keystroke in the search box (via wakeTimer).
   // On load: if a persisted deadline exists from a previous/duplicated tab,

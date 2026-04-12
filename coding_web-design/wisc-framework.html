@@ -536,7 +536,7 @@
 
     <div class="hero">
       <h2>WISC Framework</h2>
-      <p>A battle-tested system for keeping your Claude Code context window <strong>lean and high-signal</strong>. Context rot — the measurable degradation in LLM output quality as input length grows — is responsible for roughly <strong>80% of agent failures</strong> in real codebases. WISC is the engineering response: Write, Isolate, Select, Compress.</p>
+      <p>A battle-tested system for keeping your Claude Code context window <strong>lean and high-signal</strong>. Context rot — the measurable degradation in LLM (Large Language Model) output quality as input length grows — is responsible for roughly <strong>80% of agent failures</strong> in real codebases. WISC is the engineering response: Write, Isolate, Select, Compress.</p>
     </div>
 
     <!-- WISC pills -->
@@ -581,7 +581,7 @@
           </div>
         </div>
         <div style="margin-top:14px; font-size:12px; color:var(--text-muted); line-height:1.7;">
-          The <strong style="color:var(--text);">Chroma technical report</strong> (2025) evaluated 18 frontier LLMs — GPT-4.1, Claude 4, Gemini 2.5, Qwen3 — and found that <em>every single one</em> degrades as context length increases. A 1M-token window still rots at 50K tokens. The issue is signal-to-noise ratio, not capacity.
+          The <strong style="color:var(--text);">Chroma technical report</strong> (2025) evaluated 18 frontier LLMs (Large Language Models) — GPT-4.1, Claude 4, Gemini 2.5, Qwen3 — and found that <em>every single one</em> degrades as context length increases. A 1M-token window still rots at 50K tokens. The issue is signal-to-noise ratio, not capacity.
         </div>
       </div>
 
@@ -727,7 +727,7 @@
           <div class="step-num">2</div>
           <div class="step-body">
             <strong>Populate <code>examples/</code></strong><br>
-            Add real code patterns: CLI structure, agent architecture, test patterns, integration flows. These are the patterns the agent will follow — AI performs far better from examples than from rules alone.
+            Add real code patterns: CLI (Command Line Interface) structure, agent architecture, test patterns, integration flows. These are the patterns the agent will follow — AI performs far better from examples than from rules alone.
             <pre><span class="hd">examples/</span>
 <span class="li">├── cli.py</span>            <span class="cm"># CLI argument parsing pattern</span>
 <span class="li">├── agent/agent.py</span>   <span class="cm"># Agent creation pattern</span>
@@ -769,7 +769,7 @@
             Don't research inline — that fills your main context. Dispatch 2–5 parallel sub-agents: one to explore the codebase, one for web research (best practices, library choices), optionally one to scout docs.
             <pre><span class="li">"Spin up two sub-agents in parallel:</span>
 <span class="li"> one to research how auth is currently implemented,</span>
-<span class="li"> one to find best practices for JWT refresh tokens"</span></pre>
+<span class="li"> one to find best practices for JWT (JSON Web Token) refresh tokens"</span></pre>
             <span class="note">⚠ Sub-agents may burn 100K–400K tokens in research. Your main context gets back only ~500 tokens of distilled summary.</span>
             <span style="display:inline-block; margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:3px; background:var(--accent3-glow); color:var(--accent3); border:1px solid rgba(62,207,142,0.3);">I — ISOLATE: Sub-agents + Scout Pattern</span>
           </div>
@@ -976,7 +976,7 @@
 
     <div class="card blue">
       <div class="card-title">The PRP — Your Structured Plan Format</div>
-      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">A <strong style="color:var(--text);">PRP (Product Requirements Prompt)</strong> is the formal artifact produced by the planning session. It's the handoff between planning and implementation — PRD + codebase intelligence + runbook. The minimum viable packet an AI needs to ship production-ready code on the first pass.</p>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">A <strong style="color:var(--text);">PRP (Product Requirements Prompt)</strong> is the formal artifact produced by the planning session. It's the handoff between planning and implementation — PRD (Product Requirements Document) + codebase intelligence + runbook. The minimum viable packet an AI needs to ship production-ready code on the first pass.</p>
       <div class="grid-2">
         <div>
           <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">INITIAL.md template — feature request format</div>
@@ -1197,7 +1197,7 @@
           <div class="layer-num">2</div>
           <div class="layer-label">On-Demand Context<small>Task-specific</small></div>
           <div class="layer-desc">
-            Rules that apply only to specific subsystems — frontend conventions, API endpoint patterns, workflow YAML spec. Load manually when you know you're working in that area.<br>
+            Rules that apply only to specific subsystems — frontend conventions, API (Application Programming Interface) endpoint patterns, workflow YAML (YAML Ain't Markup Language) spec. Load manually when you know you're working in that area.<br>
             <span class="note">Not in global rules because you're not always working on the frontend / that module.</span>
           </div>
         </div>
@@ -1941,7 +1941,7 @@ Note: If validation fails, use error patterns in PRP to fix and retry.</pre>
           </div>
           <div class="callout blue">
             <div class="callout-label">use-cases/</div>
-            <p>Pre-built context engineering setups for <em>MCP server development</em> (with Cloudflare Workers + GitHub OAuth) and <em>agent team workflows</em>. Copy these as starting points.</p>
+            <p>Pre-built context engineering setups for <em>MCP (Model Context Protocol) server development</em> (with Cloudflare Workers + GitHub OAuth) and <em>agent team workflows</em>. Copy these as starting points.</p>
           </div>
           <div class="callout green">
             <div class="callout-label">Power keywords in CLAUDE.md</div>

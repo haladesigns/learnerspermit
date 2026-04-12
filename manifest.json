@@ -171,6 +171,24 @@
     "children": [
       {
         "type": "file",
+        "name": "claude-code-9tips.html",
+        "label": "Claude Code 9tips",
+        "path": "claude-code/claude-code-9tips.html"
+      },
+      {
+        "type": "file",
+        "name": "claude-code-commands-skills.html",
+        "label": "Claude Code Commands Skills",
+        "path": "claude-code/claude-code-commands-skills.html"
+      },
+      {
+        "type": "file",
+        "name": "claude-code-great-repos.html",
+        "label": "Claude Code Great Repos",
+        "path": "claude-code/claude-code-great-repos.html"
+      },
+      {
+        "type": "file",
         "name": "readme",
         "label": "Readme",
         "path": "claude-code/readme"

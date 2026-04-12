@@ -1,0 +1,1999 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Systems Rule Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+/* ── TOKENS ────────────────────────────────────────────────── */
+:root {
+  --bg:       #0d0f12;
+  --bg2:      #13161b;
+  --bg3:      #1a1e25;
+  --surface:  #1f242d;
+  --line:     rgba(255,255,255,0.07);
+  --line2:    rgba(255,255,255,0.13);
+  --ink:      #e8eaf0;
+  --ink2:     #8b90a0;
+  --ink3:     #555b6a;
+  --accent:   #7b6ef6;
+  --accent2:  #a59dff;
+  --dot:      rgba(255,255,255,0.04);
+
+  --c-state:      #7b6ef6;
+  --c-state-bg:   rgba(123,110,246,0.12);
+  --c-state-bdr:  rgba(123,110,246,0.35);
+  --c-trans:      #34c78a;
+  --c-trans-bg:   rgba(52,199,138,0.10);
+  --c-trans-bdr:  rgba(52,199,138,0.35);
+  --c-input:      #4da6ff;
+  --c-input-bg:   rgba(77,166,255,0.10);
+  --c-input-bdr:  rgba(77,166,255,0.35);
+  --c-output:     #ff7a5c;
+  --c-output-bg:  rgba(255,122,92,0.10);
+  --c-output-bdr: rgba(255,122,92,0.35);
+  --c-feedback:   #f06292;
+  --c-feedback-bg:  rgba(240,98,146,0.10);
+  --c-feedback-bdr: rgba(240,98,146,0.35);
+  --c-boundary:   #90a0b0;
+  --c-boundary-bg:  rgba(144,160,176,0.08);
+  --c-boundary-bdr: rgba(144,160,176,0.30);
+  --c-subsystem:  #56c96d;
+  --c-subsystem-bg:  rgba(86,201,109,0.10);
+  --c-subsystem-bdr: rgba(86,201,109,0.35);
+
+  --font-mono: 'Space Mono', monospace;
+  --font-body: 'DM Sans', sans-serif;
+  --r: 6px;
+  --r-lg: 10px;
+  --transition: .18s ease;
+}
+
+[data-theme="light"] {
+  --bg:      #f0f0ed;
+  --bg2:     #e8e8e4;
+  --bg3:     #ddddd8;
+  --surface: #fafaf8;
+  --line:    rgba(0,0,0,0.08);
+  --line2:   rgba(0,0,0,0.14);
+  --ink:     #1a1c22;
+  --ink2:    #5a5f6e;
+  --ink3:    #9a9fae;
+  --accent:  #5b4ef0;
+  --accent2: #7b6ef6;
+  --dot:     rgba(0,0,0,0.05);
+
+  --c-state-bg:   rgba(91,78,240,0.08);
+  --c-state-bdr:  rgba(91,78,240,0.30);
+  --c-trans-bg:   rgba(28,160,100,0.08);
+  --c-trans-bdr:  rgba(28,160,100,0.30);
+  --c-trans:      #1ca064;
+  --c-input-bg:   rgba(20,110,220,0.08);
+  --c-input-bdr:  rgba(20,110,220,0.30);
+  --c-input:      #146edc;
+  --c-output-bg:  rgba(210,80,40,0.08);
+  --c-output-bdr: rgba(210,80,40,0.30);
+  --c-output:     #d25028;
+  --c-feedback-bg:  rgba(190,50,100,0.08);
+  --c-feedback-bdr: rgba(190,50,100,0.30);
+  --c-feedback:   #be3264;
+  --c-boundary-bg:  rgba(80,100,120,0.06);
+  --c-boundary-bdr: rgba(80,100,120,0.25);
+  --c-boundary:   #506478;
+  --c-subsystem-bg:  rgba(30,130,60,0.08);
+  --c-subsystem-bdr: rgba(30,130,60,0.30);
+  --c-subsystem:  #1e823c;
+}
+
+/* ── RESET ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.5;
+  transition: background var(--transition), color var(--transition);
+}
+button { font-family: inherit; cursor: pointer; }
+input, textarea, select { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── LAYOUT ─────────────────────────────────────────────────── */
+#app {
+  display: grid;
+  grid-template-rows: 48px 1fr 32px;
+  grid-template-columns: 1fr 256px;
+  grid-template-areas:
+    "header  header"
+    "canvas  sidebar"
+    "footer  footer";
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ── HEADER ─────────────────────────────────────────────────── */
+#header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg2);
+  user-select: none;
+  transition: background var(--transition), border-color var(--transition);
+}
+.brand {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--accent2);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.brand span { color: var(--ink3); font-weight: 400; }
+
+.divider { width: 1px; height: 20px; background: var(--line2); flex-shrink: 0; }
+
+.toolbar-chips {
+  display: flex;
+  gap: 5px;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  align-items: center;
+}
+.toolbar-chips::-webkit-scrollbar { display: none; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 4px 7px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  letter-spacing: .04em;
+  cursor: grab;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  transition: transform .1s, opacity .1s;
+}
+.chip:active { cursor: grabbing; transform: scale(.96); }
+.chip:hover { opacity: .85; }
+.chip .pip { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+.chip-STATE    { background: var(--c-state-bg);    border-color: var(--c-state-bdr);    color: var(--c-state);    }
+.chip-STATE    .pip { background: var(--c-state);    }
+.chip-TRANSITION { background: var(--c-trans-bg);  border-color: var(--c-trans-bdr);    color: var(--c-trans);    }
+.chip-TRANSITION .pip { background: var(--c-trans);    }
+.chip-INPUT    { background: var(--c-input-bg);    border-color: var(--c-input-bdr);    color: var(--c-input);    }
+.chip-INPUT    .pip { background: var(--c-input);    }
+.chip-OUTPUT   { background: var(--c-output-bg);   border-color: var(--c-output-bdr);   color: var(--c-output);   }
+.chip-OUTPUT   .pip { background: var(--c-output);   }
+.chip-FEEDBACK { background: var(--c-feedback-bg); border-color: var(--c-feedback-bdr); color: var(--c-feedback); }
+.chip-FEEDBACK .pip { background: var(--c-feedback); }
+.chip-BOUNDARY { background: var(--c-boundary-bg); border-color: var(--c-boundary-bdr); color: var(--c-boundary); }
+.chip-BOUNDARY .pip { background: var(--c-boundary); }
+.chip-SUBSYSTEM{ background: var(--c-subsystem-bg);border-color: var(--c-subsystem-bdr);color: var(--c-subsystem);}
+.chip-SUBSYSTEM .pip { background: var(--c-subsystem); }
+
+.hdr-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: .05em;
+  font-weight: 700;
+  border-radius: var(--r);
+  border: 1px solid var(--line2);
+  background: transparent;
+  color: var(--ink2);
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+  white-space: nowrap;
+}
+.btn:hover { background: var(--bg3); color: var(--ink); }
+.btn.active { background: var(--c-state-bg); border-color: var(--c-state-bdr); color: var(--c-state); }
+.btn-accent {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+.btn-accent:hover { background: var(--accent2); color: #fff; }
+.btn-danger { color: var(--c-output); border-color: var(--c-output-bdr); }
+.btn-danger:hover { background: var(--c-output-bg); }
+
+/* theme toggle */
+.theme-toggle {
+  width: 30px; height: 18px;
+  border-radius: 9px;
+  border: 1px solid var(--line2);
+  background: var(--bg3);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+.theme-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--ink2);
+  transition: transform .2s, background .2s;
+}
+[data-theme="light"] .theme-toggle::after {
+  transform: translateX(12px);
+  background: var(--accent);
+}
+.theme-icon { font-size: 11px; line-height: 1; }
+
+/* ── CANVAS ─────────────────────────────────────────────────── */
+#canvas {
+  grid-area: canvas;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle, var(--dot) 1px, transparent 1px);
+  background-size: 22px 22px;
+  transition: background-color var(--transition);
+  cursor: default;
+}
+#canvas.panning { cursor: grabbing !important; }
+#canvas.pan-ready { cursor: grab; }
+#canvas.drop-over::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px dashed var(--accent);
+  border-radius: 0;
+  pointer-events: none;
+  opacity: .5;
+}
+
+/* world transform layer */
+#world {
+  position: absolute;
+  top: 0; left: 0;
+  width: 0; height: 0;
+  transform-origin: 0 0;
+}
+
+#conn-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 4000px; height: 4000px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+#canvas-hint {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  color: var(--ink3);
+}
+#canvas-hint .big { font-size: 40px; margin-bottom: 10px; opacity: .4; }
+#canvas-hint p { font-size: 12px; font-family: var(--font-mono); line-height: 1.8; }
+
+/* ── NODE ───────────────────────────────────────────────────── */
+.node-el {
+  position: absolute;
+  cursor: move;
+  user-select: none;
+  z-index: 10;
+}
+.node-card {
+  border-radius: var(--r-lg);
+  padding: 10px 14px;
+  min-width: 130px;
+  max-width: 210px;
+  border: 1px solid transparent;
+  backdrop-filter: blur(4px);
+  transition: box-shadow .15s, border-color .15s;
+  position: relative;
+}
+.node-card:hover { box-shadow: 0 0 0 2px var(--line2); }
+.node-card.selected { box-shadow: 0 0 0 2px var(--accent) !important; }
+
+.node-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+  opacity: .65;
+}
+.node-name { font-size: 13px; font-weight: 500; line-height: 1.3; }
+.node-sub  { font-size: 11px; margin-top: 3px; opacity: .55; font-style: italic; }
+
+.node-STATE    .node-card { background: var(--c-state-bg);    border-color: var(--c-state-bdr);    color: var(--c-state);    }
+.node-TRANSITION .node-card { background: var(--c-trans-bg);  border-color: var(--c-trans-bdr);    color: var(--c-trans);    }
+.node-INPUT    .node-card { background: var(--c-input-bg);    border-color: var(--c-input-bdr);    color: var(--c-input);    }
+.node-OUTPUT   .node-card { background: var(--c-output-bg);   border-color: var(--c-output-bdr);   color: var(--c-output);   }
+.node-FEEDBACK .node-card { background: var(--c-feedback-bg); border-color: var(--c-feedback-bdr); color: var(--c-feedback); }
+.node-BOUNDARY .node-card { background: var(--c-boundary-bg); border-color: var(--c-boundary-bdr); color: var(--c-boundary); border-style: dashed; }
+.node-SUBSYSTEM .node-card{ background: var(--c-subsystem-bg);border-color: var(--c-subsystem-bdr);color: var(--c-subsystem); border-style: double; border-width: 2px; }
+
+/* ports */
+.port {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line2);
+  background: var(--bg2);
+  transition: background .12s, border-color .12s, transform .12s;
+  z-index: 20;
+  cursor: crosshair;
+}
+.port:hover { background: var(--accent); border-color: var(--accent); transform: scale(1.3); }
+.port-out { bottom: -6px; left: 50%; transform: translateX(-50%); }
+.port-out:hover { transform: translateX(-50%) scale(1.3); }
+.port-in  { top: -6px; left: 50%; transform: translateX(-50%); }
+.port-in:hover { transform: translateX(-50%) scale(1.3); }
+
+/* delete btn */
+.del-btn {
+  position: absolute;
+  top: -7px; right: -7px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  color: var(--ink2);
+  font-size: 10px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  line-height: 1;
+  transition: background .12s, color .12s;
+}
+.del-btn:hover { background: var(--c-output-bg); color: var(--c-output); border-color: var(--c-output-bdr); }
+.node-el:hover .del-btn { display: flex; }
+
+/* ── SIDEBAR ────────────────────────────────────────────────── */
+#sidebar {
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--line);
+  background: var(--bg2);
+  overflow: hidden;
+  transition: background var(--transition), border-color var(--transition);
+}
+.sidebar-head {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+#node-editor {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line2) transparent;
+}
+.field { margin-bottom: 12px; }
+.field label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 5px;
+}
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  border-radius: var(--r);
+  padding: 6px 9px;
+  font-size: 12px;
+  color: var(--ink);
+  transition: border-color .15s, background var(--transition), color var(--transition);
+}
+.field input:focus,
+.field textarea:focus,
+.field select:focus { border-color: var(--accent); outline: none; }
+.field textarea { resize: vertical; min-height: 60px; }
+.field select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+.field .hint { font-size: 10px; color: var(--ink3); margin-top: 4px; font-style: italic; }
+
+.conns-list {
+  font-size: 11px;
+  color: var(--ink2);
+  font-family: var(--font-mono);
+  line-height: 1.8;
+  min-height: 20px;
+}
+.conn-entry { display: flex; align-items: center; gap: 4px; }
+.conn-arrow { color: var(--ink3); }
+
+.empty-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  color: var(--ink3);
+  text-align: center;
+  padding: 24px;
+}
+.empty-editor .icon { font-size: 28px; opacity: .4; }
+.empty-editor p { font-size: 11px; font-family: var(--font-mono); line-height: 1.7; }
+
+.legend {
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.legend-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 4px;
+}
+.legend-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 10px;
+  color: var(--ink2);
+  line-height: 1.4;
+}
+.legend-pip { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+
+/* ── FOOTER ─────────────────────────────────────────────────── */
+#footer {
+  grid-area: footer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border-top: 1px solid var(--line);
+  background: var(--bg2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink3);
+  transition: background var(--transition), border-color var(--transition);
+}
+#footer kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border: 1px solid var(--line2);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  background: var(--bg3);
+  color: var(--ink2);
+}
+#status-msg { margin-left: auto; color: var(--ink2); }
+
+/* ── OUTPUT MODAL ───────────────────────────────────────────── */
+#modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 999;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+#modal-overlay.open { display: flex; }
+#modal-box {
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 580px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,.4);
+}
+.modal-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-head h2 {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+.modal-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-tab {
+  padding: 4px 10px;
+  border-radius: var(--r);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: .05em;
+  border: 1px solid var(--line2);
+  background: transparent;
+  color: var(--ink2);
+  cursor: pointer;
+}
+.modal-tab.active { background: var(--c-state-bg); border-color: var(--c-state-bdr); color: var(--c-state); }
+#modal-output {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink2);
+  white-space: pre;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line2) transparent;
+}
+.modal-foot {
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── CONN LABELS ────────────────────────────────────────────── */
+.conn-lbl {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  fill: var(--ink3);
+  pointer-events: none;
+}
+
+/* ── MARQUEE ────────────────────────────────── */
+#marquee {
+  position: absolute;
+  border: 1.5px dashed var(--accent);
+  background: rgba(123,110,246,0.07);
+  border-radius: 3px;
+  pointer-events: none;
+  display: none;
+  z-index: 5;
+}
+.node-card.multi-selected {
+  box-shadow: 0 0 0 2px var(--accent2) !important;
+}
+
+/* ── HELP PANEL ─────────────────────────────── */
+#help-panel {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 340px;
+  background: var(--bg2);
+  border-left: 1px solid var(--line2);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform .22s cubic-bezier(.4,0,.2,1), box-shadow .22s;
+  box-shadow: none;
+}
+#help-panel.open {
+  transform: translateX(0);
+  box-shadow: -12px 0 40px rgba(0,0,0,.25);
+}
+.help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.help-head-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+.help-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line2) transparent;
+}
+.help-section {
+  border-bottom: 1px solid var(--line);
+}
+.help-section-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .12s;
+}
+.help-section-hd:hover { background: var(--bg3); }
+.help-section-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+.help-section-hd .chevron {
+  font-size: 10px;
+  color: var(--ink3);
+  transition: transform .15s;
+}
+.help-section.collapsed .chevron { transform: rotate(-90deg); }
+.help-section-body {
+  padding: 4px 16px 14px;
+  overflow: hidden;
+}
+.help-section.collapsed .help-section-body { display: none; }
+
+/* rows inside help */
+.h-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink2);
+  line-height: 1.45;
+}
+.h-row:last-child { border-bottom: none; }
+.h-row-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+}
+.h-row-main { flex: 1; }
+.h-row-label {
+  font-weight: 500;
+  color: var(--ink);
+  font-size: 12px;
+  margin-bottom: 1px;
+}
+.h-row-desc { font-size: 11px; color: var(--ink3); line-height: 1.5; }
+
+/* kbd in help */
+.h-kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--bg3);
+  color: var(--ink2);
+  white-space: nowrap;
+}
+
+/* primitive chips in help */
+.h-prim {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: .04em;
+  border: 1px solid transparent;
+  margin: 2px 2px 2px 0;
+}
+.h-prim .dot { width:6px;height:6px;border-radius:50%; }
+
+/* workflow steps */
+.h-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+.h-step:last-child { border-bottom: none; }
+.h-step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--c-state-bg);
+  border: 1px solid var(--c-state-bdr);
+  color: var(--c-state);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.h-step-body { flex:1; font-size:12px; color:var(--ink2); line-height:1.5; }
+.h-step-body b { color: var(--ink); font-weight: 500; }
+
+/* tip box */
+.h-tip {
+  margin: 10px 0 4px;
+  padding: 9px 12px;
+  background: var(--c-state-bg);
+  border: 1px solid var(--c-state-bdr);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--ink2);
+  line-height: 1.6;
+}
+.h-tip b { color: var(--c-state); font-weight: 500; }
+
+/* format badge */
+.h-fmt {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  margin-right: 4px;
+}
+.h-fmt-json { background:var(--c-state-bg);color:var(--c-state);border:1px solid var(--c-state-bdr); }
+.h-fmt-text { background:var(--c-trans-bg);color:var(--c-trans);border:1px solid var(--c-trans-bdr); }
+.h-fmt-prompt { background:var(--c-feedback-bg);color:var(--c-feedback);border:1px solid var(--c-feedback-bdr); }
+
+#help-btn.active { background:var(--c-state-bg);border-color:var(--c-state-bdr);color:var(--c-state); }
+
+/* ── SCROLLBAR ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="header">
+    <div class="brand">SRB<span> / systems rule builder</span></div>
+    <div class="divider"></div>
+    <div class="toolbar-chips" id="chips"></div>
+    <div class="hdr-actions">
+      <button class="btn" id="connect-btn" title="Connect mode [C]">&#8594; Connect</button>
+      <button class="btn" onclick="clearAll()" title="Clear canvas">Clear</button>
+      <div class="divider"></div>
+      <button class="btn" onclick="triggerImport()" title="Import a saved rule graph">&#8598; Import</button>
+      <input type="file" id="file-input" accept=".json,.txt,.md" style="display:none" onchange="handleFileImport(event)"/>
+      <button class="btn btn-accent" onclick="openExport()">Export &#8599;</button>
+      <div class="divider"></div>
+      <button class="btn" id="help-btn" onclick="toggleHelp()" title="Usage guide">? Help</button>
+      <div class="divider"></div>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle light/dark mode"></button>
+    </div>
+  </header>
+
+  <!-- CANVAS -->
+  <div id="canvas" tabindex="0">
+    <div id="world">
+      <svg id="conn-svg"></svg>
+    </div>
+    <div id="marquee"></div>
+    <div id="canvas-hint">
+      <div class="big">⬡</div>
+      <p>Drag primitives from the toolbar<br>onto the canvas to begin</p>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-head">Properties</div>
+    <div id="node-editor">
+      <div class="empty-editor">
+        <div class="icon">◈</div>
+        <p>Select a node to<br>edit its properties</p>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-title">Primitives</div>
+      <div class="legend-row"><div class="legend-pip" style="background:var(--c-state)"></div><span><b>State</b> — condition the system occupies</span></div>
+      <div class="legend-row"><div class="legend-pip" style="background:var(--c-trans)"></div><span><b>Transition</b> — guarded state change</span></div>
+      <div class="legend-row"><div class="legend-pip" style="background:var(--c-input)"></div><span><b>Input</b> — external signal entering</span></div>
+      <div class="legend-row"><div class="legend-pip" style="background:var(--c-output)"></div><span><b>Output</b> — result leaving system</span></div>
+      <div class="legend-row"><div class="legend-pip" style="background:var(--c-feedback)"></div><span><b>Feedback</b> — output loops back in</span></div>
+      <div class="legend-row"><div class="legend-pip" style="background:var(--c-boundary)"></div><span><b>Boundary</b> — scope delimiter</span></div>
+      <div class="legend-row"><div class="legend-pip" style="background:var(--c-subsystem)"></div><span><b>Subsystem</b> — nested component</span></div>
+    </div>
+  </aside>
+
+  <!-- HELP PANEL -->
+  <div id="help-panel">
+    <div class="help-head">
+      <span class="help-head-title">Usage guide</span>
+      <button class="btn" onclick="toggleHelp()" style="padding:3px 8px;font-size:11px;">✕</button>
+    </div>
+    <div class="help-body">
+
+      <!-- QUICK START -->
+      <div class="help-section" id="hs-start">
+        <div class="help-section-hd" onclick="toggleSection('hs-start')">
+          <span class="help-section-title">Quick start</span>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="help-section-body">
+          <div class="h-step">
+            <div class="h-step-num">1</div>
+            <div class="h-step-body"><b>Drag a primitive</b> from the toolbar onto the canvas — State, Input, Transition, etc.</div>
+          </div>
+          <div class="h-step">
+            <div class="h-step-num">2</div>
+            <div class="h-step-body"><b>Click a node</b> to select it and edit its label, description, and type-specific fields in the Properties panel.</div>
+          </div>
+          <div class="h-step">
+            <div class="h-step-num">3</div>
+            <div class="h-step-body"><b>Connect nodes</b> by pressing <span class="h-kbd">C</span> or clicking → Connect, then clicking source → target. Or drag the bottom port dot of any node.</div>
+          </div>
+          <div class="h-step">
+            <div class="h-step-num">4</div>
+            <div class="h-step-body"><b>Export</b> your graph as Text rules, JSON, or a ready-to-paste LLM prompt via the Export button.</div>
+          </div>
+          <div class="h-tip"><b>Tip:</b> Build outward from the boundary. Place a Boundary node first to define your system scope, then populate states and transitions inside it.</div>
+        </div>
+      </div>
+
+      <!-- PRIMITIVES -->
+      <div class="help-section collapsed" id="hs-prims">
+        <div class="help-section-hd" onclick="toggleSection('hs-prims')">
+          <span class="help-section-title">Primitives</span>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="help-section-body">
+          <div class="h-row">
+            <div class="h-row-icon" style="background:var(--c-state-bg);border-color:var(--c-state-bdr);color:var(--c-state);">S</div>
+            <div class="h-row-main">
+              <div class="h-row-label" style="color:var(--c-state);">State</div>
+              <div class="h-row-desc">A stable condition the system occupies. Examples: <i>Idle, Processing, Error, Locked</i>. Every system needs at least one state.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon" style="background:var(--c-trans-bg);border-color:var(--c-trans-bdr);color:var(--c-trans);">T</div>
+            <div class="h-row-main">
+              <div class="h-row-label" style="color:var(--c-trans);">Transition</div>
+              <div class="h-row-desc">A guarded change from one state to another. Has a <b>when</b> condition and a <b>then</b> action. Wire: State → Transition → State.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon" style="background:var(--c-input-bg);border-color:var(--c-input-bdr);color:var(--c-input);">I</div>
+            <div class="h-row-main">
+              <div class="h-row-label" style="color:var(--c-input);">Input</div>
+              <div class="h-row-desc">External data, signals, or energy entering the system boundary. Examples: <i>HTTP request, sensor reading, user action</i>.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon" style="background:var(--c-output-bg);border-color:var(--c-output-bdr);color:var(--c-output);">O</div>
+            <div class="h-row-main">
+              <div class="h-row-label" style="color:var(--c-output);">Output</div>
+              <div class="h-row-desc">Results, responses, or signals leaving the system. Examples: <i>API response, log entry, actuator command</i>.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon" style="background:var(--c-feedback-bg);border-color:var(--c-feedback-bdr);color:var(--c-feedback);">F</div>
+            <div class="h-row-main">
+              <div class="h-row-label" style="color:var(--c-feedback);">Feedback</div>
+              <div class="h-row-desc">An output that loops back as input. Set polarity: <b>negative</b> (stabilising — thermostat) or <b>positive</b> (amplifying — viral growth).</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon" style="background:var(--c-boundary-bg);border-color:var(--c-boundary-bdr);color:var(--c-boundary);border-style:dashed;">B</div>
+            <div class="h-row-main">
+              <div class="h-row-label" style="color:var(--c-boundary);">Boundary</div>
+              <div class="h-row-desc">Defines what is inside vs outside your system. Use it to label the overall system or a major scope line. Renders with a dashed border.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon" style="background:var(--c-subsystem-bg);border-color:var(--c-subsystem-bdr);color:var(--c-subsystem);border-style:double;border-width:2px;">S</div>
+            <div class="h-row-main">
+              <div class="h-row-label" style="color:var(--c-subsystem);">Subsystem</div>
+              <div class="h-row-desc">A nested, self-contained component inside the main system. Use to group related states when a section is complex enough to stand alone. Renders with a double border.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CANVAS INTERACTIONS -->
+      <div class="help-section collapsed" id="hs-canvas">
+        <div class="help-section-hd" onclick="toggleSection('hs-canvas')">
+          <span class="help-section-title">Canvas interactions</span>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="help-section-body">
+          <div class="h-row">
+            <div class="h-row-icon">⊕</div>
+            <div class="h-row-main">
+              <div class="h-row-label">Add node</div>
+              <div class="h-row-desc">Drag any chip from the toolbar and drop it anywhere on the canvas.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon">↖</div>
+            <div class="h-row-main">
+              <div class="h-row-label">Select node</div>
+              <div class="h-row-desc">Click a node to select it and open its properties in the sidebar.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon">⤢</div>
+            <div class="h-row-main">
+              <div class="h-row-label">Move node</div>
+              <div class="h-row-desc">Click and drag any node to reposition it on the canvas.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon">✋</div>
+            <div class="h-row-main">
+              <div class="h-row-label">Pan canvas</div>
+              <div class="h-row-desc">Click and drag on empty canvas space to pan the viewport.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon">⊙</div>
+            <div class="h-row-main">
+              <div class="h-row-label">Connect nodes</div>
+              <div class="h-row-desc">Drag the <b>bottom port dot</b> of a node to another node's top port. Or press <span class="h-kbd">C</span> to enter Connect mode, then click source → target.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon">✕</div>
+            <div class="h-row-main">
+              <div class="h-row-label">Delete node</div>
+              <div class="h-row-desc">Hover a node and click the <b>✕</b> badge, or select it and press <span class="h-kbd">Del</span>.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MULTI-SELECT -->
+      <div class="help-section collapsed" id="hs-multi">
+        <div class="help-section-hd" onclick="toggleSection('hs-multi')">
+          <span class="help-section-title">Multi-select</span>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="help-section-body">
+          <div class="h-row">
+            <div class="h-row-icon"><span class="h-kbd" style="font-size:9px;">⇧</span></div>
+            <div class="h-row-main">
+              <div class="h-row-label">Shift+click</div>
+              <div class="h-row-desc">Toggle individual nodes in or out of the multi-selection. Highlighted with a purple ring.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon">⬚</div>
+            <div class="h-row-main">
+              <div class="h-row-label">Shift+drag (canvas)</div>
+              <div class="h-row-desc">Draw a marquee box on empty space. All nodes overlapping the box are selected on release.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon">⤢</div>
+            <div class="h-row-main">
+              <div class="h-row-label">Group move</div>
+              <div class="h-row-desc">With multiple nodes selected, drag any highlighted node — the whole group moves together preserving relative positions.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-icon">⌫</div>
+            <div class="h-row-main">
+              <div class="h-row-label">Group delete</div>
+              <div class="h-row-desc">Press <span class="h-kbd">Del</span> or click the Delete button in the sidebar to remove all selected nodes and their connections at once.</div>
+            </div>
+          </div>
+          <div class="h-tip"><b>Tip:</b> Click empty canvas or press <span class="h-kbd">Esc</span> to clear multi-selection.</div>
+        </div>
+      </div>
+
+      <!-- KEYBOARD SHORTCUTS -->
+      <div class="help-section collapsed" id="hs-keys">
+        <div class="help-section-hd" onclick="toggleSection('hs-keys')">
+          <span class="help-section-title">Keyboard shortcuts</span>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="help-section-body">
+          <div class="h-row">
+            <div class="h-row-main" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;">
+              <div><span class="h-kbd">C</span> <span style="color:var(--ink2);font-size:11px;">connect mode</span></div>
+              <div><span class="h-kbd">Esc</span> <span style="color:var(--ink2);font-size:11px;">cancel / deselect</span></div>
+              <div><span class="h-kbd">Del</span> <span style="color:var(--ink2);font-size:11px;">delete selected</span></div>
+              <div><span class="h-kbd">Shift+click</span> <span style="color:var(--ink2);font-size:11px;">multi-select</span></div>
+              <div><span class="h-kbd">Shift+drag</span> <span style="color:var(--ink2);font-size:11px;">marquee select</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPORT FORMATS -->
+      <div class="help-section collapsed" id="hs-export">
+        <div class="help-section-hd" onclick="toggleSection('hs-export')">
+          <span class="help-section-title">Export formats</span>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="help-section-body">
+          <div class="h-row">
+            <div class="h-row-main">
+              <div class="h-row-label"><span class="h-fmt h-fmt-json">JSON</span></div>
+              <div class="h-row-desc">Machine-readable. Best for re-importing, programmatic processing, or embedding in a system prompt as structured data. Includes full node metadata, connection list, and a transition summary table.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-main">
+              <div class="h-row-label"><span class="h-fmt h-fmt-text">TEXT RULES</span></div>
+              <div class="h-row-desc">Human-readable structured text. Sections for each primitive type, a connections list, and a transition table with guards and actions. Good for pasting directly into an LLM context window.</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-main">
+              <div class="h-row-label"><span class="h-fmt h-fmt-prompt">LLM PROMPT</span></div>
+              <div class="h-row-desc">A complete, ready-to-send prompt wrapping the text rule graph. Asks the LLM to summarise the system, identify feedback loops, describe failure modes, and analyse boundary conditions.</div>
+            </div>
+          </div>
+          <div class="h-tip"><b>Why structured output?</b> A graph of states and transitions gives an LLM explicit causal relationships, reducing hallucination compared to prose descriptions. The structured format also compresses token usage significantly.</div>
+        </div>
+      </div>
+
+      <!-- IMPORT -->
+      <div class="help-section collapsed" id="hs-import">
+        <div class="help-section-hd" onclick="toggleSection('hs-import')">
+          <span class="help-section-title">Import</span>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="help-section-body">
+          <div class="h-row">
+            <div class="h-row-main">
+              <div class="h-row-label">Supported files</div>
+              <div class="h-row-desc"><span class="h-fmt h-fmt-json">.json</span> JSON exports from this tool.<br><span class="h-fmt h-fmt-text">.txt .md</span> Text rule exports, or LLM prompt exports (the rule graph is automatically extracted from between the <code style="font-size:10px;">--- RULE GRAPH ---</code> markers).</div>
+            </div>
+          </div>
+          <div class="h-row">
+            <div class="h-row-main">
+              <div class="h-row-label">Merge vs replace</div>
+              <div class="h-row-desc">The import dialog lets you choose: <b>clear canvas first</b> (default) replaces everything, or uncheck to merge the imported graph alongside existing nodes. IDs are remapped to prevent collisions.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer id="footer">
+    <span><kbd>C</kbd> connect</span>
+    <span><kbd>Shift+click</kbd> multi-select</span>
+    <span><kbd>Shift+drag</kbd> marquee</span>
+    <span><kbd>Del</kbd> delete</span>
+    <span><kbd>Esc</kbd> cancel</span>
+    <span id="status-msg" id="footer-status">0 nodes · 0 connections</span>
+  </footer>
+
+</div>
+
+<!-- IMPORT MODAL -->
+<div id="import-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(2px);">
+  <div style="background:var(--bg2);border:1px solid var(--line2);border-radius:12px;width:90%;max-width:560px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);">
+    <div class="modal-head">
+      <h2>Import rule graph</h2>
+      <button class="btn" onclick="closeImport()">✕ Close</button>
+    </div>
+    <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px;">
+      <div style="font-size:12px;color:var(--ink2);font-family:var(--font-mono);">
+        Accepts: <span style="color:var(--c-state)">.json</span> (JSON export) &nbsp;·&nbsp; <span style="color:var(--c-trans)">.txt / .md</span> (Text rules or LLM prompt)
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-accent" onclick="triggerImport()" style="flex-shrink:0;">&#8598; Choose file</button>
+        <span id="import-filename" style="font-size:11px;font-family:var(--font-mono);color:var(--ink3);">No file chosen</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="checkbox" id="import-clear" checked style="width:14px;height:14px;accent-color:var(--accent);"/>
+        <label for="import-clear" style="font-size:12px;color:var(--ink2);cursor:pointer;">Clear canvas before importing</label>
+      </div>
+    </div>
+    <div id="import-preview" style="flex:1;overflow-y:auto;padding:16px 20px;font-family:var(--font-mono);font-size:12px;line-height:1.7;color:var(--ink2);scrollbar-width:thin;min-height:80px;">
+      <span style="color:var(--ink3);font-style:italic;">Preview will appear here after selecting a file…</span>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeImport()">Cancel</button>
+      <button class="btn btn-accent" id="import-confirm-btn" disabled onclick="confirmImport()">Import &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div class="modal-head">
+      <h2>Rule Graph Export</h2>
+      <button class="btn" onclick="closeExport()">✕ Close</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchTab('text',this)">Text rules</button>
+      <button class="modal-tab" onclick="switchTab('json',this)">JSON</button>
+      <button class="modal-tab" onclick="switchTab('prompt',this)">LLM prompt</button>
+    </div>
+    <div id="modal-output"></div>
+    <div class="modal-foot">
+      <button class="btn" onclick="copyExport()">Copy to clipboard</button>
+      <button class="btn btn-accent" onclick="sendExportToChat()">Send to Claude &#8599;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── STATE ───────────────────────────────────────────────────── */
+let nodes = [], connections = [], selected = null;
+let connectMode = false, connectSource = null;
+let draggingNode = null, dragOffX = 0, dragOffY = 0;
+let nodeCounter = 0;
+let currentTab = 'text';
+
+/* pan */
+let panX = 0, panY = 0;
+let isPanning = false, panStartX = 0, panStartY = 0, panOriginX = 0, panOriginY = 0;
+const world = document.getElementById('world');
+function applyPan() {
+  world.style.transform = `translate(${panX}px,${panY}px)`;
+  canvas.style.backgroundPosition = `${panX % 22}px ${panY % 22}px`;
+}
+
+/* multi-select */
+let multiSelected = new Set();
+let isMarquee = false, marqueeX0 = 0, marqueeY0 = 0;
+const marqueeEl = document.getElementById('marquee');
+let multiDragOffsets = {}, isDraggingMulti = false;
+
+const TYPES = ['STATE','TRANSITION','INPUT','OUTPUT','FEEDBACK','BOUNDARY','SUBSYSTEM'];
+const TYPE_COLOR = {
+  STATE:'--c-state', TRANSITION:'--c-trans', INPUT:'--c-input',
+  OUTPUT:'--c-output', FEEDBACK:'--c-feedback', BOUNDARY:'--c-boundary', SUBSYSTEM:'--c-subsystem'
+};
+
+/* ── CHIPS ───────────────────────────────────────────────────── */
+const chipsEl = document.getElementById('chips');
+TYPES.forEach(t => {
+  const c = document.createElement('div');
+  c.className = `chip chip-${t}`;
+  c.draggable = true;
+  c.dataset.type = t;
+  c.innerHTML = `<span class="pip"></span>${t.charAt(0)+t.slice(1).toLowerCase()}`;
+  c.addEventListener('dragstart', e => { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('type', t); });
+  chipsEl.appendChild(c);
+});
+
+/* ── CANVAS DND ──────────────────────────────────────────────── */
+const canvas = document.getElementById('canvas');
+const connSvg = document.getElementById('conn-svg');
+const hint = document.getElementById('canvas-hint');
+
+canvas.addEventListener('dragover', e => { e.preventDefault(); canvas.classList.add('drop-over'); });
+canvas.addEventListener('dragleave', () => canvas.classList.remove('drop-over'));
+canvas.addEventListener('drop', e => {
+  e.preventDefault();
+  canvas.classList.remove('drop-over');
+  const t = e.dataTransfer.getData('type');
+  if (!t) return;
+  const r = canvas.getBoundingClientRect();
+  createNode(t, e.clientX - r.left - 65 - panX, e.clientY - r.top - 22 - panY);
+});
+
+/* ── NODE LIFECYCLE ──────────────────────────────────────────── */
+function createNode(type, x, y, data={}) {
+  const id = 'n' + (++nodeCounter);
+  const node = {
+    id, type,
+    x: Math.max(0, x), y: Math.max(0, y),
+    label: data.label || (type.charAt(0)+type.slice(1).toLowerCase()+' '+nodeCounter),
+    description: data.description||'',
+    condition: data.condition||'',
+    action: data.action||'',
+    polarity: data.polarity||'negative'
+  };
+  nodes.push(node);
+  renderNodeEl(node);
+  hint.style.display = 'none';
+  updateFooter();
+  selectNode(id);
+  return node;
+}
+
+function renderNodeEl(node) {
+  const el = document.createElement('div');
+  el.className = `node-el node-${node.type}`;
+  el.id = 'el-' + node.id;
+  el.style.cssText = `left:${node.x}px;top:${node.y}px;`;
+  el.innerHTML = `
+    <div class="node-card" id="card-${node.id}">
+      <div class="node-tag">${node.type}</div>
+      <div class="node-name" id="nm-${node.id}">${esc(node.label)}</div>
+      <div class="node-sub" id="sb-${node.id}">${esc(node.description)}</div>
+    </div>
+    <button class="del-btn" onclick="event.stopPropagation();deleteNode('${node.id}')" title="Delete">✕</button>
+    <div class="port port-in"  id="pin-${node.id}"></div>
+    <div class="port port-out" id="pout-${node.id}" title="Drag port to connect"></div>
+  `;
+  // drag to move / shift+click multi-select
+  el.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('port')||e.target.classList.contains('del-btn')) return;
+    if (connectMode) { handleConnectClick(node.id); return; }
+    e.preventDefault(); e.stopPropagation();
+    if (e.shiftKey) { toggleMultiSelect(node.id); return; }
+    const r = canvas.getBoundingClientRect();
+    if (multiSelected.size > 1 && multiSelected.has(node.id)) {
+      isDraggingMulti = true; multiDragOffsets = {};
+      multiSelected.forEach(id => {
+        const n = nodes.find(x => x.id === id);
+        if (n) multiDragOffsets[id] = {
+          dx: e.clientX - r.left - n.x - panX,
+          dy: e.clientY - r.top  - n.y - panY
+        };
+      });
+    } else {
+      clearMultiSelect();
+      draggingNode = node;
+      dragOffX = e.clientX - r.left - node.x - panX;
+      dragOffY = e.clientY - r.top  - node.y - panY;
+      selectNode(node.id);
+    }
+  });
+  // port mousedown → start connect
+  el.querySelector('.port-out').addEventListener('mousedown', e => {
+    e.stopPropagation();
+    connectSource = node.id;
+    connectMode = true;
+    document.getElementById('connect-btn').classList.add('active');
+    setStatus('Click a target node · Esc to cancel');
+    e.preventDefault();
+  });
+  el.querySelector('.port-in').addEventListener('mousedown', e => {
+    e.stopPropagation();
+    if (connectMode && connectSource) handleConnectClick(node.id);
+    e.preventDefault();
+  });
+  world.appendChild(el);
+}
+
+canvas.addEventListener('mousemove', e => {
+  if (isPanning) {
+    panX = panOriginX + (e.clientX - panStartX);
+    panY = panOriginY + (e.clientY - panStartY);
+    applyPan(); return;
+  }
+  if (isMarquee) { updateMarquee(e); return; }
+  if (isDraggingMulti) {
+    const r = canvas.getBoundingClientRect();
+    multiSelected.forEach(id => {
+      const n = nodes.find(x => x.id === id);
+      const off = multiDragOffsets[id];
+      if (!n || !off) return;
+      n.x = Math.max(-panX, e.clientX - r.left - off.dx - panX);
+      n.y = Math.max(-panY, e.clientY - r.top  - off.dy - panY);
+      const el = document.getElementById('el-'+id);
+      if (el) { el.style.left = n.x+'px'; el.style.top = n.y+'px'; }
+    });
+    renderConns(); return;
+  }
+  if (!draggingNode) return;
+  const r = canvas.getBoundingClientRect();
+  draggingNode.x = Math.max(-panX, e.clientX - r.left - dragOffX - panX);
+  draggingNode.y = Math.max(-panY, e.clientY - r.top  - dragOffY - panY);
+  const el = document.getElementById('el-'+draggingNode.id);
+  el.style.left = draggingNode.x + 'px';
+  el.style.top  = draggingNode.y + 'px';
+  renderConns();
+});
+canvas.addEventListener('mouseup', e => {
+  if (isMarquee) { finishMarquee(e); return; }
+  draggingNode = null; isDraggingMulti = false; multiDragOffsets = {};
+  if (isPanning) { isPanning = false; canvas.classList.remove('panning'); }
+});
+canvas.addEventListener('mouseleave', () => {
+  draggingNode = null; isDraggingMulti = false;
+  if (isMarquee) { marqueeEl.style.display='none'; isMarquee=false; }
+  if (isPanning) { isPanning = false; canvas.classList.remove('panning'); }
+});
+
+canvas.addEventListener('mousedown', e => {
+  const onBackground = e.target === canvas || e.target === world || e.target === connSvg
+    || e.target.tagName === 'svg' || e.target.tagName === 'path' || e.target.tagName === 'defs'
+    || e.target === document.getElementById('canvas-hint') || e.target.closest('#canvas-hint');
+  if (!onBackground) return;
+  if (connectMode) { deselectAll(); if (!connectSource) exitConnect(); return; }
+  if (e.shiftKey) {
+    const r = canvas.getBoundingClientRect();
+    isMarquee = true;
+    marqueeX0 = e.clientX - r.left; marqueeY0 = e.clientY - r.top;
+    marqueeEl.style.cssText = `display:block;left:${marqueeX0}px;top:${marqueeY0}px;width:0;height:0;`;
+    e.preventDefault(); return;
+  }
+  isPanning = true;
+  panStartX = e.clientX; panStartY = e.clientY;
+  panOriginX = panX;     panOriginY = panY;
+  canvas.classList.add('panning');
+  clearMultiSelect(); deselectAll();
+  e.preventDefault();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'Escape') { exitConnect(); clearMultiSelect(); deselectAll(); }
+  if (e.key.toLowerCase() === 'c') toggleConnect();
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (multiSelected.size > 1) {
+      [...multiSelected].forEach(id => deleteNode(id, true));
+      multiSelected.clear(); renderConns(); updateFooter();
+    } else if (selected) { deleteNode(selected); }
+  }
+});
+
+/* ── CONNECT ─────────────────────────────────────────────────── */
+function handleConnectClick(id) {
+  if (!connectSource) { connectSource = id; setStatus('Now click the target node'); return; }
+  if (connectSource === id) { connectSource = null; return; }
+  if (!connections.find(c => c.from===connectSource && c.to===id)) {
+    connections.push({ from: connectSource, to: id });
+    renderConns(); updateFooter();
+  }
+  connectSource = null;
+  exitConnect();
+}
+
+function toggleConnect() {
+  connectMode = !connectMode;
+  document.getElementById('connect-btn').classList.toggle('active', connectMode);
+  if (connectMode) setStatus('Click source node, then target'); else { connectSource = null; setStatus(''); }
+}
+
+function exitConnect() {
+  connectMode = false; connectSource = null;
+  document.getElementById('connect-btn').classList.remove('active');
+  setStatus('');
+}
+
+canvas.addEventListener('mouseover', e => {
+  const onBg = e.target === canvas || e.target === world || e.target === connSvg || e.target.tagName === 'svg' || e.target.tagName === 'path' || e.target.tagName === 'defs';
+  if (onBg && !isPanning && !draggingNode) canvas.classList.add('pan-ready');
+  else if (!isPanning) canvas.classList.remove('pan-ready');
+});
+canvas.addEventListener('mouseout', e => {
+  if (!isPanning) canvas.classList.remove('pan-ready');
+});
+
+document.getElementById('connect-btn').addEventListener('click', toggleConnect);
+
+/* ── SELECTION / EDITOR ──────────────────────────────────────── */
+function selectNode(id) {
+  deselectAll(false);
+  selected = id;
+  const card = document.getElementById('card-'+id);
+  if (card) card.classList.add('selected');
+  renderEditor(id);
+  if (connectMode && connectSource) handleConnectClick(id);
+}
+
+function deselectAll(clearEditor=true) {
+  selected = null;
+  document.querySelectorAll('.node-card.selected').forEach(c => c.classList.remove('selected'));
+  if (clearEditor) renderEditor(null);
+}
+
+function toggleMultiSelect(id) {
+  if (multiSelected.has(id)) {
+    multiSelected.delete(id);
+    document.getElementById('card-'+id)?.classList.remove('multi-selected');
+  } else {
+    multiSelected.add(id);
+    document.getElementById('card-'+id)?.classList.add('multi-selected');
+    deselectAll(false);
+  }
+  if (multiSelected.size === 1) {
+    const only = [...multiSelected][0];
+    clearMultiSelect(); selectNode(only);
+  } else { renderMultiEditor(); }
+}
+
+function clearMultiSelect() {
+  multiSelected.forEach(id => document.getElementById('card-'+id)?.classList.remove('multi-selected'));
+  multiSelected.clear();
+}
+
+function applyMarqueeSelect(ids) {
+  clearMultiSelect(); deselectAll(false);
+  if (ids.length === 1) { selectNode(ids[0]); return; }
+  ids.forEach(id => {
+    multiSelected.add(id);
+    document.getElementById('card-'+id)?.classList.add('multi-selected');
+  });
+  renderMultiEditor();
+}
+
+function renderMultiEditor() {
+  const ed = document.getElementById('node-editor');
+  const ids = [...multiSelected];
+  if (!ids.length) { renderEditor(null); return; }
+  const typeMap = {};
+  ids.forEach(id => { const n=nodes.find(x=>x.id===id); if(n) typeMap[n.type]=(typeMap[n.type]||0)+1; });
+  const typeColors = {STATE:'var(--c-state)',TRANSITION:'var(--c-trans)',INPUT:'var(--c-input)',
+    OUTPUT:'var(--c-output)',FEEDBACK:'var(--c-feedback)',BOUNDARY:'var(--c-boundary)',SUBSYSTEM:'var(--c-subsystem)'};
+  const breakdown = Object.entries(typeMap).map(([t,n]) =>
+    `<span style="color:${typeColors[t]};font-size:10px;font-weight:700;letter-spacing:.06em;">${t} ×${n}</span>`
+  ).join('&nbsp; ');
+  ed.innerHTML = `<div style="display:flex;flex-direction:column;gap:14px;padding:4px 0;">
+    <div style="display:flex;align-items:baseline;gap:8px;">
+      <span style="font-size:28px;font-weight:500;color:var(--ink);font-family:var(--font-mono);">${ids.length}</span>
+      <span style="font-size:12px;color:var(--ink3);">nodes selected</span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">${breakdown}</div>
+    <div style="border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:9px;color:var(--ink3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;">Actions</div>
+      <div style="font-size:11px;color:var(--ink2);">Drag any highlighted node to move the group</div>
+      <button class="btn btn-danger" style="width:100%;justify-content:center;" onclick="deleteMultiSelected()">Delete ${ids.length} nodes</button>
+    </div>
+    <div style="font-size:10px;color:var(--ink3);font-style:italic;line-height:1.6;">Shift+click nodes to add or remove<br>Shift+drag empty canvas for marquee<br>Click empty canvas to deselect all</div>
+  </div>`;
+}
+
+function deleteMultiSelected() {
+  [...multiSelected].forEach(id => deleteNode(id, true));
+  multiSelected.clear(); renderConns(); updateFooter(); renderEditor(null);
+}
+
+function renderEditor(id) {
+  const ed = document.getElementById('node-editor');
+  if (!id) {
+    ed.innerHTML = `<div class="empty-editor"><div class="icon">◈</div><p>Select a node to<br>edit its properties</p></div>`;
+    return;
+  }
+  const n = nodes.find(x=>x.id===id);
+  if (!n) return;
+  const connsOut = connections.filter(c=>c.from===id);
+  const connsIn  = connections.filter(c=>c.to===id);
+  const outLabels = connsOut.map(c=>{ const t=nodes.find(x=>x.id===c.to); return t?`→ ${t.label}`:''; }).filter(Boolean);
+  const inLabels  = connsIn.map(c=>{ const f=nodes.find(x=>x.id===c.from); return f?`← ${f.label}`:''; }).filter(Boolean);
+
+  ed.innerHTML = `
+    <div class="field">
+      <label>Type</label>
+      <select onchange="changeNodeType('${id}',this.value)">
+        ${TYPES.map(t=>`<option value="${t}"${n.type===t?' selected':''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label>Label</label>
+      <input type="text" value="${esc(n.label)}" oninput="setField('${id}','label',this.value)"/>
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <textarea oninput="setField('${id}','description',this.value)">${esc(n.description)}</textarea>
+    </div>
+    ${n.type==='TRANSITION' ? `
+    <div class="field">
+      <label>Guard condition <span style="color:var(--c-trans)">(when)</span></label>
+      <input type="text" value="${esc(n.condition)}" oninput="setField('${id}','condition',this.value)" placeholder="e.g. temp > 80"/>
+      <div class="hint">Expression that enables this transition</div>
+    </div>
+    <div class="field">
+      <label>Action <span style="color:var(--c-trans)">(then)</span></label>
+      <input type="text" value="${esc(n.action)}" oninput="setField('${id}','action',this.value)" placeholder="e.g. activate_cooling()"/>
+    </div>` : ''}
+    ${n.type==='FEEDBACK' ? `
+    <div class="field">
+      <label>Loop polarity</label>
+      <select onchange="setField('${id}','polarity',this.value)">
+        <option value="negative"${n.polarity==='negative'?' selected':''}>Negative — stabilising</option>
+        <option value="positive"${n.polarity==='positive'?' selected':''}>Positive — amplifying</option>
+      </select>
+    </div>` : ''}
+    <div class="field">
+      <label>Connections</label>
+      <div class="conns-list">${[...outLabels,...inLabels].map(l=>`<div class="conn-entry"><span class="conn-arrow">⇢</span>${esc(l)}</div>`).join('')||'<span style="color:var(--ink3);font-style:italic;">None yet</span>'}</div>
+    </div>
+    <button class="btn btn-danger" style="width:100%;margin-top:4px;" onclick="deleteNode('${id}')">Delete node</button>
+  `;
+}
+
+function setField(id, field, value) {
+  const n = nodes.find(x=>x.id===id); if (!n) return;
+  n[field] = value;
+  if (field==='label') { const el=document.getElementById('nm-'+id); if(el) el.textContent=value; }
+  if (field==='description') { const el=document.getElementById('sb-'+id); if(el) el.textContent=value; }
+}
+
+function changeNodeType(id, type) {
+  const n = nodes.find(x=>x.id===id); if (!n) return;
+  n.type = type;
+  const el = document.getElementById('el-'+id);
+  if (el) { el.className = `node-el node-${type}`; }
+  const card = document.getElementById('card-'+id);
+  if (card) { card.className = 'node-card' + (selected===id?' selected':''); }
+  const tag = card?.querySelector('.node-tag');
+  if (tag) tag.textContent = type;
+  renderConns();
+  renderEditor(id);
+}
+
+function deleteNode(id, silent=false) {
+  nodes = nodes.filter(n=>n.id!==id);
+  connections = connections.filter(c=>c.from!==id&&c.to!==id);
+  document.getElementById('el-'+id)?.remove();
+  multiSelected.delete(id);
+  if (!silent) { renderConns(); updateFooter(); }
+  if (selected===id) deselectAll();
+  if (nodes.length===0) hint.style.display='';
+}
+
+/* ── CONNECTIONS SVG ─────────────────────────────────────────── */
+function renderConns() {
+  while (connSvg.firstChild) connSvg.removeChild(connSvg.firstChild);
+  const defs = svgEl('defs');
+  const mk = svgEl('marker');
+  mk.setAttribute('id','arh'); mk.setAttribute('viewBox','0 0 10 10');
+  mk.setAttribute('refX','9'); mk.setAttribute('refY','5');
+  mk.setAttribute('markerWidth','7'); mk.setAttribute('markerHeight','7');
+  mk.setAttribute('orient','auto-start-reverse');
+  const mp = svgEl('path');
+  mp.setAttribute('d','M2 1.5L8 5L2 8.5'); mp.setAttribute('fill','none');
+  mp.setAttribute('stroke-width','1.5'); mp.setAttribute('stroke-linecap','round'); mp.setAttribute('stroke-linejoin','round');
+  mp.setAttribute('stroke','inherit');
+  mk.appendChild(mp); defs.appendChild(mk); connSvg.appendChild(defs);
+
+  connections.forEach(conn => {
+    const fn = nodes.find(n=>n.id===conn.from);
+    const tn = nodes.find(n=>n.id===conn.to);
+    if (!fn||!tn) return;
+    const fe = document.getElementById('el-'+fn.id);
+    const te = document.getElementById('el-'+tn.id);
+    if (!fe||!te) return;
+    const fc = fe.querySelector('.node-card');
+    const tc = te.querySelector('.node-card');
+    const fx = fn.x + fc.offsetWidth/2;
+    const fy = fn.y + fc.offsetHeight + 6;
+    const tx = tn.x + tc.offsetWidth/2;
+    const ty = tn.y - 6;
+    const cy = (fy+ty)/2;
+    const color = getComputedStyle(document.documentElement).getPropertyValue(TYPE_COLOR[fn.type])||'#888';
+    const path = svgEl('path');
+    path.setAttribute('d', `M${fx},${fy} C${fx},${cy} ${tx},${cy} ${tx},${ty}`);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke', color.trim());
+    path.setAttribute('stroke-width','1.5');
+    path.setAttribute('stroke-opacity','0.55');
+    path.setAttribute('marker-end','url(#arh)');
+    if (fn.type==='FEEDBACK') path.setAttribute('stroke-dasharray','5 3');
+    connSvg.appendChild(path);
+  });
+}
+
+function svgEl(tag) { return document.createElementNS('http://www.w3.org/2000/svg', tag); }
+
+/* ── THEME ───────────────────────────────────────────────────── */
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const html = document.documentElement;
+  html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+  renderConns();
+});
+
+/* ── EXPORT ──────────────────────────────────────────────────── */
+function openExport() {
+  if (!nodes.length) { alert('Add some nodes first!'); return; }
+  switchTab(currentTab, document.querySelector('.modal-tab.active'));
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeExport() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.modal-tab').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('modal-output').textContent = buildExport(tab);
+}
+
+function buildExport(format) {
+  if (format==='json') return buildJSON();
+  if (format==='prompt') return buildPrompt();
+  return buildText();
+}
+
+function buildText() {
+  const L = [];
+  L.push('# SYSTEM RULE GRAPH');
+  L.push(`# ${new Date().toISOString().slice(0,10)}  nodes:${nodes.length}  connections:${connections.length}`);
+  L.push('');
+  const byType = {};
+  nodes.forEach(n => { (byType[n.type]||(byType[n.type]=[])).push(n); });
+  ['BOUNDARY','SUBSYSTEM','STATE','INPUT','OUTPUT','TRANSITION','FEEDBACK'].forEach(t => {
+    if (!byType[t]) return;
+    L.push(`## ${t}S`);
+    byType[t].forEach(n => {
+      L.push(`  [${n.id}] "${n.label}"`);
+      if (n.description) L.push(`    desc:     ${n.description}`);
+      if (n.condition)   L.push(`    when:     ${n.condition}`);
+      if (n.action)      L.push(`    then:     ${n.action}`);
+      if (n.type==='FEEDBACK') L.push(`    polarity: ${n.polarity}`);
+    });
+    L.push('');
+  });
+  L.push('## CONNECTIONS');
+  connections.forEach(c => {
+    const f=nodes.find(n=>n.id===c.from), t=nodes.find(n=>n.id===c.to);
+    if (f&&t) L.push(`  [${c.from}]"${f.label}"  -->  [${c.to}]"${t.label}"`);
+  });
+  L.push('');
+  L.push('## TRANSITION TABLE');
+  const trans = nodes.filter(n=>n.type==='TRANSITION');
+  if (!trans.length) { L.push('  (none)'); }
+  else trans.forEach(t => {
+    const ins  = connections.filter(c=>c.to===t.id).map(c=>nodes.find(n=>n.id===c.from)?.label||'?');
+    const outs = connections.filter(c=>c.from===t.id).map(c=>nodes.find(n=>n.id===c.to)?.label||'?');
+    L.push(`  ${ins.join(', ')||'?'}  --[${t.label}]-->  ${outs.join(', ')||'?'}`);
+    if (t.condition) L.push(`    guard:  ${t.condition}`);
+    if (t.action)    L.push(`    action: ${t.action}`);
+  });
+  return L.join('\n');
+}
+
+function buildJSON() {
+  const obj = {
+    meta: { generated: new Date().toISOString(), nodes: nodes.length, connections: connections.length },
+    nodes: nodes.map(n => {
+      const o = { id:n.id, type:n.type, label:n.label };
+      if (n.description) o.description=n.description;
+      if (n.condition)   o.condition=n.condition;
+      if (n.action)      o.action=n.action;
+      if (n.type==='FEEDBACK') o.polarity=n.polarity;
+      return o;
+    }),
+    connections: connections.map(c => ({
+      from:c.from, from_label:nodes.find(n=>n.id===c.from)?.label||'',
+      to:c.to,     to_label:nodes.find(n=>n.id===c.to)?.label||''
+    })),
+    transitions: nodes.filter(n=>n.type==='TRANSITION').map(t => ({
+      id:t.id, label:t.label,
+      guard: t.condition||null,
+      action: t.action||null,
+      from_states: connections.filter(c=>c.to===t.id).map(c=>nodes.find(n=>n.id===c.from)?.label||c.from),
+      to_states:   connections.filter(c=>c.from===t.id).map(c=>nodes.find(n=>n.id===c.to)?.label||c.to)
+    }))
+  };
+  return JSON.stringify(obj, null, 2);
+}
+
+function buildPrompt() {
+  return `You are a systems analyst. I am giving you a structured rule graph that describes a system.
+
+Analyse it and:
+1. Summarise what this system does in 2–3 sentences
+2. List the key states and what triggers transitions between them
+3. Identify all feedback loops and their polarity (stabilising vs amplifying)
+4. Describe the inputs, outputs, and system boundary
+5. Identify any potential failure modes or edge cases
+
+--- RULE GRAPH ---
+${buildText()}
+--- END RULE GRAPH ---`;
+}
+
+function copyExport() {
+  navigator.clipboard.writeText(document.getElementById('modal-output').textContent)
+    .then(()=>setStatus('Copied to clipboard!')).catch(()=>{});
+}
+
+function sendExportToChat() {
+  const text = buildPrompt();
+  closeExport();
+  if (typeof sendPrompt === 'function') sendPrompt(text);
+}
+
+/* ── IMPORT ──────────────────────────────────────────────────── */
+let pendingImport = null;
+
+function triggerImport() {
+  document.getElementById('import-modal-overlay').style.display = 'flex';
+  document.getElementById('file-input').click();
+}
+function closeImport() {
+  document.getElementById('import-modal-overlay').style.display = 'none';
+  pendingImport = null;
+  document.getElementById('import-preview').innerHTML = '<span style="color:var(--ink3);font-style:italic;">Preview will appear here after selecting a file\u2026</span>';
+  document.getElementById('import-filename').textContent = 'No file chosen';
+  document.getElementById('import-confirm-btn').disabled = true;
+  document.getElementById('file-input').value = '';
+}
+
+function handleFileImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('import-filename').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const text = ev.target.result;
+    try {
+      const result = parseImport(text, file.name);
+      pendingImport = result;
+      showImportPreview(result);
+      document.getElementById('import-confirm-btn').disabled = false;
+    } catch(err) {
+      document.getElementById('import-preview').innerHTML =
+        '<span style="color:var(--c-output);">\u26a0 Parse error: ' + esc(err.message) + '</span>';
+      document.getElementById('import-confirm-btn').disabled = true;
+      pendingImport = null;
+    }
+  };
+  reader.readAsText(file);
+}
+
+function parseImport(text, filename) {
+  const isJson = filename.endsWith('.json') || text.trimStart().startsWith('{');
+  if (isJson) return parseJSON(text);
+  if (text.includes('--- RULE GRAPH ---')) {
+    const inner = text.split('--- RULE GRAPH ---')[1].split('--- END RULE GRAPH ---')[0];
+    return parseTextRules(inner.trim());
+  }
+  return parseTextRules(text);
+}
+
+function parseJSON(text) {
+  const obj = JSON.parse(text);
+  if (!obj.nodes || !Array.isArray(obj.nodes)) throw new Error('Missing nodes array');
+  const importedNodes = obj.nodes.map((n, i) => ({
+    id:          n.id || ('i' + i),
+    type:        (n.type || 'STATE').toUpperCase(),
+    label:       n.label || 'Node ' + i,
+    description: n.description || '',
+    condition:   n.condition || '',
+    action:      n.action || '',
+    polarity:    n.polarity || 'negative',
+    x: 60 + (i % 4) * 220,
+    y: 60 + Math.floor(i / 4) * 160
+  }));
+  const importedConns = (obj.connections || []).map(c => ({
+    from: c.from, to: c.to
+  })).filter(c => importedNodes.find(n => n.id === c.from) && importedNodes.find(n => n.id === c.to));
+  return { nodes: importedNodes, connections: importedConns, format: 'json' };
+}
+
+function parseTextRules(text) {
+  const lines = text.split('\n');
+  const importedNodes = [];
+  const importedConns = [];
+  let currentType = null;
+  let currentNode = null;
+  let col = 0, row = 0;
+
+  const SECTION_RE = /^##\s+(STATES?|TRANSITIONS?|INPUTS?|OUTPUTS?|FEEDBACKS?|BOUNDARYS?|BOUNDARIES|SUBSYSTEMS?)/i;
+  const NODE_RE    = /^\s+\[([^\]]+)\]\s+"([^"]+)"/;
+  const FIELD_RE   = /^\s+(desc|when|then|polarity|guard|action):\s*(.+)/i;
+  const CONN_RE    = /^\s+\[([^\]]+)\][^-]*-->\s+\[([^\]]+)\]/;
+
+  lines.forEach(line => {
+    const sec = line.match(SECTION_RE);
+    if (sec) {
+      let raw = sec[1].toUpperCase();
+      raw = raw.replace(/IES$/, 'Y').replace(/S$/, '');
+      const MAP = { BOUNDARIE: 'BOUNDARY' };
+      currentType = MAP[raw] || raw;
+      currentNode = null; return;
+    }
+    if (/^##\s+CONNECTIONS/i.test(line)) { currentType = 'CONN'; currentNode = null; return; }
+    if (/^##\s+TRANSITION\s+TABLE/i.test(line)) { currentType = 'SKIP'; return; }
+    if (line.startsWith('#')) { currentType = null; currentNode = null; return; }
+
+    if (currentType && currentType !== 'CONN' && currentType !== 'SKIP') {
+      const nm = line.match(NODE_RE);
+      if (nm) {
+        currentNode = {
+          id: nm[1].trim(), type: currentType,
+          label: nm[2], description: '', condition: '', action: '', polarity: 'negative',
+          x: 60 + col * 220, y: 60 + row * 160
+        };
+        importedNodes.push(currentNode);
+        col++; if (col >= 4) { col = 0; row++; }
+        return;
+      }
+      if (currentNode) {
+        const fm = line.match(FIELD_RE);
+        if (fm) {
+          const key = fm[1].toLowerCase().trim();
+          const val = fm[2].trim();
+          if (key === 'desc')                     currentNode.description = val;
+          if (key === 'when' || key === 'guard')  currentNode.condition   = val;
+          if (key === 'then' || key === 'action') currentNode.action      = val;
+          if (key === 'polarity')                 currentNode.polarity    = val;
+        }
+      }
+    }
+    if (currentType === 'CONN') {
+      const cm = line.match(CONN_RE);
+      if (cm) importedConns.push({ from: cm[1].trim(), to: cm[2].trim() });
+    }
+  });
+
+  if (!importedNodes.length) throw new Error('No nodes found \u2014 check the file format');
+  const validConns = importedConns.filter(c =>
+    importedNodes.find(n => n.id === c.from) && importedNodes.find(n => n.id === c.to)
+  );
+  return { nodes: importedNodes, connections: validConns, format: 'text' };
+}
+
+function showImportPreview(result) {
+  const el = document.getElementById('import-preview');
+  const typeColors = {
+    STATE:'var(--c-state)', TRANSITION:'var(--c-trans)', INPUT:'var(--c-input)',
+    OUTPUT:'var(--c-output)', FEEDBACK:'var(--c-feedback)', BOUNDARY:'var(--c-boundary)', SUBSYSTEM:'var(--c-subsystem)'
+  };
+  let html = '<div style="margin-bottom:10px;color:var(--ink2);">'
+    + '<b style="color:var(--ink);">' + result.nodes.length + ' nodes</b> &nbsp;\u00b7&nbsp; '
+    + '<b style="color:var(--ink);">' + result.connections.length + ' connections</b>'
+    + ' &nbsp;<span style="color:var(--ink3);">detected as ' + result.format + ' format</span>'
+    + '</div>';
+  result.nodes.forEach(n => {
+    const c = typeColors[n.type] || 'var(--ink2)';
+    html += '<div style="display:flex;gap:8px;margin-bottom:3px;align-items:baseline;">'
+      + '<span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:' + c + ';min-width:72px;">' + n.type + '</span>'
+      + '<span style="color:var(--ink);">' + esc(n.label) + '</span>'
+      + (n.description ? '<span style="color:var(--ink3);font-style:italic;"> \u2014 ' + esc(n.description) + '</span>' : '')
+      + '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function confirmImport() {
+  if (!pendingImport) return;
+  const shouldClear = document.getElementById('import-clear').checked;
+  if (shouldClear) {
+    nodes = []; connections = [];
+    world.querySelectorAll('.node-el').forEach(e => e.remove());
+    renderConns();
+    panX = 60; panY = 40; applyPan();
+  }
+  const idMap = {};
+  pendingImport.nodes.forEach(n => {
+    const newId = 'n' + (++nodeCounter);
+    idMap[n.id] = newId;
+    const node = Object.assign({}, n, { id: newId });
+    if (!shouldClear) { node.x += 40; node.y += 40; }
+    nodes.push(node);
+    renderNodeEl(node);
+  });
+  pendingImport.connections.forEach(c => {
+    const from = idMap[c.from], to = idMap[c.to];
+    if (from && to) connections.push({ from, to });
+  });
+  hint.style.display = 'none';
+  renderConns(); updateFooter(); deselectAll();
+  closeImport();
+  setStatus('Imported ' + pendingImport.nodes.length + ' nodes');
+  setTimeout(() => updateFooter(), 2000);
+}
+
+/* ── MARQUEE ────────────────────────────────── */
+function updateMarquee(e) {
+  const r = canvas.getBoundingClientRect();
+  const x2 = e.clientX - r.left, y2 = e.clientY - r.top;
+  const left=Math.min(marqueeX0,x2), top=Math.min(marqueeY0,y2);
+  Object.assign(marqueeEl.style, { left:left+'px', top:top+'px', width:Math.abs(x2-marqueeX0)+'px', height:Math.abs(y2-marqueeY0)+'px' });
+}
+function finishMarquee(e) {
+  isMarquee = false; marqueeEl.style.display='none';
+  const r = canvas.getBoundingClientRect();
+  const x1=Math.min(marqueeX0, e.clientX-r.left)-panX, y1=Math.min(marqueeY0, e.clientY-r.top)-panY;
+  const x2=Math.max(marqueeX0, e.clientX-r.left)-panX, y2=Math.max(marqueeY0, e.clientY-r.top)-panY;
+  const hit = nodes.filter(n => {
+    const el = document.getElementById('el-'+n.id); if (!el) return false;
+    const card = el.querySelector('.node-card');
+    return n.x < x2 && n.x+card.offsetWidth > x1 && n.y < y2 && n.y+card.offsetHeight > y1;
+  }).map(n => n.id);
+  if (hit.length) applyMarqueeSelect(hit);
+}
+
+/* ── HELP PANEL ─────────────────────────────── */
+let helpOpen = false;
+function toggleHelp() {
+  helpOpen = !helpOpen;
+  document.getElementById('help-panel').classList.toggle('open', helpOpen);
+  document.getElementById('help-btn').classList.toggle('active', helpOpen);
+}
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
+/* ── MISC ────────────────────────────────────────────────────── */
+function clearAll() {
+  if (nodes.length && !confirm('Clear the canvas?')) return;
+  nodes=[]; connections=[];
+  world.querySelectorAll('.node-el').forEach(e=>e.remove());
+  renderConns(); deselectAll(); updateFooter();
+  hint.style.display='';
+}
+
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg || `${nodes.length} nodes · ${connections.length} connections`;
+}
+function updateFooter() {
+  document.getElementById('status-msg').textContent = `${nodes.length} node${nodes.length!==1?'s':''} · ${connections.length} connection${connections.length!==1?'s':''}`;
+}
+function esc(s='') { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ── DEMO ─────────────────────────────────────────────────────── */
+(function loadDemo() {
+  panX = 60; panY = 40; applyPan();
+  const b  = createNode('BOUNDARY',   30,  30, {label:'API service', description:'HTTP request boundary'});
+  const i  = createNode('INPUT',      280,  35, {label:'User request', description:'POST /process'});
+  const s1 = createNode('STATE',       30, 170, {label:'Idle',         description:'Awaiting work'});
+  const t1 = createNode('TRANSITION', 210, 160, {label:'Validate',     condition:'request.valid === true', action:'queue.push(req)'});
+  const s2 = createNode('STATE',       30, 310, {label:'Processing',   description:'Job in progress'});
+  const o  = createNode('OUTPUT',     300, 310, {label:'Response',     description:'200 OK + payload'});
+  const fb = createNode('FEEDBACK',   175, 430, {label:'Error retry',  description:'Requeues failed jobs', polarity:'negative'});
+
+  connections.push(
+    {from:i.id,  to:t1.id},
+    {from:s1.id, to:t1.id},
+    {from:t1.id, to:s2.id},
+    {from:s2.id, to:o.id},
+    {from:o.id,  to:fb.id},
+    {from:fb.id, to:t1.id}
+  );
+  renderConns(); updateFooter(); deselectAll();
+})();
+</script>
+</body>
+</html>

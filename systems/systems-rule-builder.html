@@ -455,6 +455,7 @@ input, textarea, select { font-family: inherit; }
   display: flex;
   flex-direction: column;
   gap: 5px;
+  flex-shrink: 0;
 }
 .legend-title {
   font-family: var(--font-mono);
@@ -887,7 +888,7 @@ input, textarea, select { font-family: inherit; }
   }
   #sidebar.drawer-full #sidebar-close-btn { display:flex; }
   .sidebar-head { display:flex; align-items:center; padding:8px 16px 4px; }
-  #node-editor { flex:1; overflow-y:auto; }
+  #node-editor { flex:1; overflow-y:auto; padding-bottom:24px; }
 
   /* ── HELP full-screen ─────────────────────────────────────── */
   #help-panel { position:fixed; inset:0; width:100%; border-left:none; border-radius:0; z-index:80; }
@@ -1141,16 +1142,16 @@ input, textarea, select { font-family: inherit; }
         <div class="icon">◈</div>
         <p>Select a node to<br>edit its properties</p>
       </div>
-    </div>
-    <div class="legend">
-      <div class="legend-title">Primitives</div>
-      <div class="legend-row"><div class="legend-pip" style="background:var(--c-state)"></div><span><b>State</b> — condition the system occupies</span></div>
-      <div class="legend-row"><div class="legend-pip" style="background:var(--c-trans)"></div><span><b>Transition</b> — guarded state change</span></div>
-      <div class="legend-row"><div class="legend-pip" style="background:var(--c-input)"></div><span><b>Input</b> — external signal entering</span></div>
-      <div class="legend-row"><div class="legend-pip" style="background:var(--c-output)"></div><span><b>Output</b> — result leaving system</span></div>
-      <div class="legend-row"><div class="legend-pip" style="background:var(--c-feedback)"></div><span><b>Feedback</b> — output loops back in</span></div>
-      <div class="legend-row"><div class="legend-pip" style="background:var(--c-boundary)"></div><span><b>Boundary</b> — scope delimiter</span></div>
-      <div class="legend-row"><div class="legend-pip" style="background:var(--c-subsystem)"></div><span><b>Subsystem</b> — nested component</span></div>
+      <div class="legend">
+        <div class="legend-title">Primitives</div>
+        <div class="legend-row"><div class="legend-pip" style="background:var(--c-state)"></div><span><b>State</b> — condition the system occupies</span></div>
+        <div class="legend-row"><div class="legend-pip" style="background:var(--c-trans)"></div><span><b>Transition</b> — guarded state change</span></div>
+        <div class="legend-row"><div class="legend-pip" style="background:var(--c-input)"></div><span><b>Input</b> — external signal entering</span></div>
+        <div class="legend-row"><div class="legend-pip" style="background:var(--c-output)"></div><span><b>Output</b> — result leaving system</span></div>
+        <div class="legend-row"><div class="legend-pip" style="background:var(--c-feedback)"></div><span><b>Feedback</b> — output loops back in</span></div>
+        <div class="legend-row"><div class="legend-pip" style="background:var(--c-boundary)"></div><span><b>Boundary</b> — scope delimiter</span></div>
+        <div class="legend-row"><div class="legend-pip" style="background:var(--c-subsystem)"></div><span><b>Subsystem</b> — nested component</span></div>
+      </div>
     </div>
   </aside>
 

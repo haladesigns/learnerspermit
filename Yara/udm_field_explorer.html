@@ -135,7 +135,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .noun-col-hidden .noun-badge-cell{display:none}
 .noun-col-hidden.field-row{grid-template-columns:minmax(180px,1fr) 78px minmax(0,1.4fr)}
 .noun-badge-cell{padding:5px 8px;background:var(--bg2);border-right:0.5px solid var(--border);display:flex;align-items:center;justify-content:center}
-.noun-badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap;font-family:var(--font-mono);border:0.5px solid rgba(255,255,255,0.15);color:#fff;letter-spacing:0.01em}
+.noun-badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px;white-space:nowrap;font-family:var(--font-mono);border:0.5px solid rgba(255,255,255,0.15);color:#fff;letter-spacing:0.01em}
 .field-row:hover{border-color:var(--border2)}
 .field-row.has-children{cursor:pointer}
 .field-row.has-children .field-name::after{content:' ›';color:var(--text3);font-weight:400}
@@ -3933,7 +3933,8 @@ function rowHTML(f, q, isTop, isNav){
   const pinLabel=pinned?'⊖ pin':'⊕ pin';
   const cmpLabel=inTray?'⊟ compare':'⊞ compare';
   const nounColor=NOUNS.find(n=>n.id===f.noun)?.color||'#888';
-  const nounLabel=f.noun||'';
+  const nounLabelMap={intermediary:'intermed.',security_result:'sec_result'};
+  const nounLabel=nounLabelMap[f.noun]||f.noun||'';
   const hideNounCol=scopeNoun!=='all';
   return `<div class="field-row${isTop&&q&&!isNav?' top-match':''}${hideNounCol?' noun-col-hidden':''}">
     <div class="field-name"><span class="score-dot ${dot}"></span>${pathHl}${badge}

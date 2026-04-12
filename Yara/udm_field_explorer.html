@@ -228,18 +228,41 @@ html[data-theme="dark"] mark{background:rgba(106,171,247,0.2)}
   }
   .noun-dot{width:6px;height:6px}
   .main{padding:14px 12px;overflow-y:auto}
-  .field-row{grid-template-columns:minmax(100px,1fr) 40px 62px}
-  .field-row.browse-row{grid-template-columns:minmax(100px,1fr) 62px}
-  .field-desc{display:none}
+  /* Stack rows vertically on mobile — all columns visible */
+  .field-row,.field-row.browse-row,.noun-col-hidden.field-row{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .noun-badge-cell{display:none}
+  .field-name{border-right:none;border-bottom:0.5px solid var(--border)}
+  .field-type-cell{
+    padding:4px 10px;
+    justify-content:flex-start;
+    border-right:none;
+    border-bottom:0.5px solid var(--border);
+    background:var(--bg);
+  }
+  .field-desc{
+    display:flex;
+    padding:5px 10px 7px;
+    font-size:11px;
+    background:var(--bg);
+    border-right:none;
+  }
   .sidebar-head{padding:10px 12px 6px}
-  .type-filter-row{padding-bottom:6px}
+  .type-filter-row{padding-bottom:6px;flex-wrap:wrap}
   .panel-head h2{font-size:15px}
   .panel-desc{font-size:11px}
   .group-label{padding:8px 0 3px}
-  .legend{padding:6px 10px}
-  .legend-item{font-size:10px}
-  .search-wrap input{font-size:13px;min-height:36px}
+  .legend{padding:6px 10px;overflow-x:auto;flex-wrap:nowrap}
+  .legend-item{font-size:10px;flex-shrink:0}
+  .search-wrap input{font-size:13px;min-height:44px;-webkit-tap-highlight-color:transparent}
   .children{padding-left:12px;margin-left:8px}
+  .clear-bar{padding:8px 10px}
+  .clear-bar-actions{flex-direction:row;gap:4px}
+  .clear-scope-row{flex-wrap:wrap;gap:3px}
+  .sidebar-section-body.open{max-height:160px}
 }
 
 /* Phone portrait — standard sizes */
@@ -247,8 +270,7 @@ html[data-theme="dark"] mark{background:rgba(106,171,247,0.2)}
   .sidebar-title-row h1{font-size:12px}
   .type-filter-row{gap:3px}
   .tf{font-size:10px;padding:3px 7px}
-  .field-row{grid-template-columns:minmax(80px,1fr) 36px 58px}
-  .field-row.browse-row{grid-template-columns:minmax(80px,1fr) 58px}
+  /* field-row already stacked at this width — no grid needed */
   .field-name{font-size:10px;padding:5px 8px}
   .field-type-cell{padding:5px 4px}
   .type-tag{font-size:9px;padding:1px 5px}
@@ -280,8 +302,7 @@ html[data-theme="dark"] mark{background:rgba(106,171,247,0.2)}
   .noun-btn{font-size:9px;padding:4px 6px}
   .sidebar-head{padding:8px 8px 6px}
   .main{padding:8px 6px}
-  .field-row{grid-template-columns:minmax(60px,1fr) 32px 54px}
-  .field-row.browse-row{grid-template-columns:minmax(60px,1fr) 54px}
+  /* field-row already stacked at this width — no grid needed */
   .type-tag{font-size:8px;padding:1px 4px}
 }
 

@@ -635,12 +635,6 @@
         "name": "systems-rule-builder.html",
         "label": "Systems Rule Builder",
         "path": "systems/systems-rule-builder.html"
-      },
-      {
-        "type": "file",
-        "name": "t",
-        "label": "T",
-        "path": "systems/t"
       }
     ]
   },

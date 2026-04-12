@@ -601,6 +601,142 @@
   ::-webkit-scrollbar       { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  /* ══════════════════════════════════════════════════
+     MOBILE & RESPONSIVE — full pass
+  ══════════════════════════════════════════════════ */
+
+  /* ── tablet: 800px ── */
+  @media (max-width: 800px) {
+    /* layout breathing room */
+    main { padding: 20px 16px; gap: 16px; }
+
+    /* header: hide badge on small screens, compress */
+    header { padding: 10px 16px; gap: 8px; }
+    .badge { display: none; }
+    .logo { font-size: 13px; }
+
+    /* nav: smaller tabs, still scrollable */
+    nav { padding: 0 8px; }
+    nav button { font-size: 10px; padding: 9px 10px; letter-spacing: 0.02em; }
+
+    /* hero */
+    .hero { padding: 16px; }
+    .hero h2 { font-size: 18px; }
+    .hero p  { font-size: 14px; }
+
+    /* grids → single column */
+    .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 14px; }
+    .decision-grid   { grid-template-columns: 1fr; }
+    .arch-grid       { grid-template-columns: 1fr; }
+
+    /* cards */
+    .card { padding: 14px 16px; }
+
+    /* node pills: allow 2-col wrapping */
+    .np { min-width: calc(50% - 6px); flex: 1 1 calc(50% - 6px); }
+
+    /* leverage rows: stack bar below text */
+    .lev-row {
+      grid-template-columns: 24px 1fr;
+      grid-template-rows: auto auto;
+    }
+    .lev-bar-wrap {
+      grid-column: 2;
+      margin-top: 6px;
+    }
+
+    /* hierarchy rows: hide tag on mobile, show inline in name */
+    .hier-row { grid-template-columns: 24px 1fr; }
+    .hier-row > .priority-tag { display: none; }
+
+    /* timeline: tighter year column */
+    .tl-item { grid-template-columns: 54px 1px 1fr; gap: 0 12px; }
+    .tl-year  { font-size: 11px; }
+
+    /* tables: horizontal scroll wrapper */
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .ref-table th, .ref-table td { padding: 7px 10px; }
+    .ref-table td:first-child { white-space: normal; }
+
+    /* pre: allow horizontal scroll, smaller font */
+    pre { font-size: 11px; padding: 12px; }
+
+    /* callout */
+    .callout { padding: 12px 14px; }
+
+    /* rule rows */
+    .rule-row { padding: 9px 12px; }
+    .rule-text { font-size: 12px; }
+
+    /* step rows */
+    .step-row { padding: 10px 12px; }
+    .step-body { font-size: 12px; }
+  }
+
+  /* ── phone: 480px ── */
+  @media (max-width: 480px) {
+    main { padding: 12px 10px; gap: 12px; }
+
+    header { padding: 8px 12px; }
+    .logo  { font-size: 12px; }
+    .toggle-label { display: none; }
+
+    nav { padding: 0 4px; }
+    nav button { font-size: 9px; padding: 8px 8px; }
+
+    .hero { padding: 14px 12px; }
+    .hero h2 { font-size: 15px; }
+    .hero p  { font-size: 13px; }
+
+    .card { padding: 12px 12px; }
+
+    /* node pills: full width on tiny screens */
+    .np { min-width: 100%; flex: 1 1 100%; }
+
+    /* leverage: tighter */
+    .lev-row { padding: 8px 10px; gap: 8px; }
+    .lev-name { font-size: 12px; }
+    .lev-detail { font-size: 11px; }
+    .lev-num { font-size: 10px; }
+
+    /* archetype cards */
+    .arch-card { padding: 12px 12px; }
+    .arch-desc { font-size: 11px; }
+
+    /* timeline: even tighter */
+    .tl-item { grid-template-columns: 44px 1px 1fr; gap: 0 8px; }
+    .tl-year  { font-size: 10px; }
+    .tl-title { font-size: 12px; }
+    .tl-desc  { font-size: 11px; }
+
+    /* tables: force horizontal scroll, smaller padding */
+    .ref-table { font-size: 11px; }
+    .ref-table th { font-size: 9px; padding: 6px 8px; }
+    .ref-table td { padding: 6px 8px; font-size: 11px; }
+
+    /* rule/step text */
+    .rule-text { font-size: 11px; }
+    .step-body { font-size: 11px; }
+
+    pre { font-size: 10px; padding: 10px; }
+
+    /* callout */
+    .callout p { font-size: 13px; }
+
+    /* decision grid */
+    .decision-item { font-size: 12px; padding: 8px 12px; }
+  }
+
+  /* ── touch: remove hover effects that look weird on mobile ── */
+  @media (hover: none) {
+    .rule-row:hover,
+    .step-row:hover,
+    .lev-row:hover,
+    .arch-card:hover,
+    .hier-row:hover,
+    .ref-table tr:hover td { background: unset; border-color: var(--border); }
+  }
 </style>
 </head>
 <body>
@@ -986,7 +1122,7 @@
 
     <div class="card">
       <div class="card-title">Combined Loop Behaviors</div>
-      <table class="ref-table">
+      <div class="table-scroll"><table class="ref-table">
         <thead>
           <tr>
             <th>Loop Structure</th>
@@ -1045,7 +1181,7 @@
             <td class="col-arch">Drifting Goals</td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <div class="card yellow">
@@ -1212,7 +1348,7 @@
 
     <div class="card">
       <div class="card-title">Archetype → Rule Graph Mapping</div>
-      <table class="ref-table">
+      <div class="table-scroll"><table class="ref-table">
         <thead>
           <tr>
             <th>Archetype</th>
@@ -1247,7 +1383,7 @@
             <td class="col-note">Each subsystem connects to shared resource with no feedback about impact</td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
   </div><!-- /archetypes -->
@@ -1493,7 +1629,7 @@
 
     <div class="card">
       <div class="card-title">Rule Builder → FSM Mapping</div>
-      <table class="ref-table">
+      <div class="table-scroll"><table class="ref-table">
         <thead>
           <tr>
             <th>Rule Builder Node</th>
@@ -1546,7 +1682,7 @@
             <td class="col-note">A state that is itself an FSM — Statechart concept</td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <div class="grid-2">
@@ -1602,7 +1738,7 @@
 
     <div class="card">
       <div class="card-title">FSM Formal Verification Concepts</div>
-      <table class="ref-table">
+      <div class="table-scroll"><table class="ref-table">
         <thead>
           <tr>
             <th>Property</th>
@@ -1637,7 +1773,7 @@
             <td class="col-note">STATES should handle all relevant inputs, even if the handler is "ignore"</td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
   </div><!-- /fsm -->
@@ -1765,7 +1901,7 @@
 
         <div class="card yellow" style="margin-top:20px">
           <div class="card-title yellow">Influential Books</div>
-          <table class="ref-table">
+          <div class="table-scroll"><table class="ref-table">
             <thead>
               <tr>
                 <th>Author / Year</th>
@@ -1815,7 +1951,7 @@
                 <td class="col-note">Complex Adaptive Systems (CAS)</td>
               </tr>
             </tbody>
-          </table>
+          </table></div>
         </div>
 
         <div class="card green" style="margin-top:20px">
@@ -1854,7 +1990,7 @@
     <div class="grid-2">
       <div class="card">
         <div class="card-title">Systems Theory Terms — A to M</div>
-        <table class="ref-table">
+        <div class="table-scroll"><table class="ref-table">
           <thead><tr><th>Term</th><th>Definition</th></tr></thead>
           <tbody>
             <tr><td>Archetype</td><td class="col-desc">Recurring structural pattern of feedback loops producing characteristic behavior. Eight canonical types identified by Senge.</td></tr>
@@ -1879,12 +2015,12 @@
             <tr><td>Limiting factor</td><td class="col-desc">The single input or resource that is currently constraining system activity. Changing the limiting factor shifts the constraint.</td></tr>
             <tr><td>Mental model</td><td class="col-desc">An individual's internal representation of how a system works. Often incomplete, often wrong. Source of policy error.</td></tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       <div class="card">
         <div class="card-title">Systems Theory Terms — N to Z</div>
-        <table class="ref-table">
+        <div class="table-scroll"><table class="ref-table">
           <thead><tr><th>Term</th><th>Definition</th></tr></thead>
           <tbody>
             <tr><td>Nonlinearity</td><td class="col-desc">Cause does not produce proportional effect. Nonlinearities shift which feedback loop dominates.</td></tr>
@@ -1902,10 +2038,10 @@
             <tr><td>System</td><td class="col-desc">A set of interconnected elements producing its own pattern of behavior over time. Structure → behavior is the key insight.</td></tr>
             <tr><td>System dynamics</td><td class="col-desc">Forrester's methodology for modeling feedback systems using differential equations. Stock-flow diagrams as the language.</td></tr>
           </tbody>
-        </table>
+        </table></div>
 
         <div class="card-title" style="margin-top:20px">FSM-Specific Terms</div>
-        <table class="ref-table">
+        <div class="table-scroll"><table class="ref-table">
           <thead><tr><th>Term</th><th>Definition</th></tr></thead>
           <tbody>
             <tr><td>Alphabet (Σ)</td><td class="col-desc">The set of all valid input symbols an FSM can process. Maps to the set of all possible INPUT nodes.</td></tr>
@@ -1920,7 +2056,7 @@
             <tr><td>Statechart</td><td class="col-desc">Harel's hierarchical FSM extension with nested states, parallel regions, history, guards, entry/exit actions.</td></tr>
             <tr><td>Transition function (δ)</td><td class="col-desc">Maps (current state × input) → next state. The core of an FSM. Maps to TRANSITION nodes.</td></tr>
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
 

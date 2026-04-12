@@ -517,11 +517,13 @@
 
 <nav>
   <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="workflow">▶ Workflow</button>
   <button data-tab="write">W — Write</button>
   <button data-tab="isolate">I — Isolate</button>
   <button data-tab="select">S — Select</button>
   <button data-tab="compress">C — Compress</button>
   <button data-tab="commands">Commands</button>
+<button data-tab="resources">Resources</button>
 </nav>
 
 <main>
@@ -536,7 +538,7 @@
       <p>A battle-tested system for keeping your Claude Code context window <strong>lean and high-signal</strong>. Context rot — the measurable degradation in LLM output quality as input length grows — is responsible for roughly <strong>80% of agent failures</strong> in real codebases. WISC is the engineering response: Write, Isolate, Select, Compress.</p>
     </div>
 
-    <!-- WHISK pills -->
+    <!-- WISC pills -->
     <div class="card">
       <div class="card-title">The Four Pillars</div>
       <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
@@ -607,12 +609,299 @@
       <p><em>Context is your most precious resource</em> — not tokens you're allowed to fill, but signal you must engineer. Every token in the window competes for the model's attention. Unnecessary tokens don't sit quietly; they actively dilute the important ones.</p>
     </div>
 
+    <!-- START HERE flow -->
+    <div class="card" style="border-left: 3px solid var(--accent);">
+      <div class="card-title">🚀 Start Here — Full Session Flow</div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Every feature build follows this sequence. Click <strong style="color:var(--accent);">▶ Workflow</strong> in the nav for the full annotated walkthrough.</p>
+
+      <div style="display:flex; flex-direction:column; gap:0; position:relative;">
+
+        <!-- connector line -->
+        <div style="position:absolute; left:19px; top:36px; bottom:36px; width:2px; background:var(--border-accent); z-index:0;"></div>
+
+        <!-- Step 1 -->
+        <div style="display:grid; grid-template-columns:40px 1fr; gap:14px; align-items:flex-start; padding:10px 0; position:relative; z-index:1;">
+          <div style="width:38px; height:38px; border-radius:50%; background:var(--bg-code); border:2px solid var(--accent); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px; color:var(--accent); flex-shrink:0;">1</div>
+          <div style="padding-top:8px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--text);">Set up your project once</span>
+            <span style="font-size:12px; color:var(--text-muted);"> — write <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">CLAUDE.md</code>, create <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">examples/</code>, configure <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">.claude/commands/</code></span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; margin-left:8px; padding:2px 7px; border-radius:3px; background:var(--accent-glow); color:var(--accent); border:1px solid rgba(79,142,247,0.3);">S — SELECT</span>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div style="display:grid; grid-template-columns:40px 1fr; gap:14px; align-items:flex-start; padding:10px 0; position:relative; z-index:1;">
+          <div style="width:38px; height:38px; border-radius:50%; background:var(--bg-code); border:2px solid var(--accent3); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px; color:var(--accent3); flex-shrink:0;">2</div>
+          <div style="padding-top:8px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--text);">Start a planning session</span>
+            <span style="font-size:12px; color:var(--text-muted);"> — run <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">/prime</code>, then send sub-agents to research the codebase and web in parallel</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; margin-left:8px; padding:2px 7px; border-radius:3px; background:var(--accent3-glow); color:var(--accent3); border:1px solid rgba(62,207,142,0.3);">I — ISOLATE</span>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div style="display:grid; grid-template-columns:40px 1fr; gap:14px; align-items:flex-start; padding:10px 0; position:relative; z-index:1;">
+          <div style="width:38px; height:38px; border-radius:50%; background:var(--bg-code); border:2px solid var(--accent3); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px; color:var(--accent3); flex-shrink:0;">3</div>
+          <div style="padding-top:8px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--text);">Generate the PRP</span>
+            <span style="font-size:12px; color:var(--text-muted);"> — fill <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">INITIAL.md</code>, run <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">/generate-prp</code> → structured spec saved to <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">PRPs/</code></span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; margin-left:8px; padding:2px 7px; border-radius:3px; background:var(--accent-glow); color:var(--accent); border:1px solid rgba(79,142,247,0.3);">W — WRITE</span>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div style="display:grid; grid-template-columns:40px 1fr; gap:14px; align-items:flex-start; padding:10px 0; position:relative; z-index:1;">
+          <div style="width:38px; height:38px; border-radius:50%; background:var(--bg-code); border:2px solid var(--accent); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px; color:var(--accent); flex-shrink:0;">4</div>
+          <div style="padding-top:8px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--text);">Fresh session — execute the PRP</span>
+            <span style="font-size:12px; color:var(--text-muted);"> — new context window, run <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">/execute-prp PRPs/feature.md</code> as the only input</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; margin-left:8px; padding:2px 7px; border-radius:3px; background:var(--accent-glow); color:var(--accent); border:1px solid rgba(79,142,247,0.3);">W — WRITE</span>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div style="display:grid; grid-template-columns:40px 1fr; gap:14px; align-items:flex-start; padding:10px 0; position:relative; z-index:1;">
+          <div style="width:38px; height:38px; border-radius:50%; background:var(--bg-code); border:2px solid var(--accent4); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px; color:var(--accent4); flex-shrink:0;">5</div>
+          <div style="padding-top:8px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--text);">Monitor context health</span>
+            <span style="font-size:12px; color:var(--text-muted);"> — run <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">/context</code> to check usage; load on-demand docs and skills only as needed</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; margin-left:8px; padding:2px 7px; border-radius:3px; background:rgba(247,162,62,0.08); color:var(--accent4); border:1px solid rgba(247,162,62,0.3);">S — SELECT</span>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div style="display:grid; grid-template-columns:40px 1fr; gap:14px; align-items:flex-start; padding:10px 0; position:relative; z-index:1;">
+          <div style="width:38px; height:38px; border-radius:50%; background:var(--bg-code); border:2px solid var(--accent); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px; color:var(--accent); flex-shrink:0;">6</div>
+          <div style="padding-top:8px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--text);">Commit with standardized message</span>
+            <span style="font-size:12px; color:var(--text-muted);"> — run <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">/commit</code> — logs what was built + AI layer improvements to git</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; margin-left:8px; padding:2px 7px; border-radius:3px; background:var(--accent-glow); color:var(--accent); border:1px solid rgba(79,142,247,0.3);">W — WRITE</span>
+          </div>
+        </div>
+
+        <!-- Step 7 (conditional) -->
+        <div style="display:grid; grid-template-columns:40px 1fr; gap:14px; align-items:flex-start; padding:10px 0; position:relative; z-index:1;">
+          <div style="width:38px; height:38px; border-radius:50%; background:var(--bg-code); border:2px dashed var(--accent2); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:14px; color:var(--accent2); flex-shrink:0;">7</div>
+          <div style="padding-top:8px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--text);">If context bloats → compress</span>
+            <span style="font-size:12px; color:var(--text-muted);"> — <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">/compact</code> once with focus instructions, or <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--tag-bg);padding:1px 5px;border-radius:3px;color:var(--accent);">/handoff</code> + fresh session if needed twice</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; margin-left:8px; padding:2px 7px; border-radius:3px; background:var(--accent2-glow); color:var(--accent2); border:1px solid rgba(224,95,122,0.3);">C — COMPRESS</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; margin-left:4px; padding:2px 7px; border-radius:3px; background:var(--bg-code); color:var(--text-muted); border:1px solid var(--border);">IF NEEDED</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div><!-- /overview -->
 
 
+  </div><!-- /overview -->
+
   <!-- ============================================================
-       W — WRITE
+       WORKFLOW TAB — full annotated session walkthrough
        ============================================================ -->
+  <div class="section" id="tab-workflow">
+
+    <div class="hero">
+      <h2>▶ Full Session Workflow</h2>
+      <p>The end-to-end sequence for every feature build using WISC. Each step references the tab where you'll find deeper detail. Steps 1 and 2 are <strong>one-time setup</strong>. Steps 3–6 repeat for every feature. Step 7 is the emergency brake.</p>
+    </div>
+
+    <!-- Phase 0 -->
+    <div class="card green">
+      <div class="card-title green">Phase 0 — One-Time Project Setup</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Write your global rules — <code>CLAUDE.md</code></strong><br>
+            Architecture overview, conventions, commands to run, testing + logging strategy. Target 500–700 lines. This file is loaded into <em>every</em> session, so keep it lean.
+            <span class="tip">💡 See <strong>S — Select</strong> tab → Layer 1 for what belongs here vs. on-demand docs.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Populate <code>examples/</code></strong><br>
+            Add real code patterns: CLI structure, agent architecture, test patterns, integration flows. These are the patterns the agent will follow — AI performs far better from examples than from rules alone.
+            <pre><span class="hd">examples/</span>
+<span class="li">├── cli.py</span>            <span class="cm"># CLI argument parsing pattern</span>
+<span class="li">├── agent/agent.py</span>   <span class="cm"># Agent creation pattern</span>
+<span class="li">├── agent/tools.py</span>   <span class="cm"># Tool implementation pattern</span>
+<span class="li">└── tests/</span>           <span class="cm"># Test file structure + mocking</span></pre>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Set up <code>.claude/commands/</code></strong><br>
+            Add your slash commands: <code>/prime</code>, <code>/generate-prp</code>, <code>/execute-prp</code>, <code>/commit</code>, <code>/handoff</code>. Clone the repo template as a starting point, then customize.
+            <span class="tip">💡 See the <strong>Commands</strong> tab for the full list and file layout.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Phase 1 -->
+    <div class="card blue">
+      <div class="card-title">Phase 1 — Planning Session (new context window per feature)</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Open a fresh context window. Run <code>/prime</code></strong><br>
+            The prime command reads key files and the git log to orient the agent on what's been built recently. Use a specialized prime if you know the focus area (<code>/prime-workflows</code>, etc.).
+            <span style="display:inline-block; margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:3px; background:rgba(247,162,62,0.08); color:var(--accent4); border:1px solid rgba(247,162,62,0.3);">S — SELECT: Layer 4 Prime Commands</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>Spin up sub-agents for research</strong><br>
+            Don't research inline — that fills your main context. Dispatch 2–5 parallel sub-agents: one to explore the codebase, one for web research (best practices, library choices), optionally one to scout docs.
+            <pre><span class="li">"Spin up two sub-agents in parallel:</span>
+<span class="li"> one to research how auth is currently implemented,</span>
+<span class="li"> one to find best practices for JWT refresh tokens"</span></pre>
+            <span class="note">⚠ Sub-agents may burn 100K–400K tokens in research. Your main context gets back only ~500 tokens of distilled summary.</span>
+            <span style="display:inline-block; margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:3px; background:var(--accent3-glow); color:var(--accent3); border:1px solid rgba(62,207,142,0.3);">I — ISOLATE: Sub-agents + Scout Pattern</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <strong>Load on-demand context if needed</strong><br>
+            If you know you're working on a specific subsystem (frontend, API, workflows), load its rules now. If unsure whether a large doc is relevant, use the scout pattern first.
+            <span style="display:inline-block; margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:3px; background:rgba(247,162,62,0.08); color:var(--accent4); border:1px solid rgba(247,162,62,0.3);">S — SELECT: Layer 2 On-Demand Context</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">7</div>
+          <div class="step-body">
+            <strong>Fill <code>INITIAL.md</code> and run <code>/generate-prp</code></strong><br>
+            Describe the feature, reference examples, link docs, note gotchas. The agent researches and produces a complete PRP (Product Requirements Prompt) — implementation blueprint + validation gates.
+            <pre><span class="cm"># In the planning session:</span>
+<span class="kw">/generate-prp</span> INITIAL.md
+<span class="cm"># Output: PRPs/your-feature-name.md</span>
+<span class="cm"># Includes: steps, validation commands, confidence score</span></pre>
+            <span style="display:inline-block; margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:3px; background:var(--accent-glow); color:var(--accent); border:1px solid rgba(79,142,247,0.3);">W — WRITE: W2 Separate Sessions + PRP</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">8</div>
+          <div class="step-body">
+            <strong>End the planning session</strong><br>
+            This context window is now disposable. All the exploratory noise stays here. The PRP carries everything forward.
+            <span class="tip">💡 Never implement in the same session you planned. The research residue actively hurts implementation quality.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="card blue">
+      <div class="card-title">Phase 2 — Implementation Session (fresh context window)</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">9</div>
+          <div class="step-body">
+            <strong>Open a brand new context window. Run <code>/execute-prp</code></strong><br>
+            Pass the PRP as the <em>only</em> input. No other context. The PRP should be self-contained.
+            <pre><span class="kw">/execute-prp</span> PRPs/your-feature-name.md</pre>
+            <span class="note">⚠ If you find yourself loading additional context here, it means the PRP is incomplete — stop and update it.</span>
+            <span style="display:inline-block; margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:3px; background:var(--accent-glow); color:var(--accent); border:1px solid rgba(79,142,247,0.3);">W — WRITE: W2</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">10</div>
+          <div class="step-body">
+            <strong>Load skills as needed during implementation</strong><br>
+            Skills are lazy-loaded — the agent reads the full <code>SKILL.md</code> only when it decides it needs the capability (e.g., agent browser skill kicks in when you start end-to-end testing).
+            <span style="display:inline-block; margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:3px; background:rgba(247,162,62,0.08); color:var(--accent4); border:1px solid rgba(247,162,62,0.3);">S — SELECT: Layer 3 Skills</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">11</div>
+          <div class="step-body">
+            <strong>Monitor context with <code>/context</code></strong><br>
+            Periodically check token usage. Performance starts degrading noticeably around 200K tokens. If you're approaching that, finish the current task and either commit or hand off before continuing.
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">12</div>
+          <div class="step-body">
+            <strong>Commit with <code>/commit</code></strong><br>
+            Standardized two-part message: what was built + how the AI layer improved. This message becomes long-term memory for future sessions.
+            <pre><span class="cm"># /commit produces:</span>
+<span class="hd">feat(auth): implement JWT refresh token rotation</span>
+
+<span class="li">Changes: added refresh endpoint, token blacklist,</span>
+<span class="li">  sliding expiry logic</span>
+
+<span class="li">AI layer: updated /prime to read auth module,</span>
+<span class="li">  added JWT patterns to examples/</span></pre>
+            <span style="display:inline-block; margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:3px; background:var(--accent-glow); color:var(--accent); border:1px solid rgba(79,142,247,0.3);">W — WRITE: W1 Git Log</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="card red">
+      <div class="card-title red">Phase 3 — Emergency Brake (only if context bloats)</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">13</div>
+          <div class="step-body">
+            <strong>First bloat: <code>/compact</code> with focus instructions</strong><br>
+            Always provide a focus hint so the summary preserves the right things. Then immediately verify retention.
+            <pre><span class="kw">/compact</span> focus on the edge cases we just tested
+
+<span class="cm"># After compact, always ask:</span>
+<span class="li">"What do you remember about what we just did?"</span></pre>
+            <span style="display:inline-block; margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:3px; background:var(--accent2-glow); color:var(--accent2); border:1px solid rgba(224,95,122,0.3);">C — COMPRESS</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">14</div>
+          <div class="step-body">
+            <strong>Second bloat: <code>/handoff</code> + fresh session</strong><br>
+            If you've hit /compact a second time, the session is too far gone. Create a handoff doc, start a new context window, and paste it as your only input.
+            <pre><span class="kw">/handoff</span>
+<span class="cm"># Creates: handoff.md with completed work,</span>
+<span class="cm"># in-progress, blockers, next steps</span>
+<span class="cm"># → open fresh session, load handoff.md only</span></pre>
+            <span class="note">⚠ If you're reaching Phase 3 regularly, fix Phase 1–2 first. Compression is a symptom, not a strategy.</span>
+            <span style="display:inline-block; margin-top:6px; font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:3px; background:var(--accent2-glow); color:var(--accent2); border:1px solid rgba(224,95,122,0.3);">C — COMPRESS</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">🔁 The Loop</div>
+      <p>Repeat Steps 4–12 for every feature. Each <code>/commit</code> feeds the git log that the next session's <code>/prime</code> reads. <em>The system compounds — the longer you use it, the faster each new session starts.</em></p>
+    </div>
+
+  </div><!-- /workflow -->
   <div class="section" id="tab-write">
 
     <div class="hero" style="border-left-color: var(--accent);">
@@ -653,8 +942,7 @@
     </div>
 
     <div class="card blue">
-      <div class="card-title">W2 — Separate Planning &amp; Implementation Sessions</div>
-      <div class="step-list">
+      <div class="card-title">W2 — Separate Planning &amp; Implementation Sessions</div>      <div class="step-list">
         <div class="step-row">
           <div class="step-num">1</div>
           <div class="step-body">
@@ -680,6 +968,55 @@
           <div class="step-body">
             <strong>Implementation only</strong> — the agent is maximally focused. No planning residue, no exploratory dead-ends cluttering the window.
             <span class="tip">💡 The spec is doing the work that context would otherwise do.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">The PRP — Your Structured Plan Format</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">A <strong style="color:var(--text);">PRP (Product Requirements Prompt)</strong> is the formal artifact produced by the planning session. It's the handoff between planning and implementation — PRD + codebase intelligence + runbook. The minimum viable packet an AI needs to ship production-ready code on the first pass.</p>
+      <div class="grid-2">
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">INITIAL.md template — feature request format</div>
+          <pre><span class="hd">## FEATURE:</span>
+<span class="li">Build an async web scraper using BeautifulSoup</span>
+<span class="li">that extracts product data, handles rate limiting,</span>
+<span class="li">and stores results in PostgreSQL.</span>
+
+<span class="hd">## EXAMPLES:</span>
+<span class="li">- Auth flow: examples/auth-flow.js</span>
+<span class="li">- Similar endpoint: src/api/users.js</span>
+<span class="li">- DB schema pattern: src/models/base-model.js</span>
+
+<span class="hd">## DOCUMENTATION:</span>
+<span class="li">- JWT library: https://github.com/auth0/...</span>
+<span class="li">- Our API standards: docs/api-guidelines.md</span>
+
+<span class="hd">## OTHER CONSIDERATIONS:</span>
+<span class="li">- Use existing error handling patterns</span>
+<span class="li">- Follow standard response format</span>
+<span class="li">- Include rate limiting</span></pre>
+        </div>
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent4); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">PRP workflow</div>
+          <div class="step-list">
+            <div class="step-row">
+              <div class="step-num">1</div>
+              <div class="step-body"><strong>Fill INITIAL.md</strong> with feature req, examples, docs, gotchas</div>
+            </div>
+            <div class="step-row">
+              <div class="step-num">2</div>
+              <div class="step-body"><strong>/generate-prp INITIAL.md</strong> — agent researches codebase, fetches docs, produces <code>PRPs/feature-name.md</code></div>
+            </div>
+            <div class="step-row">
+              <div class="step-num">3</div>
+              <div class="step-body"><strong>/execute-prp PRPs/feature-name.md</strong> — fresh session, implements + validates until all criteria pass<span class="tip">💡 The PRP scores its own confidence (1–10) before execution begins.</span></div>
+            </div>
+          </div>
+          <div class="callout yellow" style="margin-top:12px;">
+            <div class="callout-label">Key insight</div>
+            <p><em>Examples folder is critical</em> — place real code patterns in <code>examples/</code> and reference them in INITIAL.md. The AI follows patterns it can see far better than rules it must infer.</p>
           </div>
         </div>
       </div>
@@ -907,7 +1244,7 @@
       </div>
 
       <div class="card yellow">
-        <div class="card-title yellow">Global Rules Sizing</div>
+        <div class="card-title yellow">Global Rules Sizing &amp; "Right Altitude"</div>
         <div class="rule-list">
           <div class="rule-row">
             <div class="rule-icon">📏</div>
@@ -920,6 +1257,27 @@
           <div class="rule-row">
             <div class="rule-icon">🚫</div>
             <div class="rule-text">Things that don't: deep-dives into specific modules, rarely-needed reference docs, subsystem specifics.</div>
+          </div>
+        </div>
+        <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:14px;">
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent4); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">The "Right Altitude" principle <span class="source-tag">ANTHROPIC</span></div>
+          <div class="decision-grid" style="margin:0;">
+            <div class="decision-col">
+              <div class="decision-col-header skip">✗ Too Low (Brittle)</div>
+              <div class="decision-item"><span class="di">❌</span>Hardcoded if/else logic in prompts</div>
+              <div class="decision-item"><span class="di">❌</span>Exhaustive edge-case lists for every scenario</div>
+              <div class="decision-item"><span class="di">❌</span>Exact step-by-step scripts with no flexibility</div>
+            </div>
+            <div class="decision-col">
+              <div class="decision-col-header skip">✗ Too High (Vague)</div>
+              <div class="decision-item"><span class="di">❌</span>Generic guidance that assumes shared context</div>
+              <div class="decision-item"><span class="di">❌</span>"Write good code" without conventions</div>
+              <div class="decision-item"><span class="di">❌</span>Prompts with no concrete behavioral signals</div>
+            </div>
+          </div>
+          <div class="callout blue" style="margin-top:10px;">
+            <div class="callout-label">✓ Goldilocks Zone</div>
+            <p>Specific enough to guide behavior, flexible enough to provide strong heuristics. Use diverse, <em>canonical examples</em> rather than exhaustive rules — for an LLM, examples are pictures worth a thousand words.</p>
           </div>
         </div>
       </div>
@@ -1211,6 +1569,127 @@
     </div>
 
   </div><!-- /commands -->
+
+  <!-- ============================================================
+       RESOURCES
+       ============================================================ -->
+  <div class="section" id="tab-resources">
+
+    <div class="hero">
+      <h2>Resources &amp; Further Reading</h2>
+      <p>The primary sources behind this framework, plus the repo template to get started immediately. Context engineering is 10× better than prompt engineering and 100× better than vibe coding.</p>
+    </div>
+
+    <div class="grid-3">
+
+      <div class="card blue">
+        <div class="card-title">GitHub Repo</div>
+        <div style="font-size:13px; color:var(--text); line-height:1.7; margin-bottom:12px;">
+          Cole Medin's context engineering template — the commands, PRP workflows, CLAUDE.md example, and folder structure shown in this reference.
+        </div>
+        <pre><span class="hd">github.com/coleam00/</span>
+<span class="li">context-engineering-intro</span>
+
+<span class="cm"># Quick start</span>
+<span class="kw">git clone https://github.com/coleam00/</span>
+<span class="kw">  context-engineering-intro.git</span></pre>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted);">12.4k ★ · 2.6k forks · MIT license</div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">Chroma Context Rot Report</div>
+        <div style="font-size:13px; color:var(--text); line-height:1.7; margin-bottom:12px;">
+          The primary research cited in this framework. Evaluated 18 frontier LLMs across multiple context lengths. Defines the problem WISC solves.
+        </div>
+        <pre><span class="hd">research.trychroma.com/</span>
+<span class="li">context-rot</span>
+
+<span class="cm"># Key finding</span>
+<span class="li">Every model degrades at every</span>
+<span class="li">input length increment tested.</span>
+<span class="li">Capacity ≠ reliability.</span></pre>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted);">Hong, Troynikov &amp; Huber · Chroma · July 2025</div>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">Anthropic Context Engineering Guide</div>
+        <div style="font-size:13px; color:var(--text); line-height:1.7; margin-bottom:12px;">
+          Anthropic's engineering blog post on context engineering as the evolution of prompt engineering. Covers compaction, multi-agent architectures, and just-in-time retrieval.
+        </div>
+        <pre><span class="hd">anthropic.com/engineering/</span>
+<span class="li">effective-context-engineering</span>
+<span class="li">-for-ai-agents</span>
+
+<span class="cm"># Published Sep 29, 2025</span></pre>
+        <div style="margin-top:12px; font-size:12px; color:var(--text-muted);">Anthropic Engineering Blog · Sep 2025</div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <div class="card-title">Repo Structure — What's Included</div>
+      <div class="grid-2">
+        <div>
+          <pre><span class="hd">context-engineering-intro/</span>
+<span class="li">├── CLAUDE.md</span>             <span class="cm"># Global rules template</span>
+<span class="li">├── INITIAL.md</span>            <span class="cm"># Feature request template</span>
+<span class="li">├── INITIAL_EXAMPLE.md</span>    <span class="cm"># Filled-out example</span>
+<span class="li">├── examples/</span>             <span class="cm"># Code pattern examples ⭐</span>
+<span class="li">│   ├── README.md</span>
+<span class="li">│   ├── cli.py</span>
+<span class="li">│   ├── agent/</span>
+<span class="li">│   └── tests/</span>
+<span class="li">├── PRPs/</span>
+<span class="li">│   ├── templates/prp_base.md</span>
+<span class="li">│   └── EXAMPLE_multi_agent_prp.md</span>
+<span class="li">├── .claude/commands/</span>
+<span class="li">│   ├── generate-prp.md</span>
+<span class="li">│   └── execute-prp.md</span>
+<span class="li">└── use-cases/</span>
+<span class="li">    ├── mcp-server/</span>
+<span class="li">    └── build-with-agent-team/</span></pre>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="callout yellow">
+            <div class="callout-label">⭐ examples/ folder</div>
+            <p>The most underrated part of the repo. Include real code patterns here — CLI structure, agent architecture, test patterns, integration flows. <em>AI follows patterns it can see far better than rules it must infer.</em></p>
+          </div>
+          <div class="callout blue">
+            <div class="callout-label">use-cases/</div>
+            <p>Pre-built context engineering setups for <em>MCP server development</em> (with Cloudflare Workers + GitHub OAuth) and <em>agent team workflows</em>. Copy these as starting points.</p>
+          </div>
+          <div class="callout green">
+            <div class="callout-label">Power keywords in CLAUDE.md</div>
+            <p>The repo's CLAUDE.md demonstrates power keywords Claude responds to: <em>IMPORTANT</em> (emphasizes critical instructions), <em>Proactively</em> (encourages initiative), <em>Ultra-think</em> (triggers deeper analysis — use sparingly).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title yellow">Context Engineering vs Prompt Engineering</div>
+      <div class="decision-grid">
+        <div class="decision-col">
+          <div class="decision-col-header skip">Prompt Engineering</div>
+          <div class="decision-item"><span class="di">📌</span>Focuses on clever wording and specific phrasing</div>
+          <div class="decision-item"><span class="di">📌</span>One-shot: optimize how you phrase a task</div>
+          <div class="decision-item"><span class="di">📌</span>Like giving someone a sticky note</div>
+          <div class="decision-item"><span class="di">📌</span>Works well for simple classification and text generation</div>
+        </div>
+        <div class="decision-col">
+          <div class="decision-col-header use">Context Engineering</div>
+          <div class="decision-item"><span class="di">✅</span>A complete system: docs, examples, rules, patterns, validation</div>
+          <div class="decision-item"><span class="di">✅</span>Iterative: curated at every inference step, not just once</div>
+          <div class="decision-item"><span class="di">✅</span>Like writing a full screenplay with all the details</div>
+          <div class="decision-item"><span class="di">✅</span>Required for multi-step agentic workflows</div>
+        </div>
+      </div>
+      <div style="margin-top:14px; font-size:13px; color:var(--text-muted); text-align:center; font-family:'IBM Plex Mono',monospace; letter-spacing:0.03em;">
+        Context Engineering is <span style="color:var(--accent3);">10× better</span> than prompt engineering · <span style="color:var(--accent3);">100× better</span> than vibe coding
+      </div>
+    </div>
+
+  </div><!-- /resources -->
 
 </main>
 

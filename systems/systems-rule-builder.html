@@ -814,6 +814,7 @@ input, textarea, select { font-family: inherit; }
 @media (max-width: 768px) and (pointer: coarse), (max-width: 480px) and (pointer: fine) {
   /* layout */
   #app { grid-template-rows:48px 1fr 68px; grid-template-columns:1fr; grid-template-areas:"header" "canvas" "footer"; }
+  #canvas { padding-bottom:36px; }
   .toolbar-chips,.divider { display:none; }
   .brand span { display:none; }
   #header { padding:0 10px; gap:6px; }
@@ -828,15 +829,16 @@ input, textarea, select { font-family: inherit; }
 
   /* ── SIDEBAR: peek drawer ──────────────────────────────────── */
   #sidebar {
-    position:fixed; left:0; right:0; bottom:68px; width:100%;
+    position:fixed; left:0; right:0;
+    bottom: 104px; /* 68px toolbar + 36px prim-sheet tab */
+    width:100%;
     border-left:none; border-top:1px solid var(--line2);
     border-radius:16px 16px 0 0; z-index:60;
     transform:translateY(100%);
     transition:transform .28s cubic-bezier(.4,0,.2,1);
     box-shadow:0 -8px 40px rgba(0,0,0,.3);
-    /* peek height is set by JS via --peek-h; full height overrides */
-    --peek-h: 72px;
-    --full-h: 72vh;
+    --peek-h: 64px;
+    --full-h: 65vh;
   }
   /* drawer drag handle bar */
   #drawer-handle {
@@ -862,6 +864,7 @@ input, textarea, select { font-family: inherit; }
   /* full: slides up to 72vh */
   #sidebar.drawer-full {
     transform:translateY(calc(100% - var(--full-h)));
+    z-index: 76;
   }
   /* peek header — shows node type badge + name summary */
   #peek-bar {
@@ -934,8 +937,13 @@ input, textarea, select { font-family: inherit; }
                 box-shadow .2s;
   }
   #prim-sheet.open {
-    max-height: 180px;      /* enough for handle + title + tiles  */
+    max-height: 180px;
     box-shadow: 0 -8px 40px rgba(0,0,0,.45);
+  }
+  /* sidebar drawer is open — slide prim-sheet fully off-screen */
+  #prim-sheet.sidebar-active {
+    transform: translateY(calc(100% + 68px));
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
   }
 
   /* tab handle — always visible, tap to toggle */
@@ -1011,7 +1019,7 @@ input, textarea, select { font-family: inherit; }
 
   /* ── ZOOM PILL ────────────────────────────────────────────── */
   #zoom-pill {
-    position:fixed; right:14px; bottom:112px;  /* above drawer tab */
+    position:fixed; right:14px; bottom:116px;  /* above prim-sheet tab */
     display:flex; flex-direction:column; gap:0;
     background:var(--bg2); border:1px solid var(--line2);
     border-radius:12px; overflow:hidden; z-index:55;
@@ -2364,9 +2372,19 @@ function setDrawerState(state) {
   const s = document.getElementById('sidebar');
   const pb = document.getElementById('mob-props-btn');
   s.classList.remove('drawer-peek','drawer-full');
-  if (state === 'peek') { s.classList.add('drawer-peek'); if(pb) pb.classList.add('active'); }
-  else if (state === 'full') { s.classList.add('drawer-full'); if(pb) pb.classList.add('active'); }
-  else { if(pb) pb.classList.remove('active'); }
+  const ps = document.getElementById('prim-sheet');
+  if (state === 'peek' || state === 'full') {
+    s.classList.add('drawer-' + state);
+    if (pb) pb.classList.add('active');
+    // slide prim-sheet out of the way
+    if (ps) { ps.classList.add('sidebar-active'); ps.classList.remove('open'); primSheetOpen = false; }
+    const lbl = document.getElementById('prim-sheet-tab-label');
+    if (lbl) lbl.textContent = 'Add primitive';
+  } else {
+    if (pb) pb.classList.remove('active');
+    // restore prim-sheet tab
+    if (ps) ps.classList.remove('sidebar-active');
+  }
 }
 function cycleDrawer() {
   if (drawerState === 'peek') setDrawerState('full');

@@ -802,6 +802,140 @@ input, textarea, select { font-family: inherit; }
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 2px; }
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE / TABLET <= 768px
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  #app {
+    grid-template-rows: 48px 1fr 64px;
+    grid-template-columns: 1fr;
+    grid-template-areas: "header" "canvas" "footer";
+  }
+  .toolbar-chips { display: none; }
+  .divider       { display: none; }
+  .brand span    { display: none; }
+  #header        { padding: 0 10px; gap: 6px; }
+  .btn           { padding: 6px 10px; font-size: 10px; }
+  .btn-label-hide { display: none; }
+
+  #sidebar {
+    position: fixed; left: 0; right: 0; bottom: 64px;
+    height: 52vh; max-height: 480px;
+    border-left: none; border-top: 1px solid var(--line2);
+    border-radius: 14px 14px 0 0;
+    z-index: 60; width: 100%;
+    transform: translateY(100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 -8px 40px rgba(0,0,0,.3);
+  }
+  #sidebar::before {
+    content: ''; display: block;
+    width: 36px; height: 4px;
+    background: var(--line2); border-radius: 2px;
+    margin: 10px auto 6px; flex-shrink: 0;
+  }
+  #sidebar.drawer-open { transform: translateY(0); }
+  .sidebar-head { display: flex; align-items: center; justify-content: space-between; }
+  #sidebar-close-btn {
+    display: flex; align-items: center;
+    padding: 2px 8px; font-size: 11px; font-family: var(--font-mono);
+    border: 1px solid var(--line2); border-radius: 4px;
+    background: transparent; color: var(--ink3); cursor: pointer;
+  }
+
+  #help-panel { position: fixed; inset: 0; width: 100%; border-left: none; border-radius: 0; z-index: 80; }
+
+  #footer {
+    height: 64px; padding: 0; background: var(--bg2);
+    border-top: 1px solid var(--line);
+    display: flex; align-items: stretch; gap: 0; overflow: hidden;
+  }
+  #footer .kbd-hint { display: none; }
+  #status-msg       { display: none; }
+
+  .mob-btn {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    border: none; background: transparent; color: var(--ink3);
+    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+    letter-spacing: .05em; text-transform: uppercase;
+    cursor: pointer; border-right: 1px solid var(--line);
+    transition: background .12s, color .12s; padding: 0 4px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mob-btn:last-child { border-right: none; }
+  .mob-btn:active     { background: var(--bg3); }
+  .mob-btn.active     { color: var(--accent2); background: var(--c-state-bg); }
+  .mob-btn .mob-icon  { font-size: 18px; line-height: 1; }
+
+  #prim-sheet {
+    position: fixed; left: 0; right: 0; bottom: 64px;
+    background: var(--bg2); border-top: 1px solid var(--line2);
+    border-radius: 14px 14px 0 0; z-index: 70;
+    padding: 10px 12px 14px;
+    transform: translateY(100%);
+    transition: transform .22s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 -8px 40px rgba(0,0,0,.3);
+  }
+  #prim-sheet::before {
+    content: ''; display: block; width: 36px; height: 4px;
+    background: var(--line2); border-radius: 2px; margin: 0 auto 12px;
+  }
+  #prim-sheet.open { transform: translateY(0); }
+  #prim-sheet-title {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 10px;
+  }
+  #prim-sheet-chips {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px;
+  }
+  .prim-tile {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 5px; padding: 10px 4px;
+    border-radius: 10px; border: 1px solid transparent; cursor: pointer;
+    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+    letter-spacing: .04em; text-align: center;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .1s, opacity .12s; user-select: none;
+  }
+  .prim-tile:active { transform: scale(.94); }
+  .prim-tile .tile-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .prim-tile.pending-place {
+    outline: 2px solid var(--accent);
+    animation: pulse-tile .7s ease-in-out infinite alternate;
+  }
+  @keyframes pulse-tile { from { opacity: 1; } to { opacity: .6; } }
+
+  #canvas-hint p { font-size: 11px; }
+  #canvas.placing { cursor: crosshair; }
+
+  #overflow-menu {
+    position: fixed; right: 10px; top: 56px;
+    background: var(--bg2); border: 1px solid var(--line2);
+    border-radius: var(--r-lg); box-shadow: 0 8px 32px rgba(0,0,0,.35);
+    z-index: 90; padding: 6px;
+    display: none; flex-direction: column; gap: 4px; min-width: 160px;
+  }
+  #overflow-menu.open { display: flex; }
+  .ovf-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 6px;
+    font-size: 12px; font-family: var(--font-mono); font-weight: 700;
+    color: var(--ink2); cursor: pointer; border: none;
+    background: transparent; text-align: left; width: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ovf-item:active { background: var(--bg3); }
+}
+
+@media (max-width: 480px) {
+  #prim-sheet-chips { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .prim-tile        { padding: 8px 2px; font-size: 8px; }
+  .mob-btn          { font-size: 8px; }
+  .mob-btn .mob-icon{ font-size: 16px; }
+}
+
 </style>
 </head>
 <body>
@@ -813,16 +947,17 @@ input, textarea, select { font-family: inherit; }
     <div class="divider"></div>
     <div class="toolbar-chips" id="chips"></div>
     <div class="hdr-actions">
-      <button class="btn" id="connect-btn" title="Connect mode [C]">&#8594; Connect</button>
-      <button class="btn" onclick="clearAll()" title="Clear canvas">Clear</button>
+      <button class="btn" id="connect-btn" title="Connect mode [C]">&#8594; <span class="btn-label-hide">Connect</span></button>
+      <button class="btn" onclick="clearAll()" title="Clear"><span class="btn-label-hide">Clear</span></button>
       <div class="divider"></div>
-      <button class="btn" onclick="triggerImport()" title="Import a saved rule graph">&#8598; Import</button>
+      <button class="btn" onclick="triggerImport()" title="Import">&#8598; <span class="btn-label-hide">Import</span></button>
       <input type="file" id="file-input" accept=".json,.txt,.md" style="display:none" onchange="handleFileImport(event)"/>
-      <button class="btn btn-accent" onclick="openExport()">Export &#8599;</button>
+      <button class="btn btn-accent" onclick="openExport()">&#8599; <span class="btn-label-hide">Export</span></button>
       <div class="divider"></div>
-      <button class="btn" id="help-btn" onclick="toggleHelp()" title="Usage guide">? Help</button>
+      <button class="btn" id="help-btn" onclick="toggleHelp()" title="Help">? <span class="btn-label-hide">Help</span></button>
       <div class="divider"></div>
       <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle light/dark mode"></button>
+      <button class="btn" id="ovf-btn" onclick="toggleOverflow()" style="display:none;" title="More">&#8943;</button>
     </div>
   </header>
 
@@ -840,7 +975,7 @@ input, textarea, select { font-family: inherit; }
 
   <!-- SIDEBAR -->
   <aside id="sidebar">
-    <div class="sidebar-head">Properties</div>
+    <div class="sidebar-head">Properties <button id="sidebar-close-btn" onclick="closeSidebar()" style="display:none;">&#10005;</button></div>
     <div id="node-editor">
       <div class="empty-editor">
         <div class="icon">◈</div>
@@ -1119,13 +1254,31 @@ input, textarea, select { font-family: inherit; }
 
   <!-- FOOTER -->
   <footer id="footer">
-    <span><kbd>C</kbd> connect</span>
-    <span><kbd>Shift+click</kbd> multi-select</span>
-    <span><kbd>Shift+drag</kbd> marquee</span>
-    <span><kbd>Del</kbd> delete</span>
-    <span><kbd>Esc</kbd> cancel</span>
-    <span id="status-msg" id="footer-status">0 nodes · 0 connections</span>
+    <span class="kbd-hint"><kbd>C</kbd> connect</span>
+    <span class="kbd-hint"><kbd>Shift+click</kbd> multi-select</span>
+    <span class="kbd-hint"><kbd>Shift+drag</kbd> marquee</span>
+    <span class="kbd-hint"><kbd>Del</kbd> delete</span>
+    <span class="kbd-hint"><kbd>Esc</kbd> cancel</span>
+    <span id="status-msg">0 nodes &middot; 0 connections</span>
+    <button class="mob-btn" id="mob-add-btn"     onclick="togglePrimSheet()" style="display:none;"><span class="mob-icon">&#xFF0B;</span>Add</button>
+    <button class="mob-btn" id="mob-connect-btn" onclick="toggleConnect()"   style="display:none;"><span class="mob-icon">&#8594;</span>Connect</button>
+    <button class="mob-btn" id="mob-props-btn"   onclick="toggleSidebar()"   style="display:none;"><span class="mob-icon">&#9672;</span>Props</button>
+    <button class="mob-btn" id="mob-export-btn"  onclick="openExport()"      style="display:none;"><span class="mob-icon">&#8593;</span>Export</button>
+    <button class="mob-btn" id="mob-help-btn"    onclick="toggleHelp()"      style="display:none;"><span class="mob-icon">?</span>Help</button>
   </footer>
+
+  <!-- PRIMITIVE SHEET (mobile) -->
+  <div id="prim-sheet">
+    <div id="prim-sheet-title">Tap a type, then tap the canvas to place it</div>
+    <div id="prim-sheet-chips"></div>
+  </div>
+
+  <!-- OVERFLOW MENU (mobile) -->
+  <div id="overflow-menu">
+    <button class="ovf-item" onclick="triggerImport();toggleOverflow()">&#8598; Import</button>
+    <button class="ovf-item" onclick="clearAll();toggleOverflow()">&#9635; Clear canvas</button>
+    <button class="ovf-item" onclick="document.getElementById('theme-toggle').click();toggleOverflow()">&#9680; Toggle theme</button>
+  </div>
 
 </div>
 
@@ -1400,7 +1553,8 @@ function handleConnectClick(id) {
 function toggleConnect() {
   connectMode = !connectMode;
   document.getElementById('connect-btn').classList.toggle('active', connectMode);
-  if (connectMode) setStatus('Click source node, then target'); else { connectSource = null; setStatus(''); }
+  const mob = document.getElementById('mob-connect-btn'); if (mob) mob.classList.toggle('active', connectMode);
+  if (connectMode) setStatus('Tap source, then target node'); else { connectSource = null; setStatus(''); }
 }
 
 function exitConnect() {
@@ -1427,6 +1581,7 @@ function selectNode(id) {
   const card = document.getElementById('card-'+id);
   if (card) card.classList.add('selected');
   renderEditor(id);
+  if (isMobile()) openSidebar();
   if (connectMode && connectSource) handleConnectClick(id);
 }
 
@@ -1955,6 +2110,159 @@ function toggleHelp() {
 function toggleSection(id) {
   document.getElementById(id).classList.toggle('collapsed');
 }
+
+/* ── MOBILE ──────────────────────────────────── */
+const isMobile = () => window.innerWidth <= 768;
+let pendingPlaceType = null, primSheetOpen = false, overflowOpen = false;
+
+function initMobileUI() {
+  if (!isMobile()) return;
+  ['mob-add-btn','mob-connect-btn','mob-props-btn','mob-export-btn','mob-help-btn']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.style.display='flex'; });
+  const ovf = document.getElementById('ovf-btn');
+  if (ovf) ovf.style.display = 'flex';
+  const sc = document.getElementById('sidebar-close-btn');
+  if (sc) sc.style.display = 'flex';
+  buildPrimSheet();
+  const h = document.getElementById('canvas-hint');
+  if (h) h.querySelector('p').innerHTML = 'Tap <b>Add</b> below to place a primitive';
+}
+
+function buildPrimSheet() {
+  const grid = document.getElementById('prim-sheet-chips');
+  if (!grid || grid.children.length) return;
+  const colorMap = {STATE:'--c-state',TRANSITION:'--c-trans',INPUT:'--c-input',
+    OUTPUT:'--c-output',FEEDBACK:'--c-feedback',BOUNDARY:'--c-boundary',SUBSYSTEM:'--c-subsystem'};
+  TYPES.forEach(t => {
+    const tile = document.createElement('div');
+    const cv = colorMap[t];
+    tile.className = 'prim-tile';
+    tile.style.cssText = `background:var(${cv}-bg);border-color:var(${cv}-bdr);color:var(${cv});`;
+    tile.innerHTML = `<span class="tile-dot" style="background:var(${cv});"></span>${t.charAt(0)+t.slice(1).toLowerCase()}`;
+    tile.addEventListener('pointerup', e => { e.preventDefault(); startPlacing(t); });
+    grid.appendChild(tile);
+  });
+}
+
+function togglePrimSheet() {
+  primSheetOpen = !primSheetOpen;
+  document.getElementById('prim-sheet').classList.toggle('open', primSheetOpen);
+  document.getElementById('mob-add-btn').classList.toggle('active', primSheetOpen);
+  if (!primSheetOpen) cancelPlacing();
+}
+
+function startPlacing(type) {
+  pendingPlaceType = type;
+  primSheetOpen = false;
+  document.getElementById('prim-sheet').classList.remove('open');
+  document.getElementById('mob-add-btn').classList.remove('active');
+  canvas.classList.add('placing');
+  setStatus('Tap canvas to place ' + type.toLowerCase());
+}
+
+function cancelPlacing() {
+  pendingPlaceType = null;
+  canvas.classList.remove('placing');
+}
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('drawer-open');
+  const b = document.getElementById('mob-props-btn'); if(b) b.classList.add('active');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('drawer-open');
+  const b = document.getElementById('mob-props-btn'); if(b) b.classList.remove('active');
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.contains('drawer-open') ? closeSidebar() : openSidebar();
+}
+
+function toggleOverflow() {
+  overflowOpen = !overflowOpen;
+  document.getElementById('overflow-menu').classList.toggle('open', overflowOpen);
+}
+
+document.addEventListener('pointerdown', e => {
+  if (overflowOpen && !e.target.closest('#overflow-menu') && !e.target.closest('#ovf-btn')) {
+    overflowOpen = false; document.getElementById('overflow-menu').classList.remove('open');
+  }
+  if (primSheetOpen && !e.target.closest('#prim-sheet') && !e.target.closest('#mob-add-btn')) {
+    primSheetOpen = false;
+    document.getElementById('prim-sheet').classList.remove('open');
+    cancelPlacing();
+  }
+});
+
+/* touch events for pan + node drag + tap-to-place */
+let touchPanActive=false, touchPanStartX=0, touchPanStartY=0, touchOriginX=0, touchOriginY=0;
+
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length !== 1) return;
+  const t = e.touches[0], r = canvas.getBoundingClientRect();
+
+  if (pendingPlaceType) {
+    e.preventDefault();
+    createNode(pendingPlaceType, t.clientX-r.left-65-panX, t.clientY-r.top-22-panY);
+    cancelPlacing(); if (isMobile()) openSidebar(); return;
+  }
+
+  const nodeEl = e.target.closest('.node-el');
+  if (nodeEl) {
+    const nodeId = nodeEl.id.replace('el-','');
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    if (connectMode) { e.preventDefault(); handleConnectClick(nodeId); return; }
+    draggingNode = node;
+    dragOffX = t.clientX - r.left - node.x - panX;
+    dragOffY = t.clientY - r.top  - node.y - panY;
+    e.preventDefault();
+    selectNode(nodeId);
+    return;
+  }
+
+  touchPanActive = true;
+  touchPanStartX = t.clientX; touchPanStartY = t.clientY;
+  touchOriginX = panX; touchOriginY = panY;
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  if (e.touches.length !== 1) return;
+  const t = e.touches[0], r = canvas.getBoundingClientRect();
+  if (draggingNode) {
+    draggingNode.x = Math.max(-panX, t.clientX-r.left-dragOffX-panX);
+    draggingNode.y = Math.max(-panY, t.clientY-r.top -dragOffY-panY);
+    const el = document.getElementById('el-'+draggingNode.id);
+    if (el) { el.style.left=draggingNode.x+'px'; el.style.top=draggingNode.y+'px'; }
+    renderConns(); e.preventDefault(); return;
+  }
+  if (touchPanActive) {
+    panX = touchOriginX + (t.clientX - touchPanStartX);
+    panY = touchOriginY + (t.clientY - touchPanStartY);
+    applyPan(); e.preventDefault();
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  const r = canvas.getBoundingClientRect();
+  if (pendingPlaceType && e.changedTouches.length===1) {
+    const t = e.changedTouches[0];
+    createNode(pendingPlaceType, t.clientX-r.left-65-panX, t.clientY-r.top-22-panY);
+    cancelPlacing(); if (isMobile()) openSidebar();
+    e.preventDefault();
+  }
+  draggingNode = null; touchPanActive = false;
+}, { passive: false });
+
+window.addEventListener('resize', () => {
+  if (!isMobile()) {
+    document.getElementById('sidebar').classList.remove('drawer-open');
+    document.getElementById('prim-sheet').classList.remove('open');
+    cancelPlacing();
+  } else { initMobileUI(); }
+});
+
+setTimeout(initMobileUI, 150);
 
 /* ── MISC ────────────────────────────────────────────────────── */
 function clearAll() {

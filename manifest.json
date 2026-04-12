@@ -447,9 +447,9 @@
       },
       {
         "type": "file",
-        "name": "ai-complex-codebases.html",
-        "label": "Ai Complex Codebases",
-        "path": "coding_web-design/ai-complex-codebases.html"
+        "name": "agentic-coding-workflow.html",
+        "label": "Agentic Coding Workflow",
+        "path": "coding_web-design/agentic-coding-workflow.html"
       },
       {
         "type": "file",

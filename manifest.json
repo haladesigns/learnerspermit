@@ -9,12 +9,6 @@
         "name": "android-appfunctions-reference.html",
         "label": "Android Appfunctions Reference",
         "path": "Android/android-appfunctions-reference.html"
-      },
-      {
-        "type": "file",
-        "name": "readme.txt",
-        "label": "Readme",
-        "path": "Android/readme.txt"
       }
     ]
   },

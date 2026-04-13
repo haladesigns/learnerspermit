@@ -830,7 +830,6 @@ input, textarea, select { font-family: inherit; }
 /* ══ MOBILE (html.is-mobile) ══════════════════════════════ */
 /* layout */
 html.is-mobile #app { grid-template-rows:48px 1fr 68px; grid-template-columns:1fr; grid-template-areas:"header" "canvas" "footer"; }
-html.is-mobile #canvas { padding-bottom:36px; }
 html.is-mobile .toolbar-chips, html.is-mobile .divider { display:none; }
 html.is-mobile .brand span { display:none; }
 html.is-mobile #header { padding:0 10px; gap:6px; }
@@ -1018,28 +1017,11 @@ html.is-mobile .prim-tile.active-type {
   }
 html.is-mobile @keyframes pulse-tile { from{opacity:1} to{opacity:.5} }
 /* ── ZOOM PILL ────────────────────────────────────────────── */
-html.is-mobile #zoom-pill {
-    position:fixed; right:14px; bottom:116px;  /* above prim-sheet tab */
-    display:flex; flex-direction:column; gap:0;
-    background:var(--bg2); border:1px solid var(--line2);
-    border-radius:12px; overflow:hidden; z-index:55;
-    box-shadow:0 4px 20px rgba(0,0,0,.3);
-  }
-html.is-mobile .zoom-btn {
-    width:44px; height:44px; border:none; background:transparent;
-    color:var(--ink2); font-size:20px; font-weight:400; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    -webkit-tap-highlight-color:transparent; touch-action:manipulation;
-    transition:background .1s, color .1s;
-  }
-html.is-mobile .zoom-btn:active { background:var(--bg3); color:var(--ink); }
-html.is-mobile #zoom-sep { height:1px; background:var(--line); flex-shrink:0; }
-html.is-mobile #zoom-pct {
-    font-family:var(--font-mono); font-size:9px; font-weight:700;
-    color:var(--ink3); text-align:center; padding:5px 0;
-    letter-spacing:.05em; cursor:pointer;
-    -webkit-tap-highlight-color:transparent;
-  }
+
+
+
+
+
 /* ── PLACING MODE banner ──────────────────────────────────── */
 html.is-mobile #placing-banner {
     position:fixed; top:56px; left:50%; transform:translateX(-50%);
@@ -1145,6 +1127,26 @@ html.is-mobile .ovf-item:active { background:var(--bg3); }
   .mob-btn:active     { background: var(--bg3); }
   .mob-btn.active     { color: var(--accent2); background: var(--c-state-bg); }
   .mob-btn .mob-icon  { font-size: 22px; line-height: 1; }
+
+  /* zoom pill buttons */
+  .zoom-btn {
+    width: 44px; height: 44px;
+    border: none; background: transparent;
+    color: var(--ink2); font-size: 20px; font-weight: 400;
+    cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: background .1s, color .1s;
+  }
+  .zoom-btn:active { background: var(--bg3); color: var(--ink); }
+  #zoom-sep, #zoom-sep2 { height: 1px; background: var(--line); flex-shrink: 0; }
+  #zoom-pct {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+    color: var(--ink3); text-align: center; padding: 5px 0;
+    letter-spacing: .05em; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
 
   /* primitive drawer */
   #prim-sheet {
@@ -1570,7 +1572,7 @@ html.is-mobile .ovf-item:active { background:var(--bg3); }
   </div>
 
   <!-- ZOOM PILL (mobile) -->
-  <div id="zoom-pill" style="display:none;">
+  <div id="zoom-pill">
     <button class="zoom-btn" onclick="zoomStep(1)" aria-label="Zoom in">+</button>
     <div id="zoom-sep"></div>
     <div id="zoom-pct" onclick="zoomReset()" title="Reset zoom">100%</div>

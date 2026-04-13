@@ -802,7 +802,8 @@ input, textarea, select { font-family: inherit; }
 /* ── MOBILE-ONLY ELEMENTS — hidden on desktop ────── */
 .mob-btn, #zoom-pill, #prim-sheet, #placing-banner,
 #overflow-menu, #ovf-btn { display: none !important; }
-/* prim-sheet is always block on mobile, hidden via transform */
+/* drawer chrome — desktop never sees these */
+#drawer-handle, #peek-bar { display: none !important; }
 
 /* ── SCROLLBAR ──────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -812,7 +813,7 @@ input, textarea, select { font-family: inherit; }
 /* ══════════════════════════════════════════════════════════════
    MOBILE / TABLET <= 768px
    ══════════════════════════════════════════════════════════════ */
-@media (max-width: 768px) and (pointer: coarse), (max-width: 480px) and (pointer: fine) {
+@media (max-width: 900px) and (hover: none) {
   /* layout */
   #app { grid-template-rows:48px 1fr 68px; grid-template-columns:1fr; grid-template-areas:"header" "canvas" "footer"; }
   #canvas { padding-bottom:36px; }
@@ -823,10 +824,13 @@ input, textarea, select { font-family: inherit; }
   .btn-label-hide { display:none; }
 
   /* restore mobile-only elements */
-  .mob-btn    { display:flex !important; }
-  #zoom-pill  { display:flex !important; }
-  /* prim-sheet visibility handled by max-height transition */
-  #ovf-btn    { display:flex !important; }
+  .mob-btn       { display:flex !important; }
+  #zoom-pill     { display:flex !important; }
+  #ovf-btn       { display:flex !important; }
+  #drawer-handle { display:flex !important; }
+  #sidebar.drawer-peek #peek-bar,
+  #sidebar.drawer-full #peek-bar { display:flex !important; }
+  /* prim-sheet visibility via transform */
 
   /* ── SIDEBAR: peek drawer ──────────────────────────────────── */
   #sidebar {
@@ -2296,7 +2300,7 @@ function toggleSection(id) {
 }
 
 /* ── MOBILE ──────────────────────────────────────────────────── */
-const isMobile = () => (window.innerWidth <= 768 && window.matchMedia('(pointer: coarse)').matches) || window.innerWidth <= 480;
+const isMobile = () => ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 900;
 let pendingPlaceType = null, primSheetOpen = false, overflowOpen = false;
 let canvasScale = 1;
 const ZOOM_STEPS = [0.4, 0.5, 0.6, 0.75, 1, 1.25, 1.5, 2];

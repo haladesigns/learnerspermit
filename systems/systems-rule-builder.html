@@ -7,6 +7,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<script>
+/* Detect mobile BEFORE CSS renders — sets html.is-mobile immediately */
+(function(){
+  var touch = ('ontouchstart' in window) ||
+              (navigator.maxTouchPoints > 0) ||
+              (navigator.msMaxTouchPoints > 0) ||
+              /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  var narrow = window.innerWidth <= 900;
+  if (touch && narrow) {
+    document.documentElement.classList.add('is-mobile');
+    if (window.innerWidth <= 480) document.documentElement.classList.add('small-screen');
+  }
+})();
+</script>
 <style>
 /* ── TOKENS ────────────────────────────────────────────────── */
 :root {
@@ -2286,7 +2300,11 @@ function toggleSection(id) {
 
 /* ── MOBILE ──────────────────────────────────────────────────── */
 function detectMobile() {
-  const is = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 900;
+  const touch = ('ontouchstart' in window) ||
+                (navigator.maxTouchPoints > 0) ||
+                (navigator.msMaxTouchPoints > 0) ||
+                /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const is = touch && window.innerWidth <= 900;
   document.documentElement.classList.toggle('is-mobile', is);
   document.documentElement.classList.toggle('small-screen', is && window.innerWidth <= 480);
   return is;

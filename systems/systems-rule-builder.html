@@ -1238,7 +1238,7 @@ html.is-mobile .ovf-item:active { background:var(--bg3); }
       <button class="btn" id="help-btn" onclick="toggleHelp()" title="Help">? <span class="btn-label-hide">Help</span></button>
       <div class="divider"></div>
       <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle light/dark mode"></button>
-      <button class="btn" id="ovf-btn" onclick="toggleOverflow()" style="display:none;" title="More">&#8943;</button>
+      <button class="btn" id="ovf-btn" onclick="toggleOverflow()" title="More">&#8943;</button>
     </div>
   </header>
 
@@ -1284,7 +1284,7 @@ html.is-mobile .ovf-item:active { background:var(--bg3); }
   </aside>
 
   <!-- HELP PANEL -->
-  <div id="help-panel">
+  <div id="help-panel" onclick="handleHelpPanelClick(event)">
     <div class="help-head">
       <span class="help-head-title">Usage guide</span>
       <button class="btn" onclick="toggleHelp()" style="padding:3px 8px;font-size:11px;">✕</button>
@@ -1549,10 +1549,10 @@ html.is-mobile .ovf-item:active { background:var(--bg3); }
     <span class="kbd-hint"><kbd>Del</kbd> delete</span>
     <span class="kbd-hint"><kbd>Esc</kbd> cancel</span>
     <span id="status-msg">0 nodes &middot; 0 connections</span>
-    <button class="mob-btn" id="mob-connect-btn" onclick="toggleConnect()"   style="display:none;"><span class="mob-icon">&#8594;</span>Connect</button>
-    <button class="mob-btn" id="mob-props-btn"   onclick="toggleSidebar()"   style="display:none;"><span class="mob-icon">&#9672;</span>Props</button>
-    <button class="mob-btn" id="mob-export-btn"  onclick="openExport()"      style="display:none;"><span class="mob-icon">&#8593;</span>Export</button>
-    <button class="mob-btn" id="mob-help-btn"    onclick="toggleHelp()"      style="display:none;"><span class="mob-icon">?</span>Help</button>
+    <button class="mob-btn" id="mob-connect-btn" onclick="toggleConnect()"  ><span class="mob-icon">&#8594;</span>Connect</button>
+    <button class="mob-btn" id="mob-props-btn"   onclick="toggleSidebar()"  ><span class="mob-icon">&#9672;</span>Props</button>
+    <button class="mob-btn" id="mob-export-btn"  onclick="openExport()"     ><span class="mob-icon">&#8593;</span>Export</button>
+    <button class="mob-btn" id="mob-help-btn"    onclick="toggleHelp()"     ><span class="mob-icon">?</span>Help</button>
   </footer>
 
   <!-- PRIMITIVE DRAWER (mobile) -->
@@ -2418,6 +2418,12 @@ function toggleHelp() {
   helpOpen = !helpOpen;
   document.getElementById('help-panel').classList.toggle('open', helpOpen);
   document.getElementById('help-btn').classList.toggle('active', helpOpen);
+  const mob = document.getElementById('mob-help-btn');
+  if (mob) mob.classList.toggle('active', helpOpen);
+}
+function handleHelpPanelClick(e) {
+  // Close if clicking the panel backdrop (not the inner box)
+  if (e.target === document.getElementById('help-panel')) toggleHelp();
 }
 function toggleSection(id) {
   document.getElementById(id).classList.toggle('collapsed');

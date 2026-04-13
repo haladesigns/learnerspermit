@@ -813,7 +813,7 @@ input, textarea, select { font-family: inherit; }
 /* ══════════════════════════════════════════════════════════════
    MOBILE / TABLET <= 768px
    ══════════════════════════════════════════════════════════════ */
-@media (max-width: 900px) and (hover: none) {
+.is-mobile {
   /* layout */
   #app { grid-template-rows:48px 1fr 68px; grid-template-columns:1fr; grid-template-areas:"header" "canvas" "footer"; }
   #canvas { padding-bottom:36px; }
@@ -873,7 +873,7 @@ input, textarea, select { font-family: inherit; }
   }
   /* peek header — shows node type badge + name summary */
   #peek-bar {
-    display:none; align-items:center; gap:10px;
+    align-items:center; gap:10px;
     padding:0 16px 8px; flex-shrink:0;
   }
   #sidebar.drawer-peek #peek-bar,
@@ -1087,11 +1087,9 @@ input, textarea, select { font-family: inherit; }
   .ovf-item:active { background:var(--bg3); }
 }
 
-@media (max-width:480px) {
-  .prim-tile { width:72px; height:72px; font-size:9px; }
-  .mob-btn   { font-size:8px; }
-  .mob-btn .mob-icon { font-size:20px; }
-}
+.is-mobile.small-screen .prim-tile { width:72px; height:72px; font-size:9px; }
+.is-mobile.small-screen .mob-btn   { font-size:8px; }
+.is-mobile.small-screen .mob-btn .mob-icon { font-size:20px; }
 
 </style>
 </head>
@@ -2300,7 +2298,13 @@ function toggleSection(id) {
 }
 
 /* ── MOBILE ──────────────────────────────────────────────────── */
-const isMobile = () => ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 900;
+function detectMobile() {
+  const is = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 900;
+  document.documentElement.classList.toggle('is-mobile', is);
+  document.documentElement.classList.toggle('small-screen', is && window.innerWidth <= 480);
+  return is;
+}
+const isMobile = () => document.documentElement.classList.contains('is-mobile');
 let pendingPlaceType = null, primSheetOpen = false, overflowOpen = false;
 let canvasScale = 1;
 const ZOOM_STEPS = [0.4, 0.5, 0.6, 0.75, 1, 1.25, 1.5, 2];
@@ -2535,6 +2539,7 @@ canvas.addEventListener('touchend', e => {
 
 /* ── resize ──────────────────────────────────────────────────── */
 window.addEventListener('resize', () => {
+  detectMobile();
   if (!isMobile()) {
     setDrawerState('closed');
     document.getElementById('prim-sheet').classList.remove('open');
@@ -2542,7 +2547,8 @@ window.addEventListener('resize', () => {
   } else { initMobileUI(); }
 });
 
-setTimeout(initMobileUI, 150);
+detectMobile();
+setTimeout(() => { detectMobile(); initMobileUI(); }, 50);
 
 /* ── MISC ────────────────────────────────────────────────────── */
 function clearAll() {

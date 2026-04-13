@@ -1086,10 +1086,133 @@ html.is-mobile .ovf-item:active { background:var(--bg3); }
 
 /* ── MOBILE VISIBILITY — pure @media, no JS required ─────── */
 @media (max-width: 900px) {
-  .mob-btn, #zoom-pill, #ovf-btn, #drawer-handle { display: flex; }
-  #prim-sheet  { display: flex; }
+
+  /* layout */
+  #app {
+    grid-template-rows: 48px 1fr 68px;
+    grid-template-columns: 1fr;
+    grid-template-areas: "header" "canvas" "footer";
+  }
+  .toolbar-chips, .divider { display: none; }
+  .brand span    { display: none; }
+  .btn-label-hide { display: none; }
+  #header { padding: 0 10px; gap: 6px; }
+  .btn    { padding: 6px 10px; font-size: 10px; }
+
+  /* show mobile-only elements */
+  .mob-btn       { display: flex; }
+  #zoom-pill     { display: flex; }
+  #ovf-btn       { display: flex; }
+  #drawer-handle { display: flex; }
   #sidebar.drawer-peek #peek-bar,
   #sidebar.drawer-full #peek-bar { display: flex; }
+
+  /* footer → mobile toolbar */
+  #footer {
+    height: 68px;
+    padding: 0;
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    overflow: hidden;
+  }
+  #footer .kbd-hint, #status-msg { display: none; }
+
+  /* mobile toolbar buttons */
+  .mob-btn {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 68px;
+    padding: 0 6px;
+    border: none;
+    background: transparent;
+    color: var(--ink3);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-right: 1px solid var(--line);
+    transition: background .12s, color .12s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .mob-btn:last-child { border-right: none; }
+  .mob-btn:active     { background: var(--bg3); }
+  .mob-btn.active     { color: var(--accent2); background: var(--c-state-bg); }
+  .mob-btn .mob-icon  { font-size: 22px; line-height: 1; }
+
+  /* primitive drawer */
+  #prim-sheet {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0; right: 0;
+    bottom: 68px;
+    z-index: 75;
+    background: var(--bg2);
+    border-top: 1px solid var(--line2);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 24px rgba(0,0,0,.35);
+    max-height: 36px;
+    overflow: hidden;
+    transition: max-height .28s cubic-bezier(.4,0,.2,1);
+  }
+  #prim-sheet.open           { max-height: 180px; }
+  #prim-sheet.sidebar-active { transform: translateY(calc(100% + 68px)); }
+
+  /* zoom pill */
+  #zoom-pill {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    right: 14px;
+    bottom: 116px;
+    background: var(--bg2);
+    border: 1px solid var(--line2);
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 55;
+    box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  }
+
+  /* sidebar drawer */
+  #sidebar {
+    position: fixed;
+    left: 0; right: 0;
+    bottom: 104px;
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--line2);
+    border-radius: 16px 16px 0 0;
+    z-index: 60;
+    transform: translateY(100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 -8px 40px rgba(0,0,0,.3);
+    --peek-h: 64px;
+    --full-h: 65vh;
+  }
+  #sidebar.drawer-peek { transform: translateY(calc(100% - var(--peek-h))); }
+  #sidebar.drawer-full { transform: translateY(calc(100% - var(--full-h))); z-index: 76; }
+  #sidebar.drawer-full #sidebar-close-btn { display: flex; }
+  .sidebar-head { display: flex; align-items: center; padding: 8px 16px 4px; }
+  #node-editor  { flex: 1; overflow-y: auto; padding-bottom: 24px; }
+
+  /* help panel */
+  #help-panel { position: fixed; inset: 0; width: 100%; border-left: none; border-radius: 0; z-index: 80; }
+
+  /* overflow menu */
+  #overflow-menu.open { display: flex; }
+}
+
+@media (max-width: 480px) {
+  .prim-tile    { width: 72px; height: 72px; font-size: 9px; }
+  .mob-btn      { font-size: 8px; }
+  .mob-btn .mob-icon { font-size: 20px; }
 }
 
 </style>

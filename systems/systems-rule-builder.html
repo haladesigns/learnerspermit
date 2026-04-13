@@ -814,10 +814,10 @@ input, textarea, select { font-family: inherit; }
 #help-btn.active { background:var(--c-state-bg);border-color:var(--c-state-bdr);color:var(--c-state); }
 
 /* ── MOBILE-ONLY ELEMENTS — hidden on desktop ────── */
+/* Media query below shows them on narrow screens — no !important needed */
 .mob-btn, #zoom-pill, #prim-sheet, #placing-banner,
-#overflow-menu, #ovf-btn { display: none !important; }
-/* drawer chrome — desktop never sees these */
-#drawer-handle, #peek-bar { display: none !important; }
+#overflow-menu, #ovf-btn,
+#drawer-handle, #peek-bar { display: none; }
 
 /* ── SCROLLBAR ──────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -836,13 +836,6 @@ html.is-mobile .brand span { display:none; }
 html.is-mobile #header { padding:0 10px; gap:6px; }
 html.is-mobile .btn { padding:6px 10px; font-size:10px; }
 html.is-mobile .btn-label-hide { display:none; }
-/* restore mobile-only elements */
-html.is-mobile .mob-btn { display:flex !important; }
-html.is-mobile #zoom-pill { display:flex !important; }
-html.is-mobile #ovf-btn { display:flex !important; }
-html.is-mobile #drawer-handle { display:flex !important; }
-html.is-mobile #sidebar.drawer-peek #peek-bar, html.is-mobile #sidebar.drawer-full #peek-bar { display:flex !important; }
-/* prim-sheet visibility via transform */
 
   /* ── SIDEBAR: peek drawer ──────────────────────────────────── */
 html.is-mobile #sidebar {
@@ -888,7 +881,6 @@ html.is-mobile #peek-bar {
     align-items:center; gap:10px;
     padding:0 16px 8px; flex-shrink:0;
   }
-html.is-mobile #sidebar.drawer-peek #peek-bar, html.is-mobile #sidebar.drawer-full #peek-bar { display:flex; }
 html.is-mobile #peek-type-badge {
     font-family:var(--font-mono); font-size:9px; font-weight:700;
     letter-spacing:.08em; text-transform:uppercase;
@@ -936,7 +928,7 @@ html.is-mobile #prim-sheet {
     left: 0; right: 0;
     bottom: 68px;           /* sit on top of footer toolbar      */
     z-index: 75;
-    display: flex !important;
+    display: flex;
     flex-direction: column;
     background: var(--bg2);
     border-top: 1px solid var(--line2);
@@ -1091,6 +1083,14 @@ html.is-mobile .ovf-item:active { background:var(--bg3); }
 .is-mobile.small-screen .prim-tile { width:72px; height:72px; font-size:9px; }
 .is-mobile.small-screen .mob-btn   { font-size:8px; }
 .is-mobile.small-screen .mob-btn .mob-icon { font-size:20px; }
+
+/* ── MOBILE VISIBILITY — pure @media, no JS required ─────── */
+@media (max-width: 900px) {
+  .mob-btn, #zoom-pill, #ovf-btn, #drawer-handle { display: flex; }
+  #prim-sheet  { display: flex; }
+  #sidebar.drawer-peek #peek-bar,
+  #sidebar.drawer-full #peek-bar { display: flex; }
+}
 
 </style>
 </head>

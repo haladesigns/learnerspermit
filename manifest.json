@@ -9,6 +9,12 @@
         "name": "android-appfunctions-reference.html",
         "label": "Android Appfunctions Reference",
         "path": "Android/android-appfunctions-reference.html"
+      },
+      {
+        "type": "file",
+        "name": "kivy-buildozer-android_apk.html",
+        "label": "Kivy Buildozer Android Apk",
+        "path": "Android/kivy-buildozer-android_apk.html"
       }
     ]
   },

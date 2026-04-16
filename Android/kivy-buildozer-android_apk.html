@@ -404,10 +404,16 @@ code {
       <div class="step-row">
         <div class="step-num">1</div>
         <div class="step-body">
-          <strong>Update Ubuntu and install system packages</strong>
+          <strong>Update Ubuntu and install all build dependencies</strong>
           <pre>sudo apt update && sudo apt upgrade -y
-sudo apt install -y python3-pip zip unzip openjdk-17-jdk cython3</pre>
-          <span class="tip">💡 openjdk-17-jdk is required by the Android build tools. cython3 is required by python-for-android.</span>
+sudo apt install -y \
+  python3-pip zip unzip \
+  openjdk-17-jdk cython3 \
+  autoconf automake libtool \
+  pkg-config libssl-dev \
+  libffi-dev build-essential \
+  git</pre>
+          <span class="tip">💡 Install all of these upfront. Buildozer will hit missing tools one by one mid-build if you don't — autoconf, automake, and libtool are needed by libffi compilation inside python-for-android.</span>
         </div>
       </div>
       <div class="step-row">
@@ -669,9 +675,37 @@ fatal: could not set 'core.filemode' to 'false'</span></pre>
     <div class="fix">Wrap shutil.move in try/except and fall back to MediaStore. Always fire ACTION_MEDIA_SCANNER_SCAN_FILE after rename.</div>
   </div>
 
+  <div class="gotcha">
+    <div class="gotcha-title">🔴 Gotcha 7 — autoreconf: not found (libffi build failure)</div>
+    <p><strong>Error:</strong></p>
+    <pre style="margin:8px 0; background:rgba(224,95,122,0.08); border-color:rgba(224,95,122,0.3)"><span class="er">autogen.sh: 2: exec: autoreconf: not found</span>
+Command failed: pythonforandroid.toolchain create ...</pre>
+    <p>python-for-android compiles <code>libffi</code> from source as part of the Android build. <code>autoreconf</code> is part of GNU autotools — required for that compilation — and isn't installed on a fresh Ubuntu. The build gets surprisingly far before hitting this.</p>
+    <p style="margin-top:8px; font-size:12px; color:var(--muted)">Rather than fixing missing tools one by one, install the full set upfront:</p>
+    <pre style="margin:8px 0; background:rgba(224,95,122,0.08); border-color:rgba(224,95,122,0.3)">sudo apt install -y \
+  autoconf automake libtool \
+  pkg-config libssl-dev \
+  libffi-dev build-essential \
+  git zip unzip</pre>
+    <div class="fix">sudo apt install -y autoconf automake libtool pkg-config libssl-dev libffi-dev build-essential git zip unzip</div>
+  </div>
+
+  <div class="gotcha">
+    <div class="gotcha-title">🟡 Gotcha 8 — DESKTOP_TEST flag not working / NameError</div>
+    <p><strong>Error:</strong> <code>NameError: name 'DESKTOP_TEST' is not defined</code> — or button click does nothing.</p>
+    <p style="margin-top:6px">Two variations of this problem:</p>
+    <p style="margin-top:6px"><strong>Variation A</strong> — <code>DESKTOP_TEST</code> defined inside the class but referenced without <code>self.</code> in <code>take_photo</code>. Class attributes need <code>self.DESKTOP_TEST</code>.</p>
+    <p style="margin-top:6px"><strong>Variation B</strong> — <code>DESKTOP_TEST = True</code> added but the <code>on_photo_taken</code> guard silently exits because <code>os.path.exists(TEST_IMAGE)</code> returns False. The path is wrong or the file doesn't exist at that exact location.</p>
+    <pre style="margin:8px 0; background:rgba(224,95,122,0.08); border-color:rgba(224,95,122,0.3)"><span class="cm"># Diagnostic — add to on_photo_taken temporarily</span>
+def on_photo_taken(self, filename):
+    print(f"on_photo_taken called with: {filename}")
+    print(f"File exists: {os.path.exists(filename)}")</pre>
+    <div class="fix">Define DESKTOP_TEST and TEST_IMAGE at the top of the file as globals (before the class). Use r"..." for Windows paths to avoid backslash escape issues.</div>
+  </div>
+
   <div class="callout amber" style="margin-top:4px">
     <div class="callout-label">⚡ Pattern</div>
-    <p>Most errors in this stack fall into two categories: <em>missing Linux tools</em> (Cython, PATH issues) and <em>filesystem permission conflicts</em> (building on /mnt/ instead of ~/). Fix those two classes and 90% of Buildozer problems disappear.</p>
+    <p>Most errors in this stack fall into three categories: <em>missing Linux tools</em> (Cython, autotools, PATH issues), <em>filesystem permission conflicts</em> (building on /mnt/ instead of ~/), and <em>desktop testing scope issues</em> (DESKTOP_TEST flag placement, wrong paths). Fix those three classes and 95% of problems disappear.</p>
   </div>
 
 </div>

@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python → Android APK — Field Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:         #0a0b0f;
+  --bg2:        #0f1117;
+  --bg3:        #141720;
+  --border:     #1c2030;
+  --border2:    #252a3a;
+  --text:       #c9d1e8;
+  --muted:      #4a5272;
+  --dim:        #2a2f45;
+  --green:      #3ecf8e;
+  --green-glow: rgba(62,207,142,0.12);
+  --red:        #e05f7a;
+  --red-glow:   rgba(224,95,122,0.12);
+  --amber:      #f7a23e;
+  --amber-glow: rgba(247,162,62,0.12);
+  --blue:       #4f8ef7;
+  --blue-glow:  rgba(79,142,247,0.12);
+  --purple:     #a78bfa;
+  --shadow:     0 4px 32px rgba(0,0,0,0.5);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 600;
+  color: var(--green); letter-spacing: -0.02em;
+}
+.logo span { color: var(--muted); font-weight: 400; }
+.header-badges { display: flex; gap: 8px; }
+.badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; padding: 3px 9px; border-radius: 3px;
+  letter-spacing: 0.06em; border: 1px solid;
+}
+.badge.g { background: var(--green-glow); color: var(--green); border-color: rgba(62,207,142,0.3); }
+.badge.a { background: var(--amber-glow); color: var(--amber); border-color: rgba(247,162,62,0.3); }
+
+/* ── NAV ── */
+nav {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; overflow-x: auto; gap: 0;
+}
+nav button {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  padding: 11px 18px;
+  background: none; border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted); cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+nav button:hover { color: var(--text); }
+nav button.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* ── MAIN ── */
+main {
+  max-width: 960px; margin: 0 auto;
+  padding: 36px 32px;
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+.section { display: none; flex-direction: column; gap: 20px; }
+.section.active { display: flex; }
+.section.active > * { animation: fadeUp 0.22s ease both; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── HERO ── */
+.hero {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--green);
+  border-radius: 8px; padding: 24px 28px;
+  box-shadow: var(--shadow), inset 0 0 80px var(--green-glow);
+}
+.hero h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px; font-weight: 800;
+  color: var(--green); margin-bottom: 8px;
+  letter-spacing: -0.03em;
+}
+.hero p { font-size: 14px; color: var(--text); max-width: 700px; line-height: 1.7; }
+.hero p strong { color: var(--green); }
+
+/* ── CARD ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 20px 24px;
+  box-shadow: var(--shadow);
+}
+.card.green  { border-left: 3px solid var(--green); }
+.card.red    { border-left: 3px solid var(--red); }
+.card.amber  { border-left: 3px solid var(--amber); }
+.card.blue   { border-left: 3px solid var(--blue); }
+.card.purple { border-left: 3px solid var(--purple); }
+
+.card-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title::before {
+  content: ''; display: inline-block;
+  width: 3px; height: 11px;
+  background: var(--green); border-radius: 2px;
+}
+.card-title.red::before    { background: var(--red); }
+.card-title.amber::before  { background: var(--amber); }
+.card-title.blue::before   { background: var(--blue); }
+.card-title.purple::before { background: var(--purple); }
+
+/* ── STEPS ── */
+.step-list { display: flex; flex-direction: column; gap: 10px; }
+.step-row {
+  display: grid; grid-template-columns: 32px 1fr;
+  gap: 14px; align-items: flex-start;
+  padding: 13px 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border); border-radius: 6px;
+  transition: border-color 0.2s;
+}
+.step-row:hover { border-color: var(--border2); }
+.step-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 700;
+  color: var(--green); text-align: center; margin-top: 1px;
+}
+.step-body { font-size: 13px; color: var(--text); line-height: 1.55; }
+.step-body strong { color: var(--text); font-weight: 700; }
+.step-body .tip  { color: var(--amber); font-size: 12px; display: block; margin-top: 5px; }
+.step-body .warn { color: var(--red);   font-size: 12px; display: block; margin-top: 5px; }
+.step-body .note { color: var(--blue);  font-size: 12px; display: block; margin-top: 5px; }
+
+/* ── CODE ── */
+pre, code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+pre {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 14px 16px;
+  overflow-x: auto; line-height: 1.75;
+  color: var(--text); margin-top: 8px;
+  position: relative;
+}
+.pre-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 6px;
+}
+code {
+  background: var(--bg3); padding: 2px 6px;
+  border-radius: 3px; color: var(--green);
+  border: 1px solid var(--border); font-size: 11px;
+}
+.cm { color: var(--muted); font-style: italic; }
+.kw { color: var(--blue); }
+.st { color: var(--amber); }
+.fn { color: var(--green); }
+.er { color: var(--red); font-weight: 600; }
+
+/* ── CALLOUT ── */
+.callout {
+  border-radius: 6px; padding: 14px 18px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+}
+.callout.green  { border-left: 3px solid var(--green);  background: var(--green-glow); }
+.callout.red    { border-left: 3px solid var(--red);    background: var(--red-glow); }
+.callout.amber  { border-left: 3px solid var(--amber);  background: var(--amber-glow); }
+.callout.blue   { border-left: 3px solid var(--blue);   background: var(--blue-glow); }
+.callout-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.1em; margin-bottom: 7px; font-weight: 600;
+}
+.callout.green  .callout-label { color: var(--green); }
+.callout.red    .callout-label { color: var(--red); }
+.callout.amber  .callout-label { color: var(--amber); }
+.callout.blue   .callout-label { color: var(--blue); }
+.callout p { font-size: 13px; color: var(--text); line-height: 1.6; }
+.callout p em { font-style: normal; font-weight: 600; color: inherit; }
+
+/* ── GOTCHA BOX ── */
+.gotcha {
+  background: var(--red-glow);
+  border: 1px solid rgba(224,95,122,0.3);
+  border-left: 3px solid var(--red);
+  border-radius: 6px; padding: 14px 18px;
+}
+.gotcha-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--red);
+  font-weight: 700; margin-bottom: 8px;
+}
+.gotcha p { font-size: 13px; color: var(--text); line-height: 1.6; }
+.gotcha code { background: rgba(224,95,122,0.15); border-color: rgba(224,95,122,0.3); color: var(--red); }
+.gotcha .fix {
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid rgba(224,95,122,0.2);
+  font-size: 12px; color: var(--green);
+  font-family: 'JetBrains Mono', monospace;
+}
+.gotcha .fix::before { content: '✓ FIX: '; font-weight: 700; }
+
+/* ── PIPELINE BAR ── */
+.pipeline {
+  display: flex; align-items: stretch;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
+}
+.pipe-step {
+  flex: 1; padding: 14px 10px; text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.04em;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+.pipe-step:last-child { border-right: none; }
+.pipe-step .pipe-sub { font-size: 10px; font-weight: 400; color: var(--muted); display: block; margin-top: 3px; letter-spacing: 0.02em; }
+.pipe-step.p1 { background: rgba(79,142,247,0.08);  color: var(--blue); }
+.pipe-step.p2 { background: rgba(247,162,62,0.08);  color: var(--amber); }
+.pipe-step.p3 { background: rgba(62,207,142,0.08);  color: var(--green); }
+.pipe-step.p4 { background: rgba(224,95,122,0.08);  color: var(--red); }
+.pipe-step.p5 { background: rgba(167,139,250,0.08); color: var(--purple); }
+
+/* ── TABLE ── */
+.ref-table { width: 100%; border-collapse: collapse; }
+.ref-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted);
+  text-align: left; padding: 8px 12px;
+  background: var(--bg3); border-bottom: 1px solid var(--border);
+}
+.ref-table td {
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  font-size: 13px; vertical-align: top;
+}
+.ref-table tr:last-child td { border-bottom: none; }
+.ref-table tr:hover td { background: var(--green-glow); }
+.ref-table td:first-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--green); white-space: nowrap;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">python → apk<span> — field guide</span></div>
+  <div class="header-badges">
+    <span class="badge g">Kivy + Buildozer</span>
+    <span class="badge a">WSL2 + Android</span>
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="setup">Environment</button>
+  <button data-tab="project">Project Setup</button>
+  <button data-tab="build">Build</button>
+  <button data-tab="gotchas">Gotchas</button>
+  <button data-tab="testing">Desktop Testing</button>
+  <button data-tab="reference">Reference</button>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════════════
+     OVERVIEW
+════════════════════════════════════════ -->
+<div class="section active" id="tab-overview">
+
+  <div class="hero">
+    <h2>Python → Android APK</h2>
+    <p>A real-world walkthrough of building a <strong>Kivy Android app</strong> on Windows using WSL2 and Buildozer — including every error hit along the way and how to fix it. Built around the PhotoRename app: take a photo, get prompted for a name, save it.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">The Full Pipeline</div>
+    <div class="pipeline">
+      <div class="pipe-step p1">WRITE<span class="pipe-sub">main.py in Python</span></div>
+      <div class="pipe-step p2">CONFIGURE<span class="pipe-sub">buildozer.spec</span></div>
+      <div class="pipe-step p3">BUILD<span class="pipe-sub">WSL2 + Buildozer</span></div>
+      <div class="pipe-step p4">PACKAGE<span class="pipe-sub">APK compiled</span></div>
+      <div class="pipe-step p5">DEPLOY<span class="pipe-sub">sideload to phone</span></div>
+    </div>
+    <p style="margin-top:12px; font-size:12px; color:var(--muted)">The first build downloads ~2GB of Android SDK/NDK tooling and takes 15–20 minutes. Every subsequent build is much faster.</p>
+  </div>
+
+  <div class="card blue">
+    <div class="card-title blue">What Each Tool Does</div>
+    <table class="ref-table">
+      <thead><tr><th>Tool</th><th>What It Is</th><th>Why You Need It</th></tr></thead>
+      <tbody>
+        <tr><td>Kivy</td><td>Python UI framework</td><td>Renders your app UI on Android — buttons, popups, images</td></tr>
+        <tr><td>plyer</td><td>Platform bridge library</td><td>Lets Python talk to Android APIs — camera, GPS, notifications</td></tr>
+        <tr><td>pyjnius</td><td>Java/Python bridge</td><td>Calls Android Java APIs directly from Python (media scan, etc.)</td></tr>
+        <tr><td>Buildozer</td><td>APK packaging tool</td><td>Compiles Python + Kivy + dependencies into an installable .apk</td></tr>
+        <tr><td>python-for-android</td><td>Cross-compiler (called by Buildozer)</td><td>Converts Python code to ARM architecture that Android can run</td></tr>
+        <tr><td>WSL2</td><td>Linux on Windows</td><td>Buildozer requires Linux — WSL2 provides it without a VM</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout amber">
+    <div class="callout-label">⚡ Key Mental Model</div>
+    <p>Your phone doesn't know what <code>main.py</code> is. Buildozer's entire job is to bundle Python, the interpreter, all dependencies, and Android glue code into a <em>single APK your phone can understand</em>. Think of it as a compiler that speaks Python in and APK out.</p>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════
+     ENVIRONMENT SETUP
+════════════════════════════════════════ -->
+<div class="section" id="tab-setup">
+
+  <div class="hero">
+    <h2>Environment Setup</h2>
+    <p>Getting WSL2 + Ubuntu installed and Buildozer ready. This is the foundation everything else sits on.</p>
+  </div>
+
+  <div class="card green">
+    <div class="card-title">Step 1 — Install WSL2 + Ubuntu</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Check if WSL has a distro installed</strong>
+          <div class="pre-label">PowerShell (as Admin)</div>
+          <pre>wsl --list --verbose</pre>
+          <span class="warn">⚠ If output says "no installed distributions" — WSL is enabled but empty. That's fine, install one now.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Install Ubuntu 22.04</strong>
+          <pre>wsl --install -d Ubuntu-22.04</pre>
+          <span class="tip">💡 This downloads Ubuntu (~500MB). When prompted, set a Linux username and password — remember them.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Reboot, then verify</strong>
+          <pre>wsl --list --verbose
+<span class="cm"># Should show: Ubuntu-22.04   Running   2</span></pre>
+          <span class="note">ℹ VERSION must be 2. If it shows 1, run: wsl --set-version Ubuntu-22.04 2</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card amber">
+    <div class="card-title amber">Step 2 — Install Build Dependencies</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Update Ubuntu and install system packages</strong>
+          <pre>sudo apt update && sudo apt upgrade -y
+sudo apt install -y python3-pip zip unzip openjdk-17-jdk cython3</pre>
+          <span class="tip">💡 openjdk-17-jdk is required by the Android build tools. cython3 is required by python-for-android.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Install Buildozer</strong>
+          <pre>pip3 install buildozer</pre>
+          <span class="warn">⚠ If you get "normal site-packages is not writeable" — that's fine, it installs to ~/.local instead. See Gotchas tab.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Add ~/.local/bin to PATH</strong>
+          <pre><span class="cm"># Fix for current session</span>
+export PATH=$PATH:~/.local/bin
+
+<span class="cm"># Make permanent — survives WSL restarts</span>
+echo 'export PATH=$PATH:~/.local/bin' >> ~/.bashrc
+source ~/.bashrc</pre>
+          <span class="note">ℹ ~/.bashrc runs every time you open WSL. Anything in it is permanent. PATH tells Linux where to look for commands.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Verify Buildozer is found</strong>
+          <pre>which buildozer
+buildozer --version</pre>
+          <span class="tip">💡 If both return output, you're ready. If not, check PATH and re-run step 3.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout blue">
+    <div class="callout-label">ℹ WSL ↔ Windows Filesystem</div>
+    <p>WSL and Windows share the same filesystem automatically. Your Windows <code>D:\</code> drive is visible in WSL as <code>/mnt/d/</code>. Your WSL home folder is accessible from Windows Explorer at <code>\\wsl$\Ubuntu-22.04\home\username\</code>. No copying or syncing needed — edit in VS Code on Windows, build in WSL, they see the same files.</p>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PROJECT SETUP
+════════════════════════════════════════ -->
+<div class="section" id="tab-project">
+
+  <div class="hero">
+    <h2>Project Setup</h2>
+    <p>Creating the project folder, the app code, and the Buildozer spec. The spec is the config file that tells Buildozer everything about your app.</p>
+  </div>
+
+  <div class="card blue">
+    <div class="card-title blue">Create the Project — In WSL Linux Filesystem</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">!</div>
+        <div class="step-body">
+          <strong>Critical: Build inside the Linux filesystem, not /mnt/c or /mnt/d</strong>
+          <span class="warn">⚠ Building on a Windows-mounted path (/mnt/c/, /mnt/d/) causes chmod failures. Buildozer needs Linux file permissions. Always build from ~/projects/ or similar.</span>
+          <pre><span class="cm"># Create project in Linux home — NOT on /mnt/</span>
+mkdir -p ~/projects/photorename
+cd ~/projects/photorename</pre>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Copy your files from Windows into Linux</strong>
+          <pre><span class="cm"># If your files are on D:\projects\photorename\</span>
+cp /mnt/d/projects/photorename/main.py .
+cp /mnt/d/projects/photorename/buildozer.spec .  <span class="cm"># if already created</span></pre>
+          <span class="tip">💡 Or just create main.py directly here and edit it in VS Code — VS Code can open WSL paths via the Remote WSL extension.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Generate buildozer.spec</strong>
+          <pre>cd ~/projects/photorename
+buildozer init</pre>
+          This creates <code>buildozer.spec</code> in your project folder with all defaults. You edit the key lines next.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card amber">
+    <div class="card-title amber">Configure buildozer.spec — Key Lines to Change</div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:12px">Open the generated spec in VS Code and find+replace these values. Everything else can stay as default.</p>
+    <pre><span class="cm"># APP IDENTITY</span>
+title = PhotoRename
+package.name = photorename
+package.domain = org.hala
+
+<span class="cm"># SOURCE</span>
+source.dir = .
+source.include_exts = py
+version = 1.0
+
+<span class="cm"># DEPENDENCIES — must include all libraries your code imports</span>
+requirements = python3,kivy,plyer,pyjnius
+
+<span class="cm"># ANDROID PERMISSIONS</span>
+android.permissions = CAMERA,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,READ_MEDIA_IMAGES
+
+<span class="cm"># ANDROID API TARGETS</span>
+android.api = 33
+android.minapi = 21
+android.ndk = 25b</pre>
+    <div class="callout amber" style="margin-top:12px">
+      <div class="callout-label">⚠ Requirements</div>
+      <p>Every Python library you import must be listed in <code>requirements</code>. Missing one = build succeeds but app crashes at runtime. <em>pyjnius</em> is needed for the media scan broadcast that makes renamed photos appear in your gallery.</p>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════
+     BUILD
+════════════════════════════════════════ -->
+<div class="section" id="tab-build">
+
+  <div class="hero">
+    <h2>Building the APK</h2>
+    <p>Running Buildozer, what to expect during the build, and how to get the APK onto your phone.</p>
+  </div>
+
+  <div class="card green">
+    <div class="card-title">Running the Build</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Navigate to your project and run the build</strong>
+          <pre>cd ~/projects/photorename
+buildozer android debug</pre>
+          <span class="tip">💡 "debug" = development APK, no signing required. Use "release" only for Play Store publishing.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>First build — what you'll see</strong>
+          <pre><span class="cm"># Buildozer downloading Android SDK (~500MB)</span>
+<span class="fn"># Downloading platform-33...</span>    11% ████░░░░
+
+<span class="cm"># Cloning python-for-android</span>
+<span class="fn">Cloning into 'python-for-android'...</span>
+
+<span class="cm"># Compiling Python for ARM</span>
+<span class="fn"># Compiling python3...</span>
+<span class="fn"># Compiling kivy...</span></pre>
+          <span class="note">ℹ First build: 15–20 minutes. SDK/NDK are cached in ~/.buildozer/. Subsequent builds: 2–5 minutes.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Successful build output</strong>
+          <pre><span class="fn"># APK created at:</span>
+bin/photorename-1.0-debug.apk</pre>
+          <span class="tip">💡 The bin/ folder is in your project directory: ~/projects/photorename/bin/</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card purple">
+    <div class="card-title purple">Getting the APK onto Your Phone</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">A</div>
+        <div class="step-body">
+          <strong>Option A — USB (fastest)</strong>
+          <pre><span class="cm"># Enable USB Debugging on your phone first:
+# Settings → About Phone → tap Build Number 7 times
+# Settings → Developer Options → USB Debugging ON</span>
+
+buildozer android deploy run</pre>
+          Buildozer installs and launches the app directly over USB.
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">B</div>
+        <div class="step-body">
+          <strong>Option B — Copy APK manually</strong>
+          <pre><span class="cm"># APK is at ~/projects/photorename/bin/
+# Access it from Windows Explorer:</span>
+\\wsl$\Ubuntu-22.04\home\hf\projects\photorename\bin\</pre>
+          Copy the <code>.apk</code> to your phone via USB transfer or cloud storage. Open it on your phone to install. You may need to enable "Install from unknown sources" in Android settings.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout green">
+    <div class="callout-label">✓ Iterating After First Build</div>
+    <p>Edit <code>main.py</code> on Windows, re-run <code>buildozer android debug</code> in WSL. The SDK/NDK are already downloaded. Only your changed Python code gets recompiled — much faster than the first run.</p>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════
+     GOTCHAS
+════════════════════════════════════════ -->
+<div class="section" id="tab-gotchas">
+
+  <div class="hero">
+    <h2>Gotchas — Errors We Actually Hit</h2>
+    <p>Every error encountered during this build, what caused it, and the exact fix. In order of appearance.</p>
+  </div>
+
+  <div class="gotcha">
+    <div class="gotcha-title">🔴 Gotcha 1 — WSL has no installed distributions</div>
+    <p><strong>Error:</strong> <code>Windows Subsystem for Linux has no installed distributions</code></p>
+    <p style="margin-top:6px">WSL the feature was enabled on Windows, but no Linux distro was ever installed inside it. The two are separate — enabling WSL doesn't give you Linux automatically.</p>
+    <div class="fix">wsl --install -d Ubuntu-22.04</div>
+  </div>
+
+  <div class="gotcha">
+    <div class="gotcha-title">🔴 Gotcha 2 — buildozer: command not found</div>
+    <p><strong>Error:</strong> <code>buildozer: command not found</code> even after installing it.</p>
+    <p style="margin-top:6px">pip installed Buildozer to <code>~/.local/bin/</code> because the system site-packages folder wasn't writeable. That folder isn't in PATH by default, so the shell can't find the command.</p>
+    <div class="fix">export PATH=$PATH:~/.local/bin &amp;&amp; echo 'export PATH=$PATH:~/.local/bin' >> ~/.bashrc</div>
+  </div>
+
+  <div class="gotcha">
+    <div class="gotcha-title">🔴 Gotcha 3 — pip3: no such option: --break-system-packages</div>
+    <p><strong>Error:</strong> <code>no such option: --break-system-packages</code></p>
+    <p style="margin-top:6px">This flag was introduced in pip 23.x for newer Ubuntu versions. Older Ubuntu (20.04 or below) doesn't recognize it. The flag isn't needed on older systems anyway.</p>
+    <div class="fix">pip3 install buildozer &nbsp;&nbsp;# just drop the flag</div>
+  </div>
+
+  <div class="gotcha">
+    <div class="gotcha-title">🔴 Gotcha 4 — Cython not found</div>
+    <p><strong>Error:</strong> <code>Cython (cython) not found, please install it.</code></p>
+    <p style="margin-top:6px">python-for-android (called by Buildozer) requires Cython to compile Python extensions for ARM. It's not installed by default.</p>
+    <div class="fix">sudo apt install -y cython3 &nbsp;&nbsp;# or: pip3 install cython</div>
+  </div>
+
+  <div class="gotcha">
+    <div class="gotcha-title">🔴 Gotcha 5 — chmod failed: Operation not permitted (THE BIG ONE)</div>
+    <p><strong>Error:</strong></p>
+    <pre style="margin:8px 0; background:rgba(224,95,122,0.08); border-color:rgba(224,95,122,0.3)"><span class="er">error: chmod on /mnt/c/Users/.../photorename/.buildozer/... failed: Operation not permitted
+fatal: could not set 'core.filemode' to 'false'</span></pre>
+    <p>The project folder was on the Windows filesystem (<code>/mnt/c/</code> or <code>/mnt/d/</code>). Linux cannot set file permissions (chmod) on NTFS-formatted Windows drives. Buildozer needs full Linux file permissions to work.</p>
+    <p style="margin-top:8px; font-size:12px; color:var(--muted)">This one wastes the most time because the build starts fine, downloads things, then fails mid-way.</p>
+    <div class="fix">mkdir -p ~/projects/photorename &amp;&amp; cp /mnt/d/.../main.py ~/projects/photorename/ — build from Linux home dir only</div>
+  </div>
+
+  <div class="gotcha">
+    <div class="gotcha-title">🟡 Gotcha 6 — Silent rename failure on Android 10+</div>
+    <p><strong>Symptom:</strong> App builds and runs but renamed photos don't appear in gallery, or the rename fails silently.</p>
+    <p style="margin-top:6px">Android 10 (API 29) introduced scoped storage restrictions. Direct writes to DCIM may be silently blocked. Two fixes: use MediaStore API via pyjnius for the rename, and always trigger a media scan broadcast after any file operation.</p>
+    <div class="fix">Wrap shutil.move in try/except and fall back to MediaStore. Always fire ACTION_MEDIA_SCANNER_SCAN_FILE after rename.</div>
+  </div>
+
+  <div class="callout amber" style="margin-top:4px">
+    <div class="callout-label">⚡ Pattern</div>
+    <p>Most errors in this stack fall into two categories: <em>missing Linux tools</em> (Cython, PATH issues) and <em>filesystem permission conflicts</em> (building on /mnt/ instead of ~/). Fix those two classes and 90% of Buildozer problems disappear.</p>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════
+     DESKTOP TESTING
+════════════════════════════════════════ -->
+<div class="section" id="tab-testing">
+
+  <div class="hero">
+    <h2>Desktop Testing Before You Build</h2>
+    <p>Kivy runs on Windows and Linux desktops too. You can test your entire app — UI, popup, rename logic, thumbnail — <strong>without touching Buildozer or your phone</strong>. Do this first. Every bug you catch here saves a 5-minute rebuild cycle.</p>
+  </div>
+
+  <div class="card green">
+    <div class="card-title">Install Kivy on Windows for Desktop Testing</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Install Kivy + plyer on Windows</strong>
+          <div class="pre-label">Windows PowerShell or CMD</div>
+          <pre>pip install kivy plyer</pre>
+          <span class="tip">💡 You don't need pyjnius on Windows — it's Android-only and already guarded by try/except in the code.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Run the app directly</strong>
+          <pre>python main.py</pre>
+          A desktop window opens with your app running. Click buttons, test the popup, test the rename flow — all live.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card amber">
+    <div class="card-title amber">What Works vs What Doesn't on Desktop</div>
+    <table class="ref-table">
+      <thead><tr><th>Feature</th><th>Desktop</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>UI layout + popup</td><td style="color:var(--green)">✓ Works</td><td>Buttons, TextInput, Image all render normally</td></tr>
+        <tr><td>Thumbnail preview</td><td style="color:var(--green)">✓ Works</td><td>Loads any local image file</td></tr>
+        <tr><td>Rename logic</td><td style="color:var(--green)">✓ Works</td><td>shutil.move works on desktop filesystem</td></tr>
+        <tr><td>plyer camera</td><td style="color:var(--red)">✗ Fails</td><td>No Android camera on desktop — mock it (see below)</td></tr>
+        <tr><td>pyjnius media scan</td><td style="color:var(--red)">✗ Fails</td><td>Android-only — already wrapped in try/except, silently skipped</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card blue">
+    <div class="card-title blue">Mocking the Camera for Full Flow Testing</div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:12px">Add a <code>DESKTOP_TEST</code> flag at the top of <code>main.py</code>. This bypasses the camera intent and feeds a local image directly into the popup — giving you the full rename + thumbnail flow on desktop.</p>
+
+    <div class="pre-label">main.py — add near the top</div>
+    <pre><span class="cm"># DESKTOP TESTING — set to False before buildozer android debug</span>
+DESKTOP_TEST = <span class="kw">True</span>
+TEST_IMAGE = <span class="st">"C:/Users/halaf/Pictures/test.jpg"</span>  <span class="cm"># any image on your machine</span></pre>
+
+    <div class="pre-label">main.py — update take_photo method</div>
+    <pre><span class="kw">def</span> <span class="fn">take_photo</span>(self, *args):
+    <span class="kw">if</span> DESKTOP_TEST:
+        self.on_photo_taken(TEST_IMAGE)
+        <span class="kw">return</span>
+    camera.take_picture(filename=TMP, on_complete=self.on_photo_taken)</pre>
+
+    <div class="callout red" style="margin-top:12px">
+      <div class="callout-label">⚠ Before Running Buildozer</div>
+      <p>Set <code>DESKTOP_TEST = False</code> before running <code>buildozer android debug</code>. If you forget, the APK will load a hardcoded Windows path on your Android phone — which obviously doesn't exist.</p>
+    </div>
+  </div>
+
+  <div class="card purple">
+    <div class="card-title purple">Recommended Testing Workflow</div>
+    <div class="step-list">
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Set DESKTOP_TEST = True, point TEST_IMAGE at any local photo</strong>
+          <span class="tip">💡 Use a real photo — it tests the thumbnail scaling and aspect ratio too.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Run python main.py — iterate freely</strong>
+          Edit code → re-run → instant feedback. No WSL, no build time, no phone needed.
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>When logic is solid, set DESKTOP_TEST = False</strong>
+          Then run <code>buildozer android debug</code> in WSL for the Android build.
+          <span class="note">ℹ Only build for Android when you're confident the logic works. Each build takes 2–5 minutes minimum.</span>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Android-only bugs (camera, media scan) — test on device</strong>
+          These can't be tested on desktop. Install the APK and test on your actual phone for the final validation.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════
+     REFERENCE
+════════════════════════════════════════ -->
+<div class="section" id="tab-reference">
+
+  <div class="hero">
+    <h2>Quick Reference</h2>
+    <p>Commands, file locations, and spec values you'll reach for repeatedly.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Essential Commands</div>
+    <table class="ref-table">
+      <thead><tr><th>Command</th><th>What It Does</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td>wsl --install -d Ubuntu-22.04</td><td>Install Ubuntu inside WSL</td><td>First time only</td></tr>
+        <tr><td>wsl --list --verbose</td><td>Check installed distros + WSL version</td><td>Diagnosing WSL issues</td></tr>
+        <tr><td>wsl --shutdown</td><td>Fully stop WSL</td><td>After updates or when WSL misbehaves</td></tr>
+        <tr><td>buildozer init</td><td>Generate buildozer.spec in current folder</td><td>Once per project</td></tr>
+        <tr><td>buildozer android debug</td><td>Build debug APK</td><td>Every build iteration</td></tr>
+        <tr><td>buildozer android deploy run</td><td>Build + install + launch on USB phone</td><td>USB testing</td></tr>
+        <tr><td>buildozer android debug 2>&1 | tee build.log</td><td>Build and save full log to file</td><td>Debugging build errors</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card amber">
+    <div class="card-title amber">File Locations</div>
+    <table class="ref-table">
+      <thead><tr><th>Path</th><th>What's There</th></tr></thead>
+      <tbody>
+        <tr><td>~/projects/photorename/</td><td>Your project — source code, spec file</td></tr>
+        <tr><td>~/projects/photorename/bin/</td><td>Output APK after successful build</td></tr>
+        <tr><td>~/.buildozer/</td><td>Buildozer cache — Android SDK, NDK, python-for-android</td></tr>
+        <tr><td>\\wsl$\Ubuntu-22.04\home\hf\</td><td>WSL home from Windows Explorer</td></tr>
+        <tr><td>/mnt/c/ /mnt/d/</td><td>Windows C: D: drives from WSL — read/write, no chmod</td></tr>
+        <tr><td>~/.bashrc</td><td>WSL startup script — PATH and env vars go here</td></tr>
+        <tr><td>~/.local/bin/</td><td>Where pip installs user-level executables (buildozer lives here)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card green">
+    <div class="card-title">buildozer.spec — PhotoRename Values</div>
+    <pre><span class="cm">[app]</span>
+title = PhotoRename
+package.name = photorename
+package.domain = org.hala
+source.dir = .
+source.include_exts = py
+version = 1.0
+requirements = python3,kivy,plyer,pyjnius
+android.permissions = CAMERA,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,READ_MEDIA_IMAGES
+android.api = 33
+android.minapi = 21
+android.ndk = 25b</pre>
+  </div>
+
+  <div class="card blue">
+    <div class="card-title blue">Android Permissions Reference</div>
+    <table class="ref-table">
+      <thead><tr><th>Permission</th><th>Why Needed</th></tr></thead>
+      <tbody>
+        <tr><td>CAMERA</td><td>Launch the camera intent to take photos</td></tr>
+        <tr><td>READ_EXTERNAL_STORAGE</td><td>Read files from DCIM/Camera (API &lt; 33)</td></tr>
+        <tr><td>WRITE_EXTERNAL_STORAGE</td><td>Write/rename files in DCIM/Camera (API &lt; 33)</td></tr>
+        <tr><td>READ_MEDIA_IMAGES</td><td>Granular media permission for API 33+</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+</main>
+
+<script>
+const tabs     = document.querySelectorAll('nav button');
+const sections = document.querySelectorAll('.section');
+
+tabs.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.tab;
+    tabs.forEach(b => b.classList.remove('active'));
+    sections.forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + target).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

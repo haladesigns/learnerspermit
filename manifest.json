@@ -458,6 +458,19 @@
         ]
       },
       {
+        "type": "folder",
+        "name": "clojure",
+        "label": "Clojure",
+        "children": [
+          {
+            "type": "file",
+            "name": "c",
+            "label": "C",
+            "path": "coding_web-design/clojure/c"
+          }
+        ]
+      },
+      {
         "type": "file",
         "name": "agentic-coding-workflow.html",
         "label": "Agentic Coding Workflow",

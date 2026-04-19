@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI + Human Music Curation — Workflow Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --purple:        #a78bfa;
+    --purple-glow:   rgba(167,139,250,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --purple:        #7c3aed;
+    --purple-glow:   rgba(124,58,237,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* HEADER */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600; font-size: 15px;
+    color: var(--accent); letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; padding: 2px 8px; border-radius: 3px;
+    background: var(--accent-glow); color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em;
+  }
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle {
+    width: 44px; height: 24px; background: var(--toggle-bg);
+    border: 1px solid var(--border-accent); border-radius: 12px;
+    cursor: pointer; position: relative; appearance: none; outline: none; transition: background 0.3s;
+  }
+  .toggle::after {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; background: var(--accent);
+    border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  /* NAV */
+  nav {
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    padding: 0 32px; display: flex; overflow-x: auto;
+  }
+  nav button {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    padding: 10px 16px; background: none; border: none;
+    border-bottom: 2px solid transparent; color: var(--text-muted);
+    cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN */
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px 24px;
+    box-shadow: var(--shadow); transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+  .card.purple { border-left: 3px solid var(--purple);  }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-muted); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title::before {
+    content: ''; display: inline-block; width: 3px; height: 12px;
+    background: var(--accent); border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+  .card-title.purple::before { background: var(--purple);  }
+
+  /* HERO */
+  .hero {
+    background: var(--bg-card); border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent); border-radius: 8px;
+    padding: 24px; box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace; font-size: 22px;
+    font-weight: 600; color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 720px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  /* GRIDS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* RULE ROWS */
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row {
+    display: grid; grid-template-columns: 20px 1fr; gap: 12px;
+    align-items: flex-start; padding: 10px 14px;
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 6px; transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong  { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg    { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos    { color: var(--accent3); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent);
+  }
+
+  /* STEP ROWS */
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row {
+    display: grid; grid-template-columns: 32px 1fr; gap: 14px;
+    align-items: flex-start; padding: 14px 16px;
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 6px; transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace; font-size: 15px;
+    font-weight: 600; color: var(--accent); text-align: center; margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.6; }
+  .step-body strong { color: var(--text); font-weight: 600; font-size: 14px; }
+  .step-body .note  { color: var(--accent2); font-size: 12px; display: block; margin-top: 6px; }
+  .step-body .tip   { color: var(--accent4); font-size: 12px; display: block; margin-top: 6px; }
+  .step-body .sub   { color: var(--text-muted); font-size: 12px; display: block; margin-top: 4px; font-family: 'IBM Plex Mono', monospace; }
+  .step-body ul     { margin-top: 8px; padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }
+  .step-body ul li  { font-size: 13px; color: var(--text-muted); }
+  .step-body ul li strong { color: var(--accent3); font-weight: 600; font-size: 13px; }
+
+  /* CALLOUTS */
+  .callout {
+    background: var(--bg-code); border: 1px solid var(--border-accent);
+    border-radius: 6px; padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout.purple { border-left: 3px solid var(--purple);  }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout.purple .callout-label { color: var(--purple);  }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 600; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+  .callout.purple p em { color: var(--purple);  }
+
+  /* DECISION GRID */
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item {
+    padding: 9px 16px; font-size: 13px; color: var(--text);
+    border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  /* LOOP DIAGRAM */
+  .loop-container {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 32px 24px;
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column; align-items: center; gap: 0;
+  }
+  .loop-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--text-muted); margin-bottom: 28px;
+  }
+  .loop-steps {
+    display: flex; align-items: center; gap: 0;
+    flex-wrap: wrap; justify-content: center;
+    position: relative;
+  }
+  .loop-step {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    position: relative;
+  }
+  .loop-node {
+    width: 88px; height: 88px; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 2px solid; font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; text-align: center; cursor: default;
+    transition: transform 0.2s, box-shadow 0.2s;
+    line-height: 1.3;
+  }
+  .loop-node:hover { transform: scale(1.06); }
+  .loop-node.n1 { border-color: var(--accent);  background: var(--accent-glow);  color: var(--accent);  }
+  .loop-node.n2 { border-color: var(--accent3); background: var(--accent3-glow); color: var(--accent3); }
+  .loop-node.n3 { border-color: var(--purple);  background: var(--purple-glow);  color: var(--purple);  }
+  .loop-node.n4 { border-color: var(--accent4); background: var(--accent4-glow); color: var(--accent4); }
+  .loop-node.n5 { border-color: var(--accent2); background: var(--accent2-glow); color: var(--accent2); }
+  .loop-icon { font-size: 22px; margin-bottom: 4px; }
+  .loop-label { font-size: 10px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 6px; }
+  .loop-arrow {
+    width: 36px; height: 2px; position: relative;
+    display: flex; align-items: center; margin: 0 4px; margin-bottom: 20px;
+  }
+  .loop-arrow::before { content: ''; position: absolute; left: 0; right: 0; height: 2px; background: var(--border-accent); }
+  .loop-arrow::after  { content: '▶'; position: absolute; right: -6px; top: -7px; font-size: 10px; color: var(--border-accent); }
+  .loop-note {
+    margin-top: 20px; font-size: 12px; color: var(--text-muted);
+    font-style: italic; text-align: center;
+  }
+  .loop-note strong { color: var(--accent4); font-style: normal; }
+
+  /* PHASE BADGE */
+  .phase-badge {
+    display: inline-block; font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; padding: 2px 7px; border-radius: 3px;
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .pb-blue   { background: var(--accent-glow);  color: var(--accent);  border: 1px solid rgba(79,142,247,0.3); }
+  .pb-green  { background: var(--accent3-glow); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .pb-purple { background: var(--purple-glow);  color: var(--purple);  border: 1px solid rgba(167,139,250,0.3); }
+  .pb-amber  { background: var(--accent4-glow); color: var(--accent4); border: 1px solid rgba(247,162,62,0.3); }
+  .pb-red    { background: var(--accent2-glow); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+
+  /* EXAMPLE CARDS */
+  .example-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden; box-shadow: var(--shadow);
+  }
+  .example-header {
+    padding: 14px 20px; display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .example-tag {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    padding: 3px 8px; border-radius: 3px; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .et-orchestral { background: var(--purple-glow); color: var(--purple); border: 1px solid rgba(167,139,250,0.3); }
+  .et-lofi       { background: var(--accent3-glow); color: var(--accent3); border: 1px solid rgba(62,207,142,0.3); }
+  .example-title { font-weight: 600; font-size: 15px; color: var(--text); }
+  .example-body  { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .example-body { grid-template-columns: 1fr; } }
+  .ex-section-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-dim); margin-bottom: 10px;
+  }
+  .intent-grid { display: flex; flex-direction: column; gap: 8px; }
+  .intent-row {
+    display: grid; grid-template-columns: 120px 1fr; gap: 10px;
+    padding: 8px 12px; background: var(--bg-code);
+    border: 1px solid var(--border); border-radius: 4px;
+  }
+  .intent-key {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--text-muted); display: flex; align-items: center;
+  }
+  .intent-val { font-size: 13px; color: var(--text); }
+
+  /* QUOTE */
+  .quote-block {
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent4); border-radius: 6px;
+    padding: 16px 20px; font-size: 14px; color: var(--text);
+    line-height: 1.7; font-style: italic;
+  }
+  .quote-block strong { color: var(--accent4); font-style: normal; font-weight: 600; }
+
+  /* ROLE TABLE */
+  .role-table { width: 100%; border-collapse: collapse; }
+  .role-table th {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); text-align: left;
+    padding: 8px 12px; background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .role-table td {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    font-size: 13px; vertical-align: top;
+  }
+  .role-table tr:last-child td { border-bottom: none; }
+  .role-table tr:hover td { background: var(--accent-glow); }
+  .role-table td.ai  { color: var(--accent4); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .role-table td.hum { color: var(--accent3); font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .role-table td.both { color: var(--purple); font-size: 12px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  /* ANIMATION */
+  .section.active > * { animation: fadeUp 0.25s ease both; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* TABLE SCROLL */
+  .table-scroll { overflow-x: auto; }
+
+  @media (max-width: 480px) {
+    main { padding: 16px; }
+    header { padding: 10px 16px; }
+    nav { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">AI + Human Music<span> — Curation Workflow</span></div>
+    <div class="badge">REFERENCE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="loop">The Loop</button>
+  <button data-tab="steps">5 Steps</button>
+  <button data-tab="examples">Examples</button>
+  <button data-tab="principles">Principles</button>
+</nav>
+
+<main>
+
+  <!-- =========================================================
+       OVERVIEW
+       ========================================================= -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>AI + Human Music Curation Workflow</h2>
+      <p>The difference between <strong>random outputs</strong> and meaningful music is not the technology — it's the process behind it. This framework covers how humans and AI collaborate in a feedback loop where <strong>human taste, selection, and direction</strong> drive the quality of the final result.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">What You Walk Away With</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔄</div>
+            <div class="rule-text">A clear workflow you can follow step by step to use AI in music.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text">How to take AI from <strong>random generation</strong> to <strong>intentional music results</strong>.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🧠</div>
+            <div class="rule-text">The real role of the human in the process — and why it's becoming <span class="pos">more important</span>, not less.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text">A practical system you can start using <strong>immediately</strong> in your own music.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">The Core Insight</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🚫</div>
+            <div class="rule-text">This is <span class="neg">NOT</span> a linear pipeline from input to output.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">✅</div>
+            <div class="rule-text">This <span class="pos">IS</span> a feedback loop — every human decision changes what AI produces next.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💡</div>
+            <div class="rule-text">Stop thinking: <strong>"AI generates, I use."</strong></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text">Start thinking: <strong>"I guide → AI responds → I refine."</strong></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="grid-3">
+      <div class="callout blue">
+        <div class="callout-label">🎵 AI Role</div>
+        <p><em>AI executes.</em> It doesn't decide. It generates options fast — but has no context, story, or intention.</p>
+      </div>
+      <div class="callout green">
+        <div class="callout-label">🧑‍🎨 Human Role</div>
+        <p><em>Humans create value.</em> You define intent, evaluate meaning, and select what fits the vision.</p>
+      </div>
+      <div class="callout yellow">
+        <div class="callout-label">🏆 Final Output</div>
+        <p>The value is not in the tracks. <em>It's in the selection.</em> Cohesive, intentional, purpose-driven music.</p>
+      </div>
+    </div>
+
+    <div class="callout purple">
+      <div class="callout-label">🔑 Closing Statement</div>
+      <p>The advantage is not the tool — <em>it's how you use it</em> and more importantly how you think about it. The difference between noise and meaning is not what the AI produces. It's <em>what you choose to keep.</em></p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- =========================================================
+       THE LOOP
+       ========================================================= -->
+  <div class="section" id="tab-loop">
+
+    <div class="loop-container">
+      <div class="loop-title">The Loop Simplified</div>
+      <div class="loop-steps">
+        <div class="loop-step">
+          <div class="loop-node n1"><div class="loop-icon">📋</div>DEFINE</div>
+          <div class="loop-label">Intent</div>
+        </div>
+        <div class="loop-arrow"></div>
+        <div class="loop-step">
+          <div class="loop-node n2"><div class="loop-icon">⚡</div>GENERATE</div>
+          <div class="loop-label">AI Output</div>
+        </div>
+        <div class="loop-arrow"></div>
+        <div class="loop-step">
+          <div class="loop-node n3"><div class="loop-icon">🎧</div>SELECT</div>
+          <div class="loop-label">Evaluate</div>
+        </div>
+        <div class="loop-arrow"></div>
+        <div class="loop-step">
+          <div class="loop-node n4"><div class="loop-icon">🔧</div>REFINE</div>
+          <div class="loop-label">Shape It</div>
+        </div>
+        <div class="loop-arrow"></div>
+        <div class="loop-step">
+          <div class="loop-node n5"><div class="loop-icon">🔄</div>REPEAT</div>
+          <div class="loop-label">Loop Back</div>
+        </div>
+      </div>
+      <div class="loop-note">This is <strong>not</strong> repetition — it's refinement. Each cycle the AI adapts more to your taste.</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">What the Loop Does</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-text">Each selection teaches the AI <strong>more like this</strong> / <strong>less like that</strong>.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📈</div>
+            <div class="rule-text">Over time, AI outputs start to <span class="pos">feel more aligned</span> — not because AI is more creative, but because it's adapting to your taste.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎵</div>
+            <div class="rule-text">It's like training your ear: at first everything sounds similar, but over time you hear differences and refine faster.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🚀</div>
+            <div class="rule-text">AI just accelerates the loop — the same sketch → adjust → refine process composers have always done.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">Loop Killers</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Inconsistent decisions:</span> selecting cinematic orchestral one day, generic pop loops the next — you're not training the system, you're confusing it.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Generating without direction:</span> without intent, more generation = more noise, not more quality.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Picking the safe option:</span> always choosing the cleanest track trains mediocrity — select for <strong>potential</strong>, not perfection.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Skipping requirement definition:</span> most people jump straight to generation — that's why they get results that sound okay but don't mean anything.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">🧠 The Question to Ask Yourself</div>
+      <p>Are you <em>training the AI</em> or <em>confusing it</em>? Are you <em>refining your process</em> or just repeating it?</p>
+    </div>
+
+  </div><!-- /loop -->
+
+
+  <!-- =========================================================
+       5 STEPS
+       ========================================================= -->
+  <div class="section" id="tab-steps">
+
+    <div class="callout blue">
+      <div class="callout-label">📌 Human-Driven Process</div>
+      <p>Everything in this workflow starts <em>not with AI, but with a human decision</em>. The human defines direction, evaluates output, and shapes the system over time.</p>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">Step-by-Step Workflow</div>
+      <div class="step-list">
+
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <span class="phase-badge pb-blue">Human Phase</span><br>
+            <strong>Requirement Definition</strong><br>
+            Before generating anything, define what you want to feel, what you want to hear, and where the music is going to live. AI only works as well as your intent.
+            <ul>
+              <li><strong>Mood &amp; emotional direction</strong> — what we want to feel</li>
+              <li><strong>Style / genre reference</strong> — what we want to hear</li>
+              <li><strong>Instrumentation</strong> — what are the building blocks to use</li>
+              <li><strong>Context (film, playlist, audience)</strong> — where this music is going to live</li>
+            </ul>
+            <span class="note">⚠ Skipping this step is the #1 reason people get results that sound okay but don't mean anything.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <span class="phase-badge pb-green">Human Phase</span><br>
+            <strong>Review &amp; Selection</strong><br>
+            The AI generates options. Humans create value. You're no longer prompting — you're listening, judging, and deciding. This is the most underrated part of the process.
+            <ul>
+              <li><strong>Evaluate emotional impact</strong> — does this create the right feeling?</li>
+              <li><strong>Check alignment with intent</strong> — does this support the emotional arc?</li>
+              <li><strong>Select what has potential</strong> — not what's perfect, what's promising</li>
+              <li><strong>Reject what doesn't serve the vision</strong> — this is your primary job</li>
+            </ul>
+            <span class="tip">💡 You're not a creator here — you're a curator. That's a completely different mindset.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <span class="phase-badge pb-purple">AI Phase</span><br>
+            <strong>Model Training &amp; Fine-Tuning</strong><br>
+            The AI evolves based on your decisions. Two layers:
+            <ul>
+              <li><strong>Pre-trained knowledge</strong> — AI already understands harmony, rhythm, structure, style patterns. You're not starting from zero.</li>
+              <li><strong>Fine-tuning</strong> — AI doesn't know you. Your selections teach it your taste, aesthetic, and musical priorities. Every select/reject is a signal.</li>
+            </ul>
+            <span class="tip">💡 Think of it like working with an assistant composer — at first they guess, but over time they start anticipating what you want.</span>
+            <span class="note">⚠ Inconsistent selections produce an inconsistent system. Intentional decisions = intentional results.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <span class="phase-badge pb-amber">AI Phase</span><br>
+            <strong>Music Generation</strong><br>
+            AI executes. It doesn't decide. This is pattern recognition, recombination, and style application — not intelligence.
+            <ul>
+              <li><strong>Generates</strong> melodies, harmony, rhythm, orchestration</li>
+              <li><strong>Applies</strong> learned style patterns from fine-tuning</li>
+              <li><strong>Produces</strong> multiple variations for selection</li>
+              <li><strong>Fast — but not intentional.</strong> AI doesn't know why it exists, where it's going, or what it means.</li>
+            </ul>
+            <span class="tip">💡 The power is not in generating more — it's in generating better inputs based on your intent and previous decisions.</span>
+          </div>
+        </div>
+
+        <div class="step-row">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <span class="phase-badge pb-red">Loop Phase</span><br>
+            <strong>Iteration &amp; Learning</strong><br>
+            Quality comes from the loop — not the output. Every time you complete a cycle, the system updates.
+            <ul>
+              <li><strong>Selection feeds the system</strong> — your keeps and rejects are training data</li>
+              <li><strong>Feedback refines future results</strong> — the AI analyzes what you chose and why</li>
+              <li><strong>Patterns begin to align with your taste</strong> — outputs feel increasingly personal</li>
+              <li><strong>Each cycle improves relevance</strong> — you're building a musical language together</li>
+            </ul>
+            <span class="tip">💡 Then go back to Step 1 — redefine or sharpen intent, and repeat.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="callout green">
+        <div class="callout-label">✅ The Human's Irreplaceable Role</div>
+        <p>Context. Story. Intention. Only you know why the music exists, where it's going, and what it means. <em>AI generates possibilities — humans create the purpose.</em></p>
+      </div>
+      <div class="callout yellow">
+        <div class="callout-label">⚡ The Key Mindset Shift</div>
+        <p>Taste becomes your biggest asset. Given 10 AI-generated tracks, can you confidently pick the <em>best</em> one — or just the <em>safest</em> one? <em>The difference is everything.</em></p>
+      </div>
+    </div>
+
+  </div><!-- /steps -->
+
+
+  <!-- =========================================================
+       EXAMPLES
+       ========================================================= -->
+  <div class="section" id="tab-examples">
+
+    <div class="callout blue">
+      <div class="callout-label">📌 How to Use These</div>
+      <p>These examples show how Step 1 (Requirement Definition) should be done — with <em>specific, layered intent</em> rather than a vague genre label. The level of clarity you bring to this step changes everything downstream.</p>
+    </div>
+
+    <!-- Example 1 -->
+    <div class="example-card">
+      <div class="example-header">
+        <div class="example-tag et-orchestral">Example 1</div>
+        <div class="example-title">Orchestral Piece — "Stepping Back"</div>
+      </div>
+      <div class="example-body">
+        <div>
+          <div class="ex-section-label">❌ Vague Intent (Generic Result)</div>
+          <div style="padding: 12px 16px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace;">
+            "Generate cinematic music"
+          </div>
+          <div style="margin-top: 12px;">
+            <div class="ex-section-label">✅ Specific Intent (Usable Result)</div>
+            <div class="intent-grid">
+              <div class="intent-row">
+                <div class="intent-key">Harmonic Language</div>
+                <div class="intent-val">Tension built through chromatic harmony</div>
+              </div>
+              <div class="intent-row">
+                <div class="intent-key">Emotional Direction</div>
+                <div class="intent-val">Emotional ambiguity</div>
+              </div>
+              <div class="intent-row">
+                <div class="intent-key">Structural Intent</div>
+                <div class="intent-val">Shifting tonal centers</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="ex-section-label">🎵 Music Generation Intent</div>
+          <div class="intent-grid">
+            <div class="intent-row">
+              <div class="intent-key">Atmosphere</div>
+              <div class="intent-val">Rich, textural, immersive</div>
+            </div>
+            <div class="intent-row">
+              <div class="intent-key">Development</div>
+              <div class="intent-val">Gradual, building slowly</div>
+            </div>
+            <div class="intent-row">
+              <div class="intent-key">Structure</div>
+              <div class="intent-val">Orchestral expansion of a simple motif</div>
+            </div>
+          </div>
+          <div class="callout yellow" style="margin-top: 12px;">
+            <div class="callout-label">💡 Key Lesson</div>
+            <p>That level of clarity <em>changes everything</em>. Specificity is the prompt.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Example 2 -->
+    <div class="example-card">
+      <div class="example-header">
+        <div class="example-tag et-lofi">Example 2</div>
+        <div class="example-title">Lo-fi Study Track</div>
+      </div>
+      <div class="example-body">
+        <div>
+          <div class="ex-section-label">❌ Vague Intent (Randomness)</div>
+          <div style="padding: 12px 16px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace;">
+            "Lo-fi"
+          </div>
+          <div style="margin-top: 12px;">
+            <div class="ex-section-label">✅ Specific Intent (Clear Target for AI)</div>
+            <div class="intent-grid">
+              <div class="intent-row">
+                <div class="intent-key">Texture</div>
+                <div class="intent-val">Warm textures</div>
+              </div>
+              <div class="intent-row">
+                <div class="intent-key">Tempo</div>
+                <div class="intent-val">Slow tempo</div>
+              </div>
+              <div class="intent-row">
+                <div class="intent-key">Melody</div>
+                <div class="intent-val">Repetitive piano motif</div>
+              </div>
+              <div class="intent-row">
+                <div class="intent-key">Ambience</div>
+                <div class="intent-val">Soft noise layer</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="quote-block">
+            "Most people skip this step. They go straight to generation. And that's why they get results that sound okay… <strong>but don't mean anything.</strong>"
+          </div>
+          <div class="callout green" style="margin-top: 12px;">
+            <div class="callout-label">✅ What Proper Definition Gives You</div>
+            <p>The AI has a <em>clear target</em>. The output becomes evaluable against your intent. Selection becomes a judgment call instead of a guess.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selection example -->
+    <div class="card yellow">
+      <div class="card-title yellow">Review &amp; Selection — Concrete Example</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">You get 5 variations of a theme. Here's what most people do vs. what a composer does:</p>
+      <div class="table-scroll">
+        <table class="role-table">
+          <thead>
+            <tr><th>Variation</th><th>Character</th><th>Most People Pick</th><th>Composer Picks</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>A</td><td>Clean but generic</td>
+              <td style="color:var(--accent2)">✓ (it's safe)</td>
+              <td style="color:var(--text-muted)">—</td>
+            </tr>
+            <tr>
+              <td>B</td><td>Interesting but messy</td>
+              <td style="color:var(--text-muted)">—</td>
+              <td style="color:var(--text-muted)">—</td>
+            </tr>
+            <tr>
+              <td>C</td><td>Unique moment, not consistent</td>
+              <td style="color:var(--text-muted)">—</td>
+              <td style="color:var(--accent3)">✓ (has potential)</td>
+            </tr>
+            <tr>
+              <td>D</td><td>Emotionally right, rough</td>
+              <td style="color:var(--text-muted)">—</td>
+              <td style="color:var(--accent3)">✓ (shape it further)</td>
+            </tr>
+            <tr>
+              <td>E</td><td>Technically correct</td>
+              <td style="color:var(--text-muted)">—</td>
+              <td style="color:var(--text-muted)">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px; font-size:13px; color:var(--text-muted);">
+        Good music is not selected because it's <strong style="color:var(--accent4)">perfect</strong>. It's selected because it's <strong style="color:var(--accent3)">promising</strong>. This is where taste becomes your biggest asset.
+      </div>
+    </div>
+
+  </div><!-- /examples -->
+
+
+  <!-- =========================================================
+       PRINCIPLES
+       ========================================================= -->
+  <div class="section" id="tab-principles">
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Do This</div>
+        <div class="decision-item"><span class="di">✅</span>Define intent before generating — mood, style, instrumentation, context.</div>
+        <div class="decision-item"><span class="di">✅</span>Select for potential, not perfection. The rough track with a unique moment beats the clean-but-generic one.</div>
+        <div class="decision-item"><span class="di">✅</span>Be consistent in your selections — you are training the system with every decision.</div>
+        <div class="decision-item"><span class="di">✅</span>Ask: does this harmony create tension? Does this feel intentional? Does it support the arc?</div>
+        <div class="decision-item"><span class="di">✅</span>Think like a curator, not a creator, during the review phase.</div>
+        <div class="decision-item"><span class="di">✅</span>Iterate deliberately — use feedback to refine intent and re-enter the loop.</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Avoid This</div>
+        <div class="decision-item"><span class="di">❌</span>Jumping straight to generation without defining what you want the music to feel and mean.</div>
+        <div class="decision-item"><span class="di">❌</span>Using vague genre labels as your full prompt ("cinematic", "lo-fi") without layered specifics.</div>
+        <div class="decision-item"><span class="di">❌</span>Generating more and more hoping the perfect track appears — without direction, generation becomes noise.</div>
+        <div class="decision-item"><span class="di">❌</span>Making random or inconsistent selections — this confuses the AI instead of training it.</div>
+        <div class="decision-item"><span class="di">❌</span>Always picking the safest, cleanest option — you train mediocrity into the system.</div>
+        <div class="decision-item"><span class="di">❌</span>Treating AI as a creative authority — it executes patterns; it doesn't decide meaning.</div>
+      </div>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title">AI vs Human — What Each One Does</div>
+      <div class="table-scroll">
+        <table class="role-table">
+          <thead>
+            <tr><th>Responsibility</th><th>AI</th><th>Human</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Generate melodies, harmony, rhythm</td>
+              <td class="ai">✓ AI</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>Apply learned style patterns</td>
+              <td class="ai">✓ AI</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>Produce multiple variations fast</td>
+              <td class="ai">✓ AI</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>Know why the music exists</td>
+              <td style="color:var(--accent2)">✗ Never</td>
+              <td class="hum">✓ Human</td>
+            </tr>
+            <tr>
+              <td>Define emotional intent and context</td>
+              <td style="color:var(--accent2)">✗ Never</td>
+              <td class="hum">✓ Human</td>
+            </tr>
+            <tr>
+              <td>Evaluate emotional impact vs vision</td>
+              <td style="color:var(--accent2)">✗ Never</td>
+              <td class="hum">✓ Human</td>
+            </tr>
+            <tr>
+              <td>Select what has potential</td>
+              <td style="color:var(--accent2)">✗ Never</td>
+              <td class="hum">✓ Human</td>
+            </tr>
+            <tr>
+              <td>Adapt based on selection history</td>
+              <td class="ai">✓ AI</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>Refine intent based on results</td>
+              <td>—</td>
+              <td class="hum">✓ Human</td>
+            </tr>
+            <tr>
+              <td>Create cohesion across a playlist</td>
+              <td>—</td>
+              <td class="hum">✓ Human</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="callout green">
+        <div class="callout-label">🏆 What the Loop Produces (Done Right)</div>
+        <p>Cohesive playlist / soundtrack · Aligned with intent &amp; emotion · Consistent musical identity · <em>Purpose-driven listening experience</em></p>
+      </div>
+      <div class="callout purple">
+        <div class="callout-label">🌐 The Bigger Picture</div>
+        <p>The future of music is not human <em>or</em> AI. It's human <em>through</em> AI. Master this workflow and you don't just keep up with the future — <em>you shape it.</em></p>
+      </div>
+    </div>
+
+    <div class="quote-block">
+      "The real question is not <strong>can AI create music</strong>. It clearly can. The real question is <strong>can you guide it?</strong> Can you recognize what matters? And can you turn possibilities into purpose?"
+    </div>
+
+  </div><!-- /principles -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

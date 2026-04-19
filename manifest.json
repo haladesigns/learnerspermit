@@ -467,6 +467,12 @@
             "name": "c",
             "label": "C",
             "path": "coding_web-design/clojure/c"
+          },
+          {
+            "type": "file",
+            "name": "clojure-common-functions.html",
+            "label": "Clojure Common Functions",
+            "path": "coding_web-design/clojure/clojure-common-functions.html"
           }
         ]
       },

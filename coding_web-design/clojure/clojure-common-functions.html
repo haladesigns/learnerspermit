@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clojure Core — Function Directory</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --surface2: #f2f0ec;
+    --border: #e5e2db;
+    --border2: #d4d0c8;
+    --text: #1a1916;
+    --text2: #5c5a55;
+    --text3: #9b9890;
+    --accent: #5b4ef8;
+    --accent-bg: #eeedfe;
+    --accent-text: #3c3489;
+    --code-bg: #1c1b18;
+    --code-text: #e8e4d9;
+    --green-bg: #eaf3de;
+    --green-text: #3b6d11;
+    --teal-bg: #e1f5ee;
+    --teal-text: #0f6e56;
+    --amber-bg: #faeeda;
+    --amber-text: #854f0b;
+    --gray-bg: #f1efe8;
+    --gray-text: #5f5e5a;
+    --coral-bg: #faece7;
+    --coral-text: #993c1d;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  [data-theme="dark"] {
+    --bg: #141310;
+    --surface: #1e1c18;
+    --surface2: #252320;
+    --border: #2e2c27;
+    --border2: #3a3830;
+    --text: #f0ece3;
+    --text2: #a8a49a;
+    --text3: #5a5850;
+    --accent: #7c6ef9;
+    --accent-bg: #26215c;
+    --accent-text: #afa9ec;
+    --code-bg: #0d0c0a;
+    --code-text: #d4cfc3;
+    --green-bg: #173404;
+    --green-text: #c0dd97;
+    --teal-bg: #04342c;
+    --teal-text: #9fe1cb;
+    --amber-bg: #412402;
+    --amber-text: #fac775;
+    --gray-bg: #2c2c2a;
+    --gray-text: #b4b2a9;
+    --coral-bg: #4a1b0c;
+    --coral-text: #f5c4b3;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .header-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 0 0.75rem;
+    gap: 12px;
+  }
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .logo-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo-sub {
+    font-size: 12px;
+    color: var(--text3);
+    font-weight: 400;
+  }
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .count-badge {
+    font-size: 12px;
+    color: var(--text3);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+  }
+  .theme-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    color: var(--text2);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .theme-btn:hover { background: var(--border); }
+
+  .search-wrap { padding-bottom: 0.75rem; }
+  .search-box {
+    position: relative;
+  }
+  .search-icon {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 14px;
+    pointer-events: none;
+  }
+  input[type=text] {
+    width: 100%;
+    padding: 9px 12px 9px 36px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  input[type=text]:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(91,78,248,0.12);
+  }
+  input[type=text]::placeholder { color: var(--text3); }
+
+  .filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding-bottom: 0.75rem;
+  }
+  .pill {
+    font-size: 12px;
+    padding: 4px 11px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text2);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .pill:hover { background: var(--surface2); color: var(--text); }
+  .pill.active {
+    background: var(--accent-bg);
+    color: var(--accent-text);
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 1.25rem 1.5rem 3rem;
+  }
+  .status-bar {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 0.75rem;
+    padding-left: 2px;
+  }
+
+  /* ── CARDS ── */
+  .fn-list { display: flex; flex-direction: column; gap: 4px; }
+  .fn-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .fn-card:hover { border-color: var(--border2); }
+  .fn-card.open { border-color: var(--accent); }
+
+  .fn-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .fn-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    min-width: 130px;
+    flex-shrink: 0;
+  }
+  .fn-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+  .tag-maps      { background: var(--teal-bg);   color: var(--teal-text); }
+  .tag-seqs      { background: var(--accent-bg);  color: var(--accent-text); }
+  .tag-collections { background: var(--green-bg); color: var(--green-text); }
+  .tag-functions { background: var(--amber-bg);   color: var(--amber-text); }
+  .tag-predicates { background: var(--green-bg);  color: var(--green-text); }
+  .tag-misc      { background: var(--gray-bg);    color: var(--gray-text); }
+
+  .fn-blurb {
+    font-size: 13px;
+    color: var(--text2);
+    flex: 1;
+  }
+  .fn-chevron {
+    font-size: 11px;
+    color: var(--text3);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .fn-card.open .fn-chevron { transform: rotate(90deg); }
+
+  .fn-body {
+    display: none;
+    padding: 0 14px 14px;
+    border-top: 1px solid var(--border);
+  }
+  .fn-card.open .fn-body { display: block; }
+
+  .fn-sig {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 7px 11px;
+    margin: 12px 0 8px;
+  }
+
+  .code-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+  .fn-example {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 10px 14px;
+    white-space: pre;
+    line-height: 1.65;
+    overflow-x: auto;
+  }
+  .copy-btn {
+    display: block;
+    width: 100%;
+    font-size: 11px;
+    padding: 6px;
+    background: #252320;
+    border: none;
+    border-top: 1px solid #2e2c27;
+    border-radius: 0 0 var(--radius) var(--radius);
+    color: #6b6860;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    text-align: center;
+    letter-spacing: 0.04em;
+    transition: background 0.15s, color 0.15s;
+  }
+  .copy-btn:hover { background: #2e2c27; color: #a8a49a; }
+  .copy-btn.copied { color: #9fe1cb; }
+
+  .fn-python {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text3);
+    padding: 6px 10px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-bg);
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .fn-python code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent-text);
+  }
+
+  .empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text3);
+    font-size: 14px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text3);
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    margin-top: 2rem;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="logo">
+        <span class="logo-name">clojure.core</span>
+        <span class="logo-sub">function directory</span>
+      </div>
+      <div class="header-actions">
+        <span class="count-badge" id="count-badge">50 functions</span>
+        <button class="theme-btn" id="theme-btn" title="Toggle dark mode" onclick="toggleTheme()">☾</button>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="search" placeholder="Search by name, description, or example…" oninput="render()" />
+      </div>
+    </div>
+    <div class="filters" id="filters"></div>
+  </div>
+</header>
+
+<main>
+  <div class="status-bar" id="status"></div>
+  <div class="fn-list" id="fn-list"></div>
+</main>
+
+<footer>
+  clojure.core · 50 functions · from the video by @dval_in · built for learning
+</footer>
+
+<script>
+const fns = [
+  { name:"vector []", tag:"collections", blurb:"Ordered, indexed collection. The workhorse data structure.", sig:"[1 2 3]  or  (vector 1 2 3)", ex:'; Create\n[1 2 :hello "world"]  ; => [1 2 :hello "world"]\n; Nested\n[[1 2] [3 4]]          ; => [[1 2] [3 4]]', py:'Python list: [1, 2, 3]' },
+  { name:"list '()", tag:"collections", blurb:"Linked list. Quote it or Clojure tries to call first item as a function.", sig:"'(1 2 3)  or  (list 1 2 3)", ex:"'(1 2 3)              ; => (1 2 3)\n(type '(1 2 3))        ; => clojure.lang.PersistentList\n; Without quote:\n(1 2 3)               ; ERROR — tries to call 1 as a function", py:'Python list — but rarely used directly in Clojure' },
+  { name:"set #{}", tag:"collections", blurb:"Unique elements only. Duplicate values throw an error.", sig:"#{1 2 3}", ex:"#{1 2 3}              ; => #{1 2 3}\n#{1 1 2}              ; ERROR: duplicate key\n(contains? #{:a :b} :a) ; => true", py:'Python set: {1, 2, 3}' },
+  { name:"map {}", tag:"maps", blurb:"Key-value pairs. Keys can be any value — keywords are idiomatic.", sig:'{:name "Ada" :age 36}', ex:'{:name "Ada" :age 36 :role :engineer}\n; Keys can be keywords, strings, or numbers\n{"key" 1  42 :val}', py:"Python dict: {'name': 'Ada'}" },
+  { name:"seq", tag:"seqs", blurb:"Coerce any collection to a sequence. Returns nil on empty — use for empty checks.", sig:"(seq coll)", ex:"(seq [1 2 3])          ; => (1 2 3)\n(seq [])               ; => nil\n(seq nil)              ; => nil\n; Idiomatic non-empty check:\n(when (seq coll) ...)", py:'iter(collection) — but returns nil not empty iterator' },
+  { name:"get", tag:"maps", blurb:"Get by key (maps) or index (vectors). Returns nil or optional default.", sig:"(get map key)  (get map key default)", ex:"(get {:a 1 :b 2} :a)   ; => 1\n(get [10 20 30] 1)     ; => 20\n(get {:a 1} :z 42)     ; => 42  (default)\n(get {:a 1} :missing)  ; => nil", py:"d.get('key', default)" },
+  { name:"get-in", tag:"maps", blurb:"Get from nested maps using a path vector.", sig:"(get-in map [k1 k2 ...])  (get-in map path default)", ex:"(def m {:a {:b {:c 99}}})\n(get-in m [:a :b :c])  ; => 99\n(get-in m [:a :x] 42)  ; => 42  (default)\n(get-in m [:a :b :d])  ; => nil", py:"m['a']['b']['c'] but safe — no KeyError" },
+  { name:"assoc", tag:"maps", blurb:"Add or update keys in a map. Returns a new map — original unchanged.", sig:"(assoc map k v)  (assoc map k v k2 v2 ...)", ex:"(assoc {:a 1} :b 2)      ; => {:a 1 :b 2}\n(assoc {:a 1} :a 99)     ; => {:a 99}\n(assoc {:a 1} :b 2 :c 3) ; => {:a 1 :b 2 :c 3}", py:"dict | {'b': 2}  or  {**d, 'b': 2}" },
+  { name:"assoc-in", tag:"maps", blurb:"Add or update a value deep inside nested maps using a path.", sig:"(assoc-in map [k1 k2] val)", ex:"(def m {:a {:b 1}})\n(assoc-in m [:a :b] 99)  ; => {:a {:b 99}}\n(assoc-in m [:a :c] 5)   ; => {:a {:b 1 :c 5}}", py:'Deep dict update — no clean Python equivalent' },
+  { name:"dissoc", tag:"maps", blurb:"Remove one or more keys from a map. Returns a new map.", sig:"(dissoc map k1 k2 ...)", ex:"(dissoc {:a 1 :b 2 :c 3} :b)  ; => {:a 1 :c 3}\n(dissoc {:a 1 :b 2} :a :b)    ; => {}", py:"del d['key'] — but dissoc is immutable" },
+  { name:"update", tag:"maps", blurb:"Apply a function to the value at a key. Returns a new map.", sig:"(update map k fn args...)", ex:"(update {:a 1} :a inc)            ; => {:a 2}\n(update {:a 10} :a + -10)         ; => {:a 0}\n(update {:a 1} :a (fn [v] (* v 3))) ; => {:a 3}", py:"d['a'] = d['a'] + 1 — but immutable" },
+  { name:"update-in", tag:"maps", blurb:"Apply a function to a value deep in a nested map.", sig:"(update-in map [k1 k2] fn args...)", ex:"(def m {:a {:b 1}})\n(update-in m [:a :b] inc)         ; => {:a {:b 2}}\n(update-in m [:a :b] + 10)        ; => {:a {:b 11}}", py:'No clean equivalent — requires nested get/set' },
+  { name:"merge", tag:"maps", blurb:"Combine maps. Later maps overwrite earlier on duplicate keys.", sig:"(merge m1 m2 m3 ...)", ex:"(merge {:a 1} {:b 2})             ; => {:a 1 :b 2}\n(merge {:a 1} {:a 99 :b 2})       ; => {:a 99 :b 2}\n; Great for defaults + overrides:\n(merge defaults overrides)", py:'{**defaults, **overrides}' },
+  { name:"merge-with", tag:"maps", blurb:"Like merge but resolves duplicate keys by calling a function.", sig:"(merge-with f m1 m2 ...)", ex:"(merge-with + {:a 1} {:a 2})      ; => {:a 3}\n(merge-with concat {:a [1]} {:a [2]}) ; => {:a (1 2)}", py:'No direct equivalent' },
+  { name:"select-keys", tag:"maps", blurb:"Return a sub-map containing only the specified keys.", sig:"(select-keys map [k1 k2 ...])", ex:"(select-keys {:a 1 :b 2 :c 3} [:a :c]) ; => {:a 1 :c 3}", py:"{k: d[k] for k in ['a','c']}" },
+  { name:"keys", tag:"maps", blurb:"Return all keys of a map as a sequence.", sig:"(keys map)", ex:"(keys {:a 1 :b 2 :c 3})  ; => (:a :b :c)", py:"d.keys()" },
+  { name:"vals", tag:"maps", blurb:"Return all values of a map as a sequence.", sig:"(vals map)", ex:"(vals {:a 1 :b 2 :c 3})  ; => (1 2 3)", py:"d.values()" },
+  { name:"update-keys", tag:"maps", blurb:"Apply a function to every key in a map. New in Clojure 1.11.", sig:"(update-keys map f)", ex:'(update-keys {"a" 1 "b" 2} keyword)  ; => {:a 1 :b 2}\n(update-keys {:a 1} name)             ; => {"a" 1}', py:"{f(k): v for k, v in d.items()}" },
+  { name:"update-vals", tag:"maps", blurb:"Apply a function to every value in a map. New in Clojure 1.11.", sig:"(update-vals map f)", ex:"(update-vals {:a 1 :b 2} inc)         ; => {:a 2 :b 3}\n(update-vals {:a 1 :b 10} #(* % 2))   ; => {:a 2 :b 20}", py:"{k: f(v) for k, v in d.items()}" },
+  { name:"count", tag:"seqs", blurb:"Number of top-level elements. Nested collections count as one.", sig:"(count coll)", ex:'(count [1 2 3])           ; => 3\n(count {:a 1 :b 2})       ; => 2\n(count "hello")           ; => 5\n(count [[1 2] [3 4]])     ; => 2  (top level only)', py:"len(collection)" },
+  { name:"first", tag:"seqs", blurb:"First element. Returns nil on empty.", sig:"(first coll)", ex:"(first [10 20 30])        ; => 10\n(first '(10 20 30))       ; => 10\n(first [])                ; => nil", py:"coll[0]" },
+  { name:"second", tag:"seqs", blurb:"Second element. Returns nil if fewer than 2 elements exist.", sig:"(second coll)", ex:"(second [10 20 30])       ; => 20\n(second [10])             ; => nil", py:"coll[1]" },
+  { name:"last", tag:"seqs", blurb:"Last element. Warning: O(n) — traverses the whole sequence.", sig:"(last coll)", ex:"(last [1 2 3])            ; => 3\n(last '(1 2 3))           ; => 3", py:"coll[-1]" },
+  { name:"rest", tag:"seqs", blurb:"All but the first element. Returns empty seq () — not nil — on empty.", sig:"(rest coll)", ex:"(rest [1 2 3])            ; => (2 3)\n(rest [1])                ; => ()\n(rest [])                 ; => ()", py:"coll[1:]" },
+  { name:"nth", tag:"seqs", blurb:"Element at index n. Throws on out of bounds (unlike get).", sig:"(nth coll n)  (nth coll n default)", ex:"(nth [10 20 30] 2)        ; => 30\n(nth [10 20 30] 5 :none)  ; => :none", py:"coll[n]" },
+  { name:"take", tag:"seqs", blurb:"First n elements. Safe — returns all if fewer than n exist.", sig:"(take n coll)", ex:"(take 2 [1 2 3 4 5])      ; => (1 2)\n(take 10 [1 2 3])         ; => (1 2 3)", py:"coll[:n]" },
+  { name:"drop", tag:"seqs", blurb:"Skip first n elements, return the rest.", sig:"(drop n coll)", ex:"(drop 2 [1 2 3 4 5])      ; => (3 4 5)\n(drop 10 [1 2])           ; => ()", py:"coll[n:]" },
+  { name:"drop-last", tag:"seqs", blurb:"All but last n elements. Default is 1.", sig:"(drop-last coll)  (drop-last n coll)", ex:"(drop-last [1 2 3 4 5])   ; => (1 2 3 4)\n(drop-last 2 [1 2 3 4])   ; => (1 2)", py:"coll[:-n]" },
+  { name:"flatten", tag:"seqs", blurb:"Recursively flatten all nested collections into one flat sequence.", sig:"(flatten coll)", ex:"(flatten [1 [2 [3 4]] 5])   ; => (1 2 3 4 5)\n(flatten [[1 2] [3 [4 5]]])  ; => (1 2 3 4 5)", py:"itertools.chain.from_iterable (1 level only)" },
+  { name:"map", tag:"seqs", blurb:"Apply a function to every element. Returns a lazy sequence.", sig:"(map f coll)  (map f c1 c2)", ex:"(map inc [1 2 3])           ; => (2 3 4)\n(map #(* % 2) [1 2 3])      ; => (2 4 6)\n; Two collections — pairs elements:\n(map + [1 2 3] [10 20 30])  ; => (11 22 33)", py:"map(f, lst)  or  [f(x) for x in lst]" },
+  { name:"mapv", tag:"seqs", blurb:"Like map but returns a vector instead of a lazy sequence.", sig:"(mapv f coll)", ex:"(mapv inc [1 2 3])          ; => [2 3 4]  (vector!)\n; vs map:\n(map inc [1 2 3])           ; => (2 3 4)  (lazy seq)", py:"[f(x) for x in lst]" },
+  { name:"map-indexed", tag:"seqs", blurb:"Like map but function receives index and value as two args.", sig:"(map-indexed f coll)  — f receives [index value]", ex:"(map-indexed vector [10 20 30])\n; => ([0 10] [1 20] [2 30])\n(map-indexed #(str %1 \":\" %2) [:a :b])\n; => (\"0::a\" \"1::b\")", py:"enumerate(lst)" },
+  { name:"mapcat", tag:"seqs", blurb:"map then concatenate results. Equivalent to flatMap.", sig:"(mapcat f coll)", ex:"(mapcat #(repeat 2 %) [1 2 3])\n; => (1 1 2 2 3 3)\n; Same as flatten + map:", py:"itertools.chain.from_iterable(map(f, lst))" },
+  { name:"filter", tag:"seqs", blurb:"Keep elements where predicate returns truthy. Returns lazy seq.", sig:"(filter pred coll)", ex:"(filter even? [1 2 3 4 5])        ; => (2 4)\n(filter pos? [-1 0 1 2 -3])       ; => (1 2)\n(filter :active [{:active true} {:active false}])\n; => ({:active true})", py:"filter(f, lst)  or  [x for x in lst if f(x)]" },
+  { name:"remove", tag:"seqs", blurb:"Opposite of filter — keep elements where predicate is falsy.", sig:"(remove pred coll)", ex:"(remove even? [1 2 3 4 5])        ; => (1 3 5)\n(remove nil? [1 nil 2 nil 3])     ; => (1 2 3)", py:"[x for x in lst if not f(x)]" },
+  { name:"keep", tag:"seqs", blurb:"Like map but automatically drops nil results. Saves a remove-nil step.", sig:"(keep f coll)", ex:"(keep #(when (even? %) %) [1 2 3 4])\n; => (2 4)\n; vs the verbose way:\n(remove nil? (map #(when (even? %) %) [1 2 3 4]))", py:"filter(None, map(f, lst))" },
+  { name:"keep-indexed", tag:"seqs", blurb:"Like keep but function receives index and value.", sig:"(keep-indexed f coll)  — f receives [index value]", ex:"(keep-indexed #(when (even? %1) %2) [:a :b :c :d])\n; => (:a :c)  (elements at even indices)", py:"No clean equivalent" },
+  { name:"reduce", tag:"seqs", blurb:"Fold a collection into a single value using an accumulator function.", sig:"(reduce f coll)  (reduce f init coll)", ex:"(reduce + [1 2 3 4 5])            ; => 15\n(reduce + 100 [1 2 3])            ; => 106\n(reduce conj [] [1 2 3])          ; => [1 2 3]", py:"functools.reduce(f, lst, init)" },
+  { name:"apply", tag:"functions", blurb:"Call a function with a collection spread as its argument list.", sig:"(apply f args... coll)", ex:'(apply + [1 2 3])               ; => 6\n(apply str ["a" "b" "c"])       ; => "abc"\n(apply max [3 1 4 1 5])         ; => 5', py:"f(*args)" },
+  { name:"into", tag:"seqs", blurb:"Pour elements of one collection into another, preserving type.", sig:"(into to from)", ex:"(into [] '(1 2 3))              ; => [1 2 3]\n(into #{} [1 2 2 3])            ; => #{1 2 3}\n(into {} [[:a 1] [:b 2]])       ; => {:a 1 :b 2}", py:"list(iterable), set(iterable), dict(pairs)" },
+  { name:"group-by", tag:"seqs", blurb:"Group elements by the result of a function. Returns a map of groups.", sig:"(group-by f coll)", ex:"(group-by even? [1 2 3 4 5])\n; => {false [1 3 5], true [2 4]}\n(group-by :role [{:role :eng} {:role :pm} {:role :eng}])\n; => {:eng [{...} {...}] :pm [{...}]}", py:"collections.defaultdict with groupby" },
+  { name:"frequencies", tag:"seqs", blurb:"Count occurrences of each unique element. Returns a map.", sig:"(frequencies coll)", ex:'(frequencies [1 2 1 3 2 1])   ; => {1 3, 2 2, 3 1}\n(frequencies "banana")        ; => {\\b 1 \\a 3 \\n 2}', py:"collections.Counter(lst)" },
+  { name:"partition", tag:"seqs", blurb:"Split into chunks of n. Drops incomplete last chunk — watch out for this.", sig:"(partition n coll)  (partition n step coll)", ex:"(partition 2 [1 2 3 4 5])     ; => ((1 2) (3 4))  — 5 dropped!\n(partition 2 1 [1 2 3 4])     ; => ((1 2) (2 3) (3 4)) overlapping", py:"zip(*[iter(lst)]*n)" },
+  { name:"partition-all", tag:"seqs", blurb:"Like partition but keeps the incomplete last chunk.", sig:"(partition-all n coll)", ex:"(partition-all 2 [1 2 3 4 5]) ; => ((1 2) (3 4) (5))  — 5 kept!", py:"No direct equivalent" },
+  { name:"shuffle", tag:"seqs", blurb:"Return collection in a random order.", sig:"(shuffle coll)", ex:"(shuffle [1 2 3 4 5])         ; => [3 1 5 2 4]  (random)", py:"random.sample(lst, len(lst))" },
+  { name:"sort", tag:"seqs", blurb:"Sort in natural order. Returns a sequence.", sig:"(sort coll)  (sort comparator coll)", ex:"(sort [3 1 4 1 5 9 2])        ; => (1 1 2 3 4 5 9)\n(sort > [3 1 4 1 5])          ; => (5 4 3 1 1)", py:"sorted(lst)" },
+  { name:"sort-by", tag:"seqs", blurb:"Sort by the result of a key function.", sig:"(sort-by f coll)  (sort-by f comparator coll)", ex:"(sort-by :id [{:id 3} {:id 1} {:id 2}])\n; => ({:id 1} {:id 2} {:id 3})\n(sort-by count [\"bb\" \"a\" \"ccc\"])\n; => (\"a\" \"bb\" \"ccc\")", py:"sorted(lst, key=f)" },
+  { name:"reverse", tag:"seqs", blurb:"Reverse the order of a collection.", sig:"(reverse coll)", ex:"(reverse [1 2 3 4 5])         ; => (5 4 3 2 1)\n(reverse \"abc\")               ; => (\\c \\b \\a)", py:"reversed(lst)  or  lst[::-1]" },
+  { name:"distinct", tag:"seqs", blurb:"Remove duplicate elements, preserving original order.", sig:"(distinct coll)", ex:"(distinct [1 2 1 3 2 4])      ; => (1 2 3 4)\n(distinct [:a :b :a :c :b])   ; => (:a :b :c)", py:"list(dict.fromkeys(lst))" },
+  { name:"interleave", tag:"seqs", blurb:"Interleave elements from two or more collections alternately.", sig:"(interleave c1 c2 ...)", ex:"(interleave [1 2 3] [:a :b :c]) ; => (1 :a 2 :b 3 :c)\n(interleave [1 2] [:a :b] [10 20]) ; => (1 :a 10 2 :b 20)", py:"list(itertools.chain.from_iterable(zip(c1,c2)))" },
+  { name:"interpose", tag:"seqs", blurb:"Insert a separator between every element of a collection.", sig:"(interpose sep coll)", ex:'(interpose ", " ["a" "b" "c"])\n; => ("a" ", " "b" ", " "c")\n(apply str (interpose ", " ["a" "b" "c"]))\n; => "a, b, c"', py:"sep.join(lst)" },
+  { name:"repeat", tag:"seqs", blurb:"Repeat a value n times. Without n, returns an infinite lazy sequence.", sig:"(repeat n x)  (repeat x)", ex:"(repeat 3 :ok)                ; => (:ok :ok :ok)\n(take 5 (repeat 0))           ; => (0 0 0 0 0)", py:"[x] * n  or  itertools.repeat(x)" },
+  { name:"repeatedly", tag:"seqs", blurb:"Call a zero-arg function n times. Useful for generating test data.", sig:"(repeatedly n f)  (repeatedly f)", ex:"(repeatedly 3 #(rand-int 10)) ; => (4 7 2)  (random)\n(take 5 (repeatedly rand))    ; random floats", py:"[f() for _ in range(n)]" },
+  { name:"range", tag:"seqs", blurb:"Lazy sequence of numbers. Infinite without args — always use with take.", sig:"(range)  (range end)  (range start end step)", ex:"(range 5)                     ; => (0 1 2 3 4)\n(range 2 10 2)                ; => (2 4 6 8)\n(take 5 (range))              ; => (0 1 2 3 4)", py:"range(n) — but Clojure's is lazy and infinite" },
+  { name:"cycle", tag:"seqs", blurb:"Infinitely repeat a collection. Always combine with take.", sig:"(cycle coll)", ex:"(take 7 (cycle [1 2 3]))      ; => (1 2 3 1 2 3 1)", py:"itertools.cycle(lst)" },
+  { name:"juxt", tag:"functions", blurb:"Apply multiple functions to the same input, return all results as a vector.", sig:"(juxt f1 f2 f3 ...)", ex:"((juxt first last count) [1 2 3 4])\n; => [1 4 4]\n((juxt :name :age) {:name \"Ada\" :age 36})\n; => [\"Ada\" 36]\n(map (juxt :a :b) [{:a 1 :b 2} {:a 3 :b 4}])\n; => ([1 2] [3 4])", py:"lambda x: (f1(x), f2(x), f3(x))" },
+];
+
+const TAGS = ["all","maps","seqs","collections","functions"];
+let activeTag = "all";
+let openCard = null;
+
+// ── THEME ──
+function initTheme() {
+  const saved = localStorage.getItem("clj-theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark = saved ? saved === "dark" : prefersDark;
+  document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+  document.getElementById("theme-btn").textContent = isDark ? "☀" : "☾";
+}
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const next = isDark ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  document.getElementById("theme-btn").textContent = next === "dark" ? "☀" : "☾";
+  localStorage.setItem("clj-theme", next);
+}
+initTheme();
+
+// ── FILTERS ──
+const filtersEl = document.getElementById("filters");
+const tagLabels = { all:"all", maps:"maps", seqs:"sequences", collections:"collections", functions:"functions" };
+TAGS.forEach(t => {
+  const btn = document.createElement("button");
+  btn.className = "pill" + (t === "all" ? " active" : "");
+  btn.textContent = tagLabels[t];
+  btn.onclick = () => {
+    activeTag = t;
+    document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    render();
+  };
+  filtersEl.appendChild(btn);
+});
+
+// ── COPY ──
+function copyCode(btn) {
+  const text = btn.getAttribute("data-code");
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = "copied";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "copy"; btn.classList.remove("copied"); }, 1600);
+  });
+}
+
+// ── RENDER ──
+function render() {
+  const q = document.getElementById("search").value.toLowerCase().trim();
+  const list = document.getElementById("fn-list");
+  const filtered = fns.filter(f => {
+    const tagOk = activeTag === "all" || f.tag === activeTag;
+    const textOk = !q || f.name.toLowerCase().includes(q)
+      || f.blurb.toLowerCase().includes(q)
+      || f.ex.toLowerCase().includes(q)
+      || (f.py && f.py.toLowerCase().includes(q));
+    return tagOk && textOk;
+  });
+
+  document.getElementById("status").textContent =
+    filtered.length === fns.length
+      ? `${fns.length} functions`
+      : `${filtered.length} of ${fns.length} functions`;
+  document.getElementById("count-badge").textContent =
+    filtered.length === fns.length ? `${fns.length} functions` : `${filtered.length} shown`;
+
+  list.innerHTML = "";
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty">No functions match — try a broader search</div>';
+    return;
+  }
+
+  filtered.forEach(f => {
+    const card = document.createElement("div");
+    card.className = "fn-card";
+    card.innerHTML = `
+      <div class="fn-head">
+        <span class="fn-name">${f.name}</span>
+        <span class="fn-tag tag-${f.tag}">${tagLabels[f.tag] || f.tag}</span>
+        <span class="fn-blurb">${f.blurb}</span>
+        <span class="fn-chevron">&#9654;</span>
+      </div>
+      <div class="fn-body">
+        <div class="fn-sig">${f.sig}</div>
+        <div class="code-wrap">
+          <pre class="fn-example">${f.ex}</pre>
+          <button class="copy-btn" data-code="${f.ex}" onclick="copyCode(this)">copy</button>
+        </div>
+        ${f.py ? `<div class="fn-python">Python: <code>${f.py}</code></div>` : ""}
+      </div>`;
+    card.querySelector(".fn-head").addEventListener("click", () => {
+      const isOpen = card.classList.contains("open");
+      if (openCard && openCard !== card) openCard.classList.remove("open");
+      card.classList.toggle("open", !isOpen);
+      openCard = isOpen ? null : card;
+    });
+    list.appendChild(card);
+  });
+}
+
+render();
+</script>
+</body>
+</html>

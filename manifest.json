@@ -519,6 +519,12 @@
       },
       {
         "type": "file",
+        "name": "tree_installation_manual.pdf",
+        "label": "Tree Installation Manual",
+        "path": "coding_web-design/tree_installation_manual.pdf"
+      },
+      {
+        "type": "file",
         "name": "Web Design.md",
         "label": "Web Design",
         "path": "coding_web-design/Web Design.md"

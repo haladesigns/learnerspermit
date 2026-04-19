@@ -614,6 +614,19 @@
   },
   {
     "type": "folder",
+    "name": "music-production",
+    "label": "Music Production",
+    "children": [
+      {
+        "type": "file",
+        "name": "t",
+        "label": "T",
+        "path": "music-production/t"
+      }
+    ]
+  },
+  {
+    "type": "folder",
     "name": "neural-nets",
     "label": "Neural Nets",
     "children": [

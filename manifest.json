@@ -473,6 +473,30 @@
             "name": "clojure-common-functions.html",
             "label": "Clojure Common Functions",
             "path": "coding_web-design/clojure/clojure-common-functions.html"
+          },
+          {
+            "type": "file",
+            "name": "Clojure_Episode00.pdf",
+            "label": "Clojure Episode00",
+            "path": "coding_web-design/clojure/Clojure_Episode00.pdf"
+          },
+          {
+            "type": "file",
+            "name": "Clojure_Episode01.pdf",
+            "label": "Clojure Episode01",
+            "path": "coding_web-design/clojure/Clojure_Episode01.pdf"
+          },
+          {
+            "type": "file",
+            "name": "Clojure_Episode02.pdf",
+            "label": "Clojure Episode02",
+            "path": "coding_web-design/clojure/Clojure_Episode02.pdf"
+          },
+          {
+            "type": "file",
+            "name": "tree_installation_manual.pdf",
+            "label": "Tree Installation Manual",
+            "path": "coding_web-design/clojure/tree_installation_manual.pdf"
           }
         ]
       },

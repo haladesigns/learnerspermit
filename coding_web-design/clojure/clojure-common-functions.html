@@ -246,6 +246,14 @@
   .tag-functions { background: var(--amber-bg);   color: var(--amber-text); }
   .tag-predicates { background: var(--green-bg);  color: var(--green-text); }
   .tag-misc      { background: var(--gray-bg);    color: var(--gray-text); }
+  .tag-essentials { background: #fcebeb; color: #a32d2d; }
+  .tag-strings   { background: #faeeda; color: #854f0b; }
+  .tag-logic     { background: #e1f5ee; color: #0f6e56; }
+  .tag-dev       { background: #f1efe8; color: #5f5e5a; }
+  [data-theme="dark"] .tag-essentials { background: #501313; color: #f09595; }
+  [data-theme="dark"] .tag-strings   { background: #412402; color: #fac775; }
+  [data-theme="dark"] .tag-logic     { background: #04342c; color: #9fe1cb; }
+  [data-theme="dark"] .tag-dev       { background: #2c2c2a; color: #b4b2a9; }
 
   .fn-blurb {
     font-size: 13px;
@@ -428,7 +436,7 @@
 </main>
 
 <footer>
-  clojure.core · 50 functions · from the video by @dval_in · built for learning
+  clojure.core · 87 functions · video by @dval_in + essentials · built for learning
 </footer>
 
 <script>
@@ -488,10 +496,37 @@ const fns = [
   { name:"repeatedly", tag:"seqs", blurb:"Call a zero-arg function n times. Useful for generating test data.", sig:"(repeatedly n f)  (repeatedly f)", ex:"(repeatedly 3 #(rand-int 10)) ; => (4 7 2)  (random)\n(take 5 (repeatedly rand))    ; random floats", py:"[f() for _ in range(n)]" },
   { name:"range", tag:"seqs", blurb:"Lazy sequence of numbers. Infinite without args — always use with take.", sig:"(range)  (range end)  (range start end step)", ex:"(range 5)                     ; => (0 1 2 3 4)\n(range 2 10 2)                ; => (2 4 6 8)\n(take 5 (range))              ; => (0 1 2 3 4)", py:"range(n) — but Clojure's is lazy and infinite" },
   { name:"cycle", tag:"seqs", blurb:"Infinitely repeat a collection. Always combine with take.", sig:"(cycle coll)", ex:"(take 7 (cycle [1 2 3]))      ; => (1 2 3 1 2 3 1)", py:"itertools.cycle(lst)" },
-  { name:"juxt", tag:"functions", blurb:"Apply multiple functions to the same input, return all results as a vector.", sig:"(juxt f1 f2 f3 ...)", ex:"((juxt first last count) [1 2 3 4])\n; => [1 4 4]\n((juxt :name :age) {:name \"Ada\" :age 36})\n; => [\"Ada\" 36]\n(map (juxt :a :b) [{:a 1 :b 2} {:a 3 :b 4}])\n; => ([1 2] [3 4])", py:"lambda x: (f1(x), f2(x), f3(x))" },
+  { name:"juxt", tag:"functions", blurb:"Apply multiple functions to the same input, return all results as a vector.", sig:"(juxt f1 f2 f3 ...)", ex:"((juxt first last count) [1 2 3 4])\n; => [1 4 4]\n((juxt :name :age) {:name \"Ada\" :age 36})\n; => [\"Ada\" 36]\n(map (juxt :a :b) [{:a 1 :b 2} {:a 3 :b 4}])\n; => ([1 2] [3 4])", py:"lambda x: (f1(x), f2(x), f3(x))" },,
+
+  // ── ESSENTIALS & DAILY DRIVERS ──
+  { name:"conj", tag:"essentials", blurb:"Add element to collection. Appends to vectors, prepends to lists.", sig:"(conj coll x)  (conj coll x y z ...)", ex:"(conj [1 2 3] 4)          ; => [1 2 3 4]  — end\n(conj '(1 2 3) 4)         ; => (4 1 2 3)  — front!\n(conj {:a 1} [:b 2])      ; => {:a 1 :b 2}\n; Multiple elements:\n(conj [1 2] 3 4 5)        ; => [1 2 3 4 5]", py:"lst.append(x) — but conj is immutable, returns new coll" },
+  { name:"cons", tag:"essentials", blurb:"Prepend an element to a sequence. Always adds to front.", sig:"(cons x seq)", ex:"(cons 0 [1 2 3])          ; => (0 1 2 3)\n(cons :a '(:b :c))        ; => (:a :b :c)\n; vs conj on a vector:\n(conj [1 2 3] 0)          ; => [1 2 3 0]  — end", py:"[x] + lst" },
+  { name:"contains?", tag:"essentials", blurb:"Check if key exists in map, or index exists in vector. NOT for sequence search.", sig:"(contains? coll key)", ex:"(contains? {:a 1 :b 2} :a)  ; => true\n(contains? {:a 1} :z)        ; => false\n(contains? [10 20 30] 1)     ; => true  (index 1 exists)\n(contains? #{:a :b} :a)      ; => true\n; NOT for searching values in a list:", py:"'key' in d  or  x in s (sets)" },
+  { name:"empty?", tag:"essentials", blurb:"Returns true if collection has no elements.", sig:"(empty? coll)", ex:"(empty? [])               ; => true\n(empty? [1 2 3])          ; => false\n(empty? {})               ; => true\n(empty? nil)              ; => true", py:"len(coll) == 0  or  not coll" },
+  { name:"not-empty", tag:"essentials", blurb:"Returns the collection if non-empty, nil if empty. Idiomatic guard.", sig:"(not-empty coll)", ex:"(not-empty [1 2 3])       ; => [1 2 3]\n(not-empty [])            ; => nil\n; Idiomatic use:\n(when-let [xs (not-empty coll)]\n  (process xs))", py:"coll or None" },
+  { name:"some", tag:"essentials", blurb:"Return first truthy result of applying pred to a collection. Returns nil if none.", sig:"(some pred coll)", ex:"(some even? [1 3 5 4 7])  ; => true  (first truthy)\n(some #{3 5} [1 2 3 4])   ; => 3     (set as predicate)\n(some identity [nil false 42]) ; => 42", py:"next((x for x in lst if f(x)), None)" },
+  { name:"every?", tag:"essentials", blurb:"Returns true if predicate is truthy for every element.", sig:"(every? pred coll)", ex:"(every? even? [2 4 6])    ; => true\n(every? even? [2 3 6])    ; => false\n(every? string? [\"a\" \"b\"]) ; => true", py:"all(f(x) for x in lst)" },
+  { name:"not", tag:"logic", blurb:"Logical negation. Returns true/false.", sig:"(not x)", ex:"(not true)                ; => false\n(not false)               ; => true\n(not nil)                 ; => true\n(not 0)                   ; => false  (0 is truthy!)", py:"not x" },
+  { name:"and", tag:"logic", blurb:"Short-circuit AND. Returns last truthy value or first falsy.", sig:"(and x y z ...)", ex:"(and 1 2 3)               ; => 3     (last truthy)\n(and 1 nil 3)             ; => nil   (first falsy)\n(and true true)           ; => true\n(and)                     ; => true  (no args)", py:"x and y" },
+  { name:"or", tag:"logic", blurb:"Short-circuit OR. Returns first truthy value or last falsy.", sig:"(or x y z ...)", ex:"(or nil false 3)          ; => 3     (first truthy)\n(or nil false)            ; => false (last falsy)\n(or nil 42 99)            ; => 42", py:"x or y" },
+  { name:"when", tag:"logic", blurb:"Like if but no else branch. Returns nil if condition is falsy.", sig:"(when test & body)", ex:"(when true (println \"hi\"))  ; prints hi, returns nil\n(when false :never)         ; => nil\n(when (seq coll)\n  (first coll))", py:"if condition:\n    do_thing()  — but when returns a value" },
+  { name:"when-let", tag:"logic", blurb:"Bind a value and execute body only if it is truthy.", sig:"(when-let [sym expr] & body)", ex:"(when-let [x (first [1 2 3])]\n  (* x 10))               ; => 10\n(when-let [x (first [])]\n  (* x 10))               ; => nil  (first [] is nil)", py:"if (x := expr):\n    use(x)" },
+  { name:"if-let", tag:"logic", blurb:"Bind a value and branch on whether it is truthy or falsy.", sig:"(if-let [sym expr] then else)", ex:"(if-let [x (first [1 2 3])]\n  (* x 10)\n  :nothing)               ; => 10\n(if-let [x (first [])]\n  (* x 10)\n  :nothing)               ; => :nothing", py:"x = expr\nresult = use(x) if x else fallback" },
+  { name:"cond", tag:"logic", blurb:"Multi-branch conditional. Test/expr pairs evaluated in order.", sig:"(cond test1 expr1  test2 expr2  :else default)", ex:"(defn classify [n]\n  (cond\n    (neg? n)  :negative\n    (zero? n) :zero\n    (pos? n)  :positive))\n(classify -5)             ; => :negative\n(classify 0)              ; => :zero", py:"if/elif/else — but cond is an expression" },
+  { name:"nil?", tag:"logic", blurb:"Returns true if value is nil.", sig:"(nil? x)", ex:"(nil? nil)                ; => true\n(nil? false)              ; => false\n(nil? 0)                  ; => false\n(nil? (get {} :missing))  ; => true", py:"x is None" },
+  { name:"some?", tag:"logic", blurb:"Returns true if value is NOT nil. Complement of nil?.", sig:"(some? x)", ex:"(some? 42)                ; => true\n(some? nil)               ; => false\n(some? false)             ; => true  (false is not nil!)", py:"x is not None" },
+  { name:"comp", tag:"functions", blurb:"Compose functions right-to-left. Returns a new function.", sig:"(comp f g h ...)  — applies h first, then g, then f", ex:"(def inc-then-double (comp #(* % 2) inc))\n(inc-then-double 3)       ; => 8  (3+1=4, 4*2=8)\n((comp str inc) 41)       ; => \"42\"\n; In a pipeline:\n(map (comp str inc) [1 2 3]) ; => (\"2\" \"3\" \"4\")", py:"lambda x: f(g(h(x)))" },
+  { name:"partial", tag:"functions", blurb:"Partially apply a function — fix some args, return new function.", sig:"(partial f arg1 arg2 ...)", ex:"(def add5 (partial + 5))\n(add5 10)                 ; => 15\n(add5 20)                 ; => 25\n(def greet (partial str \"Hello \"))\n(greet \"Ada\")              ; => \"Hello Ada\"", py:"functools.partial(f, arg1)" },
+  { name:"identity", tag:"functions", blurb:"Returns its argument unchanged. Useful as a no-op in pipelines.", sig:"(identity x)", ex:"(identity 42)             ; => 42\n(identity :keyword)       ; => :keyword\n; Real use — filter out falsy:\n(filter identity [1 nil 2 false 3]) ; => (1 2 3)", py:"lambda x: x" },
+  { name:"str", tag:"strings", blurb:"Convert anything to string and concatenate. Nil becomes empty string.", sig:"(str x y z ...)", ex:"(str \"Hello \" \"world\")     ; => \"Hello world\"\n(str 42)                  ; => \"42\"\n(str :keyword)            ; => \":keyword\"\n(str nil)                 ; => \"\"\n(str \"x=\" 10 \" y=\" 20)    ; => \"x=10 y=20\"", py:"str(x)  or  f-string" },
+  { name:"prn", tag:"dev", blurb:"Like println but prints in readable form — strings show with quotes.", sig:"(prn x y z ...)", ex:"(println \"hello\")         ; prints: hello\n(prn \"hello\")             ; prints: \"hello\"  (quoted)\n(prn {:a 1})              ; prints: {:a 1}", py:"repr(x)" },
+  { name:"type", tag:"dev", blurb:"Return the JVM class of a value. Essential at the REPL.", sig:"(type x)", ex:"(type 42)                 ; => java.lang.Long\n(type 3.14)               ; => java.lang.Double\n(type :keyword)           ; => clojure.lang.Keyword\n(type [1 2 3])            ; => clojure.lang.PersistentVector", py:"type(x)" },
+  { name:"doc", tag:"dev", blurb:"Print documentation for any function at the REPL. Your first stop.", sig:"(doc fn-name)", ex:"(doc map)\n(doc conj)\n(doc assoc)\n; Prints: arglists, docstring, source location\n; Works on vars, macros, special forms", py:"help(fn)" },
+  { name:"->", tag:"essentials", blurb:"Thread-first macro. Passes result as FIRST arg of each form.", sig:"(-> x (f1 arg) (f2 arg) ...)", ex:"(-> {:a 1}\n    (assoc :b 2)\n    (assoc :c 3))\n; => {:a 1 :b 2 :c 3}\n; Reads top-to-bottom as a pipeline", py:"No equivalent — use chained calls" },
+  { name:"->>", tag:"essentials", blurb:"Thread-last macro. Passes result as LAST arg of each form.", sig:"(->> x (f1 arg) (f2 arg) ...)", ex:"(->> [1 2 3 4 5]\n     (filter even?)\n     (map #(* % 10))\n     (reduce +))\n; => 60  (2+4=6, *10=60)\n; The idiomatic Clojure pipeline", py:"Closest: functools.reduce / method chaining" }
 ];
 
-const TAGS = ["all","maps","seqs","collections","functions"];
+const TAGS = ["all","essentials","maps","seqs","collections","functions","strings","logic","dev"];
 let activeTag = "all";
 let openCard = null;
 
@@ -514,7 +549,7 @@ initTheme();
 
 // ── FILTERS ──
 const filtersEl = document.getElementById("filters");
-const tagLabels = { all:"all", maps:"maps", seqs:"sequences", collections:"collections", functions:"functions" };
+const tagLabels = { all:"all", essentials:"essentials", maps:"maps", seqs:"sequences", collections:"collections", functions:"functions", strings:"strings", logic:"logic", dev:"dev" };
 TAGS.forEach(t => {
   const btn = document.createElement("button");
   btn.className = "pill" + (t === "all" ? " active" : "");

@@ -94,8 +94,12 @@
     margin-top: 0.4rem;
     margin-bottom: 0.2rem;
     padding-left: 1.1rem;
-    border-left: 2px solid var(--on-surface);
-    border-left-color: color-mix(in srgb, var(--on-surface) 18%, transparent);
+    border-left: 2px solid color-mix(in srgb, var(--on-surface) 18%, transparent);
+  }
+  /* Nested subfolder bars progressively thinner and more transparent */
+  .subfolder-list.open .subfolder-list.open {
+    border-left-color: color-mix(in srgb, var(--on-surface) 9%, transparent);
+    padding-left: 0.85rem;
   }
 
   /* Sticky context label — shown when folder toggle scrolls out of view */
@@ -483,17 +487,25 @@ function appendColumn(label, children, container) {
 
     function updateSticky() {
       const toggles = scroll.querySelectorAll('.folder-toggle.open');
+      const scrollRect = scroll.getBoundingClientRect();
+      // Account for sticky element height so threshold doesn't flicker
+      const stickyH = sticky.offsetHeight || 0;
+      const threshold = scrollRect.top + stickyH;
+
       let topmost = null;
-      let topmostTop = Infinity;
+      let topmostRelTop = -Infinity; // most-negative = furthest above = topmost
 
       toggles.forEach(toggle => {
         const rect = toggle.getBoundingClientRect();
-        const scrollRect = scroll.getBoundingClientRect();
-        const relTop = rect.top - scrollRect.top;
-        // Toggle has scrolled above the visible area
-        if (relTop < 0 && rect.top < topmostTop) {
-          topmostTop = rect.top;
-          topmost = toggle;
+        const relTop = rect.top - threshold;
+        // Has scrolled above the sticky threshold
+        if (relTop < 0) {
+          // Among all scrolled-out toggles, pick the one closest to the top
+          // (least negative relTop = bottom-most of the scrolled-out group = current context)
+          if (relTop > topmostRelTop) {
+            topmostRelTop = relTop;
+            topmost = toggle;
+          }
         }
       });
 

@@ -489,12 +489,6 @@
           },
           {
             "type": "file",
-            "name": "Clojure_Episode04.pdf",
-            "label": "Clojure Episode04",
-            "path": "coding_web-design/clojure/Clojure_Episode04.pdf"
-          },
-          {
-            "type": "file",
             "name": "Clojure_Episode05.pdf",
             "label": "Clojure Episode05",
             "path": "coding_web-design/clojure/Clojure_Episode05.pdf"

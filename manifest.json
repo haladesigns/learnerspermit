@@ -544,6 +544,18 @@
         "children": [
           {
             "type": "file",
+            "name": "python-concepts.html",
+            "label": "Python Concepts",
+            "path": "coding_web-design/python/python-concepts.html"
+          },
+          {
+            "type": "file",
+            "name": "python-functions.html",
+            "label": "Python Functions",
+            "path": "coding_web-design/python/python-functions.html"
+          },
+          {
+            "type": "file",
             "name": "t",
             "label": "T",
             "path": "coding_web-design/python/t"

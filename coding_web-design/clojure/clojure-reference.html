@@ -193,18 +193,44 @@ input[type=text]:focus {
 input::placeholder { color: var(--text3); }
 
 /* Filter pills */
+.filters-wrap {
+  position: relative;
+  padding-bottom: .65rem;
+}
+.filters-wrap::before,
+.filters-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: .65rem;
+  width: 32px;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity .2s;
+}
+.filters-wrap::before {
+  left: 0;
+  background: linear-gradient(to right, var(--surface), transparent);
+  opacity: 0;
+}
+.filters-wrap::after {
+  right: 0;
+  background: linear-gradient(to left, var(--surface), transparent);
+  opacity: 0;
+}
+.filters-wrap.fade-left::before   { opacity: 1; }
+.filters-wrap.fade-right::after   { opacity: 1; }
 .filters {
   display: flex;
   gap: 5px;
-  flex-wrap: wrap;
-  padding-bottom: .65rem;
+  flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
+  padding: 2px 2px;
 }
 .filters::-webkit-scrollbar { display: none; }
 .pill {
-  font-size: 15px;
-  padding: 4px 12px;
+  font-size: 13px;
+  padding: 4px 11px;
   border-radius: 20px;
   border: 1px solid var(--border2);
   background: var(--surface);
@@ -251,15 +277,19 @@ main {
 
 /* Card head */
 .card-head {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: start;
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   padding: 10px 12px;
   cursor: pointer;
   user-select: none;
 }
-.card-left { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.card-head-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.card-left { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
 .card-name {
   font-family: var(--mono);
   font-size: 15px;
@@ -269,8 +299,8 @@ main {
 }
 .card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .tag {
-  font-size: 14px;
-  padding: 3px 8px;
+  font-size: 12px;
+  padding: 2px 8px;
   border-radius: 20px;
   font-weight: 500;
   letter-spacing: .01em;
@@ -412,7 +442,8 @@ main {
   main { padding: .75rem .75rem 4rem; }
   .card-head { gap: 6px; padding: 9px 10px; }
   .card-name { font-size: 14px; }
-  .card-desc { font-size: 15px; }
+  .card-desc { font-size: 14px; }
+  .tag { font-size: 12px; padding: 2px 7px; }
   .card-body { padding: 0 10px 10px; }
   .count-badge { display: none; }
 }
@@ -503,7 +534,9 @@ main {
         <input type="text" id="search" placeholder="Search by name, type, namespace, description…" oninput="render()" autocomplete="off" spellcheck="false">
       </div>
     </div>
-    <div class="filters" id="filters"></div>
+    <div class="filters-wrap" id="filters-wrap">
+      <div class="filters" id="filters"></div>
+    </div>
   </div>
 </header>
 
@@ -600,6 +633,17 @@ function toggleTheme() {
 initTheme();
 
 const filtersEl = document.getElementById('filters');
+const filtersWrap = document.getElementById('filters-wrap');
+
+function updateFilterFade() {
+  var el = filtersEl;
+  var atLeft  = el.scrollLeft <= 2;
+  var atRight = el.scrollLeft >= el.scrollWidth - el.clientWidth - 2;
+  filtersWrap.classList.toggle('fade-left',  !atLeft);
+  filtersWrap.classList.toggle('fade-right', !atRight);
+}
+
+filtersEl.addEventListener('scroll', updateFilterFade, { passive: true });
 FILTER_GROUPS.forEach((g, i) => {
   const btn = document.createElement('button');
   btn.className = 'pill' + (i === 0 ? ' active' : '');
@@ -610,6 +654,8 @@ FILTER_GROUPS.forEach((g, i) => {
     render();
   };
   filtersEl.appendChild(btn);
+  // Update fade after pills are built
+  setTimeout(updateFilterFade, 0);
 });
 
 function copyCode(btn) {
@@ -858,20 +904,23 @@ function render() {
     const hasSig  = f.sig && f.sig.trim();
     const hasRel  = f.related && f.related.trim();
     const sinceStr = f.since ? ' \u00b7 since ' + f.since : '';
-    const shortDesc = f.desc.length > 120 ? f.desc.slice(0, 120) + '\u2026' : f.desc;
+    const maxDesc = window.innerWidth < 500 ? 70 : 120;
+    const shortDesc = f.desc.length > maxDesc ? f.desc.slice(0, maxDesc) + '\u2026' : f.desc;
 
     var html = '';
     html += '<div class="card-head">';
-    html +=   '<div class="card-left">';
-    html +=     '<span class="card-name">' + escHtml(f.name) + '</span>';
-    html +=     '<div class="card-tags">';
-    html +=       '<span class="tag ' + nsClass(f.ns) + '">' + nsShort(f.ns) + '</span>';
-    html +=       '<span class="tag tag-type">' + escHtml(f.type) + sinceStr + '</span>';
-    html +=       '<span class="tag tag-type">' + escHtml(secLabel) + '</span>';
+    html +=   '<div class="card-head-top">';
+    html +=     '<div class="card-left">';
+    html +=       '<span class="card-name">' + escHtml(f.name) + '</span>';
+    html +=       '<div class="card-tags">';
+    html +=         '<span class="tag ' + nsClass(f.ns) + '">' + nsShort(f.ns) + '</span>';
+    html +=         '<span class="tag tag-type">' + escHtml(f.type) + sinceStr + '</span>';
+    html +=         '<span class="tag tag-type">' + escHtml(secLabel) + '</span>';
+    html +=       '</div>';
     html +=     '</div>';
+    html +=     '<span class="card-chevron">&#9654;</span>';
     html +=   '</div>';
     html +=   '<div class="card-desc">' + escHtml(shortDesc) + '</div>';
-    html +=   '<span class="card-chevron">&#9654;</span>';
     html += '</div>';
 
     html += '<div class="card-body">';

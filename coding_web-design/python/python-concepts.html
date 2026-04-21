@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python — Core Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:       #f0f4f8;
+  --surface:  #ffffff;
+  --surface2: #e4ecf4;
+  --border:   #c8d8e8;
+  --border2:  #b0c4d8;
+  --text:     #141c28;
+  --text2:    #4a5568;
+  --text3:    #8898aa;
+  --accent:   #2563eb;
+  --accent2:  #60a5fa;
+  --accent-bg:#eff6ff;
+  --accent-t: #1e3a8a;
+  --core-bg:  #eaf3e8;
+  --core-t:   #2a5c25;
+  --str-bg:   #fff7e6;
+  --str-t:    #7c4a00;
+  --set-bg:   #f0e8f5;
+  --set-t:    #5a1a7a;
+  --code-bg:      #eef2f7;
+  --code-t:       #1a2535;
+  --code-border:  #bfcfe0;
+  --code-footer-bg:     #dde8f2;
+  --code-footer-border: #bfcfe0;
+  --code-footer-t:      #6a7e96;
+  --code-footer-hover:  #c8d8e8;
+  --tok-comment:  #8a9db5;
+  --tok-string:   #0a7a3a;
+  --tok-keyword:  #2563eb;
+  --tok-number:   #c05c00;
+  --tok-special:  #9333ea;
+  --tok-bool:     #be185d;
+  --tok-result:   #5a8a3a;
+  --tok-decorator:#0e7490;
+  --tok-builtin:  #c75a2c;
+  --shadow:       0 1px 4px rgba(0,0,0,.07);
+  --radius:   6px;
+  --radius-lg:10px;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+}
+[data-theme="dark"] {
+  --bg:       #0d1117;
+  --surface:  #161b22;
+  --surface2: #1c2330;
+  --border:   #263040;
+  --border2:  #304050;
+  --text:     #e6edf3;
+  --text2:    #8d96a0;
+  --text3:    #4a5568;
+  --accent:   #58a6ff;
+  --accent2:  #2563eb;
+  --accent-bg:#0d2040;
+  --accent-t: #93c5fd;
+  --core-bg:  #0e1e0c;
+  --core-t:   #7ad070;
+  --str-bg:   #2a1a00;
+  --str-t:    #fbbf24;
+  --set-bg:   #1a0c28;
+  --set-t:    #c070e8;
+  --code-bg:      #0a0e14;
+  --code-t:       #d4dbe8;
+  --code-border:  #1e2a38;
+  --code-footer-bg:     #111820;
+  --code-footer-border: #1e2a38;
+  --code-footer-t:      #4a5568;
+  --code-footer-hover:  #1c2330;
+  --tok-comment:  #546a7b;
+  --tok-string:   #56d364;
+  --tok-keyword:  #79c0ff;
+  --tok-number:   #ff9945;
+  --tok-special:  #d2a8ff;
+  --tok-bool:     #ff7eb6;
+  --tok-result:   #6a9955;
+  --tok-decorator:#39c5cf;
+  --tok-builtin:  #e8936a;
+  --shadow:       0 1px 4px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.7;
+  min-height: 100vh;
+  transition: background .2s, color .2s;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+.hdr-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+.hdr-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: .75rem 0 .65rem;
+}
+.logo { flex: 1; min-width: 0; }
+.logo-name {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: -.02em;
+}
+.logo-sub { font-size: 14px; color: var(--text3); margin-top: 1px; }
+.hdr-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--text2);
+  transition: background .15s;
+  flex-shrink: 0; text-decoration: none;
+}
+.icon-btn:hover { background: var(--border); }
+.ref-link {
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.ref-link:hover { background: var(--accent-bg); }
+
+/* ── NAV PILLS ── */
+.concept-nav {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: .6rem;
+}
+.concept-nav::-webkit-scrollbar { display: none; }
+.nav-pill {
+  font-size: 13px;
+  padding: 3px 11px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text2);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: all .15s;
+  font-family: var(--sans);
+}
+.nav-pill:hover { background: var(--surface2); color: var(--text); }
+.nav-pill.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── MAIN ── */
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1rem 5rem;
+}
+
+/* ── CONCEPT SECTIONS ── */
+.concept-section {
+  margin-bottom: 3.5rem;
+  scroll-margin-top: 80px;
+}
+.concept-section:last-child { margin-bottom: 0; }
+
+.concept-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+  padding-bottom: .75rem;
+  border-bottom: 2px solid var(--border);
+}
+.concept-number {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+.concept-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+.concept-subtitle {
+  font-size: 14px;
+  color: var(--text3);
+  font-style: italic;
+}
+
+/* Prose */
+.prose {
+  color: var(--text2);
+  font-size: 16px;
+  line-height: 1.75;
+  margin-bottom: 1.25rem;
+}
+.prose strong { color: var(--text); font-weight: 600; }
+.prose code {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.prose a { color: var(--accent); text-decoration: underline; }
+
+/* ── CALLOUT BOXES ── */
+.callout {
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+  font-size: 15px;
+  line-height: 1.65;
+  border-left: 3px solid;
+}
+.callout strong { display: block; font-size: 13px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; margin-bottom: .4rem; }
+.callout.key {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent-t);
+}
+.callout.key strong { color: var(--accent); }
+.callout.clojure {
+  background: var(--str-bg);
+  border-color: var(--str-t);
+  color: var(--str-t);
+}
+.callout.clojure strong { color: var(--str-t); }
+.callout.warning {
+  background: var(--set-bg);
+  border-color: var(--set-t);
+  color: var(--set-t);
+}
+.callout.warning strong { color: var(--set-t); }
+.callout.concept {
+  background: var(--core-bg);
+  border-color: var(--core-t);
+  color: var(--core-t);
+}
+.callout.concept strong { color: var(--core-t); }
+.callout code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: rgba(0,0,0,.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ── COMPARISON GRID ── */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.compare-col {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.compare-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  color: var(--text3);
+}
+.compare-col.python .compare-label { color: var(--accent); background: var(--accent-bg); border-color: var(--accent); }
+.compare-col.clojure .compare-label { color: var(--str-t); background: var(--str-bg); border-color: var(--str-t); }
+.compare-col pre {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--code-bg);
+  color: var(--code-t);
+  padding: 10px 12px;
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.65;
+  margin: 0;
+  border: none;
+}
+
+/* ── CODE BLOCK (standalone) ── */
+.code-block {
+  font-family: var(--mono);
+  font-size: 14px;
+  background: var(--code-bg);
+  color: var(--code-t);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--code-border);
+  padding: 12px 14px;
+  white-space: pre;
+  line-height: 1.65;
+  overflow-x: auto;
+  tab-size: 4;
+  margin-bottom: 1.25rem;
+}
+
+/* ── DIAGRAM BOXES ── */
+.diagram {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.8;
+  overflow-x: auto;
+}
+.diagram .d-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: .5rem;
+  font-family: var(--sans);
+}
+.d-acc  { color: var(--accent); }
+.d-green{ color: var(--core-t); }
+.d-blue { color: var(--str-t); }
+.d-grey { color: var(--text3); }
+.d-purple { color: var(--set-t); }
+
+/* ── CONCEPT PAIRS ── */
+.concept-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.concept-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: .9rem 1rem;
+}
+.concept-box h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: .4rem;
+}
+.concept-box p {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.55;
+}
+.concept-box code {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ── TIMELINE / STATE FLOW ── */
+.state-flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: .9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+}
+.state-box {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+}
+.state-box.highlight {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent-t);
+}
+.state-arrow { color: var(--text3); font-size: 16px; flex-shrink: 0; }
+.state-label { font-size: 12px; color: var(--text3); width: 100%; padding-top: .3rem; font-style: italic; }
+
+/* ── REFERENCE TABLE ── */
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  font-size: 14px;
+}
+.ref-table th {
+  text-align: left;
+  padding: 6px 10px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.ref-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.ref-table td:first-child {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.ref-table tr:last-child td { border-bottom: none; }
+.ref-table tr:hover td { background: var(--surface2); }
+
+/* Syntax highlight spans */
+.tok-comment  { color: var(--tok-comment);  font-style: italic; }
+.tok-string   { color: var(--tok-string); }
+.tok-keyword  { color: var(--tok-keyword); font-weight: 500; }
+.tok-number   { color: var(--tok-number); }
+.tok-special  { color: var(--tok-special); font-weight: 500; }
+.tok-bool     { color: var(--tok-bool); }
+.tok-result   { color: var(--tok-result); font-style: italic; }
+.tok-decorator{ color: var(--tok-decorator); font-weight: 500; }
+.tok-builtin  { color: var(--tok-builtin); }
+
+/* ── SECTION DIVIDER ── */
+.section-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 3rem 0;
+}
+
+/* ── MOBILE ── */
+@media (max-width: 600px) {
+  .hdr-inner { padding: 0 .75rem; }
+  .logo-sub { display: none; }
+  main { padding: 1.25rem .75rem 4rem; }
+  .concept-title { font-size: 18px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .concept-pair { grid-template-columns: 1fr; }
+  .compare-col pre { font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  .code-block { font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+  .diagram { font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  .ref-table { font-size: 13px; }
+  .prose { font-size: 15px; }
+  .state-flow { gap: 5px; }
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-inner">
+    <div class="hdr-top">
+      <div class="logo">
+        <div class="logo-name">python — core concepts</div>
+        <div class="logo-sub">11 ideas that explain how Python thinks</div>
+      </div>
+      <div class="hdr-actions">
+        <a href="python-functions.html" class="ref-link">&#8594; function ref</a>
+        <button class="icon-btn" id="theme-btn" title="Toggle theme" onclick="toggleTheme()">&#9790;</button>
+      </div>
+    </div>
+    <nav class="concept-nav" id="concept-nav">
+      <a href="#object-model"       class="nav-pill">1 · Object Model</a>
+      <a href="#names-binding"      class="nav-pill">2 · Names &amp; Binding</a>
+      <a href="#mutability"         class="nav-pill">3 · Mutability</a>
+      <a href="#everything-object"  class="nav-pill">4 · Everything is an Object</a>
+      <a href="#iterables-protocol" class="nav-pill">5 · Iterables &amp; Protocols</a>
+      <a href="#scope-closures"     class="nav-pill">6 · Scope &amp; Closures</a>
+      <a href="#first-class-fns"    class="nav-pill">7 · First-class Functions</a>
+      <a href="#decorators"         class="nav-pill">8 · Decorators</a>
+      <a href="#generators"         class="nav-pill">9 · Generators &amp; Laziness</a>
+      <a href="#dunder-protocol"    class="nav-pill">10 · Dunder Protocol</a>
+      <a href="#exceptions"         class="nav-pill">11 · Exceptions &amp; Context</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- INTRO -->
+<div class="prose" style="margin-bottom:2.5rem; padding:.9rem 1rem; background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:var(--radius-lg);">
+  <strong>How to use this page.</strong> This page explains <em>why</em> Python works the way it does — the 11 cornerstone ideas behind every design decision. Each concept has a surface explanation followed by the mechanical picture underneath. Clojure contrasts are woven throughout for learners working across both languages.
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     1. OBJECT MODEL
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="object-model">
+  <div class="concept-header">
+    <span class="concept-number">01</span>
+    <div>
+      <div class="concept-title">The Object Model</div>
+      <div class="concept-subtitle">Everything is an object — and objects are dictionaries all the way down</div>
+    </div>
+  </div>
+
+  <p class="prose">Python's entire runtime is built on one idea: <strong>everything is an object</strong>. Numbers, strings, functions, classes, modules, even <code>None</code> — all objects. An object is a bundle of data (attributes) and behaviour (methods). This is not a metaphor — it is the literal implementation. Understanding this unlocks Python's flexibility.</p>
+
+  <div class="concept-pair">
+    <div class="concept-box">
+      <h4>Objects have identity</h4>
+      <p>Every object has a unique identity (its address in memory), accessible via <code>id(obj)</code>. Two variables can point to the same object. <code>is</code> checks identity; <code>==</code> checks equality.</p>
+    </div>
+    <div class="concept-box">
+      <h4>Objects have type</h4>
+      <p>Every object has a type — its class — accessible via <code>type(obj)</code>. Types are themselves objects (instances of <code>type</code>, the metaclass). This is the "turtles all the way down" quality of Python.</p>
+    </div>
+  </div>
+
+  <pre class="code-block" id="obj-model-code">x = 42
+type(x)          # => &lt;class 'int'&gt;
+id(x)            # => some memory address (e.g. 140234567890)
+isinstance(x, int)  # => True
+
+# Even a function is an object
+def greet(name):
+    return f"Hello, {name}"
+
+type(greet)      # => &lt;class 'function'&gt;
+greet.__name__   # => 'greet'
+greet.__doc__    # => None  (no docstring)
+
+# Even a class is an object
+type(int)        # => &lt;class 'type'&gt;
+type(type)       # => &lt;class 'type'&gt;  (type is its own type!)
+
+# Identity vs equality
+a = [1, 2, 3]
+b = [1, 2, 3]
+a == b           # => True   (same content)
+a is b           # => False  (different objects)
+c = a
+c is a           # => True   (same object)</pre>
+
+  <div class="callout key">
+    <strong>Attributes are stored in __dict__</strong>
+    Most objects store their attributes in a plain Python dictionary called <code>__dict__</code>. When you write <code>obj.name = "Ada"</code>, Python is essentially doing <code>obj.__dict__["name"] = "Ada"</code>. This is why Python is so flexible — you can add attributes to objects at any time, inspect them, iterate over them. The object model is transparent.
+  </div>
+
+  <div class="callout clojure">
+    <strong>Clojure contrast</strong>
+    Clojure doesn't have a unified object model in the same sense. Data is plain maps/vectors/sets; behaviour is separate functions. There's no <code>obj.method()</code> — functions and data are distinct. This is the "simple vs easy" trade-off: Clojure separates concerns that Python bundles together.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     2. NAMES & BINDING
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="names-binding">
+  <div class="concept-header">
+    <span class="concept-number">02</span>
+    <div>
+      <div class="concept-title">Names &amp; Binding</div>
+      <div class="concept-subtitle">Variables are not boxes — they are name tags attached to objects</div>
+    </div>
+  </div>
+
+  <p class="prose">The single most important mental model shift for Python: <strong>variables are not storage locations</strong>. They are <em>names</em> that refer to objects. Assignment doesn't put a value in a box — it ties a name tag to an existing object. Multiple names can refer to the same object. A name can be re-tied to a different object at any time.</p>
+
+  <div class="diagram">
+    <div class="d-label">Names as labels, not boxes:</div>
+    <pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;white-space:pre;"><span class="d-grey">x = [1, 2, 3]       # name 'x' points to list object</span>
+<span class="d-acc">  x ──────────────►  [1, 2, 3]  (object in memory)</span>
+
+<span class="d-grey">y = x               # name 'y' points to the SAME object</span>
+<span class="d-acc">  x ──────────────►  [1, 2, 3]</span>
+<span class="d-acc">  y ──────────────►  (same object)</span>
+
+<span class="d-grey">y.append(4)         # mutation via y — x sees the change too!</span>
+<span class="d-acc">  x ──────────────►  [1, 2, 3, 4]</span>
+<span class="d-acc">  y ──────────────►  (same object, now mutated)</span>
+
+<span class="d-green">x = [10, 20]        # rebind x to a NEW object — y unaffected</span>
+<span class="d-acc">  x ──────────────►  [10, 20]   (new object)</span>
+<span class="d-acc">  y ──────────────►  [1, 2, 3, 4]  (still the old object)</span></pre>
+  </div>
+
+  <pre class="code-block" id="binding-code">x = 42
+y = x       # y and x both point to the integer object 42
+x = 100     # rebind x — y still points to 42
+print(y)    # => 42   (integers are immutable, so no surprise)
+
+# Mutable objects reveal the difference
+a = [1, 2, 3]
+b = a               # both point to the same list
+b.append(4)
+print(a)            # => [1, 2, 3, 4]  — a was affected!
+
+# To get an independent copy:
+b = a.copy()        # shallow copy — new list, same element objects
+b = a[:]            # same
+import copy
+b = copy.deepcopy(a)  # deep copy — entirely independent
+
+# Augmented assignment on immutables creates new objects
+x = 10
+id_before = id(x)
+x += 1
+id(x) == id_before  # => False — x now points to a new int object</pre>
+
+  <div class="callout key">
+    <strong>Passing arguments — "pass by object reference"</strong>
+    Python is neither pass-by-value nor pass-by-reference. It is pass-by-object-reference (sometimes called "pass-by-assignment"). The function receives a new name for the same object. Mutating the object affects the caller. Rebinding the parameter does not. This is the source of endless confusion — and understanding names vs boxes resolves it completely.
+  </div>
+
+  <div class="callout clojure">
+    <strong>Clojure contrast</strong>
+    Clojure's <code>def</code> is similar — it binds a symbol to a value. The key difference: in Clojure, the value is always immutable. There's no equivalent of Python's aliasing problem with mutable collections. <code>(def x [1 2 3])</code> and later <code>(def y x)</code> — both y and x see the same immutable vector, and nothing can surprise you.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     3. MUTABILITY
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="mutability">
+  <div class="concept-header">
+    <span class="concept-number">03</span>
+    <div>
+      <div class="concept-title">Mutability</div>
+      <div class="concept-subtitle">Mutable vs immutable is a property of the type, not the variable</div>
+    </div>
+  </div>
+
+  <p class="prose">Python types are divided into <strong>mutable</strong> (can be changed after creation) and <strong>immutable</strong> (cannot). This is a property of the <em>type</em>, not of any particular variable. You cannot make a list immutable by declaring the variable; you must use a different type (<code>tuple</code>). This distinction governs what you can do, what is safe to share, and what can be used as a dict key.</p>
+
+  <div class="concept-pair">
+    <div class="concept-box">
+      <h4>Mutable types</h4>
+      <p><code>list</code>, <code>dict</code>, <code>set</code>, <code>bytearray</code>, and most user-defined class instances. Can be modified in place. Not hashable — cannot be dict keys.</p>
+    </div>
+    <div class="concept-box">
+      <h4>Immutable types</h4>
+      <p><code>int</code>, <code>float</code>, <code>str</code>, <code>tuple</code>, <code>frozenset</code>, <code>bytes</code>, <code>bool</code>. Cannot be modified after creation. Hashable — can be dict keys and set members.</p>
+    </div>
+  </div>
+
+  <pre class="code-block" id="mutability-code"># Immutable — operations return new objects
+s = "hello"
+s.upper()       # => "HELLO"  — new string; s is unchanged
+s               # => "hello"
+
+t = (1, 2, 3)
+t[0] = 99       # => TypeError: 'tuple' object does not support item assignment
+
+# Mutable — operations modify in place and return None
+lst = [1, 2, 3]
+lst.append(4)   # => None  (side effect: lst is now [1, 2, 3, 4])
+lst             # => [1, 2, 3, 4]
+
+# The dict-key rule: only immutable (hashable) types allowed
+d = {}
+d[(1, 2)] = "ok"     # tuple as key — fine
+d[[1, 2]] = "bad"    # => TypeError: unhashable type: 'list'
+
+# frozenset — the immutable set
+fs = frozenset([1, 2, 3])
+d[fs] = "also fine"  # frozenset is hashable</pre>
+
+  <div class="callout warning">
+    <strong>The mutable default argument trap</strong>
+    <code>def f(x, items=[]):</code> — the default list is created once when the function is defined, not each time it's called. Every call that uses the default shares the same list. This is one of Python's most notorious gotchas. The fix: use <code>None</code> as the default and create the mutable value inside the function body.
+  </div>
+
+  <div class="callout clojure">
+    <strong>Clojure contrast</strong>
+    In Clojure, every value is immutable by default — there is no mutable list, no mutable map. The equivalent of Python's list/dict are Clojure's persistent vector/map, but they cannot be mutated. Clojure chose immutable-first; Python chose mutable-first. This is the foundational trade-off between the two languages.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     4. EVERYTHING IS AN OBJECT
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="everything-object">
+  <div class="concept-header">
+    <span class="concept-number">04</span>
+    <div>
+      <div class="concept-title">Everything is an Object</div>
+      <div class="concept-subtitle">Functions, classes, and modules are objects you can pass, inspect, and modify</div>
+    </div>
+  </div>
+
+  <p class="prose">In Python, <strong>functions are objects</strong>. Classes are objects. Modules are objects. This is not a slogan — it is the operational truth. You can store a function in a list, pass it to another function, attach attributes to it, introspect its source. This first-class quality of functions and types is what makes Python's metaprogramming powerful.</p>
+
+  <pre class="code-block" id="fns-objects-code">def square(n):
+    return n * n
+
+# A function is just an object
+type(square)            # => &lt;class 'function'&gt;
+square.__name__         # => 'square'
+square.__code__.co_varnames  # => ('n',)
+
+# Store in a list
+ops = [square, abs, str]
+[f(4) for f in ops]     # => [16, 4, '4']
+
+# Pass to a function
+def apply(f, x):
+    return f(x)
+
+apply(square, 5)        # => 25
+apply(str, 42)          # => '42'
+
+# Classes are objects too
+type(int)               # => &lt;class 'type'&gt;
+int.__bases__           # => (&lt;class 'object'&gt;,)
+int.__mro__             # => [int, object]  (method resolution order)
+
+# Modules are objects
+import os
+type(os)                # => &lt;class 'module'&gt;
+os.__file__             # => '/usr/lib/python3.x/os.py'
+dir(os)                 # => list of all names in the module</pre>
+
+  <div class="callout concept">
+    <strong>Introspection — Python's superpower</strong>
+    Because everything is an object with attributes, Python can inspect itself at runtime. <code>dir(obj)</code> lists all attributes. <code>getattr(obj, name)</code> accesses an attribute by string name — enabling dynamic dispatch. <code>inspect.getsource(fn)</code> returns the source code of a function. This is the foundation of frameworks like Django, pytest, and Flask.
+  </div>
+
+  <div class="callout key">
+    <strong>Callable objects</strong>
+    Any object with a <code>__call__</code> method can be called like a function. This is how decorators, class instances used as callbacks, and partial functions work. The <code>()</code> syntax is just syntactic sugar for calling <code>__call__</code>.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     5. ITERABLES & THE ITERATOR PROTOCOL
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="iterables-protocol">
+  <div class="concept-header">
+    <span class="concept-number">05</span>
+    <div>
+      <div class="concept-title">Iterables &amp; the Iterator Protocol</div>
+      <div class="concept-subtitle">One interface that makes for-loops work on everything</div>
+    </div>
+  </div>
+
+  <p class="prose">Python's <code>for</code> loop doesn't know about lists, dicts, or files specifically. It knows about one thing: the <strong>iterator protocol</strong>. Any object that implements two methods — <code>__iter__</code> and <code>__next__</code> — can be iterated. This is why the same <code>for x in ...</code> syntax works on lists, strings, files, generators, database cursors, and anything else you define.</p>
+
+  <div class="concept-pair">
+    <div class="concept-box">
+      <h4>Iterable</h4>
+      <p>An object with <code>__iter__()</code> that returns an iterator. Lists, tuples, strings, dicts, sets, and files are all iterables. Calling <code>iter(obj)</code> invokes <code>__iter__</code>.</p>
+    </div>
+    <div class="concept-box">
+      <h4>Iterator</h4>
+      <p>An object with both <code>__iter__()</code> (returns self) and <code>__next__()</code> (returns next value or raises <code>StopIteration</code>). Iterators are stateful and one-directional.</p>
+    </div>
+  </div>
+
+  <pre class="code-block" id="iter-proto-code"># What the for loop actually does:
+# for x in collection:   is equivalent to:
+it = iter(collection)   # calls collection.__iter__()
+while True:
+    try:
+        x = next(it)    # calls it.__next__()
+    except StopIteration:
+        break
+
+# Implement your own iterable
+class Countdown:
+    def __init__(self, start):
+        self.start = start
+
+    def __iter__(self):
+        return CountdownIterator(self.start)
+
+class CountdownIterator:
+    def __init__(self, current):
+        self.current = current
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current <= 0:
+            raise StopIteration
+        val = self.current
+        self.current -= 1
+        return val
+
+list(Countdown(5))  # => [5, 4, 3, 2, 1]
+for n in Countdown(3):
+    print(n)         # 3, 2, 1</pre>
+
+  <div class="callout key">
+    <strong>The same map/filter/zip work on everything</strong>
+    Because <code>map()</code>, <code>filter()</code>, <code>zip()</code>, <code>sorted()</code>, and <code>sum()</code> all work on any iterable — not specifically lists — you can chain them. They're also all lazy (return iterators, not lists) in Python 3, so large data streams don't need to be materialised in memory.
+  </div>
+
+  <div class="callout clojure">
+    <strong>Clojure parallel</strong>
+    This is structurally identical to Clojure's sequence abstraction. Clojure's seq protocol (<code>first</code>, <code>rest</code>, <code>cons</code>) plays the same role as Python's iterator protocol (<code>__iter__</code>, <code>__next__</code>). Both languages unify all collection operations behind a single interface. The key difference: Python iterators are mutable and stateful; Clojure lazy seqs are immutable values.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     6. SCOPE & CLOSURES
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="scope-closures">
+  <div class="concept-header">
+    <span class="concept-number">06</span>
+    <div>
+      <div class="concept-title">Scope &amp; Closures</div>
+      <div class="concept-subtitle">LEGB — Local, Enclosing, Global, Built-in</div>
+    </div>
+  </div>
+
+  <p class="prose">Python resolves names using the <strong>LEGB rule</strong>: Local → Enclosing → Global → Built-in. When you reference a name, Python searches each scope in that order and uses the first match it finds. Understanding this rule explains every NameError, every shadowed variable, and every closure.</p>
+
+  <pre class="code-block" id="scope-code">x = "global"
+
+def outer():
+    x = "enclosing"
+
+    def inner():
+        x = "local"
+        print(x)  # => "local"     (L: found in local scope)
+
+    inner()
+    print(x)      # => "enclosing" (E: found in enclosing scope)
+
+outer()
+print(x)          # => "global"    (G: found in global scope)
+
+# global and nonlocal keywords assign to outer scopes
+count = 0
+
+def increment():
+    global count  # tells Python: 'count' refers to global scope
+    count += 1
+
+increment()
+count  # => 1
+
+# nonlocal for enclosing (not global) scope
+def make_counter():
+    n = 0
+    def increment():
+        nonlocal n   # refers to enclosing 'n', not a new local
+        n += 1
+        return n
+    return increment
+
+counter = make_counter()
+counter()  # => 1
+counter()  # => 2</pre>
+
+  <div class="callout concept">
+    <strong>Closures — functions that capture their environment</strong>
+    A closure is a function that "closes over" names from its enclosing scope — carrying them with it even after the enclosing function returns. <code>make_counter()</code> above returns <code>increment</code>, which still has access to <code>n</code> even after <code>make_counter</code> has finished. The closure captures the variable (the binding), not the value at the time of creation — which is why the classic loop-closure bug exists.
+  </div>
+
+  <pre class="code-block" id="closure-bug-code"># Classic loop closure bug
+fns = [lambda: i for i in range(3)]
+[f() for f in fns]    # => [2, 2, 2]  — all captured the SAME i
+# All lambdas close over the same variable i, which is 2 at loop end
+
+# Fix: capture the value at each iteration with a default argument
+fns = [lambda i=i: i for i in range(3)]
+[f() for f in fns]    # => [0, 1, 2]  — each has its own copy</pre>
+
+  <div class="callout clojure">
+    <strong>Clojure contrast</strong>
+    Clojure also has closures — <code>fn</code> closes over lexical scope. But because Clojure values are immutable, the loop-closure bug doesn't exist. There's no mutable loop variable to accidentally share. <code>(for [i (range 3)] (fn [] i))</code> correctly captures each value of <code>i</code>.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     7. FIRST-CLASS FUNCTIONS
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="first-class-fns">
+  <div class="concept-header">
+    <span class="concept-number">07</span>
+    <div>
+      <div class="concept-title">First-Class Functions &amp; Functional Tools</div>
+      <div class="concept-subtitle">Functions as values — map, filter, reduce, lambda, partial</div>
+    </div>
+  </div>
+
+  <p class="prose">Python treats functions as first-class values: they can be passed as arguments, returned from functions, stored in data structures. Combined with <code>lambda</code>, <code>functools</code>, and comprehensions, this enables a functional style that composes cleanly — without needing to be fully functional in the Haskell/Clojure sense.</p>
+
+  <pre class="code-block" id="hof-code">from functools import reduce, partial
+
+# Higher-order functions — take or return functions
+numbers = [1, 2, 3, 4, 5, 6]
+
+list(map(lambda x: x * x, numbers))       # => [1, 4, 9, 16, 25, 36]
+list(filter(lambda x: x % 2 == 0, numbers)) # => [2, 4, 6]
+reduce(lambda a, b: a + b, numbers)        # => 21
+
+# list comprehensions — preferred Pythonic style
+[x * x for x in numbers]                  # => [1, 4, 9, 16, 25, 36]
+[x for x in numbers if x % 2 == 0]        # => [2, 4, 6]
+{x: x*x for x in range(5)}                # dict comprehension
+{x*x for x in range(5)}                   # set comprehension
+
+# partial — fix some arguments to create a specialised function
+def power(base, exp):
+    return base ** exp
+
+square = partial(power, exp=2)
+cube   = partial(power, exp=3)
+square(4)   # => 16
+cube(3)     # => 27
+
+# Function composition — manual in Python
+def compose(f, g):
+    return lambda x: f(g(x))
+
+add_one = lambda x: x + 1
+double  = lambda x: x * 2
+double_then_add = compose(add_one, double)
+double_then_add(5)  # => 11</pre>
+
+  <div class="callout clojure">
+    <strong>Clojure contrast</strong>
+    Clojure leans fully into the functional style — <code>map</code>, <code>filter</code>, <code>reduce</code> are the primary tools, not alternatives to loops. Python offers both idioms; the Pythonic style often prefers comprehensions over <code>map</code>/<code>filter</code>. In Clojure, the threading macros (<code>-&gt;&gt;</code>) play the role Python's comprehensions play — making pipelines readable.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     8. DECORATORS
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="decorators">
+  <div class="concept-header">
+    <span class="concept-number">08</span>
+    <div>
+      <div class="concept-title">Decorators</div>
+      <div class="concept-subtitle">Syntax sugar for wrapping functions — metaprogramming made accessible</div>
+    </div>
+  </div>
+
+  <p class="prose">A decorator is a function that takes a function and returns a (usually modified) function. The <code>@decorator</code> syntax is purely sugar: <code>@log</code> before a <code>def</code> is exactly equivalent to <code>fn = log(fn)</code> after it. Decorators are Python's most visible metaprogramming tool — used extensively in frameworks for routing, caching, authentication, and logging.</p>
+
+  <pre class="code-block" id="decorator-code">import functools, time
+
+# A basic decorator
+def timer(fn):
+    @functools.wraps(fn)   # preserves __name__, __doc__ etc.
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = fn(*args, **kwargs)
+        end = time.perf_counter()
+        print(f"{fn.__name__} took {end - start:.4f}s")
+        return result
+    return wrapper
+
+@timer
+def slow_sum(n):
+    return sum(range(n))
+
+slow_sum(1_000_000)  # prints: slow_sum took 0.0234s
+                     # returns: 499999500000
+
+# @timer is exactly equivalent to:
+# slow_sum = timer(slow_sum)
+
+# Decorator with arguments — a factory that returns a decorator
+def repeat(n):
+    def decorator(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            for _ in range(n):
+                result = fn(*args, **kwargs)
+            return result
+        return wrapper
+    return decorator
+
+@repeat(3)
+def say(msg):
+    print(msg)
+
+say("hello")  # prints "hello" three times
+
+# Class decorators work the same way
+@timer          # also valid on classes
+class MyClass:
+    pass</pre>
+
+  <div class="callout key">
+    <strong>functools.wraps — always use it</strong>
+    Without <code>@functools.wraps(fn)</code>, the wrapper function's <code>__name__</code>, <code>__doc__</code>, and other metadata are replaced by the wrapper's own. This breaks debugging, documentation, and introspection. Always wrap the inner function with <code>@functools.wraps(fn)</code>.
+  </div>
+
+  <div class="callout clojure">
+    <strong>Clojure parallel</strong>
+    Clojure's equivalent is higher-order functions and macros. A Clojure wrapper function like <code>(defn timed [f] (fn [& args] (time (apply f args))))</code> is the manual equivalent. Clojure macros can do what Python decorators cannot — restructure the code before evaluation. Python decorators operate on already-compiled function objects; macros operate on unevaluated source.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     9. GENERATORS & LAZINESS
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="generators">
+  <div class="concept-header">
+    <span class="concept-number">09</span>
+    <div>
+      <div class="concept-title">Generators &amp; Laziness</div>
+      <div class="concept-subtitle">yield suspends execution — producing values one at a time without materialising the whole sequence</div>
+    </div>
+  </div>
+
+  <p class="prose">A generator function uses <code>yield</code> instead of <code>return</code>. Calling it returns a generator object — an iterator that runs the function body <em>lazily</em>, pausing at each <code>yield</code> and resuming when the next value is requested. This enables infinite sequences, memory-efficient pipelines, and coroutine-like patterns without allocating everything upfront.</p>
+
+  <pre class="code-block" id="generator-code">def naturals():
+    n = 0
+    while True:
+        yield n
+        n += 1
+
+gen = naturals()    # nothing runs yet — returns generator object
+next(gen)           # => 0    (function runs until first yield)
+next(gen)           # => 1    (resumes from after yield)
+next(gen)           # => 2
+
+# Generator expression — lazy comprehension syntax
+squares = (x*x for x in range(1_000_000))
+next(squares)       # => 0   (only one value computed)
+next(squares)       # => 1
+
+# Chaining generators — memory-efficient pipeline
+def evens(n):
+    for i in range(n):
+        if i % 2 == 0:
+            yield i
+
+def doubled(seq):
+    for x in seq:
+        yield x * 2
+
+# Nothing computed until consumed:
+pipeline = doubled(evens(1_000_000))
+list(pipeline)[:5]  # => [0, 4, 8, 12, 16]
+
+# yield from — delegate to sub-generator
+def flatten(nested):
+    for item in nested:
+        if isinstance(item, list):
+            yield from flatten(item)
+        else:
+            yield item
+
+list(flatten([1, [2, [3, 4]], 5]))  # => [1, 2, 3, 4, 5]</pre>
+
+  <div class="callout warning">
+    <strong>Generators are stateful and one-shot</strong>
+    Unlike Clojure's lazy seqs, Python generators are mutable iterators with internal state. Once exhausted, they return nothing. You cannot rewind, share safely between threads, or iterate twice. For reusability, wrap the generator logic in a class or function that creates a fresh generator each time.
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-col python">
+      <div class="compare-label">Python — stateful, one-shot</div>
+      <pre id="py-lazy">gen = (x*x for x in range(5))
+list(gen)  # => [0, 1, 4, 9, 16]
+list(gen)  # => []   (exhausted!)
+
+# Each call to the function creates fresh state
+def squares(n):
+    return (x*x for x in range(n))
+
+list(squares(5))  # => [0, 1, 4, 9, 16]
+list(squares(5))  # => [0, 1, 4, 9, 16]  (new generator)</pre>
+    </div>
+    <div class="compare-col clojure">
+      <div class="compare-label">Clojure — immutable lazy value</div>
+      <pre id="clj-lazy">(def squares (map #(* % %) (range 5)))
+(vec squares)  ; => [0 1 4 9 16]
+(vec squares)  ; => [0 1 4 9 16]  still works!
+
+; Clojure lazy seqs are immutable values —
+; you can share them, iterate twice,
+; store them, pass them around freely.
+; No stateful cursor to exhaust.</pre>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     10. DUNDER PROTOCOL
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="dunder-protocol">
+  <div class="concept-header">
+    <span class="concept-number">10</span>
+    <div>
+      <div class="concept-title">The Dunder Protocol</div>
+      <div class="concept-subtitle">__magic__ methods — how Python operators and built-ins are implemented</div>
+    </div>
+  </div>
+
+  <p class="prose">Python's operators and built-in functions are not magic — they are dispatched to <strong>dunder methods</strong> (double underscore, also called "magic methods") on objects. <code>a + b</code> calls <code>a.__add__(b)</code>. <code>len(x)</code> calls <code>x.__len__()</code>. <code>for x in obj</code> calls <code>obj.__iter__()</code>. This protocol is how you make your own objects behave like built-in types.</p>
+
+  <table class="ref-table">
+    <tr><th>Operation</th><th>Dunder called</th><th>Notes</th></tr>
+    <tr><td>a + b</td><td>__add__, __radd__</td><td>radd called if a doesn't implement add</td></tr>
+    <tr><td>a == b</td><td>__eq__</td><td>default is identity check</td></tr>
+    <tr><td>a &lt; b</td><td>__lt__</td><td>use @functools.total_ordering for full ordering</td></tr>
+    <tr><td>len(x)</td><td>__len__</td><td>must return non-negative int</td></tr>
+    <tr><td>x[key]</td><td>__getitem__</td><td>also enables iteration if __iter__ missing</td></tr>
+    <tr><td>x[key] = v</td><td>__setitem__</td><td></td></tr>
+    <tr><td>str(x)</td><td>__str__</td><td>human-readable string</td></tr>
+    <tr><td>repr(x)</td><td>__repr__</td><td>developer representation; used in REPL</td></tr>
+    <tr><td>bool(x)</td><td>__bool__</td><td>fallback to __len__ if missing</td></tr>
+    <tr><td>hash(x)</td><td>__hash__</td><td>required for dict keys and set members</td></tr>
+    <tr><td>with x as y</td><td>__enter__, __exit__</td><td>context manager protocol</td></tr>
+    <tr><td>for v in x</td><td>__iter__</td><td>returns an iterator</td></tr>
+    <tr><td>next(x)</td><td>__next__</td><td>returns next value or raises StopIteration</td></tr>
+    <tr><td>f(args)</td><td>__call__</td><td>makes any object callable</td></tr>
+  </table>
+
+  <pre class="code-block" id="dunder-code">class Vector:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __repr__(self):
+        return f"Vector({self.x}, {self.y})"
+
+    def __add__(self, other):
+        return Vector(self.x + other.x, self.y + other.y)
+
+    def __mul__(self, scalar):
+        return Vector(self.x * scalar, self.y * scalar)
+
+    def __len__(self):
+        return 2  # 2D vector always has 2 components
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+    def __hash__(self):
+        return hash((self.x, self.y))
+
+v1 = Vector(1, 2)
+v2 = Vector(3, 4)
+v1 + v2         # => Vector(4, 6)
+v1 * 3          # => Vector(3, 6)
+len(v1)         # => 2
+v1 == Vector(1, 2)  # => True
+{v1, v2}        # works — __hash__ is defined</pre>
+
+  <div class="callout key">
+    <strong>__repr__ vs __str__</strong>
+    <code>__repr__</code> should return a string that, ideally, could be used to recreate the object (<code>Vector(1, 2)</code>). <code>__str__</code> is for human display. When <code>__str__</code> is missing, <code>__repr__</code> is used as a fallback. Always implement <code>__repr__</code>. Add <code>__str__</code> only when you need a different human-facing representation.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     11. EXCEPTIONS & CONTEXT MANAGERS
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="exceptions">
+  <div class="concept-header">
+    <span class="concept-number">11</span>
+    <div>
+      <div class="concept-title">Exceptions &amp; Context Managers</div>
+      <div class="concept-subtitle">Error handling as control flow — and guaranteed cleanup with with</div>
+    </div>
+  </div>
+
+  <p class="prose">Python uses exceptions for both error reporting and <strong>normal control flow</strong>. <code>StopIteration</code> signals loop end. <code>KeyError</code> signals a missing dict key. This is idiomatic Python — EAFP ("Easier to Ask Forgiveness than Permission") rather than LBYL ("Look Before You Leap"). Context managers then handle cleanup, ensuring resources are released regardless of how a block exits.</p>
+
+  <pre class="code-block" id="exceptions-code"># LBYL — Look Before You Leap (non-Pythonic for dicts)
+if "key" in d:
+    value = d["key"]
+else:
+    value = default
+
+# EAFP — Easier to Ask Forgiveness (Pythonic)
+try:
+    value = d["key"]
+except KeyError:
+    value = default
+
+# Even cleaner for dicts:
+value = d.get("key", default)
+
+# Exception hierarchy — catch the right level
+try:
+    result = int("abc")
+except ValueError as e:
+    print(f"Bad value: {e}")
+except TypeError:
+    print("Wrong type entirely")
+except Exception as e:
+    print(f"Unexpected: {e}")    # broad catch — use sparingly
+finally:
+    print("always runs")
+
+# Raise your own exceptions
+class InsufficientFunds(ValueError):
+    def __init__(self, amount, balance):
+        super().__init__(f"Cannot withdraw {amount}, balance is {balance}")
+        self.amount = amount
+        self.balance = balance
+
+raise InsufficientFunds(100, 30)</pre>
+
+  <pre class="code-block" id="context-code"># Context managers — guaranteed setup and teardown
+# with statement calls __enter__ on entry and __exit__ on exit
+# __exit__ runs even if an exception is raised inside the block
+
+with open("data.txt") as f:
+    contents = f.read()
+# file is closed here — even if an exception occurred inside
+
+# Multiple context managers
+with open("in.txt") as src, open("out.txt", "w") as dst:
+    dst.write(src.read())
+
+# Write your own context manager — using contextlib
+from contextlib import contextmanager
+
+@contextmanager
+def timer_context(label):
+    import time
+    start = time.perf_counter()
+    try:
+        yield             # body of the 'with' block runs here
+    finally:
+        elapsed = time.perf_counter() - start
+        print(f"{label}: {elapsed:.4f}s")
+
+with timer_context("my operation"):
+    sum(range(1_000_000))   # => "my operation: 0.0312s"</pre>
+
+  <div class="callout concept">
+    <strong>contextlib.contextmanager — the easy way</strong>
+    Rather than implementing <code>__enter__</code> and <code>__exit__</code> on a class, use the <code>@contextmanager</code> decorator on a generator function. The code before <code>yield</code> is <code>__enter__</code>; the code after (in <code>finally</code>) is <code>__exit__</code>. Cleaner, more readable, and handles exceptions correctly.
+  </div>
+
+  <div class="callout clojure">
+    <strong>Clojure contrast</strong>
+    Clojure uses <code>try/catch/finally</code> similarly, but idiomatic Clojure avoids exceptions for control flow — functions return <code>nil</code> for "not found" rather than throwing. For resource management, <code>with-open</code> is the equivalent of Python's <code>with</code>. Because Clojure code is more functional, there's less need for the EAFP pattern — <code>nil</code>-safety and <code>some-&gt;</code> threading handle missing values more gracefully.
+  </div>
+</section>
+
+
+<div class="section-divider"></div>
+
+<!-- SUMMARY -->
+<section class="concept-section" id="summary">
+  <div class="concept-header">
+    <span class="concept-number" style="background:var(--surface2);border-color:var(--border2);color:var(--text2)">&#10003;</span>
+    <div>
+      <div class="concept-title">How the 11 concepts connect</div>
+    </div>
+  </div>
+
+  <p class="prose">These aren't independent ideas — they form an interconnected model of Python's runtime:</p>
+
+  <div class="state-flow" style="flex-direction:column; align-items:flex-start; gap:10px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Object Model</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">everything is an object — the foundation of all Python behaviour</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Names &amp; Binding</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">variables are labels, not boxes — explains aliasing and mutation</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Mutability</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">type determines mutability — governs safety and hashability</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Everything is an Object</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">functions and classes are objects — enables higher-order patterns</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Iterables &amp; Protocol</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">one interface for all iteration — powers for-loops universally</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Scope &amp; Closures</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">LEGB lookup — explains every NameError and captured variable</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">First-class Functions</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">functions as values — unlocks functional style and composition</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Decorators</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">wrapping functions — metaprogramming made accessible</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Generators</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">lazy computation — memory-efficient sequences and pipelines</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Dunder Protocol</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">operator dispatch — how Python syntax maps to method calls</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Exceptions &amp; Context</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">EAFP error handling — and guaranteed cleanup with with</span>
+    </div>
+  </div>
+</section>
+
+
+</main>
+
+<script>
+function initTheme() {
+  var saved = localStorage.getItem('py-ref-theme');
+  var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme:dark)').matches;
+  applyTheme(dark);
+}
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = dark ? '\u2600' : '\u263e';
+  document.querySelectorAll('pre.code-block, .compare-col pre').forEach(function(pre) {
+    if (pre.dataset.src) pre.innerHTML = highlight(pre.dataset.src);
+  });
+}
+function toggleTheme() {
+  var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  applyTheme(!dark);
+  localStorage.setItem('py-ref-theme', !dark ? 'dark' : 'light');
+}
+
+// ── PYTHON SYNTAX HIGHLIGHTER ──
+function highlight(code) {
+  // Python keywords
+  var KEYWORDS = new Set([
+    'False','None','True','and','as','assert','async','await',
+    'break','class','continue','def','del','elif','else','except',
+    'finally','for','from','global','if','import','in','is',
+    'lambda','nonlocal','not','or','pass','raise','return',
+    'try','while','with','yield'
+  ]);
+  // Python builtins
+  var BUILTINS = new Set([
+    'abs','all','any','ascii','bin','bool','breakpoint','bytearray',
+    'bytes','callable','chr','classmethod','compile','complex',
+    'copyright','delattr','dict','dir','divmod','enumerate','eval',
+    'exec','filter','float','format','frozenset','getattr','globals',
+    'hasattr','hash','help','hex','id','input','int','isinstance',
+    'issubclass','iter','len','list','locals','map','max','memoryview',
+    'min','next','object','oct','open','ord','pow','print','property',
+    'range','repr','reversed','round','set','setattr','slice','sorted',
+    'staticmethod','str','sum','super','tuple','type','vars','zip'
+  ]);
+
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function span(cls, s) { return '<span class="tok-' + cls + '">' + esc(s) + '</span>'; }
+
+  function processLine(line) {
+    var out = '', i = 0, len = line.length;
+    while (i < len) {
+      var ch = line[i];
+
+      // Comment
+      if (ch === '#') {
+        var rest = line.slice(i);
+        out += /^#\s*(=+>|=>)/.test(rest) ? span('result', rest) : span('comment', rest);
+        break;
+      }
+
+      // Decorator
+      if (ch === '@' && i === 0 || (ch === '@' && /\s/.test(line[i-1]))) {
+        var j = i + 1;
+        while (j < len && /[a-zA-Z0-9_.]/.test(line[j])) j++;
+        out += span('decorator', line.slice(i, j)); i = j; continue;
+      }
+
+      // Triple-quoted strings
+      if ((ch === '"' || ch === "'") && line[i+1] === ch && line[i+2] === ch) {
+        var q = line.slice(i, i+3);
+        var j = i + 3;
+        while (j < len - 2) {
+          if (line[j] === ch && line[j+1] === ch && line[j+2] === ch) { j += 3; break; }
+          j++;
+        }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+
+      // f-strings and regular strings
+      if ((ch === 'f' || ch === 'r' || ch === 'b') && (line[i+1] === '"' || line[i+1] === "'")) {
+        var prefix = ch; var quote = line[i+1]; var j = i + 2;
+        while (j < len) {
+          if (line[j] === '\\') { j += 2; continue; }
+          if (line[j] === quote) { j++; break; }
+          j++;
+        }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+      if (ch === '"' || ch === "'") {
+        var q = ch; var j = i + 1;
+        while (j < len) {
+          if (line[j] === '\\') { j += 2; continue; }
+          if (line[j] === q) { j++; break; }
+          j++;
+        }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+
+      // Numbers
+      if (/[0-9]/.test(ch) || (ch === '-' && /[0-9]/.test(line[i+1] || ''))) {
+        var prev = i > 0 ? line[i-1] : ' ';
+        if (ch === '-' && /[a-zA-Z_]/.test(prev)) { out += esc(ch); i++; continue; }
+        var j = i;
+        if (line[j] === '-') j++;
+        if (line[j] === '0' && (line[j+1] === 'x' || line[j+1] === 'X')) {
+          j += 2; while (j < len && /[0-9a-fA-F_]/.test(line[j])) j++;
+        } else if (line[j] === '0' && (line[j+1] === 'b' || line[j+1] === 'B')) {
+          j += 2; while (j < len && /[01_]/.test(line[j])) j++;
+        } else {
+          while (j < len && /[0-9_]/.test(line[j])) j++;
+          if (j < len && line[j] === '.') { j++; while (j < len && /[0-9_]/.test(line[j])) j++; }
+          if (j < len && (line[j] === 'e' || line[j] === 'E')) {
+            j++; if (j < len && (line[j] === '+' || line[j] === '-')) j++;
+            while (j < len && /[0-9_]/.test(line[j])) j++;
+          }
+          if (j < len && (line[j] === 'j' || line[j] === 'J')) j++;
+        }
+        out += span('number', line.slice(i, j)); i = j; continue;
+      }
+
+      // Words: keywords, builtins, True/False/None
+      if (/[a-zA-Z_]/.test(ch)) {
+        var j = i;
+        while (j < len && /[a-zA-Z0-9_]/.test(line[j])) j++;
+        var word = line.slice(i, j);
+        if (word === 'True' || word === 'False' || word === 'None') out += span('bool', word);
+        else if (KEYWORDS.has(word)) out += span('keyword', word);
+        else if (BUILTINS.has(word) && (j >= len || line[j] === '(')) out += span('builtin', word);
+        else out += esc(word);
+        i = j; continue;
+      }
+
+      out += esc(ch); i++;
+    }
+    return out;
+  }
+
+  return code.split('\n').map(processLine).join('\n');
+}
+
+// ── HIGHLIGHT ALL CODE BLOCKS ──
+function highlightAll() {
+  document.querySelectorAll('pre.code-block').forEach(function(pre) {
+    pre.dataset.src = pre.textContent;
+    pre.innerHTML = highlight(pre.dataset.src);
+  });
+  document.querySelectorAll('.compare-col pre').forEach(function(pre) {
+    pre.dataset.src = pre.textContent;
+    pre.innerHTML = highlight(pre.dataset.src);
+  });
+}
+
+// ── ACTIVE NAV PILL ON SCROLL ──
+function updateActiveNav() {
+  var sections = document.querySelectorAll('.concept-section[id]');
+  var pills = document.querySelectorAll('.nav-pill');
+  var scrollY = window.scrollY + 120;
+  var activeId = null;
+  sections.forEach(function(s) {
+    if (s.offsetTop <= scrollY) activeId = s.id;
+  });
+  pills.forEach(function(p) {
+    var href = p.getAttribute('href').slice(1);
+    p.classList.toggle('active', href === activeId);
+  });
+}
+window.addEventListener('scroll', updateActiveNav, { passive: true });
+
+// Desktop: redirect vertical wheel to horizontal scroll on concept nav
+var isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+if (!isTouchDevice) {
+  var conceptNav = document.getElementById('concept-nav');
+  conceptNav.addEventListener('wheel', function(e) {
+    if (e.deltaY !== 0) {
+      e.preventDefault();
+      conceptNav.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+}
+
+// Smooth scroll for nav pills
+document.querySelectorAll('.nav-pill').forEach(function(pill) {
+  pill.addEventListener('click', function(e) {
+    e.preventDefault();
+    var id = pill.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+initTheme();
+highlightAll();
+updateActiveNav();
+</script>
+</body>
+</html>

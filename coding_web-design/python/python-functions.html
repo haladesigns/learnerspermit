@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python — Function Directory</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #e8eef5;
+    --border: #c8d8e8;
+    --border2: #b0c4d8;
+    --text: #141c28;
+    --text2: #4a5568;
+    --text3: #8898aa;
+    --accent: #2563eb;
+    --accent-bg: #eff6ff;
+    --accent-text: #1e3a8a;
+    --code-bg: #eef2f7;
+    --code-text: #1a2535;
+    --green-bg: #eaf3de;
+    --green-text: #3b6d11;
+    --teal-bg: #e1f5ee;
+    --teal-text: #0f6e56;
+    --amber-bg: #faeeda;
+    --amber-text: #854f0b;
+    --gray-bg: #f1efe8;
+    --gray-text: #5f5e5a;
+    --coral-bg: #faece7;
+    --coral-text: #993c1d;
+    --purple-bg: #f3e8ff;
+    --purple-text: #6b21a8;
+    --pink-bg: #fce7f3;
+    --pink-text: #9d174d;
+    --sky-bg: #e0f2fe;
+    --sky-text: #0369a1;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #263040;
+    --border2: #304050;
+    --text: #e6edf3;
+    --text2: #8d96a0;
+    --text3: #4a5568;
+    --accent: #58a6ff;
+    --accent-bg: #0d2040;
+    --accent-text: #93c5fd;
+    --code-bg: #090c10;
+    --code-text: #c9d1d9;    --green-bg: #173404;
+    --green-text: #c0dd97;
+    --teal-bg: #04342c;
+    --teal-text: #9fe1cb;
+    --amber-bg: #412402;
+    --amber-text: #fac775;
+    --gray-bg: #2c2c2a;
+    --gray-text: #b4b2a9;
+    --coral-bg: #4a1b0c;
+    --coral-text: #f5c4b3;
+    --purple-bg: #2d1b4e;
+    --purple-text: #d8b4fe;
+    --pink-bg: #4a0d2b;
+    --pink-text: #f9a8d4;
+    --sky-bg: #0c2a3e;
+    --sky-text: #7dd3fc;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .header-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 0 0.75rem;
+    gap: 12px;
+  }
+  .logo { display: flex; align-items: baseline; gap: 10px; flex-shrink: 0; }
+  .logo-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .logo-sub { font-size: 12px; color: var(--text3); font-weight: 400; }
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .ref-link {
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 3px 10px;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .ref-link:hover { background: var(--accent-bg); }
+  .count-badge {
+    font-size: 12px;
+    color: var(--text3);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+  }
+  .theme-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    color: var(--text2);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .theme-btn:hover { background: var(--border); }
+
+  .search-wrap { padding-bottom: 0.75rem; }
+  .search-box { position: relative; }
+  .search-icon {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 14px;
+    pointer-events: none;
+  }
+  input[type=text] {
+    width: 100%;
+    padding: 9px 12px 9px 36px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  input[type=text]:focus {
+    border-color: var(--accent);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  }
+  input[type=text]::placeholder { color: var(--text3); }
+
+  .filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding-bottom: 0.75rem;
+  }
+  .pill {
+    font-size: 12px;
+    padding: 4px 11px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text2);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .pill:hover { background: var(--surface2); color: var(--text); }
+  .pill.active {
+    background: var(--accent-bg);
+    color: var(--accent-text);
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 1.25rem 1.5rem 3rem;
+  }
+  .status-bar {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 0.75rem;
+    padding-left: 2px;
+  }
+
+  /* ── CARDS ── */
+  .fn-list { display: flex; flex-direction: column; gap: 4px; }
+  .fn-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .fn-card:hover { border-color: var(--border2); }
+  .fn-card.open { border-color: var(--accent); }
+
+  .fn-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .fn-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    min-width: 160px;
+    flex-shrink: 0;
+  }
+  .fn-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+  .tag-builtins    { background: var(--accent-bg);  color: var(--accent-text); }
+  .tag-collections { background: var(--green-bg);   color: var(--green-text); }
+  .tag-strings     { background: var(--amber-bg);   color: var(--amber-text); }
+  .tag-flow        { background: var(--coral-bg);   color: var(--coral-text); }
+  .tag-oop         { background: var(--purple-bg);  color: var(--purple-text); }
+  .tag-math        { background: var(--teal-bg);    color: var(--teal-text); }
+  .tag-functional  { background: var(--pink-bg);    color: var(--pink-text); }
+  .tag-io          { background: var(--sky-bg);     color: var(--sky-text); }
+  .tag-advanced    { background: var(--gray-bg);    color: var(--gray-text); }
+  [data-theme="dark"] .tag-builtins    { background: var(--accent-bg);  color: var(--accent-text); }
+  [data-theme="dark"] .tag-collections { background: var(--green-bg);   color: var(--green-text); }
+  [data-theme="dark"] .tag-strings     { background: var(--amber-bg);   color: var(--amber-text); }
+  [data-theme="dark"] .tag-flow        { background: var(--coral-bg);   color: var(--coral-text); }
+  [data-theme="dark"] .tag-oop         { background: var(--purple-bg);  color: var(--purple-text); }
+  [data-theme="dark"] .tag-math        { background: var(--teal-bg);    color: var(--teal-text); }
+  [data-theme="dark"] .tag-functional  { background: var(--pink-bg);    color: var(--pink-text); }
+  [data-theme="dark"] .tag-io          { background: var(--sky-bg);     color: var(--sky-text); }
+  [data-theme="dark"] .tag-advanced    { background: var(--gray-bg);    color: var(--gray-text); }
+
+  .fn-blurb { font-size: 13px; color: var(--text2); flex: 1; }
+  .fn-chevron {
+    font-size: 11px;
+    color: var(--text3);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .fn-card.open .fn-chevron { transform: rotate(90deg); }
+
+  .fn-body {
+    display: none;
+    padding: 0 14px 14px;
+    border-top: 1px solid var(--border);
+  }
+  .fn-card.open .fn-body { display: block; }
+
+  .fn-sig {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 7px 11px;
+    margin: 12px 0 8px;
+  }
+
+  .code-wrap { display: flex; flex-direction: column; }
+  .fn-example {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 10px 14px;
+    white-space: pre;
+    line-height: 1.65;
+    overflow-x: auto;
+  }
+  .copy-btn {
+    display: block;
+    width: 100%;
+    font-size: 11px;
+    padding: 6px;
+    background: var(--code-footer-bg, var(--surface2));
+    border: none;
+    border-top: 1px solid var(--code-footer-border, var(--border));
+    border-radius: 0 0 var(--radius) var(--radius);
+    color: var(--text3);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    text-align: center;
+    letter-spacing: 0.04em;
+    transition: background 0.15s, color 0.15s;
+  }
+  .copy-btn:hover { background: var(--border); color: var(--text2); }
+  .copy-btn.copied { color: #4ade80; }
+
+  /* Clojure cross-reference strip */
+  .fn-clojure {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text3);
+    padding: 6px 10px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-bg);
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .fn-clojure code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent-text);
+  }
+
+  .empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text3);
+    font-size: 14px;
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 600px) {
+    .header-inner { padding: 0 1rem; }
+    .logo-sub { display: none; }
+    main { padding: 1rem 1rem 3rem; }
+    .fn-head { flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 12px 10px; position: relative; }
+    .fn-name { min-width: unset; font-size: 14px; width: 100%; }
+    .fn-blurb { font-size: 12px; line-height: 1.5; width: 100%; }
+    .fn-chevron { position: absolute; top: 14px; right: 12px; }
+    .fn-body { padding: 0 12px 12px; }
+    .fn-sig { font-size: 11px; padding: 6px 10px; }
+    .fn-example { font-size: 11px; padding: 8px 10px; white-space: pre-wrap; word-break: break-word; }
+    .fn-clojure { font-size: 11px; }
+    .filters { gap: 5px; }
+    .pill { font-size: 11px; padding: 3px 9px; }
+    input[type=text] { font-size: 14px; }
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text3);
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    margin-top: 2rem;
+  }
+
+  /* ── HELP PANEL ── */
+  .help-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 200;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+    overflow-y: auto;
+  }
+  .help-overlay.open { display: flex; }
+  .help-box {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    max-width: 680px;
+    width: 100%;
+    padding: 1.75rem 2rem;
+    position: relative;
+  }
+  .help-close {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .help-close:hover { background: var(--surface2); }
+  .help-title {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .help-section { margin-bottom: 1.25rem; }
+  .help-section-title {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 0.5rem;
+  }
+  .help-section p { font-size: 13px; color: var(--text2); line-height: 1.65; margin-bottom: 0.4rem; }
+  .help-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .help-key {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 2px 7px;
+    color: var(--text);
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 110px;
+    text-align: center;
+  }
+  .help-val { font-size: 13px; color: var(--text2); }
+  .help-divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+  @media (max-width: 600px) { .help-box { padding: 1.25rem; } }
+
+  /* Syntax highlight spans */
+  .tok-comment   { color: #6a8a9f; font-style: italic; }
+  .tok-string    { color: #56d364; }
+  .tok-keyword   { color: #79c0ff; font-weight: 500; }
+  .tok-number    { color: #ff9945; }
+  .tok-bool      { color: #ff7eb6; }
+  .tok-builtin   { color: #ffa657; }
+  .tok-decorator { color: #39c5cf; font-weight: 500; }
+  .tok-result    { color: #7dd3a8; font-style: italic; }
+  [data-theme="light"] .tok-comment   { color: #6e8899; }
+  [data-theme="light"] .tok-string    { color: #0a7a3a; }
+  [data-theme="light"] .tok-keyword   { color: #1d4ed8; font-weight: 500; }
+  [data-theme="light"] .tok-number    { color: #b45309; }
+  [data-theme="light"] .tok-bool      { color: #be185d; }
+  [data-theme="light"] .tok-builtin   { color: #c75a2c; }
+  [data-theme="light"] .tok-decorator { color: #0e7490; font-weight: 500; }
+  [data-theme="light"] .tok-result    { color: #2e7d4f; font-style: italic; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="logo">
+        <span class="logo-name">python</span>
+        <span class="logo-sub">function directory</span>
+      </div>
+      <div class="header-actions">
+        <a href="python-concepts.html" class="ref-link">&#8594; concepts</a>
+        <span class="count-badge" id="count-badge">— functions</span>
+        <button class="theme-btn" id="help-btn" title="Help" onclick="toggleHelp()">?</button>
+        <button class="theme-btn" id="theme-btn" title="Toggle dark mode" onclick="toggleTheme()">☾</button>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="search" placeholder="Search by name, description, or example…" oninput="render()" />
+      </div>
+    </div>
+    <div class="filters" id="filters"></div>
+  </div>
+</header>
+
+<main>
+  <div class="status-bar" id="status"></div>
+  <div class="fn-list" id="fn-list"></div>
+</main>
+
+<footer>
+  python · function directory · 9 chapters · with Clojure cross-references · built for learning
+</footer>
+
+<!-- HELP OVERLAY -->
+<div class="help-overlay" id="help-overlay" onclick="closeHelpOnBg(event)">
+  <div class="help-box">
+    <button class="help-close" onclick="toggleHelp()">✕</button>
+    <div class="help-title">python — function directory</div>
+
+    <div class="help-section">
+      <div class="help-section-title">How to use</div>
+      <div class="help-row"><span class="help-key">search bar</span><span class="help-val">Filter by name, description, or code in examples</span></div>
+      <div class="help-row"><span class="help-key">tag pills</span><span class="help-val">Filter by category: builtins, collections, strings, flow, oop, math, functional, io, advanced</span></div>
+      <div class="help-row"><span class="help-key">click card</span><span class="help-val">Expand to see signature, code example, and Clojure equivalent</span></div>
+      <div class="help-row"><span class="help-key">copy button</span><span class="help-val">Copy the example code to clipboard</span></div>
+    </div>
+
+    <hr class="help-divider">
+
+    <div class="help-section">
+      <div class="help-section-title">Clojure cross-references</div>
+      <p>Each entry shows the nearest Clojure equivalent — same concept, different language. Useful when translating patterns between the two languages during parallel learning.</p>
+    </div>
+
+    <hr class="help-divider">
+
+    <div class="help-section">
+      <div class="help-section-title">Categories</div>
+      <p><strong>builtins</strong> — built-in functions: len, range, print, type, isinstance…</p>
+      <p><strong>collections</strong> — list, dict, set, tuple, deque, Counter, defaultdict…</p>
+      <p><strong>strings</strong> — str methods: split, join, upper, format, encode…</p>
+      <p><strong>flow</strong> — control flow: if/elif/else, for, while, break, continue, exceptions…</p>
+      <p><strong>oop</strong> — classes, inheritance, super, staticmethod, classmethod, attributes…</p>
+      <p><strong>math</strong> — math module, arithmetic operators, min/max, abs, round…</p>
+      <p><strong>functional</strong> — map, filter, reduce, lambda, sorted, zip, enumerate…</p>
+      <p><strong>io</strong> — file I/O: open, read, write, close, with statement…</p>
+      <p><strong>advanced</strong> — generators, async/await, decorators, re, sys, queue, threading…</p>
+    </div>
+
+    <hr class="help-divider">
+
+    <div class="help-section" style="margin-bottom:0">
+      <div class="help-section-title">About</div>
+      <p>Based on a 9-chapter Python reference covering Basic Functions, Flow Control, Flow, File I/O, Mathematics, OOP, Advanced Tools, Optimization, and Appendices. Part of a parallel Clojure/Python learning project.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const fns = [
+
+  // ── CHAPTER 1: BASIC FUNCTIONS / BUILTINS ──────────────────────────────────
+  { name:"abs()", tag:"builtins", blurb:"Returns the absolute value of a number.",
+    sig:"abs(x)",
+    ex:"abs(-7)      # => 7\nabs(-3.14)   # => 3.14\nabs(5)       # => 5",
+    clj:"(Math/abs -7)  ; or (abs -7) in Clojure 1.11+" },
+
+  { name:"all()", tag:"builtins", blurb:"Returns True if all elements of an iterable are truthy (or iterable is empty).",
+    sig:"all(iterable)",
+    ex:"all([True, True, True])   # => True\nall([True, False, True])  # => False\nall([])                   # => True  (vacuously true)\nall(x > 0 for x in [1,2,3])  # => True",
+    clj:"(every? pred coll)  — (every? pos? [1 2 3]) => true" },
+
+  { name:"any()", tag:"builtins", blurb:"Returns True if at least one element is truthy. False for empty iterable.",
+    sig:"any(iterable)",
+    ex:"any([False, False, True])  # => True\nany([False, False])         # => False\nany([])                     # => False",
+    clj:"(some pred coll)  — returns first truthy result, not a boolean" },
+
+  { name:"assert()", tag:"flow", blurb:"Tests a condition; raises AssertionError with optional message if False.",
+    sig:"assert condition\nassert condition, message",
+    ex:"assert 2 + 2 == 4\nassert len([1,2,3]) == 3, 'Expected 3 items'\n# assert False  # => AssertionError",
+    clj:"No direct equivalent — use (when-not cond (throw ...))" },
+
+  { name:"async / await", tag:"advanced", blurb:"Syntax for asynchronous programming using coroutines and event loops.",
+    sig:"async def fn():  ...  await coroutine",
+    ex:"import asyncio\n\nasync def fetch(url):\n    await asyncio.sleep(1)  # non-blocking pause\n    return f'data from {url}'\n\nasync def main():\n    result = await fetch('example.com')\n    print(result)\n\nasyncio.run(main())",
+    clj:"Clojure uses core.async channels and go blocks: (go (>! ch val))" },
+
+  { name:"bin()", tag:"builtins", blurb:"Converts an integer to a binary string prefixed with '0b'.",
+    sig:"bin(x)",
+    ex:"bin(10)    # => '0b1010'\nbin(255)   # => '0b11111111'\nint('0b1010', 2)  # => 10  (reverse)",
+    clj:"(Integer/toBinaryString 10)  => \"1010\"" },
+
+  { name:"bool()", tag:"builtins", blurb:"Converts a value to Boolean. Falsy: 0, '', [], {}, None, False.",
+    sig:"bool(x)",
+    ex:"bool(0)     # => False\nbool('')    # => False\nbool([])    # => False\nbool(None)  # => False\nbool(1)     # => True\nbool('hi')  # => True\nbool([0])   # => True  (non-empty list)",
+    clj:"(boolean x)  — nil and false are falsy; everything else truthy" },
+
+  { name:"bytes()", tag:"builtins", blurb:"Creates an immutable bytes object from an integer size, iterable, or string.",
+    sig:"bytes(n)  /  bytes(iterable)  /  bytes(str, encoding)",
+    ex:"bytes(4)              # => b'\\x00\\x00\\x00\\x00'\nbytes([65, 66, 67])   # => b'ABC'\nbytes('hello', 'utf-8')  # => b'hello'",
+    clj:"No direct equivalent — use (.getBytes str \"UTF-8\")" },
+
+  { name:"enumerate()", tag:"functional", blurb:"Pairs each element of an iterable with its index. Returns an iterator of (index, value) tuples.",
+    sig:"enumerate(iterable, start=0)",
+    ex:"for i, v in enumerate(['a','b','c']):\n    print(i, v)  # 0 a, 1 b, 2 c\n\nlist(enumerate(['x','y'], start=1))  # => [(1,'x'),(2,'y')]",
+    clj:"(map-indexed (fn [i v] [i v]) coll)  or  (map-indexed vector coll)" },
+
+  { name:"exec()", tag:"advanced", blurb:"Executes dynamically generated Python code from a string or code object.",
+    sig:"exec(code, globals=None, locals=None)",
+    ex:"exec('x = 10')\nexec('print(x)')  # => 10\n\nns = {}\nexec('def greet(n): return f\"Hi {n}\"', ns)\nns['greet']('Ada')  # => 'Hi Ada'",
+    clj:"(eval '(+ 1 2))  — Clojure eval is homoiconic; exec is string-based" },
+
+  { name:"print()", tag:"builtins", blurb:"Prints objects to stdout (or a file). Configurable separator and end.",
+    sig:"print(*objects, sep=' ', end='\\n', file=sys.stdout)",
+    ex:"print('hello')            # => hello\nprint('a', 'b', 'c')      # => a b c\nprint('a','b', sep='-')   # => a-b\nprint('no newline', end='')  # no trailing newline",
+    clj:"(println \"hello\")  — always ends with newline; (print) without newline" },
+
+  { name:"type()", tag:"builtins", blurb:"Returns the type of an object, or creates a new type dynamically.",
+    sig:"type(obj)  /  type(name, bases, dict)",
+    ex:"type(42)          # => <class 'int'>\ntype('hello')     # => <class 'str'>\ntype([1,2,3])     # => <class 'list'>\ntype(None)        # => <class 'NoneType'>",
+    clj:"(type x)  or  (class x)  — returns Java class" },
+
+  { name:"isinstance()", tag:"builtins", blurb:"Returns True if an object is an instance of a class (or tuple of classes).",
+    sig:"isinstance(obj, classinfo)",
+    ex:"isinstance(42, int)          # => True\nisinstance('hi', str)        # => True\nisinstance(3.14, (int, float))  # => True\nisinstance([], dict)         # => False",
+    clj:"(instance? ClassName obj)  — (instance? String \"hi\") => true" },
+
+  { name:"len()", tag:"builtins", blurb:"Returns the number of items in an object (sequence, collection, or string).",
+    sig:"len(s)",
+    ex:"len([1, 2, 3])    # => 3\nlen('hello')      # => 5\nlen({'a':1,'b':2}) # => 2\nlen(range(10))    # => 10",
+    clj:"(count coll)  — works on all collections" },
+
+  { name:"range()", tag:"builtins", blurb:"Returns a lazy sequence of integers. Does not create a list.",
+    sig:"range(stop)  /  range(start, stop[, step])",
+    ex:"list(range(5))        # => [0, 1, 2, 3, 4]\nlist(range(2, 8))     # => [2, 3, 4, 5, 6, 7]\nlist(range(0, 10, 2)) # => [0, 2, 4, 6, 8]\nlist(range(5, 0, -1)) # => [5, 4, 3, 2, 1]",
+    clj:"(range)  (range 5)  (range 2 8)  — lazy, infinite (range) supported" },
+
+  { name:"id()", tag:"builtins", blurb:"Returns the unique identity (memory address) of an object. Used with 'is'.",
+    sig:"id(object)",
+    ex:"x = [1, 2, 3]\ny = x\nid(x) == id(y)   # => True  (same object)\nz = [1, 2, 3]\nid(x) == id(z)   # => False (different objects)",
+    clj:"No direct equivalent — Clojure uses value equality" },
+
+  { name:"hash()", tag:"builtins", blurb:"Returns the hash value of an object. Only immutable (hashable) types are hashable.",
+    sig:"hash(object)",
+    ex:"hash(42)        # => 42  (ints hash to themselves)\nhash('hello')   # => some integer\nhash((1,2,3))   # => some integer\nhash([1,2,3])   # TypeError: unhashable type: 'list'",
+    clj:"(hash x)  — Clojure values are all hashable by default" },
+
+  { name:"repr()", tag:"builtins", blurb:"Returns a developer-readable string representation. Calls __repr__.",
+    sig:"repr(object)",
+    ex:"repr(42)          # => '42'\nrepr([1, 2, 3])   # => '[1, 2, 3]'\nrepr('hello')     # => \"'hello'\"  (with quotes)",
+    clj:"(pr-str x)  — prints readable representation; (str x) for __str__" },
+
+  { name:"dir()", tag:"builtins", blurb:"Returns a list of all attributes and methods of an object.",
+    sig:"dir([object])",
+    ex:"dir([])          # => ['append', 'clear', 'copy', ...]\ndir(str)         # => all string methods\ndir()            # => names in current scope",
+    clj:"(ns-publics 'clojure.core)  or  (dir clojure.core)" },
+
+  { name:"help()", tag:"builtins", blurb:"Displays the docstring / documentation for an object.",
+    sig:"help([object])",
+    ex:"help(str.split)    # => detailed docs\nhelp(list)         # => list class docs\nhelp()             # interactive help system",
+    clj:"(doc fn-name)  — e.g. (doc map)" },
+
+  { name:"input()", tag:"builtins", blurb:"Reads a line of text from stdin. Always returns a string.",
+    sig:"input([prompt])",
+    ex:"name = input('Enter your name: ')\nage  = int(input('Enter your age: '))  # cast to int",
+    clj:"(read-line)  — no prompt; combine with (print \"prompt: \")" },
+
+  { name:"open()", tag:"io", blurb:"Opens a file and returns a file object. Use with 'with' for automatic closing.",
+    sig:"open(file, mode='r', encoding=None)",
+    ex:"# Read\nwith open('data.txt') as f:\n    content = f.read()\n\n# Write\nwith open('out.txt', 'w') as f:\n    f.write('hello')\n\n# Modes: 'r' read, 'w' write, 'a' append, 'b' binary",
+    clj:"(slurp \"file.txt\")  (spit \"file.txt\" content)  — for full control use clojure.java.io" },
+
+  { name:"close()", tag:"io", blurb:"Closes an open file. Prefer 'with' statement which closes automatically.",
+    sig:"file.close()",
+    ex:"f = open('data.txt')\ncontent = f.read()\nf.close()  # manual close\n\n# Better: with closes automatically\nwith open('data.txt') as f:\n    content = f.read()  # auto-closed after block",
+    clj:"with-open macro closes automatically: (with-open [r (io/reader f)] ...)" },
+
+  { name:"read()", tag:"io", blurb:"Reads the entire file (or n bytes) from a file object.",
+    sig:"file.read([n])",
+    ex:"with open('data.txt') as f:\n    all_text = f.read()       # entire file\n    # or\n    chunk = f.read(100)       # first 100 chars\n    line  = f.readline()     # one line\n    lines = f.readlines()    # list of all lines",
+    clj:"(slurp \"data.txt\")  — returns entire file as string" },
+
+  { name:"write()", tag:"io", blurb:"Writes a string to an open file. Returns number of characters written.",
+    sig:"file.write(string)",
+    ex:"with open('out.txt', 'w') as f:\n    f.write('Hello, world\\n')\n    f.write('Second line\\n')\n\n# writelines — writes list without separators\nwith open('out.txt', 'w') as f:\n    f.writelines(['line1\\n', 'line2\\n'])",
+    clj:"(spit \"out.txt\" \"content\")  — append: (spit f s :append true)" },
+
+  // ── CHAPTER 2: FLOW CONTROL ────────────────────────────────────────────────
+  { name:"if / elif / else", tag:"flow", blurb:"Conditional execution. elif and else are optional.",
+    sig:"if condition:\n    ...\nelif condition:\n    ...\nelse:\n    ...",
+    ex:"x = 10\nif x > 0:\n    print('positive')\nelif x == 0:\n    print('zero')\nelse:\n    print('negative')\n\n# Ternary expression\nlabel = 'pos' if x > 0 else 'non-pos'",
+    clj:"(if cond then else)  (cond ...)  (when ...)  — all are expressions" },
+
+  { name:"for loop", tag:"flow", blurb:"Iterates over any iterable. else clause runs if no break was hit.",
+    sig:"for var in iterable:\n    ...",
+    ex:"for i in range(3):\n    print(i)       # 0, 1, 2\n\nfor item in ['a','b','c']:\n    print(item)\n\n# for/else — else runs if loop completes without break\nfor n in [2, 3, 4]:\n    if n % 2 == 0:\n        print('found even'); break\nelse:\n    print('no even found')",
+    clj:"(for [x coll] expr)  — returns lazy seq; (doseq [x coll] side-effects)" },
+
+  { name:"while", tag:"flow", blurb:"Repeats while condition is True. else clause runs if condition becomes False.",
+    sig:"while condition:\n    ...",
+    ex:"n = 0\nwhile n < 3:\n    print(n)\n    n += 1       # 0, 1, 2\n\n# break exits early\nwhile True:\n    val = input('Enter q to quit: ')\n    if val == 'q':\n        break",
+    clj:"(while cond body)  — side-effect loop; (loop [x init] (recur new-x)) for recursion" },
+
+  { name:"break", tag:"flow", blurb:"Exits the innermost for/while loop immediately.",
+    sig:"break",
+    ex:"for i in range(10):\n    if i == 5:\n        break\n    print(i)  # prints 0..4\n\n# break with while\nwhile True:\n    if some_condition:\n        break",
+    clj:"No direct break — use (reduced val) inside reduce, or restructure with recursion" },
+
+  { name:"continue", tag:"flow", blurb:"Skips the rest of the current loop iteration and proceeds to the next.",
+    sig:"continue",
+    ex:"for i in range(5):\n    if i == 2:\n        continue    # skip 2\n    print(i)    # prints 0, 1, 3, 4",
+    clj:"No direct equivalent — use (filter pred coll) or (when cond ...)" },
+
+  { name:"exception handling", tag:"flow", blurb:"try/except/else/finally — catch exceptions and ensure cleanup code runs.",
+    sig:"try:\n    ...\nexcept ExceptionType as e:\n    ...\nelse:\n    ...  # runs if no exception\nfinally:\n    ...  # always runs",
+    ex:"try:\n    result = 10 / 0\nexcept ZeroDivisionError as e:\n    print(f'Error: {e}')\nexcept (TypeError, ValueError):\n    print('type or value error')\nelse:\n    print('success')    # no exception raised\nfinally:\n    print('cleanup')    # always runs",
+    clj:"(try (/ 10 0) (catch ArithmeticException e (str e)) (finally ...))" },
+
+  { name:"raise", tag:"flow", blurb:"Raises an exception. Can raise a new instance or re-raise the current one.",
+    sig:"raise ExceptionType(message)\nraise  # re-raise current exception",
+    ex:"raise ValueError('invalid input')\nraise TypeError(f'Expected int, got {type(x).__name__}')\n\n# Custom exception\nclass AppError(Exception):\n    pass\nraise AppError('something went wrong')",
+    clj:"(throw (Exception. \"message\"))  or  (throw (ex-info \"msg\" {:data val}))" },
+
+  // ── CHAPTER 3: FLOW (collections and other constructs) ───────────────────
+  { name:"callable()", tag:"builtins", blurb:"Returns True if the object appears callable (has __call__).",
+    sig:"callable(object)",
+    ex:"callable(print)          # => True\ncallable(lambda x: x)   # => True\ncallable(42)             # => False\ncallable([])             # => False",
+    clj:"(ifn? x)  — true if x implements IFn (functions, keywords, maps, sets)" },
+
+  { name:"class", tag:"oop", blurb:"Defines a new class. Python uses class-based OOP with single/multiple inheritance.",
+    sig:"class ClassName(BaseClass):\n    def __init__(self, ...):\n        ...",
+    ex:"class Animal:\n    def __init__(self, name):\n        self.name = name\n\n    def speak(self):\n        return f'{self.name} makes a sound'\n\nclass Dog(Animal):\n    def speak(self):\n        return f'{self.name} barks'\n\nd = Dog('Rex')\nd.speak()   # => 'Rex barks'",
+    clj:"(defrecord Dog [name]) + protocols — or just plain maps with functions" },
+
+  { name:"class methods", tag:"oop", blurb:"@classmethod receives the class as first arg. @staticmethod receives nothing extra.",
+    sig:"@classmethod\ndef method(cls, ...):\n    ...",
+    ex:"class Counter:\n    count = 0\n\n    @classmethod\n    def increment(cls):\n        cls.count += 1\n        return cls.count\n\n    @staticmethod\n    def description():\n        return 'A simple counter'\n\nCounter.increment()    # => 1\nCounter.description()  # => 'A simple counter'",
+    clj:"No direct equivalent — Clojure separates data (records) from functions" },
+
+  { name:"clear()", tag:"collections", blurb:"Removes all items from a list, dict, or set in place.",
+    sig:"collection.clear()",
+    ex:"lst = [1, 2, 3]\nlst.clear()\nlst           # => []\n\nd = {'a': 1}\nd.clear()\nd              # => {}",
+    clj:"Clojure collections are immutable — just rebind to empty: {} [] #{}" },
+
+  { name:"complex()", tag:"math", blurb:"Creates a complex number with real and imaginary parts.",
+    sig:"complex(real=0, imag=0)  /  complex('1+2j')",
+    ex:"complex(2, 3)      # => (2+3j)\ncomplex(4)         # => (4+0j)\n(2+3j).real        # => 2.0\n(2+3j).imag        # => 3.0\nabs(3+4j)          # => 5.0  (magnitude)",
+    clj:"No direct equivalent — use a library or represent as {:real 2 :imag 3}" },
+
+  { name:"copy()", tag:"collections", blurb:"Creates a shallow copy of a list or dict. Use copy.deepcopy for nested structures.",
+    sig:"obj.copy()  /  copy.copy(obj)  /  copy.deepcopy(obj)",
+    ex:"import copy\n\norig = [1, [2, 3], 4]\nshallow = orig.copy()         # new list, shared inner objects\ndeep    = copy.deepcopy(orig)  # fully independent copy\n\nshallow[1].append(99)  # affects orig[1] too!\ndeep[1].append(99)     # does NOT affect orig",
+    clj:"Not needed — Clojure values are immutable, sharing is always safe" },
+
+  { name:"collections module", tag:"collections", blurb:"Specialised container types: deque, Counter, defaultdict, OrderedDict, namedtuple.",
+    sig:"from collections import deque, Counter, defaultdict, namedtuple",
+    ex:"from collections import Counter, defaultdict, deque\n\n# Counter — count occurrences\nCounter('banana')          # => Counter({'a':3,'n':2,'b':1})\n\n# defaultdict — auto-creates missing keys\ndd = defaultdict(list)\ndd['key'].append(1)        # no KeyError\n\n# deque — fast appends/pops from both ends\ndq = deque([1,2,3])\ndq.appendleft(0)           # => deque([0,1,2,3])",
+    clj:"(frequencies coll)  (group-by f coll)  — maps replace most collection types" },
+
+  { name:"data types", tag:"builtins", blurb:"Python's core types: int, float, str, bool, list, tuple, dict, set, NoneType.",
+    sig:"int  float  str  bool  list  tuple  dict  set  frozenset  bytes  NoneType",
+    ex:"type(42)         # => <class 'int'>\ntype(3.14)       # => <class 'float'>\ntype('hello')    # => <class 'str'>\ntype(True)       # => <class 'bool'>\ntype([1,2])      # => <class 'list'>\ntype((1,2))      # => <class 'tuple'>\ntype({1:2})      # => <class 'dict'>\ntype({1,2})      # => <class 'set'>\ntype(None)       # => <class 'NoneType'>",
+    clj:"Core types: Long, Double, String, Boolean, PersistentVector, PersistentHashMap, PersistentHashSet, nil" },
+
+  { name:"datetime", tag:"advanced", blurb:"Date and time objects. In the datetime module.",
+    sig:"from datetime import datetime, date, timedelta",
+    ex:"from datetime import datetime, date, timedelta\n\nnow = datetime.now()\nnow.year, now.month, now.day    # => 2025, ...\n\nd = date(2025, 1, 1)\nd + timedelta(days=30)          # => date(2025, 1, 31)\n\ndatetime.strptime('2025-01-01', '%Y-%m-%d')  # parse\ndatetime.now().strftime('%Y-%m-%d')          # format",
+    clj:"(java.time.LocalDate/now)  — use java.time.* interop" },
+
+  { name:"del", tag:"flow", blurb:"Deletes a variable, list element, dict key, or slice.",
+    sig:"del name  /  del obj[key]  /  del obj[start:stop]",
+    ex:"x = 42\ndel x          # variable no longer exists\n\nlst = [1,2,3,4]\ndel lst[1]     # => [1, 3, 4]\ndel lst[1:]    # => [1]\n\nd = {'a':1,'b':2}\ndel d['a']     # => {'b': 2}",
+    clj:"(dissoc map :key)  — returns new map; (subvec v 0 n) for vector slicing" },
+
+  { name:"delattr()", tag:"oop", blurb:"Removes an attribute from an object.",
+    sig:"delattr(object, name)",
+    ex:"class Config:\n    debug = True\n    verbose = False\n\nc = Config()\ndelattr(c, 'debug')  # removes the debug attribute\nhasattr(c, 'debug')  # => False",
+    clj:"Clojure records are immutable — use dissoc on a plain map instead" },
+
+  { name:"dict()", tag:"collections", blurb:"Creates a dictionary from keyword args, key-value pairs, or another mapping.",
+    sig:"dict(**kwargs)  /  dict(iterable)  /  dict(mapping)",
+    ex:"dict(a=1, b=2)              # => {'a': 1, 'b': 2}\ndict([('a',1),('b',2)])    # => {'a': 1, 'b': 2}\ndict({'a':1}, b=2)         # => {'a': 1, 'b': 2}\n\n# Dict methods\nd = {'a':1,'b':2,'c':3}\nd.keys()                   # => dict_keys(['a','b','c'])\nd.values()                 # => dict_values([1,2,3])\nd.items()                  # => dict_items([('a',1),...])\nd.get('z', 0)              # => 0  (default)\nd.update({'d':4})          # in-place merge",
+    clj:"{:a 1 :b 2}  — map literal; (assoc m :k v) (dissoc m :k) (merge m1 m2)" },
+
+  // ── CHAPTER 4: FILE MANAGEMENT ────────────────────────────────────────────
+  { name:"deque()", tag:"collections", blurb:"Double-ended queue with O(1) appends and pops from both ends.",
+    sig:"from collections import deque\ndeque(iterable, maxlen=None)",
+    ex:"from collections import deque\ndq = deque([1,2,3])\ndq.append(4)        # right: [1,2,3,4]\ndq.appendleft(0)    # left:  [0,1,2,3,4]\ndq.pop()            # => 4\ndq.popleft()        # => 0\ndeque([1,2,3], maxlen=2)  # => deque([2,3], maxlen=2)",
+    clj:"Use a vector with conj (right) or cons (left); or clojure.lang.PersistentQueue" },
+
+  // ── CHAPTER 5: MATHEMATICS ────────────────────────────────────────────────
+  { name:"max()", tag:"math", blurb:"Returns the largest item. With key= argument, compares by a function.",
+    sig:"max(iterable, key=None)  /  max(a, b, c, ...)",
+    ex:"max([3, 1, 4, 1, 5])           # => 5\nmax(3, 7, 2)                   # => 7\nmax(['apple','fig','banana'],\n    key=len)                   # => 'banana'",
+    clj:"(apply max coll)  or  (reduce max coll)" },
+
+  { name:"min()", tag:"math", blurb:"Returns the smallest item.",
+    sig:"min(iterable, key=None)  /  min(a, b, c, ...)",
+    ex:"min([3, 1, 4, 1, 5])           # => 1\nmin('apple','fig','banana')    # => 'apple'  (lexicographic)\nmin([3,1,4], key=lambda x:-x)  # => 4  (largest via neg key)",
+    clj:"(apply min coll)  or  (reduce min coll)" },
+
+  { name:"min() vs sort()", tag:"math", blurb:"min() finds one extreme value in O(n). sort() orders all elements in O(n log n).",
+    sig:"min(coll)  vs  sorted(coll)",
+    ex:"lst = [5, 2, 8, 1, 9]\nmin(lst)           # => 1  — O(n), does not sort\nsorted(lst)        # => [1,2,5,8,9]  — O(n log n)\n\n# If you only need the min/max, min() is faster than sorting",
+    clj:"(apply min coll)  vs  (sort coll)" },
+
+  { name:"memoryview()", tag:"advanced", blurb:"Exposes the buffer protocol — access bytes of objects without copying.",
+    sig:"memoryview(obj)",
+    ex:"b = bytearray(b'hello')\nmv = memoryview(b)\nmv[0]           # => 104  (ASCII 'h')\nmv[0] = 72      # mutate — b is now bytearray(b'Hello')\nbytes(mv[1:3])  # => b'el'  (slice without copy)",
+    clj:"No direct equivalent — use Java NIO ByteBuffer for low-level buffer access" },
+
+  { name:"method chaining", tag:"oop", blurb:"Calling multiple methods in sequence on the same object. Each method returns self.",
+    sig:"obj.method1().method2().method3()",
+    ex:"# String methods chain naturally (each returns a new str)\n'  hello world  '.strip().title().replace(' ', '_')\n# => 'Hello_World'\n\n# Pandas-style chaining\n# df.dropna().reset_index().rename(columns={'a':'b'})\n\n# Builder pattern — return self\nclass Builder:\n    def __init__(self): self.items = []\n    def add(self, x): self.items.append(x); return self\n    def build(self): return self.items\n\nBuilder().add(1).add(2).build()  # => [1, 2]",
+    clj:"(->> value (fn1) (fn2) (fn3))  — threading macro is the Clojure equivalent" },
+
+  { name:"math functions", tag:"math", blurb:"Mathematical functions from the math module: sin, cos, exp, log, sqrt, etc.",
+    sig:"import math",
+    ex:"import math\nmath.sqrt(16)      # => 4.0\nmath.pi            # => 3.14159...\nmath.e             # => 2.71828...\nmath.sin(math.pi/2)  # => 1.0\nmath.log(math.e)   # => 1.0\nmath.log10(100)    # => 2.0\nmath.ceil(3.2)     # => 4\nmath.floor(3.8)    # => 3\nmath.factorial(5)  # => 120",
+    clj:"(Math/sqrt 16)  (Math/sin ...)  — Java Math interop" },
+
+  { name:"math operations", tag:"math", blurb:"Arithmetic operators: + - * / // % **. All return new values.",
+    sig:"a + b  /  a - b  /  a * b  /  a / b  /  a // b  /  a % b  /  a ** b",
+    ex:"10 + 3   # => 13  (addition)\n10 - 3   # => 7   (subtraction)\n10 * 3   # => 30  (multiplication)\n10 / 3   # => 3.333...  (true division — always float)\n10 // 3  # => 3   (floor division)\n10 % 3   # => 1   (modulus / remainder)\n10 ** 3  # => 1000  (exponentiation)\ndivmod(10, 3)  # => (3, 1)  (quotient and remainder)",
+    clj:"(+ 10 3)  (/ 10 3)  (quot 10 3)  (mod 10 3)  — prefix notation" },
+
+  // ── CHAPTER 6: OOP ────────────────────────────────────────────────────────
+  { name:"lambda", tag:"functional", blurb:"Anonymous single-expression function. Cannot contain statements.",
+    sig:"lambda args: expression",
+    ex:"square = lambda x: x * x\nsquare(5)              # => 25\n\n# Useful as callback:\nsorted([3,1,2], key=lambda x: -x)  # => [3,2,1]\nlist(map(lambda x: x*2, [1,2,3]))  # => [2,4,6]\n\n# Multi-arg lambda\nadd = lambda a, b: a + b\nadd(3, 4)              # => 7",
+    clj:"(fn [x] (* x x))  or  #(* % %)  — anonymous function forms" },
+
+  { name:"len()", tag:"builtins", blurb:"Returns the length of a sequence, collection, or string. Calls __len__.",
+    sig:"len(s)",
+    ex:"len([1,2,3])      # => 3\nlen('hello')      # => 5\nlen((1,2,3,4))    # => 4\nlen({1,2,3})      # => 3\nlen({'a':1,'b':2}) # => 2",
+    clj:"(count coll)  — works on all Clojure collections" },
+
+  { name:"list()", tag:"collections", blurb:"Creates a list from an iterable, or an empty list.",
+    sig:"list()  /  list(iterable)",
+    ex:"list()               # => []\nlist('abc')          # => ['a','b','c']\nlist(range(5))       # => [0,1,2,3,4]\nlist({1,2,3})        # => [1,2,3] (order undefined)\n\n# List methods\nlst = [3,1,2]\nlst.append(4)        # => [3,1,2,4]\nlst.extend([5,6])    # => [3,1,2,4,5,6]\nlst.insert(0, 0)     # => [0,3,1,2,4,5,6]\nlst.remove(3)        # => removes first 3\nlst.sort()           # in-place sort\nlst.reverse()        # in-place reverse\nlst.pop()            # removes and returns last",
+    clj:"[]  — vector literal; (conj v x)  (into [] coll)  (vec coll)" },
+
+  { name:"super()", tag:"oop", blurb:"Returns a proxy object that delegates method calls to a parent class.",
+    sig:"super().__init__(...)  /  super().method(...)",
+    ex:"class Animal:\n    def __init__(self, name):\n        self.name = name\n\nclass Dog(Animal):\n    def __init__(self, name, breed):\n        super().__init__(name)  # call Animal.__init__\n        self.breed = breed\n\nd = Dog('Rex', 'Husky')\nd.name   # => 'Rex'  (set by Animal.__init__)",
+    clj:"No direct equivalent — protocols + records handle polymorphism differently" },
+
+  { name:"staticmethod()", tag:"oop", blurb:"Decorator that creates a method not bound to the class or instance.",
+    sig:"@staticmethod\ndef method(args):\n    ...",
+    ex:"class MathUtils:\n    @staticmethod\n    def add(a, b):\n        return a + b\n\n    @staticmethod\n    def is_even(n):\n        return n % 2 == 0\n\nMathUtils.add(3, 4)     # => 7  (no self or cls)\nMathUtils.is_even(4)    # => True",
+    clj:"Just a regular function — Clojure functions are not bound to classes" },
+
+  { name:"object()", tag:"oop", blurb:"Base class for all Python classes. All classes implicitly inherit from object.",
+    sig:"object()",
+    ex:"class MyClass:\n    pass\n\nisinstance(MyClass(), object)   # => True\ntype(MyClass).__bases__         # => (<class 'object'>,)\n\n# object() instance is a featureless object\no = object()\ntype(o)   # => <class 'object'>",
+    clj:"All Clojure records extend Object (Java) implicitly" },
+
+  { name:"locale", tag:"advanced", blurb:"Format numbers, dates, and currencies using locale-specific conventions.",
+    sig:"import locale",
+    ex:"import locale\nlocale.setlocale(locale.LC_ALL, 'en_US.UTF-8')\nlocale.format_string('%d', 1234567, grouping=True)  # => '1,234,567'\nlocale.currency(1234.56)  # => '$1,234.56'",
+    clj:"Use java.text.NumberFormat or java.util.Locale" },
+
+  { name:"operator module", tag:"math", blurb:"Function equivalents of Python's operators. Useful as higher-order callbacks.",
+    sig:"import operator",
+    ex:"import operator\noperator.add(3, 4)     # => 7   (same as 3+4)\noperator.mul(3, 4)     # => 12\noperator.lt(3, 4)      # => True\noperator.itemgetter(1)([10,20,30])  # => 20\nsorted(data, key=operator.itemgetter('age'))",
+    clj:"Clojure operators (+, -, *, /) are already functions: (map + [1 2] [3 4])" },
+
+  // ── CHAPTER 7: ADVANCED TOOLS ─────────────────────────────────────────────
+  { name:"queue module", tag:"advanced", blurb:"Thread-safe FIFO, LIFO, and priority queues.",
+    sig:"import queue\nqueue.Queue()  /  queue.LifoQueue()  /  queue.PriorityQueue()",
+    ex:"import queue\nq = queue.Queue()\nq.put('task1')\nq.put('task2')\nq.get()     # => 'task1'  (FIFO)\nq.empty()   # => False\nq.qsize()   # => 1",
+    clj:"Use clojure.lang.PersistentQueue  or  core.async channels for concurrent queues" },
+
+  { name:"quit()", tag:"builtins", blurb:"Exits the Python interpreter. Raises SystemExit. For scripts use sys.exit().",
+    sig:"quit()  /  exit()  /  sys.exit([code])",
+    ex:"import sys\nsys.exit(0)     # clean exit\nsys.exit(1)     # exit with error code\n\n# In scripts, use sys.exit()\n# quit()/exit() are for interactive use only",
+    clj:"(System/exit 0)  — Java interop" },
+
+  { name:"reduce()", tag:"functional", blurb:"Folds an iterable into a single value using a two-argument function.",
+    sig:"from functools import reduce\nreduce(function, iterable[, initializer])",
+    ex:"from functools import reduce\nreduce(lambda a,b: a+b, [1,2,3,4,5])  # => 15\nreduce(lambda a,b: a+b, [1,2,3], 100) # => 106  (init=100)\nreduce(lambda a,b: a*b, [1,2,3,4])   # => 24  (factorial-ish)",
+    clj:"(reduce + [1 2 3 4 5])  (reduce + 100 [1 2 3])  — same semantics" },
+
+  { name:"re module", tag:"advanced", blurb:"Regular expression operations: search, match, findall, sub, compile.",
+    sig:"import re",
+    ex:"import re\nre.search(r'\\d+', 'abc123')        # => Match object\nre.findall(r'\\d+', 'a1 b22 c3')   # => ['1','22','3']\nre.sub(r'\\s+', '-', 'hello world') # => 'hello-world'\nre.match(r'^\\w+', 'hello world')   # matches at start\n\n# Compile for reuse\npat = re.compile(r'(\\w+)@(\\w+)')\npat.findall('a@b c@d')  # => [('a','b'),('c','d')]",
+    clj:"(re-find #\"\\d+\" \"abc123\")  (re-seq #\"\\d+\" s)  — regex literals with #\"...\"" },
+
+  { name:"sys module", tag:"advanced", blurb:"System-specific parameters: argv, path, stdin/stdout, exit.",
+    sig:"import sys",
+    ex:"import sys\nsys.argv           # command-line arguments list\nsys.argv[0]        # script name\nsys.path           # module search paths\nsys.version        # Python version string\nsys.stdin          # standard input\nsys.stdout         # standard output\nsys.exit(0)        # exit with code",
+    clj:"*command-line-args*  — bound to CLI args list" },
+
+  { name:"zip()", tag:"functional", blurb:"Pairs elements from multiple iterables. Stops at the shortest.",
+    sig:"zip(*iterables)",
+    ex:"list(zip([1,2,3],[4,5,6]))        # => [(1,4),(2,5),(3,6)]\nlist(zip('abc','xy'))             # => [('a','x'),('b','y')]\n\n# Unzip\npairs = [(1,'a'),(2,'b'),(3,'c')]\nnums, letters = zip(*pairs)\n# => (1,2,3) and ('a','b','c')\n\n# With dict\ndict(zip(['a','b'],[1,2]))       # => {'a':1,'b':2}",
+    clj:"(map vector coll1 coll2)  or  (zipmap keys vals)" },
+
+  { name:"yield", tag:"advanced", blurb:"Turns a function into a generator. Suspends execution and returns a value.",
+    sig:"def gen():\n    yield value",
+    ex:"def countdown(n):\n    while n > 0:\n        yield n\n        n -= 1\n\nlist(countdown(3))  # => [3, 2, 1]\n\n# Generator expression\nsquares = (x*x for x in range(5))\nnext(squares)  # => 0\nnext(squares)  # => 1\n\n# yield from — delegate to sub-generator\ndef chain(*iters):\n    for it in iters:\n        yield from it",
+    clj:"(lazy-seq ...)  or  (sequence (map f) coll)  — lazy seqs are Clojure's generators" },
+
+  // ── CHAPTER 8: OPTIMIZATION & FUNCTIONAL ─────────────────────────────────
+  { name:"sorted()", tag:"functional", blurb:"Returns a new sorted list from any iterable. Does not modify original.",
+    sig:"sorted(iterable, key=None, reverse=False)",
+    ex:"sorted([3,1,4,1,5])                    # => [1,1,3,4,5]\nsorted([3,1,4], reverse=True)          # => [4,3,1]\nsorted(['banana','apple','fig'], key=len) # => ['fig','apple','banana']\nsorted([{'n':2},{'n':1}], key=lambda d: d['n'])  # => [{n:1},{n:2}]",
+    clj:"(sort coll)  (sort-by f coll)  (sort > coll)  — return lazy seq" },
+
+  { name:"map()", tag:"functional", blurb:"Applies a function to every element of one or more iterables. Returns a lazy iterator.",
+    sig:"map(function, iterable, ...)",
+    ex:"list(map(str, [1,2,3]))            # => ['1','2','3']\nlist(map(lambda x: x*x, [1,2,3]))  # => [1,4,9]\n\n# Multiple iterables — paired\nlist(map(lambda a,b: a+b, [1,2],[10,20]))  # => [11,22]\n\n# Prefer list comprehension for single iterable\n[x*x for x in [1,2,3]]  # more Pythonic",
+    clj:"(map f coll)  (map f c1 c2)  — lazy; (mapv f coll) for eager vector result" },
+
+  { name:"filter()", tag:"functional", blurb:"Returns an iterator of elements where function returns truthy.",
+    sig:"filter(function, iterable)",
+    ex:"list(filter(None, [1,0,2,None,3]))  # => [1,2,3]  (filters falsy)\nlist(filter(lambda x: x>2, [1,2,3,4]))  # => [3,4]\nlist(filter(str.isupper, ['a','B','c','D']))  # => ['B','D']",
+    clj:"(filter pred coll)  (remove pred coll)  — lazy sequences" },
+
+  { name:"reversed()", tag:"functional", blurb:"Returns a reverse iterator over a sequence. Does not create a new list.",
+    sig:"reversed(sequence)",
+    ex:"list(reversed([1,2,3,4]))    # => [4,3,2,1]\nlist(reversed('hello'))     # => ['o','l','l','e','h']\n\n# vs slice (creates new list)\n[1,2,3][::-1]               # => [3,2,1]",
+    clj:"(reverse coll)  — returns lazy seq; (rseq v) for O(1) reverse of vectors" },
+
+  { name:"round()", tag:"math", blurb:"Rounds to n decimal places. Uses banker's rounding (round half to even).",
+    sig:"round(number[, ndigits])",
+    ex:"round(3.14159, 2)   # => 3.14\nround(3.14159)      # => 3  (nearest int)\nround(2.5)          # => 2  (banker's rounding!)\nround(3.5)          # => 4\nround(1234, -2)     # => 1200  (round to hundreds)",
+    clj:"(Math/round x)  — always rounds .5 up; use format for decimal places" },
+
+  // ── STRINGS ───────────────────────────────────────────────────────────────
+  { name:"str methods — case", tag:"strings", blurb:"upper(), lower(), title(), capitalize(), swapcase() — case transformations.",
+    sig:"str.upper()  /  str.lower()  /  str.title()  /  str.capitalize()",
+    ex:"'hello'.upper()        # => 'HELLO'\n'HELLO'.lower()        # => 'hello'\n'hello world'.title()  # => 'Hello World'\n'hello'.capitalize()   # => 'Hello'\n'Hello World'.swapcase()  # => 'hELLO wORLD'",
+    clj:"(clojure.string/upper-case s)  (clojure.string/lower-case s)  (clojure.string/capitalize s)" },
+
+  { name:"str methods — search", tag:"strings", blurb:"find(), index(), count(), startswith(), endswith(), in operator.",
+    sig:"str.find(sub)  /  str.count(sub)  /  str.startswith(prefix)",
+    ex:"'hello'.find('ll')         # => 2  (-1 if not found)\n'hello'.index('ll')        # => 2  (ValueError if not found)\n'banana'.count('a')        # => 3\n'hello'.startswith('he')   # => True\n'hello'.endswith('lo')     # => True\n'll' in 'hello'            # => True",
+    clj:"(clojure.string/index-of s sub)  (clojure.string/starts-with? s prefix)  (count (re-seq ...))" },
+
+  { name:"str methods — split/join", tag:"strings", blurb:"split() breaks a string into a list. join() assembles a list into a string.",
+    sig:"str.split([sep])  /  sep.join(iterable)",
+    ex:"'a,b,c'.split(',')         # => ['a','b','c']\n'hello world'.split()      # => ['hello','world']  (any whitespace)\n'hello'.split('l')         # => ['he','','o']\n\n','.join(['a','b','c'])    # => 'a,b,c'\n''.join(['h','i'])         # => 'hi'\n'\\n'.join(['line1','line2'])",
+    clj:"(clojure.string/split s #\",\")  (clojure.string/join \",\" coll)" },
+
+  { name:"str methods — strip", tag:"strings", blurb:"strip(), lstrip(), rstrip() — remove whitespace or specified characters.",
+    sig:"str.strip([chars])  /  str.lstrip([chars])  /  str.rstrip([chars])",
+    ex:"'  hello  '.strip()      # => 'hello'\n'  hello  '.lstrip()     # => 'hello  '\n'  hello  '.rstrip()     # => '  hello'\n'xxhelloxx'.strip('x')   # => 'hello'\n'###title###'.strip('#')  # => 'title'",
+    clj:"(clojure.string/trim s)  (clojure.string/triml s)  (clojure.string/trimr s)" },
+
+  { name:"str methods — replace", tag:"strings", blurb:"replace() returns a new string with occurrences replaced. Immutable operation.",
+    sig:"str.replace(old, new[, count])",
+    ex:"'hello world'.replace('world','Python')  # => 'hello Python'\n'aabbcc'.replace('b','x')               # => 'aaxxcc'\n'aaaa'.replace('a','x', 2)              # => 'xxaa'  (max 2 replacements)",
+    clj:"(clojure.string/replace s old new)  — also accepts regex: (clojure.string/replace s #\"pattern\" replacement)" },
+
+  { name:"str.format() / f-strings", tag:"strings", blurb:"String interpolation. f-strings (3.6+) are preferred for readability.",
+    sig:"f'text {expr}'  /  'text {}'.format(val)",
+    ex:"name, age = 'Ada', 36\nf'Hello, {name}!'            # => 'Hello, Ada!'\nf'{name} is {age} years old' # => 'Ada is 36 years old'\nf'{3.14159:.2f}'             # => '3.14'  (format spec)\nf'{1000000:,}'               # => '1,000,000'\nf'{255:#x}'                  # => '0xff'  (hex)\n\n# .format() (older style)\n'Hello, {}!'.format('Ada')\n'Hello, {name}!'.format(name='Ada')",
+    clj:"(format \"Hello %s\" name)  or  (str \"Hello \" name \"!\")" },
+
+  { name:"str.encode()", tag:"strings", blurb:"Encodes a string to bytes using a specified encoding.",
+    sig:"str.encode(encoding='utf-8', errors='strict')",
+    ex:"'hello'.encode()             # => b'hello'  (UTF-8 default)\n'hello'.encode('ascii')      # => b'hello'\n'café'.encode('utf-8')       # => b'caf\\xc3\\xa9'\nb'hello'.decode('utf-8')     # => 'hello'  (reverse)",
+    clj:"(.getBytes \"hello\" \"UTF-8\")  (String. bytes \"UTF-8\")" },
+
+  // ── OOP (remaining) ───────────────────────────────────────────────────────
+  { name:"@property", tag:"oop", blurb:"Decorator that makes a method accessible as an attribute. Enables getters/setters.",
+    sig:"@property\ndef attr(self):\n    return self._attr",
+    ex:"class Temperature:\n    def __init__(self, celsius):\n        self._celsius = celsius\n\n    @property\n    def celsius(self):\n        return self._celsius\n\n    @celsius.setter\n    def celsius(self, value):\n        if value < -273.15:\n            raise ValueError('Below absolute zero!')\n        self._celsius = value\n\n    @property\n    def fahrenheit(self):\n        return self._celsius * 9/5 + 32\n\nt = Temperature(25)\nt.fahrenheit   # => 77.0  (no call needed)\nt.celsius = 30  # uses setter",
+    clj:"No equivalent — Clojure data is plain maps; computed values are functions" },
+
+  { name:"__init__", tag:"oop", blurb:"Constructor method called when a new instance is created.",
+    sig:"def __init__(self, ...):\n    ...",
+    ex:"class Point:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n\n    def __repr__(self):\n        return f'Point({self.x}, {self.y})'\n\n    def distance(self, other):\n        return ((self.x-other.x)**2 + (self.y-other.y)**2)**0.5\n\np = Point(3, 4)\np.x       # => 3\nrepr(p)   # => 'Point(3, 4)'",
+    clj:"(defrecord Point [x y])  — (->Point 3 4)  creates instance" },
+
+  { name:"__repr__ / __str__", tag:"oop", blurb:"__repr__ for developers (REPL). __str__ for users (print). repr() calls __repr__.",
+    sig:"def __repr__(self): ...\ndef __str__(self): ...",
+    ex:"class Dog:\n    def __init__(self, name):\n        self.name = name\n\n    def __repr__(self):\n        return f'Dog({self.name!r})'\n\n    def __str__(self):\n        return f'A dog named {self.name}'\n\nd = Dog('Rex')\nrepr(d)   # => \"Dog('Rex')\"   (uses __repr__)\nstr(d)    # => 'A dog named Rex'  (uses __str__)\nprint(d)  # => A dog named Rex   (uses __str__)",
+    clj:"(defmethod print-method MyType [v w] (.write w (str v)))  or  toString in defrecord" },
+
+  { name:"hasattr() / getattr() / setattr()", tag:"oop", blurb:"Inspect and manipulate object attributes dynamically by name string.",
+    sig:"hasattr(obj, name)  /  getattr(obj, name[, default])  /  setattr(obj, name, value)",
+    ex:"class Config:\n    debug = True\n\nc = Config()\nhasattr(c, 'debug')          # => True\nhasattr(c, 'verbose')        # => False\ngetattr(c, 'debug')          # => True\ngetattr(c, 'verbose', False) # => False  (default)\nsetattr(c, 'verbose', True)\nc.verbose                    # => True",
+    clj:"Clojure maps: (get m :key)  (:key m)  (assoc m :key val)  — explicit, no reflection" },
+
+  // ── ADVANCED ──────────────────────────────────────────────────────────────
+  { name:"decorators", tag:"advanced", blurb:"Functions that wrap other functions. @decorator is sugar for fn = decorator(fn).",
+    sig:"@decorator\ndef function(...):\n    ...",
+    ex:"import functools\n\ndef timer(fn):\n    @functools.wraps(fn)\n    def wrapper(*args, **kwargs):\n        import time\n        start = time.perf_counter()\n        result = fn(*args, **kwargs)\n        print(f'{fn.__name__}: {time.perf_counter()-start:.4f}s')\n        return result\n    return wrapper\n\n@timer\ndef slow():\n    sum(range(1_000_000))\n\nslow()  # prints timing",
+    clj:"Higher-order functions or macros: (defn timed [f] (fn [& args] (time (apply f args))))" },
+
+  { name:"generator functions", tag:"advanced", blurb:"Functions with yield. Return a generator object that produces values lazily on demand.",
+    sig:"def gen():\n    yield value\n    yield value2",
+    ex:"def fibonacci():\n    a, b = 0, 1\n    while True:\n        yield a\n        a, b = b, a + b\n\nfib = fibonacci()\n[next(fib) for _ in range(8)]  # => [0,1,1,2,3,5,8,13]\n\n# Finite generator\ndef squares(n):\n    for i in range(n):\n        yield i * i\n\nlist(squares(5))  # => [0,1,4,9,16]",
+    clj:"(lazy-seq (cons x (rest-fn)))  or  (iterate f init)  — Clojure lazy seqs are values" },
+
+  { name:"context managers (with)", tag:"advanced", blurb:"__enter__ / __exit__ protocol ensures setup and cleanup. @contextmanager for function-based.",
+    sig:"with expression as var:\n    ...",
+    ex:"# File auto-close\nwith open('f.txt') as f:\n    data = f.read()\n\n# contextmanager decorator\nfrom contextlib import contextmanager\n\n@contextmanager\ndef managed():\n    print('setup')\n    try:\n        yield 'resource'\n    finally:\n        print('cleanup')\n\nwith managed() as r:\n    print(r)  # prints: setup, resource, cleanup",
+    clj:"(with-open [r (io/reader f)] ...)  — closes via AutoCloseable" },
+
+  { name:"*args / **kwargs", tag:"advanced", blurb:"*args collects positional arguments into a tuple. **kwargs collects keyword args into a dict.",
+    sig:"def fn(*args, **kwargs):\n    ...",
+    ex:"def show(*args):\n    for a in args: print(a)\n\nshow(1, 2, 3)   # prints 1, 2, 3\n\ndef info(**kwargs):\n    for k,v in kwargs.items(): print(f'{k}={v}')\n\ninfo(name='Ada', age=36)\n\n# Spread with * and **\ndef add(a, b): return a+b\nparams = [3, 4]\nadd(*params)    # => 7",
+    clj:"(defn f [& args] ...)  — args is a seq; no keyword-arg spreading natively" },
+
+  { name:"list comprehension", tag:"functional", blurb:"Concise way to create lists. More Pythonic than map/filter for single iterables.",
+    sig:"[expression for var in iterable if condition]",
+    ex:"[x*x for x in range(5)]         # => [0,1,4,9,16]\n[x for x in range(10) if x%2==0] # => [0,2,4,6,8]\n\n# Nested\n[[i*j for j in range(3)] for i in range(3)]\n# => [[0,0,0],[0,1,2],[0,2,4]]\n\n# Dict comprehension\n{k:v for k,v in [('a',1),('b',2)]}  # => {'a':1,'b':2}\n\n# Set comprehension\n{x*x for x in range(5)}  # => {0,1,4,9,16}\n\n# Generator expression (lazy)\n(x*x for x in range(5))",
+    clj:"(for [x (range 5)] (* x x))  — returns lazy seq; (into {} (for ...))" },
+
+  { name:"dict comprehension", tag:"collections", blurb:"Concise way to create dicts from an iterable.",
+    sig:"{key_expr: val_expr for var in iterable if condition}",
+    ex:"{x: x*x for x in range(5)}         # => {0:0,1:1,2:4,3:9,4:16}\n{k.upper(): v for k,v in d.items()} # => uppercase keys\n{k:v for k,v in d.items() if v>0}   # => filter by value",
+    clj:"(into {} (for [[k v] m :when (pos? v)] [(name k) v]))" },
+
+  { name:"tuple()", tag:"collections", blurb:"Immutable ordered sequence. Hashable — can be dict key. Faster than list for fixed data.",
+    sig:"tuple()  /  tuple(iterable)  /  (val1, val2, ...)",
+    ex:"t = (1, 2, 3)\nt[0]                  # => 1\nt[-1]                 # => 3\nt + (4, 5)            # => (1,2,3,4,5)  (new tuple)\n\n# Tuple unpacking\na, b, c = (1, 2, 3)\nx, *rest = (1, 2, 3, 4)  # x=1, rest=[2,3,4]\n\n# Named tuple\nfrom collections import namedtuple\nPoint = namedtuple('Point', ['x','y'])\np = Point(3, 4)\np.x, p.y   # => 3, 4",
+    clj:"Clojure vectors [1 2 3] are immutable like tuples; no exact tuple type" },
+
+  { name:"set()", tag:"collections", blurb:"Unordered collection of unique elements. Fast membership testing, union, intersection.",
+    sig:"set()  /  set(iterable)  /  {val1, val2, ...}",
+    ex:"s = {1, 2, 3}\ns.add(4)           # => {1,2,3,4}\ns.discard(2)       # => {1,3,4}  (no error if missing)\ns.remove(3)        # => {1,4}  (KeyError if missing)\n\n# Set operations\n{1,2,3} | {2,3,4}  # => {1,2,3,4}  union\n{1,2,3} & {2,3,4}  # => {2,3}      intersection\n{1,2,3} - {2,3,4}  # => {1}        difference\n3 in {1,2,3}       # => True  (O(1) lookup)",
+    clj:"#{1 2 3}  — (conj s x) (disj s x) (clojure.set/union s1 s2) (clojure.set/intersection s1 s2)" },
+
+  { name:"frozenset()", tag:"collections", blurb:"Immutable set. Hashable — can be used as dict key or set element.",
+    sig:"frozenset(iterable)",
+    ex:"fs = frozenset([1, 2, 3])\nfs.add(4)          # AttributeError — immutable!\nfs | frozenset([4])  # => frozenset({1,2,3,4})  (new)\nd = {fs: 'value'}  # usable as dict key",
+    clj:"Clojure sets are already persistent/immutable: #{1 2 3}" },
+
+  { name:"zip_longest()", tag:"functional", blurb:"Like zip() but pads shorter iterables with a fill value instead of stopping early.",
+    sig:"from itertools import zip_longest\nzip_longest(*iterables, fillvalue=None)",
+    ex:"from itertools import zip_longest\nlist(zip_longest([1,2,3],[4,5], fillvalue=0))\n# => [(1,4),(2,5),(3,0)]",
+    clj:"(map vector (concat c1 (repeat default)) (concat c2 (repeat default)))" },
+
+  { name:"itertools", tag:"functional", blurb:"Tools for efficient looping: chain, product, combinations, permutations, islice, groupby.",
+    sig:"import itertools",
+    ex:"import itertools\nlist(itertools.chain([1,2],[3,4]))   # => [1,2,3,4]\nlist(itertools.product('AB','12'))   # => [('A','1'),('A','2'),...]\nlist(itertools.combinations([1,2,3],2))  # => [(1,2),(1,3),(2,3)]\nlist(itertools.permutations([1,2,3],2))  # => [(1,2),(1,3),(2,1),...]\nlist(itertools.islice(range(100),5))     # => [0,1,2,3,4]",
+    clj:"(clojure.core) has most: (mapcat ...) (for [...] ...) (combo/combinations) — use clojure.math.combinatorics for combinations" },
+
+  { name:"functools.partial()", tag:"functional", blurb:"Creates a new function with some arguments pre-filled.",
+    sig:"from functools import partial\npartial(func, *args, **kwargs)",
+    ex:"from functools import partial\n\ndef power(base, exp):\n    return base ** exp\n\nsquare = partial(power, exp=2)\ncube   = partial(power, exp=3)\nsquare(4)   # => 16\ncube(3)     # => 27\n\n# Practical: partial int() for base conversion\nfrom_hex = partial(int, base=16)\nfrom_hex('ff')   # => 255",
+    clj:"(partial f arg1 arg2)  — (partial + 10)  returns fn that adds 10 to its arg" },
+
+  { name:"functools.wraps()", tag:"advanced", blurb:"Preserves __name__, __doc__, __module__ when wrapping a function with a decorator.",
+    sig:"from functools import wraps\n@wraps(wrapped_fn)",
+    ex:"from functools import wraps\n\ndef my_decorator(fn):\n    @wraps(fn)  # without this, wrapper.__name__ would be 'wrapper'\n    def wrapper(*args, **kwargs):\n        print('before')\n        return fn(*args, **kwargs)\n    return wrapper\n\n@my_decorator\ndef greet(name):\n    '''Returns a greeting.'''\n    return f'Hi {name}'\n\ngreet.__name__  # => 'greet'  (preserved!)\ngreet.__doc__   # => 'Returns a greeting.'",
+    clj:"Clojure functions preserve metadata automatically via (with-meta fn meta-map)" },
+
+  { name:"threading / multiprocessing", tag:"advanced", blurb:"threading for I/O-bound concurrency. multiprocessing for CPU-bound — bypasses the GIL.",
+    sig:"import threading\nimport multiprocessing",
+    ex:"import threading\n\ndef task(n):\n    print(f'thread {n}')\n\nthreads = [threading.Thread(target=task, args=(i,)) for i in range(3)]\nfor t in threads: t.start()\nfor t in threads: t.join()\n\n# Thread-safe shared state\nlock = threading.Lock()\nwith lock:\n    shared_counter += 1",
+    clj:"Clojure atoms/refs/agents replace locks. (future (work)) for async. (pmap f coll) for parallel map" },
+
+  // ── APPENDICES ────────────────────────────────────────────────────────────
+  { name:"comparison operators", tag:"flow", blurb:"==, !=, <, >, <=, >= for value comparison. 'is' for identity. 'in' for membership.",
+    sig:"== != < > <= >= is is not in not in",
+    ex:"3 == 3.0      # => True  (value equality)\n3 is 3.0      # => False (different objects)\n'a' in 'cat'  # => True\n'z' not in [1,2,3]  # => True\nNone is None  # => True  (use 'is' for None)\nx = None\nx is None     # preferred over x == None",
+    clj:"(= x y)  (< a b)  (not= x y)  (nil? x)  (contains? coll x)" },
+
+  { name:"logical operators", tag:"flow", blurb:"and, or, not — short-circuit evaluation. Return operand values, not just True/False.",
+    sig:"a and b  /  a or b  /  not a",
+    ex:"True and False    # => False\nTrue or False     # => True\nnot True          # => False\n\n# Short-circuit: returns the deciding value\n1 and 2           # => 2  (both truthy, returns last)\n0 and 2           # => 0  (falsy short-circuit)\n'' or 'default'   # => 'default'\n\n# Common pattern: default value\nname = user_input or 'anonymous'",
+    clj:"(and ...)  (or ...)  (not x)  — same short-circuit; (or x default) pattern identical" },
+
+  { name:"walrus operator :=", tag:"flow", blurb:"Assignment expression (Python 3.8+). Assigns and returns a value inside an expression.",
+    sig:"name := expression",
+    ex:"# Without walrus\ndata = expensive_computation()\nif data:\n    use(data)\n\n# With walrus\nif data := expensive_computation():\n    use(data)\n\n# In while loop\nwhile chunk := f.read(1024):\n    process(chunk)\n\n# In comprehension\n[y := f(x), y**2, y**3]",
+    clj:"(let [x (f)] ...)  — Clojure's let bindings serve this purpose" },
+
+  { name:"slicing", tag:"collections", blurb:"Extract sub-sequences with [start:stop:step]. Negative indices count from end.",
+    sig:"seq[start:stop:step]  /  seq[start:stop]  /  seq[::step]",
+    ex:"lst = [0,1,2,3,4,5]\nlst[1:4]     # => [1,2,3]   (stop is exclusive)\nlst[:3]      # => [0,1,2]   (from start)\nlst[3:]      # => [3,4,5]   (to end)\nlst[-2:]     # => [4,5]     (last 2)\nlst[::2]     # => [0,2,4]   (every 2nd)\nlst[::-1]    # => [5,4,3,2,1,0]  (reversed)\n'hello'[1:3]  # => 'el'",
+    clj:"(subvec v 1 4)  (take 3 v)  (drop 3 v)  (take-last 2 v)  (reverse v)" },
+
+  { name:"unpacking / destructuring", tag:"flow", blurb:"Assign multiple variables from a sequence in one line. * captures the rest.",
+    sig:"a, b, c = iterable\na, *rest = iterable\n*start, last = iterable",
+    ex:"a, b, c = [1, 2, 3]\na, b = b, a               # swap\n\nx, *rest = [1, 2, 3, 4]\n# x=1, rest=[2,3,4]\n\n*init, last = [1, 2, 3, 4]\n# init=[1,2,3], last=4\n\n# Nested unpacking\n(a, b), c = (1, 2), 3\n\n# Function return unpacking\ndef minmax(lst):\n    return min(lst), max(lst)\nlo, hi = minmax([3,1,4,1,5])",
+    clj:"(let [[a b c] [1 2 3]])  (let [[x & rest] coll])  (let [{:keys [a b]} m])" },
+
+];
+
+// ── TAG LABELS ──
+const tagLabels = {
+  builtins: "builtins",
+  collections: "collections",
+  strings: "strings",
+  flow: "flow",
+  oop: "oop",
+  math: "math",
+  functional: "functional",
+  io: "io",
+  advanced: "advanced",
+};
+
+// ── STATE ──
+let activeTag = "all";
+let openCard = null;
+
+// ── FILTERS ──
+const filterContainer = document.getElementById("filters");
+const allTags = ["all", ...Object.keys(tagLabels)];
+
+allTags.forEach(tag => {
+  const btn = document.createElement("button");
+  btn.className = "pill" + (tag === "all" ? " active" : "");
+  btn.textContent = tag === "all" ? "all" : tagLabels[tag];
+  btn.addEventListener("click", () => {
+    activeTag = tag;
+    filterContainer.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    render();
+  });
+  filterContainer.appendChild(btn);
+});
+
+// ── PYTHON SYNTAX HIGHLIGHTER ──
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function highlight(code) {
+  const KEYWORDS = new Set([
+    'False','None','True','and','as','assert','async','await',
+    'break','class','continue','def','del','elif','else','except',
+    'finally','for','from','global','if','import','in','is',
+    'lambda','nonlocal','not','or','pass','raise','return',
+    'try','while','with','yield'
+  ]);
+  const BUILTINS = new Set([
+    'abs','all','any','ascii','bin','bool','breakpoint','bytearray',
+    'bytes','callable','chr','classmethod','compile','complex',
+    'delattr','dict','dir','divmod','enumerate','eval','exec',
+    'filter','float','format','frozenset','getattr','globals',
+    'hasattr','hash','help','hex','id','input','int','isinstance',
+    'issubclass','iter','len','list','locals','map','max','memoryview',
+    'min','next','object','oct','open','ord','pow','print','property',
+    'range','repr','reversed','round','set','setattr','slice','sorted',
+    'staticmethod','str','sum','super','tuple','type','vars','zip'
+  ]);
+
+  function span(cls, s) { return '<span class="tok-' + cls + '">' + escHtml(s) + '</span>'; }
+
+  function processLine(line) {
+    let out = '', i = 0, len = line.length;
+    while (i < len) {
+      const ch = line[i];
+
+      // Comment
+      if (ch === '#') {
+        const rest = line.slice(i);
+        out += /^#\s*(=+>|=>)/.test(rest) ? span('result', rest) : span('comment', rest);
+        break;
+      }
+
+      // Decorator (@word at start of line or after whitespace)
+      if (ch === '@') {
+        let j = i + 1;
+        while (j < len && /[a-zA-Z0-9_.]/.test(line[j])) j++;
+        out += span('decorator', line.slice(i, j)); i = j; continue;
+      }
+
+      // Triple-quoted strings
+      if ((ch === '"' || ch === "'") && line[i+1] === ch && line[i+2] === ch) {
+        let j = i + 3;
+        while (j <= len - 3) {
+          if (line[j] === ch && line[j+1] === ch && line[j+2] === ch) { j += 3; break; }
+          j++;
+        }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+
+      // Prefixed strings: f"" r"" b"" rb"" fr""
+      if (/[fFrRbBuU]/.test(ch) && (line[i+1] === '"' || line[i+1] === "'")) {
+        const q = line[i+1]; let j = i + 2;
+        while (j < len) { if (line[j] === '\\') { j+=2; continue; } if (line[j] === q) { j++; break; } j++; }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+      if (/[fFrRbB]/.test(ch) && /[fFrRbB]/.test(line[i+1]) && (line[i+2] === '"' || line[i+2] === "'")) {
+        const q = line[i+2]; let j = i + 3;
+        while (j < len) { if (line[j] === '\\') { j+=2; continue; } if (line[j] === q) { j++; break; } j++; }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+
+      // Regular strings
+      if (ch === '"' || ch === "'") {
+        const q = ch; let j = i + 1;
+        while (j < len) { if (line[j] === '\\') { j+=2; continue; } if (line[j] === q) { j++; break; } j++; }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+
+      // Numbers: 0x hex, 0b binary, float, int, underscore separators, complex j
+      if (/[0-9]/.test(ch) || (ch === '-' && /[0-9]/.test(line[i+1]||''))) {
+        const prev = i > 0 ? line[i-1] : ' ';
+        if (ch === '-' && /[a-zA-Z_]/.test(prev)) { out += escHtml(ch); i++; continue; }
+        let j = i;
+        if (line[j] === '-') j++;
+        if (line[j] === '0' && /[xXbBoO]/.test(line[j+1]||'')) {
+          j += 2; while (j < len && /[0-9a-fA-F_]/.test(line[j])) j++;
+        } else {
+          while (j < len && /[0-9_]/.test(line[j])) j++;
+          if (j < len && line[j] === '.') { j++; while (j < len && /[0-9_]/.test(line[j])) j++; }
+          if (j < len && /[eE]/.test(line[j])) { j++; if (/[+-]/.test(line[j]||'')) j++; while (j < len && /[0-9_]/.test(line[j])) j++; }
+          if (j < len && /[jJ]/.test(line[j])) j++;
+        }
+        out += span('number', line.slice(i, j)); i = j; continue;
+      }
+
+      // Identifiers: keywords, builtins, True/False/None, plain names
+      if (/[a-zA-Z_]/.test(ch)) {
+        let j = i;
+        while (j < len && /[a-zA-Z0-9_]/.test(line[j])) j++;
+        const word = line.slice(i, j);
+        if (word === 'True' || word === 'False' || word === 'None') out += span('bool', word);
+        else if (KEYWORDS.has(word)) out += span('keyword', word);
+        else if (BUILTINS.has(word) && (j >= len || line[j] === '(' || line[j] === ' ' || line[j] === '\n')) out += span('builtin', word);
+        else out += escHtml(word);
+        i = j; continue;
+      }
+
+      out += escHtml(ch); i++;
+    }
+    return out;
+  }
+
+  return code.split('\n').map(processLine).join('\n');
+}
+
+// ── RENDER ──
+function render() {
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const list = document.getElementById("fn-list");
+
+  const filtered = fns.filter(f => {
+    const tagOk = activeTag === "all" || f.tag === activeTag;
+    const textOk = !q || f.name.toLowerCase().includes(q)
+      || f.blurb.toLowerCase().includes(q)
+      || f.ex.toLowerCase().includes(q)
+      || (f.clj && f.clj.toLowerCase().includes(q));
+    return tagOk && textOk;
+  });
+
+  document.getElementById("status").textContent =
+    filtered.length === fns.length
+      ? `${fns.length} entries`
+      : `${filtered.length} of ${fns.length} entries`;
+
+  document.getElementById("count-badge").textContent =
+    filtered.length === fns.length ? `${fns.length} entries` : `${filtered.length} shown`;
+
+  list.innerHTML = "";
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty">No entries match — try a broader search</div>';
+    return;
+  }
+
+  filtered.forEach(f => {
+    const card = document.createElement("div");
+    card.className = "fn-card";
+    const hlEx = highlight(f.ex);
+    card.innerHTML = `
+      <div class="fn-head">
+        <span class="fn-name">${f.name}</span>
+        <span class="fn-tag tag-${f.tag}">${tagLabels[f.tag] || f.tag}</span>
+        <span class="fn-blurb">${f.blurb}</span>
+        <span class="fn-chevron">&#9654;</span>
+      </div>
+      <div class="fn-body">
+        <div class="fn-sig">${f.sig.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>
+        <div class="code-wrap">
+          <pre class="fn-example">${hlEx}</pre>
+          <button class="copy-btn" onclick="copyCode(this, event)" data-code="${f.ex.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}">copy</button>
+        </div>
+        ${f.clj ? `<div class="fn-clojure">Clojure: <code>${escHtml(f.clj)}</code></div>` : ""}
+      </div>`;
+    card.querySelector(".fn-head").addEventListener("click", () => {
+      const isOpen = card.classList.contains("open");
+      if (openCard && openCard !== card) openCard.classList.remove("open");
+      card.classList.toggle("open", !isOpen);
+      openCard = isOpen ? null : card;
+    });
+    list.appendChild(card);
+  });
+}
+
+render();
+
+// ── COPY ──
+function copyCode(btn, e) {
+  e.stopPropagation();
+  const code = btn.dataset.code;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = "copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "copy"; btn.classList.remove("copied"); }, 1500);
+  });
+}
+
+// ── HELP ──
+function toggleHelp() {
+  document.getElementById("help-overlay").classList.toggle("open");
+}
+function closeHelpOnBg(e) {
+  if (e.target === document.getElementById("help-overlay")) toggleHelp();
+}
+
+// ── THEME ──
+function initTheme() {
+  const saved = localStorage.getItem("py-fn-theme");
+  const dark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme:dark)").matches;
+  applyTheme(dark);
+}
+function applyTheme(dark) {
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  document.getElementById("theme-btn").textContent = dark ? "☀" : "☾";
+}
+function toggleTheme() {
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  applyTheme(!dark);
+  localStorage.setItem("py-fn-theme", !dark ? "dark" : "light");
+}
+
+initTheme();
+</script>
+</body>
+</html>

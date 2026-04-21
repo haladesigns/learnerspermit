@@ -87,19 +87,31 @@
 
   /* Nested folders */
   .subfolder-list { display: none; list-style: none; margin: 0; padding: 0; }
+
+  /* Top-level: 2px, on-surface 18%, standard indent */
   .subfolder-list.open {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
     margin-top: 0.4rem;
     margin-bottom: 0.2rem;
-    padding-left: 1.1rem;
+    padding-left: 1.25rem;
     border-left: 2px solid color-mix(in srgb, var(--on-surface) 18%, transparent);
   }
-  /* Nested subfolder bars progressively thinner and more transparent */
+
+  /* Nested: 1px, outline-variant colour, extra indent creates gap between bars */
   .subfolder-list.open .subfolder-list.open {
-    border-left-color: color-mix(in srgb, var(--on-surface) 9%, transparent);
+    border-left: 1px solid var(--outline-variant);
+    padding-left: 1rem;
+    margin-left: 0.15rem;
+  }
+
+  /* Deep nesting: same as nested but extra margin offset */
+  .subfolder-list.open .subfolder-list.open .subfolder-list.open {
+    border-left: 1px solid var(--outline-variant);
     padding-left: 0.85rem;
+    margin-left: 0.25rem;
+    opacity: 0.8;
   }
 
   /* Sticky context label — shown when folder toggle scrolls out of view */

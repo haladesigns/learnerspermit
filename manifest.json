@@ -513,6 +513,12 @@
           },
           {
             "type": "file",
+            "name": "clojure-concepts.html",
+            "label": "Clojure Concepts",
+            "path": "coding_web-design/clojure/clojure-concepts.html"
+          },
+          {
+            "type": "file",
             "name": "clojure-reference.html",
             "label": "Clojure Reference",
             "path": "coding_web-design/clojure/clojure-reference.html"

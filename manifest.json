@@ -470,6 +470,12 @@
           },
           {
             "type": "file",
+            "name": "clojure-reference.html",
+            "label": "Clojure Reference",
+            "path": "coding_web-design/clojure/clojure-reference.html"
+          },
+          {
+            "type": "file",
             "name": "Clojure_Episode00.pdf",
             "label": "Clojure Episode00",
             "path": "coding_web-design/clojure/Clojure_Episode00.pdf"

@@ -538,6 +538,19 @@
         ]
       },
       {
+        "type": "folder",
+        "name": "python",
+        "label": "Python",
+        "children": [
+          {
+            "type": "file",
+            "name": "t",
+            "label": "T",
+            "path": "coding_web-design/python/t"
+          }
+        ]
+      },
+      {
         "type": "file",
         "name": "agentic-coding-workflow.html",
         "label": "Agentic Coding Workflow",

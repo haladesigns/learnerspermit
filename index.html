@@ -86,8 +86,48 @@
   }
 
   /* Nested folders */
-  .subfolder-list { display: none; padding-left: 1rem; margin-top: 0.3rem; list-style: none; }
-  .subfolder-list.open { display: flex; flex-direction: column; gap: 0.3rem; }
+  .subfolder-list { display: none; list-style: none; margin: 0; padding: 0; }
+  .subfolder-list.open {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-top: 0.4rem;
+    margin-bottom: 0.2rem;
+    padding-left: 1.1rem;
+    border-left: 2px solid var(--on-surface);
+    border-left-color: color-mix(in srgb, var(--on-surface) 18%, transparent);
+  }
+
+  /* Sticky context label — shown when folder toggle scrolls out of view */
+  .sticky-context {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    padding: 0.35rem 0 0.35rem 0;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--on-surface);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-bottom: 1px solid var(--divider);
+    margin-bottom: 0.5rem;
+  }
+  .sticky-context.visible {
+    opacity: 1;
+  }
+  .sticky-context svg {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+    transform: rotate(90deg);
+  }
   .folder-toggle {
     color: var(--on-surface) !important;
     display: flex;
@@ -411,10 +451,16 @@ function appendColumn(label, children, container) {
   const scroll = document.createElement('div');
   scroll.className = 'category-scroll';
 
+  // Sticky context label (hidden by default, shown by IntersectionObserver)
+  const sticky = document.createElement('div');
+  sticky.className = 'sticky-context';
+  sticky.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg><span></span>`;
+
   const ul = document.createElement('ul');
   ul.style.cssText = 'list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.45rem;';
   renderEntries(children, ul);
 
+  scroll.appendChild(sticky);
   scroll.appendChild(ul);
   col.appendChild(h2);
   col.appendChild(scroll);
@@ -429,6 +475,47 @@ function appendColumn(label, children, container) {
         col.classList.toggle('overflows', !atBottom);
       });
     }
+
+    // IntersectionObserver: watch each open folder toggle — when it scrolls out
+    // of the scroll container upward, show the sticky label with that folder's name
+    const stickyLabel = sticky.querySelector('span');
+    let activeFolder = null;
+
+    function updateSticky() {
+      const toggles = scroll.querySelectorAll('.folder-toggle.open');
+      let topmost = null;
+      let topmostTop = Infinity;
+
+      toggles.forEach(toggle => {
+        const rect = toggle.getBoundingClientRect();
+        const scrollRect = scroll.getBoundingClientRect();
+        const relTop = rect.top - scrollRect.top;
+        // Toggle has scrolled above the visible area
+        if (relTop < 0 && rect.top < topmostTop) {
+          topmostTop = rect.top;
+          topmost = toggle;
+        }
+      });
+
+      if (topmost) {
+        const name = topmost.querySelector('.folder-label')?.textContent || '';
+        if (name !== activeFolder) {
+          stickyLabel.textContent = name;
+          activeFolder = name;
+        }
+        sticky.classList.add('visible');
+      } else {
+        sticky.classList.remove('visible');
+        activeFolder = null;
+      }
+    }
+
+    scroll.addEventListener('scroll', updateSticky);
+
+    // Also re-run when folders are toggled open/closed
+    scroll.addEventListener('click', () => {
+      requestAnimationFrame(updateSticky);
+    });
   });
 }
 

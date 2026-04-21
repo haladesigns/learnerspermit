@@ -513,12 +513,6 @@
           },
           {
             "type": "file",
-            "name": "clojure-reference.html",
-            "label": "Clojure Reference",
-            "path": "coding_web-design/clojure/clojure-reference.html"
-          },
-          {
-            "type": "file",
             "name": "tree_installation_manual.pdf",
             "label": "Tree Installation Manual",
             "path": "coding_web-design/clojure/tree_installation_manual.pdf"

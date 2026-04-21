@@ -469,6 +469,36 @@
             "children": [
               {
                 "type": "file",
+                "name": "Clojure_Episode00.pdf",
+                "label": "Clojure Episode00",
+                "path": "coding_web-design/clojure/study/Clojure_Episode00.pdf"
+              },
+              {
+                "type": "file",
+                "name": "Clojure_Episode01.pdf",
+                "label": "Clojure Episode01",
+                "path": "coding_web-design/clojure/study/Clojure_Episode01.pdf"
+              },
+              {
+                "type": "file",
+                "name": "Clojure_Episode02.pdf",
+                "label": "Clojure Episode02",
+                "path": "coding_web-design/clojure/study/Clojure_Episode02.pdf"
+              },
+              {
+                "type": "file",
+                "name": "Clojure_Episode04.pdf",
+                "label": "Clojure Episode04",
+                "path": "coding_web-design/clojure/study/Clojure_Episode04.pdf"
+              },
+              {
+                "type": "file",
+                "name": "Clojure_Episode05.pdf",
+                "label": "Clojure Episode05",
+                "path": "coding_web-design/clojure/study/Clojure_Episode05.pdf"
+              },
+              {
+                "type": "file",
                 "name": "t",
                 "label": "T",
                 "path": "coding_web-design/clojure/study/t"

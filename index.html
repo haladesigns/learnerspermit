@@ -116,28 +116,32 @@
     border-left: 1px solid rgba(173,179,178,0.35);
   }
 
-  /* Sticky context label — shown when folder toggle scrolls out of view */
+  /* Sticky context label — overlay, takes zero layout space when hidden */
   .sticky-context {
     position: sticky;
     top: 0;
     z-index: 10;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .sticky-context-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     background: var(--bg);
-    padding: 0.35rem 0 0.35rem 0;
+    padding: 0.3rem 0;
     font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--on-surface);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.18s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
     border-bottom: 1px solid var(--divider);
-    margin-bottom: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    width: 100%;
   }
-  .sticky-context.visible {
+  .sticky-context.visible .sticky-context-inner {
     opacity: 1;
   }
   .sticky-context svg {
@@ -472,7 +476,7 @@ function appendColumn(label, children, container) {
   // Sticky context label (hidden by default, shown by IntersectionObserver)
   const sticky = document.createElement('div');
   sticky.className = 'sticky-context';
-  sticky.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg><span></span>`;
+  sticky.innerHTML = `<div class="sticky-context-inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg><span></span></div>`;
 
   const ul = document.createElement('ul');
   ul.style.cssText = 'list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.45rem;';
@@ -497,7 +501,7 @@ function appendColumn(label, children, container) {
 
     // IntersectionObserver: watch each open folder toggle — when it scrolls out
     // of the scroll container upward, show the sticky label with that folder's name
-    const stickyLabel = sticky.querySelector('span');
+    const stickyLabel = sticky.querySelector('.sticky-context-inner span');
     let activeFolder = null;
 
     function updateSticky() {

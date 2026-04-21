@@ -489,12 +489,6 @@
           },
           {
             "type": "file",
-            "name": "Clojure_Episode05.pdf",
-            "label": "Clojure Episode05",
-            "path": "coding_web-design/clojure/Clojure_Episode05.pdf"
-          },
-          {
-            "type": "file",
             "name": "tree_installation_manual.pdf",
             "label": "Tree Installation Manual",
             "path": "coding_web-design/clojure/tree_installation_manual.pdf"

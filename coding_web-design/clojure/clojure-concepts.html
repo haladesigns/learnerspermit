@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clojure — Core Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS (identical to reference page) ── */
+:root {
+  --bg:       #f5f2eb;
+  --surface:  #ffffff;
+  --surface2: #ede9e0;
+  --border:   #ddd8cc;
+  --border2:  #ccc6b8;
+  --text:     #1c1a14;
+  --text2:    #5a5648;
+  --text3:    #9a9282;
+  --accent:   #c75a2c;
+  --accent2:  #e8936a;
+  --accent-bg:#fdf0e8;
+  --accent-t: #7a3018;
+  --core-bg:  #eaf3e8;
+  --core-t:   #2a5c25;
+  --str-bg:   #e8eef8;
+  --str-t:    #1e3a6e;
+  --set-bg:   #f0e8f5;
+  --set-t:    #5a1a7a;
+  --code-bg:      #f0ece2;
+  --code-t:       #2a2420;
+  --code-border:  #ccc6b4;
+  --code-footer-bg:     #e6e1d6;
+  --code-footer-border: #ccc6b4;
+  --code-footer-t:      #7a7060;
+  --code-footer-hover:  #ddd8cc;
+  --code-cm:      #9fd882;
+  --code-kw:      #e8936a;
+  --code-str:     #82c9d8;
+  --tok-comment:  #8a8a8a;
+  --tok-string:   #0070a0;
+  --tok-keyword:  #c75a2c;
+  --tok-number:   #2a7a2a;
+  --tok-special:  #7a28a0;
+  --tok-bool:     #0055aa;
+  --tok-result:   #5a8a3a;
+  --tok-dispatch: #a06000;
+  --shadow:       0 1px 4px rgba(0,0,0,.07);
+  --radius:   6px;
+  --radius-lg:10px;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+}
+[data-theme="dark"] {
+  --bg:       #141210;
+  --surface:  #1c1a16;
+  --surface2: #242018;
+  --border:   #2e2a22;
+  --border2:  #3a3428;
+  --text:     #ede8dc;
+  --text2:    #a09880;
+  --text3:    #5a5448;
+  --accent:   #e8784a;
+  --accent2:  #c75a2c;
+  --accent-bg:#2a1a0e;
+  --accent-t: #f0a882;
+  --core-bg:  #0e1e0c;
+  --core-t:   #7ad070;
+  --str-bg:   #0c1428;
+  --str-t:    #7aabee;
+  --set-bg:   #1a0c28;
+  --set-t:    #c070e8;
+  --code-bg:      #0c0a08;
+  --code-t:       #e0d8c8;
+  --code-border:  #2a2620;
+  --code-footer-bg:     #181510;
+  --code-footer-border: #2e2a22;
+  --code-footer-t:      #5a5448;
+  --code-footer-hover:  #242018;
+  --tok-comment:  #636366;
+  --tok-string:   #82c9d8;
+  --tok-keyword:  #e8936a;
+  --tok-number:   #b5cea8;
+  --tok-special:  #c586c0;
+  --tok-bool:     #569cd6;
+  --tok-result:   #6a9955;
+  --tok-dispatch: #dcdcaa;
+  --shadow:       0 1px 4px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.7;
+  min-height: 100vh;
+  transition: background .2s, color .2s;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+.hdr-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+.hdr-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: .75rem 0 .65rem;
+}
+.logo { flex: 1; min-width: 0; }
+.logo-name {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: -.02em;
+}
+.logo-sub { font-size: 14px; color: var(--text3); margin-top: 1px; }
+.hdr-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--text2);
+  transition: background .15s;
+  flex-shrink: 0; text-decoration: none;
+}
+.icon-btn:hover { background: var(--border); }
+.ref-link {
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.ref-link:hover { background: var(--accent-bg); }
+
+/* ── NAV PILLS ── */
+.concept-nav {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: .6rem;
+}
+.concept-nav::-webkit-scrollbar { display: none; }
+.nav-pill {
+  font-size: 13px;
+  padding: 3px 11px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text2);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: all .15s;
+  font-family: var(--sans);
+}
+.nav-pill:hover { background: var(--surface2); color: var(--text); }
+.nav-pill.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── MAIN ── */
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1rem 5rem;
+}
+
+/* ── CONCEPT SECTIONS ── */
+.concept-section {
+  margin-bottom: 3.5rem;
+  scroll-margin-top: 80px;
+}
+.concept-section:last-child { margin-bottom: 0; }
+
+.concept-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+  padding-bottom: .75rem;
+  border-bottom: 2px solid var(--border);
+}
+.concept-number {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+.concept-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+.concept-subtitle {
+  font-size: 14px;
+  color: var(--text3);
+  font-style: italic;
+}
+
+/* Prose */
+.prose {
+  color: var(--text2);
+  font-size: 16px;
+  line-height: 1.75;
+  margin-bottom: 1.25rem;
+}
+.prose strong { color: var(--text); font-weight: 600; }
+.prose code {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.prose a { color: var(--accent); text-decoration: underline; }
+
+/* ── CALLOUT BOXES ── */
+.callout {
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+  font-size: 15px;
+  line-height: 1.65;
+  border-left: 3px solid;
+}
+.callout strong { display: block; font-size: 13px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; margin-bottom: .4rem; }
+.callout.key {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent-t);
+}
+.callout.key strong { color: var(--accent); }
+.callout.python {
+  background: var(--str-bg);
+  border-color: var(--str-t);
+  color: var(--str-t);
+}
+.callout.python strong { color: var(--str-t); }
+.callout.warning {
+  background: var(--set-bg);
+  border-color: var(--set-t);
+  color: var(--set-t);
+}
+.callout.warning strong { color: var(--set-t); }
+.callout.concept {
+  background: var(--core-bg);
+  border-color: var(--core-t);
+  color: var(--core-t);
+}
+.callout.concept strong { color: var(--core-t); }
+.callout code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: rgba(0,0,0,.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ── COMPARISON GRID ── */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.compare-col {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.compare-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  color: var(--text3);
+}
+.compare-col.python .compare-label { color: var(--str-t); background: var(--str-bg); border-color: var(--str-t); }
+.compare-col.clojure .compare-label { color: var(--accent); background: var(--accent-bg); border-color: var(--accent); }
+.compare-col pre {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--code-bg);
+  color: var(--code-t);
+  padding: 10px 12px;
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.65;
+  margin: 0;
+  border: none;
+}
+
+/* ── CODE BLOCK (standalone, no toggle) ── */
+.code-block {
+  font-family: var(--mono);
+  font-size: 14px;
+  background: var(--code-bg);
+  color: var(--code-t);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--code-border);
+  padding: 12px 14px;
+  white-space: pre;
+  line-height: 1.65;
+  overflow-x: auto;
+  tab-size: 2;
+  margin-bottom: 1.25rem;
+}
+
+/* ── DIAGRAM BOXES ── */
+.diagram {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.8;
+  overflow-x: auto;
+}
+.diagram .d-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: .5rem;
+  font-family: var(--sans);
+}
+.d-acc  { color: var(--accent); }
+.d-green{ color: var(--core-t); }
+.d-blue { color: var(--str-t); }
+.d-grey { color: var(--text3); }
+.d-purple { color: var(--set-t); }
+
+/* ── CONCEPT PAIRS ── */
+.concept-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.concept-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: .9rem 1rem;
+}
+.concept-box h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: .4rem;
+}
+.concept-box p {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.55;
+}
+.concept-box code {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ── TIMELINE / STATE FLOW ── */
+.state-flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: .9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+}
+.state-box {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+}
+.state-box.highlight {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent-t);
+}
+.state-arrow { color: var(--text3); font-size: 16px; flex-shrink: 0; }
+.state-label { font-size: 12px; color: var(--text3); width: 100%; padding-top: .3rem; font-style: italic; }
+
+/* ── REFERENCE TABLE ── */
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  font-size: 14px;
+}
+.ref-table th {
+  text-align: left;
+  padding: 6px 10px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.ref-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.ref-table td:first-child {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.ref-table tr:last-child td { border-bottom: none; }
+.ref-table tr:hover td { background: var(--surface2); }
+
+/* Syntax highlight spans */
+.tok-comment  { color: var(--tok-comment);  font-style: italic; }
+.tok-string   { color: var(--tok-string); }
+.tok-keyword  { color: var(--tok-keyword); }
+.tok-number   { color: var(--tok-number); }
+.tok-special  { color: var(--tok-special);  font-weight: 500; }
+.tok-bool     { color: var(--tok-bool); }
+.tok-result   { color: var(--tok-result);   font-style: italic; }
+.tok-dispatch { color: var(--tok-dispatch); }
+
+/* ── SECTION DIVIDER ── */
+.section-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 3rem 0;
+}
+
+/* ── MOBILE ── */
+@media (max-width: 600px) {
+  .hdr-inner { padding: 0 .75rem; }
+  .logo-sub { display: none; }
+  main { padding: 1.25rem .75rem 4rem; }
+  .concept-title { font-size: 18px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .concept-pair { grid-template-columns: 1fr; }
+  .compare-col pre { font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  .code-block { font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+  .diagram { font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  .ref-table { font-size: 13px; }
+  .prose { font-size: 15px; }
+  .state-flow { gap: 5px; }
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-inner">
+    <div class="hdr-top">
+      <div class="logo">
+        <div class="logo-name">clojure — core concepts</div>
+        <div class="logo-sub">9 ideas that explain how Clojure thinks</div>
+      </div>
+      <div class="hdr-actions">
+        <a href="clojure-reference.html" class="ref-link">&#8594; function ref</a>
+        <button class="icon-btn" id="theme-btn" title="Toggle theme" onclick="toggleTheme()">&#9790;</button>
+      </div>
+    </div>
+    <nav class="concept-nav" id="concept-nav">
+      <a href="#simple-vs-easy"    class="nav-pill">1 · Simple vs Easy</a>
+      <a href="#sexprs-forms-cons"  class="nav-pill">2 · S-expressions, Forms &amp; cons</a>
+      <a href="#values-identity"   class="nav-pill">3 · Values &amp; Identity</a>
+      <a href="#immutability"      class="nav-pill">4 · Immutability</a>
+      <a href="#persistent-ds"     class="nav-pill">5 · Persistent Structures</a>
+      <a href="#seq-abstraction"   class="nav-pill">6 · Sequence Abstraction</a>
+      <a href="#expressions"       class="nav-pill">7 · Everything is an Expression</a>
+      <a href="#homoiconicity"     class="nav-pill">8 · Code as Data</a>
+      <a href="#laziness"          class="nav-pill">9 · Lazy Evaluation</a>
+      <a href="#managed-refs"      class="nav-pill">10 · Managed References</a>
+      <a href="#namespaces"        class="nav-pill">11 · Namespaces</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     INTRO
+     ═══════════════════════════════════════════════════════════ -->
+<div class="prose" style="margin-bottom:2.5rem; padding:.9rem 1rem; background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:var(--radius-lg);">
+  <strong>How to use this page.</strong> The function reference tells you <em>what</em> functions do. This page explains <em>why</em> Clojure works the way it does — the 11 cornerstone ideas behind every design decision. Each concept has a surface explanation to get you started, followed by the deeper mechanical picture of what's actually happening underneath. Python comparisons are woven throughout.
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     1. SIMPLE VS EASY
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="simple-vs-easy">
+  <div class="concept-header">
+    <span class="concept-number">01</span>
+    <div>
+      <div class="concept-title">Simple vs Easy</div>
+      <div class="concept-subtitle">The meta-concept behind every Clojure design decision</div>
+    </div>
+  </div>
+
+  <p class="prose">Rich Hickey — Clojure's creator — draws a sharp distinction between two words that programmers use interchangeably. Getting this distinction right changes how you think about every language choice.</p>
+
+  <div class="concept-pair">
+    <div class="concept-box">
+      <h4>Simple</h4>
+      <p>Objective. <em>Not tangled together.</em> A thing that does one job, has one role, is not complected (braided) with other concerns. Simplicity can be measured. It doesn't depend on who you are.</p>
+    </div>
+    <div class="concept-box">
+      <h4>Easy</h4>
+      <p>Subjective. <em>Familiar or nearby.</em> Something is easy for you if you already know it, if it's close to tools you've used before. Easy is relative — what's easy for one person is hard for another.</p>
+    </div>
+  </div>
+
+  <p class="prose">Clojure deliberately chose <strong>simple over easy</strong>. Parentheses feel unfamiliar (not easy) but there's only one syntax rule (simple). Immutability feels inconvenient at first (not easy) but eliminates an entire class of bugs (simple — no entangled state). The payoff compounds: simple things remain understandable as programs grow. Easy-but-complex things become unmaintainable.</p>
+
+  <div class="callout key">
+    <strong>The key word: complect</strong>
+    Hickey uses the verb "to complect" — to interweave or braid things together that should be separate. Objects in OO languages complect state, identity, and value into one thing. Functions complect in Clojure are called out and eliminated. The goal is always: separate concerns that are logically separate.
+  </div>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    Python is designed to be easy — familiar syntax, gentle learning curve, lots of batteries. It's also more complex in the Hickey sense: mutable by default, methods tied to objects, state mixed with identity. This isn't a criticism of Python — it's a different trade-off. Clojure trades early ease for long-term simplicity.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     2. S-EXPRESSIONS, FORMS & CONS
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="sexprs-forms-cons">
+  <div class="concept-header">
+    <span class="concept-number">02</span>
+    <div>
+      <div class="concept-title">S-expressions, Forms &amp; cons</div>
+      <div class="concept-subtitle">The syntax, the evaluable unit, and the primitive everything is built from</div>
+    </div>
+  </div>
+
+  <p class="prose">These three ideas explain the shape of every line of Clojure you have ever written. They are not abstract — they are the concrete mechanics of how the language reads and evaluates code.</p>
+
+  <div class="concept-pair">
+    <div class="concept-box">
+      <h4>S-expression (symbolic expression)</h4>
+      <p>The universal syntax unit of Lisp languages. An s-expression is either an <em>atom</em> (a single value: a number, string, keyword, symbol) or a <em>list</em> (a parenthesised sequence of s-expressions). Every piece of Clojure code is an s-expression. There is no other syntax.</p>
+    </div>
+    <div class="concept-box">
+      <h4>Form</h4>
+      <p>Any s-expression that Clojure can evaluate. A <em>special form</em> is one the compiler handles directly (<code>def</code>, <code>if</code>, <code>let</code>, <code>fn</code>). A <em>macro form</em> is expanded before evaluation. A <em>function call form</em> evaluates the first element as a function and applies it to the rest. Every form returns a value.</p>
+    </div>
+  </div>
+
+  <p class="prose">The rule for reading a list form is always the same: <strong>the first element is what gets called, everything after is an argument</strong>. This single rule covers 100% of Clojure syntax — arithmetic, conditionals, function definitions, everything.</p>
+
+  <pre class="code-block" id="sexprs-code">; Atoms — self-evaluating s-expressions
+42           ; => 42    (number)
+"hello"      ; => "hello" (string)
+:name        ; => :name  (keyword)
+true         ; => true   (boolean)
+
+; List forms — (operator arg1 arg2 ...)
+(+ 1 2)             ; function call — calls + with 1 and 2
+(if true "yes" "no"); special form  — if is handled by the compiler
+(def x 42)          ; special form  — binds symbol x to 42
+(println "hi")      ; function call — calls println with "hi"
+
+; Nested s-expressions — each sub-expression evaluates first
+(+ (* 2 3) (- 10 4))   ; => 12   (* 2 3)=6, (- 10 4)=6, (+ 6 6)=12
+
+; The shape never changes — operator always comes first
+(> 10 5)     ; not  10 > 5
+(not true)   ; not  !true
+(str "a" "b"); not  "a" + "b"</pre>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    Python has multiple syntax forms: infix operators (<code>1 + 2</code>), function calls (<code>f(x)</code>), subscripts (<code>d[k]</code>), attribute access (<code>obj.method()</code>), statements (<code>if</code>, <code>for</code>), comprehensions. Each has its own rules. Clojure has one: <code>(operator args...)</code>. The uniformity feels strange at first and pays off forever — there are no special cases to memorise.
+  </div>
+
+  <div class="concept-pair" style="margin-top:1rem">
+    <div class="concept-box">
+      <h4>Special forms</h4>
+      <p>Built-in forms the compiler handles directly — they cannot be redefined. There are fewer than 20: <code>def</code>, <code>if</code>, <code>do</code>, <code>let</code>, <code>fn</code>, <code>loop</code>, <code>recur</code>, <code>quote</code>, <code>try</code>, <code>throw</code>, <code>new</code>, <code>.</code>. Everything else — <code>when</code>, <code>cond</code>, <code>defn</code>, <code>-&gt;&gt;</code> — is built on top of these using macros.</p>
+    </div>
+    <div class="concept-box">
+      <h4>Macro forms</h4>
+      <p>Forms that are transformed into other forms before evaluation. <code>defn</code> expands to <code>def</code> + <code>fn</code>. <code>when</code> expands to <code>if</code> + <code>do</code>. <code>-&gt;&gt;</code> rearranges nested calls. The macro runs at compile time, receiving unevaluated code as data and returning new code to evaluate.</p>
+    </div>
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">cons — the primitive beneath all sequences</h3>
+
+  <p class="prose"><code>cons</code> (short for "construct") is the fundamental building block of Lisp. It takes a value and a sequence and returns a new sequence with the value prepended. A Lisp list is nothing more than a chain of cons cells — each cell holds one value and a reference to the next cell. The last cell points to nil.</p>
+
+  <div class="diagram">
+    <div class="d-label">A list as a chain of cons cells:</div>
+    <pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;white-space:pre;"><span class="d-grey">The list '(1 2 3) in memory:</span>
+
+<span class="d-acc">[ 1 | ─────]──►[ 2 | ─────]──►[ 3 | ─────]──► nil</span>
+<span class="d-grey">  ^               ^               ^
+  head            head            head
+  (first)         (second)        (third)</span>
+
+<span class="d-grey">Each box is one cons cell: a value + a pointer to the next cell.
+</span><span class="d-green">(first '(1 2 3))  => 1          (the head of the first cell)
+(rest  '(1 2 3))  => (2 3)      (the tail — everything after)
+(cons 0 '(1 2 3)) => (0 1 2 3)  (a new cell prepended)</span></pre>
+  </div>
+
+  <p class="prose"><code>first</code>, <code>rest</code>, and <code>cons</code> are the three primitives that define the entire sequence abstraction. Every sequence function — <code>map</code>, <code>filter</code>, <code>reduce</code>, <code>take</code>, <code>drop</code> — is ultimately built from these three operations. This is why the sequence abstraction is universal: if something can do <code>first</code>, <code>rest</code>, and <code>cons</code>, every sequence function works on it automatically.</p>
+
+  <pre class="code-block" id="cons-code">; cons builds sequences
+(cons 1 '(2 3))      ; => (1 2 3)   — prepend to a list
+(cons 1 [2 3])       ; => (1 2 3)   — prepend to a vector (returns seq)
+(cons 1 nil)         ; => (1)        — cons onto nil = single-element list
+
+; Decompose with first and rest
+(first '(1 2 3))     ; => 1
+(rest  '(1 2 3))     ; => (2 3)
+(first (rest '(1 2 3))) ; => 2      — second element
+
+; The recursive pattern: process head, recurse on tail
+; (This is how map, filter etc. work internally)
+(defn my-count [coll]
+  (if (seq coll)
+    (inc (my-count (rest coll)))
+    0))
+
+(my-count '(1 2 3))  ; => 3</pre>
+
+  <div class="callout key">
+    <strong>Why this matters</strong>
+    Understanding cons explains why <code>conj</code> adds to different ends for lists vs vectors (lists are cons-based — prepending is O(1); vectors are trees — appending is O(1)). It explains why <code>rest</code> always returns a seq regardless of the input type. And it connects Clojure directly to McCarthy's original 1958 Lisp — <code>car</code>/<code>cdr</code>/<code>cons</code> are the same three primitives, just renamed to <code>first</code>/<code>rest</code>/<code>cons</code>.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     3. VALUES, IDENTITY, STATE
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="values-identity">
+  <div class="concept-header">
+    <span class="concept-number">03</span>
+    <div>
+      <div class="concept-title">Values, Identity &amp; State</div>
+      <div class="concept-subtitle">The most important conceptual split in all of Clojure</div>
+    </div>
+  </div>
+
+  <p class="prose">Object-oriented languages fuse three distinct concepts into one mutable object. Clojure separates them deliberately. Understanding the difference is the single biggest step toward thinking in Clojure.</p>
+
+  <div class="concept-pair">
+    <div class="concept-box">
+      <h4>Value</h4>
+      <p>An immutable piece of information. <code>42</code>. <code>"hello"</code>. <code>{:name "Ada"}</code>. A value never changes — it just is. The number 42 is always 42. Two values are equal if they contain the same information.</p>
+    </div>
+    <div class="concept-box">
+      <h4>Identity</h4>
+      <p>A logical entity that takes on different values over time. "Ada's score" is an identity. Right now it holds the value <code>95</code>. After a game it might hold <code>112</code>. The identity is stable; the values it holds change.</p>
+    </div>
+  </div>
+  <div class="concept-pair" style="margin-top:-4px">
+    <div class="concept-box">
+      <h4>State</h4>
+      <p>The value of an identity at a specific point in time. "Ada's score at 3pm was 95." State is always a pairing of identity + value + time. Yesterday's state and today's state are different, but both are valid values.</p>
+    </div>
+    <div class="concept-box">
+      <h4>Time</h4>
+      <p>Clojure models time explicitly. An identity moves through a <em>succession of values</em> — like a river that is always "the river" even as the water flowing through it changes. Old values are never destroyed.</p>
+    </div>
+  </div>
+
+  <p class="prose">In Python, a list <code>scores = [95, 88]</code> fuses all three: the name <em>scores</em> (identity), the current content (value), and the ability to change in place (time) are all bundled into one mutable object. When you do <code>scores.append(72)</code>, the old value is gone. You cannot ask "what was scores before?"</p>
+
+  <div class="state-flow">
+    <div class="state-label">Clojure's model — an identity across time:</div>
+    <div class="state-box">scores = [95, 88]</div>
+    <div class="state-arrow">&#8594; t1</div>
+    <div class="state-box">scores = [95, 88, 72]</div>
+    <div class="state-arrow">&#8594; t2</div>
+    <div class="state-box highlight">scores = [95, 88, 72, 60]</div>
+    <div class="state-label">Both old values still exist. Any thread that grabbed a reference at t1 still sees [95, 88].</div>
+  </div>
+
+  <div class="callout key">
+    <strong>The OO problem</strong>
+    In OO languages, identity and value live in the same memory location. The only way to "change" an object is to mutate that memory. Everyone pointing to it sees the change — whether they expected it or not. Clojure separates them: values are immutable, identities are explicit references that can be updated to point at a new value.
+  </div>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    <code>x = [1, 2, 3]</code> — x is a name (identity) pointing at a mutable list (value). When you do <code>x.append(4)</code>, the list itself changes. Any other variable pointing to the same list sees the change too. This is mutation — and it's the default in Python. In Clojure, no value ever changes. To "update" something, you create a new value.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     3. IMMUTABILITY
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="immutability">
+  <div class="concept-header">
+    <span class="concept-number">04</span>
+    <div>
+      <div class="concept-title">Immutability</div>
+      <div class="concept-subtitle">The default is safe — mutation is the opt-in exception</div>
+    </div>
+  </div>
+
+  <p class="prose">In Clojure, <strong>every value is immutable by default</strong>. Calling <code>assoc</code>, <code>conj</code>, <code>dissoc</code>, or any other "change" function does not modify the original. It returns a new value. The original is unchanged and always safe to share.</p>
+
+  <div class="compare-grid">
+    <div class="compare-col python">
+      <div class="compare-label">Python — mutation is the default</div>
+      <pre id="py-immut">person = {"name": "Ada", "age": 36}
+person["age"] = 37    # mutates in place
+# person is now {"name": "Ada", "age": 37}
+# the old value {age: 36} is gone forever
+
+numbers = [1, 2, 3]
+numbers.append(4)     # mutates the list
+# any other variable pointing to
+# numbers now sees [1, 2, 3, 4]</pre>
+    </div>
+    <div class="compare-col clojure">
+      <div class="compare-label">Clojure — new values, original untouched</div>
+      <pre id="clj-immut">(def person {:name "Ada" :age 36})
+(def older (assoc person :age 37))
+; person  => {:name "Ada" :age 36}  unchanged
+; older   => {:name "Ada" :age 37}  new map
+
+(def numbers [1 2 3])
+(def more (conj numbers 4))
+; numbers => [1 2 3]   unchanged
+; more    => [1 2 3 4] new vector</pre>
+    </div>
+  </div>
+
+  <p class="prose">This has cascading benefits that compound throughout a codebase:</p>
+
+  <div class="callout concept">
+    <strong>Benefits of immutability</strong>
+    <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">Free thread safety.</strong> Immutable values can be shared across threads with zero synchronization. No locks, no mutexes, no concurrent modification exceptions — because nothing can change.<br><br>
+    <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">Simpler reasoning.</strong> A function that receives a map will always see the same map. No defensive copying. No wondering if something mutated it in another branch.<br><br>
+    <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">Free equality.</strong> Two values are equal if they contain the same data. Since values don't change, equality checks are stable.<br><br>
+    <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">History for free.</strong> Keep a reference to an old value and you have undo. Keep a sequence of old values and you have a complete audit trail.
+  </div>
+
+  <div class="callout warning">
+    <strong>Common misconception</strong>
+    Immutability does not mean "you can never change anything." It means values don't change — but you can always create a new, updated value and point an identity at it. The distinction is between <em>mutating a value</em> (forbidden) and <em>updating a reference</em> (allowed, explicit, controlled). Atoms, refs, and agents are how you do the latter.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     4. PERSISTENT DATA STRUCTURES
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="persistent-ds">
+  <div class="concept-header">
+    <span class="concept-number">05</span>
+    <div>
+      <div class="concept-title">Persistent Data Structures &amp; Structural Sharing</div>
+      <div class="concept-subtitle">How immutability stays fast — the implementation that makes it practical</div>
+    </div>
+  </div>
+
+  <p class="prose">The most common objection to immutability is performance: "If every update creates a new copy, won't that be impossibly slow and waste enormous memory?" The answer is no — because Clojure's data structures don't actually copy. They <strong>share structure</strong>.</p>
+
+  <div class="callout key">
+    <strong>Surface level — what you need to know</strong>
+    When you call <code>(conj my-vector 4)</code>, Clojure does not copy the entire vector. The new vector <em>shares most of its memory</em> with the original. Only the changed parts are new. This is safe because immutable values can never be modified — sharing is always safe. The result is that "copying" is nearly free.
+  </div>
+
+  <p class="prose">This property is called <strong>persistence</strong> — not in the sense of disk storage, but in the sense that every old version of a data structure persists in memory, accessible and correct. "Persistent" means: an operation on a data structure produces a new version while the old version remains intact and accessible.</p>
+
+  <p class="prose"><strong>Mechanistic detail — how it actually works:</strong></p>
+
+  <p class="prose">Clojure's vectors are implemented as <strong>32-way trees</strong> (a tree where each node can have up to 32 children). When you update one element, Clojure walks down the tree to that element and copies only the nodes on the path from root to that element. With a branching factor of 32, a vector of 1 million elements has a tree depth of only ~4 levels (32⁴ ≈ 1,000,000). Updating one element copies at most 4 nodes — not 1,000,000.</p>
+
+  <div class="diagram">
+    <div class="d-label">Structural sharing — updating element at index 2 in a vector of 8:</div>
+    <pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.8;overflow-x:auto;white-space:pre;"><span class="d-grey">                    root
+                   /    \
+               node-A    node-B            &lt;-- shared, unchanged
+              /  |  \    /  |  \
+</span><span class="d-acc">           [0] [1] NEW</span><span class="d-grey"> [3] [4] [5]         &lt;-- NEW replaces old [2]
+            |   |    |   |   |   |
+</span><span class="d-acc">           "a" "b" "X"</span><span class="d-grey"> "d" "e" "f"
+
+</span><span class="d-green">Only 2 nodes copied (path from root to element).
+The rest of the tree — everything in grey — is SHARED with the old vector.
+Old vector [0][1][2][3][4][5] still exists, unchanged, pointing to original node.</span></pre>
+  </div>
+
+  <p class="prose">For maps and sets, Clojure uses a more sophisticated structure called a <strong>Hash Array Mapped Trie (HAMT)</strong> — invented by Phil Bagwell and adapted by Rich Hickey. A HAMT combines the best properties of a hash table and a tree: near-constant lookup time, efficient memory use, and structural sharing. The branching factor is still 32. Updating a map of 1 million entries still copies only ~4 nodes.</p>
+
+  <div class="compare-grid">
+    <div class="compare-col python">
+      <div class="compare-label">Python — copying is expensive</div>
+      <pre id="py-ds">import copy
+original = {"a": 1, "b": 2, "c": 3}
+
+# Shallow copy — new dict but same values
+modified = {**original, "b": 99}
+# Creates a completely new dict object
+# Memory: O(n) — proportional to dict size
+
+# Deep copy — even more expensive
+deep = copy.deepcopy(original)
+# Must traverse entire structure</pre>
+    </div>
+    <div class="compare-col clojure">
+      <div class="compare-label">Clojure — structural sharing</div>
+      <pre id="clj-ds">(def original {:a 1 :b 2 :c 3})
+(def modified (assoc original :b 99))
+
+; original => {:a 1 :b 2 :c 3}  unchanged
+; modified => {:a 1 :b 99 :c 3} new map
+; But :a and :c are SHARED in memory
+; Only :b and the path to it are new
+; Memory: O(log32 n) — nearly constant!</pre>
+    </div>
+  </div>
+
+  <div class="callout concept">
+    <strong>Why "persistent"?</strong>
+    The term comes from a 1986 computer science paper: "Making Data Structures Persistent" by Driscoll, Sarnak, Sleator, and Tarjan. A persistent data structure is one that preserves all previous versions of itself when modified. Clojure's collections are all persistent. Every version of every collection you've ever created is still valid and accessible — at essentially zero cost.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     5. SEQUENCE ABSTRACTION
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="seq-abstraction">
+  <div class="concept-header">
+    <span class="concept-number">06</span>
+    <div>
+      <div class="concept-title">The Sequence Abstraction</div>
+      <div class="concept-subtitle">One interface that works on everything — the source of Clojure's composability</div>
+    </div>
+  </div>
+
+  <p class="prose">In most languages, you need different functions for different data structures. Python has <code>list.append()</code> but <code>dict.update()</code>. You iterate over a list differently from how you iterate over a dict. Clojure takes a different path: <strong>one unified interface called seq works on everything</strong>.</p>
+
+  <p class="prose">The seq abstraction is built on three operations. If something can do these three things, it's a sequence and all sequence functions work on it:</p>
+
+  <table class="ref-table">
+    <tr><th>Operation</th><th>What it does</th><th>Works on</th></tr>
+    <tr><td>(first coll)</td><td>Returns the first element, or nil if empty</td><td>vectors, lists, maps, sets, strings, ranges, files…</td></tr>
+    <tr><td>(rest coll)</td><td>Returns a seq of everything after the first</td><td>same — all seqable things</td></tr>
+    <tr><td>(cons x coll)</td><td>Returns a new seq with x prepended</td><td>same</td></tr>
+  </table>
+
+  <p class="prose">Because <code>map</code>, <code>filter</code>, <code>reduce</code>, <code>take</code>, <code>drop</code>, and every other sequence function is built on these three primitives, they all work on any collection automatically:</p>
+
+  <pre class="code-block" id="seq-code">; The SAME map function works on all of these:
+(map inc [1 2 3])          ; => (2 3 4)   vector
+(map inc '(1 2 3))         ; => (2 3 4)   list
+(map str "hello")          ; => ("h" "e" "l" "l" "o")  string!
+(map first {:a 1 :b 2})    ; => (:a :b)   map keys
+(map inc (range 5))        ; => (1 2 3 4 5)  lazy range
+
+; filter works the same way
+(filter even? [1 2 3 4 5]) ; => (2 4)
+(filter even? (range 10))  ; => (0 2 4 6 8)
+(filter :active [{:name "Ada" :active true}
+                 {:name "Alan" :active false}])
+; => ({:name "Ada" :active true})</pre>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    Python has made progress here — <code>map()</code> and <code>filter()</code> work on iterables generally. But Clojure goes further: maps (dicts) are seqable as sequences of key-value pairs, so you can <code>map</code> over a map the same way you'd map over a list. There's no <code>dict.items()</code> call needed. The abstraction is more complete and more uniform.
+  </div>
+
+  <div class="callout concept">
+    <strong>Programming to abstractions</strong>
+    This is a design principle: write functions that work against the <em>interface</em> (seq), not a specific type (vector, list, string). A function that accepts "anything seqable" is immediately more useful than one that only accepts vectors. This is why Clojure code is so composable — functions written for one purpose tend to work in many more contexts.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     6. EVERYTHING IS AN EXPRESSION
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="expressions">
+  <div class="concept-header">
+    <span class="concept-number">07</span>
+    <div>
+      <div class="concept-title">Everything is an Expression</div>
+      <div class="concept-subtitle">No statements — every form returns a value, always</div>
+    </div>
+  </div>
+
+  <p class="prose">In Python, there are <em>statements</em> (things that do something but don't return values — like <code>if</code> blocks, <code>for</code> loops, assignments) and <em>expressions</em> (things that evaluate to a value — like <code>1 + 2</code> or <code>"hello".upper()</code>). Clojure has no statements. <strong>Everything is an expression. Everything returns a value.</strong></p>
+
+  <div class="compare-grid">
+    <div class="compare-col python">
+      <div class="compare-label">Python — statements don't return values</div>
+      <pre id="py-expr"># if is a STATEMENT — doesn't return a value
+if x > 0:
+    label = "positive"
+else:
+    label = "other"
+
+# Workaround: ternary expression
+label = "positive" if x > 0 else "other"
+
+# for loop is a STATEMENT
+for i in range(5):
+    print(i)
+# returns None implicitly</pre>
+    </div>
+    <div class="compare-col clojure">
+      <div class="compare-label">Clojure — every form is an expression</div>
+      <pre id="clj-expr">; if IS an expression — returns a value
+(def label (if (> x 0) "positive" "other"))
+
+; let IS an expression
+(def result
+  (let [x 10
+        y 20]
+    (+ x y)))  ; => 30
+
+; Everything composes naturally
+(str "Score: " (if (> score 90) "A" "B"))</pre>
+    </div>
+  </div>
+
+  <p class="prose"><strong>Prefix notation</strong> is the other side of this coin. In Clojure, the function always comes first. This is called prefix (or Polish) notation:</p>
+
+  <pre class="code-block" id="prefix-code">; Python infix:   1 + 2 + 3 + 4
+; Clojure prefix: (+ 1 2 3 4)  — same rule, n arguments
+
+; Python:  10 > 5
+; Clojure: (> 10 5)  — same form as any other function call
+
+; Python:  "hello"[1]
+; Clojure: (get "hello" 1)  — or (nth "hello" 1)
+
+; The rule never changes:
+; (function arg1 arg2 arg3 ...)
+; Whether it's arithmetic, comparison, or your own function</pre>
+
+  <div class="callout key">
+    <strong>Why this matters</strong>
+    When everything is an expression and the syntax is uniform, code becomes data. You can pass expressions around, generate them, transform them. There are no special cases where "this kind of thing works differently." The uniformity is what makes macros possible and what makes the code so composable.
+  </div>
+
+  <p class="prose">The parentheses are not a cost — they're the payoff of this uniformity. Every pair of parens is a function call. The first thing inside is always the function. This single rule covers 100% of Clojure syntax.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     7. HOMOICONICITY / CODE AS DATA
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="homoiconicity">
+  <div class="concept-header">
+    <span class="concept-number">08</span>
+    <div>
+      <div class="concept-title">Code as Data / Homoiconicity</div>
+      <div class="concept-subtitle">Code and data share the same structure — the foundation of macros</div>
+    </div>
+  </div>
+
+  <p class="prose">This is one of the most distinctive and powerful properties of Lisp languages. The word <em>homoiconicity</em> means "same representation" — code and data are represented the same way. In Clojure, <strong>a function call is a list</strong>. A list is a data structure. Therefore a function call is a data structure that you can manipulate with ordinary Clojure functions.</p>
+
+  <pre class="code-block" id="homoicon-code">; This is a function call:
+(+ 1 2 3)
+
+; This is a LIST of data:
+'(+ 1 2 3)
+
+; They look identical — the quote just says "treat this as data,
+; don't evaluate it." Remove the quote and it evaluates.
+
+; So code IS data. Data CAN BE code.
+; The quote (') is the only difference.
+
+(def my-code '(+ 1 2 3))  ; a list — just data
+(first my-code)             ; => +  (the symbol +)
+(rest  my-code)             ; => (1 2 3)
+(eval  my-code)             ; => 6  (now execute it as code)</pre>
+
+  <p class="prose">This property is what makes <strong>macros</strong> possible. A macro is a function that receives unevaluated code (as data structures — lists, symbols, vectors) and transforms it into new code (other lists, symbols, vectors) before evaluation. The macro runs at compile time, manipulating your code the same way any other function manipulates data.</p>
+
+  <pre class="code-block" id="macro-code">; The threading macros you already use are macros
+; ->> is not a function — it's a macro that rewrites code
+
+; You write:
+(->> [1 2 3 4 5]
+     (filter even?)
+     (map #(* % 10))
+     (reduce +))
+
+; The macro rewrites it to:
+(reduce + (map #(* % 10) (filter even? [1 2 3 4 5])))
+
+; These are identical at runtime. The macro ran at compile time,
+; received your ->> form as a data structure, rearranged it,
+; and handed back the nested version to be compiled.</pre>
+
+  <div class="callout key">
+    <strong>The practical upshot</strong>
+    In Python, if you want a new language feature — say, a custom loop construct, or a new control flow form — you cannot add it. You're limited to what the language provides. In Clojure, you can add new syntax as a library. <code>when</code>, <code>cond</code>, <code>for</code>, <code>-&gt;&gt;</code>, <code>and</code>, <code>or</code> — these are all macros written in Clojure itself. The language can grow new features from userland.
+  </div>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    Python has decorators and metaclasses as metaprogramming tools, but they operate at a different level and with much less power. Python code cannot easily manipulate other Python code as data structures — the AST is accessible but not the primary representation. In Clojure, the primary representation of code is already a data structure. That's the essential difference.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     8. LAZY EVALUATION
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="laziness">
+  <div class="concept-header">
+    <span class="concept-number">09</span>
+    <div>
+      <div class="concept-title">Lazy Evaluation</div>
+      <div class="concept-subtitle">Computation is deferred until results are actually needed</div>
+    </div>
+  </div>
+
+  <p class="prose">Most sequence functions in Clojure return <strong>lazy sequences</strong> — descriptions of a computation that hasn't happened yet. Nothing is computed until something actually consumes the values. This makes it possible to work with infinite sequences, build processing pipelines without intermediate memory allocation, and compose large data transformations efficiently.</p>
+
+  <pre class="code-block" id="lazy-code">; (range) is an INFINITE sequence — no upper bound
+; This line itself costs almost nothing
+(def all-numbers (range))
+
+; Nothing is computed until you consume:
+(take 5 all-numbers)   ; => (0 1 2 3 4)   only 5 values computed
+
+; Pipeline over potentially huge data — no intermediate collections
+(->> (range 1000000)       ; infinite lazy range
+     (filter even?)         ; lazy — nothing computed yet
+     (map #(* % %))         ; lazy — still nothing computed
+     (take 5))              ; NOW computation happens, for 5 values only
+; => (0 4 16 36 64)
+; Only 10 numbers were ever examined (the first 5 evens: 0,2,4,6,8)</pre>
+
+  <div class="callout key">
+    <strong>Surface level — what you need to know</strong>
+    Lazy sequences are like a recipe, not a meal. Writing the recipe costs nothing. Cooking happens only when you eat. <code>take</code>, <code>first</code>, <code>doall</code>, <code>into</code>, and <code>reduce</code> are the "eat" operations — they force realization. Until then, the sequence is just a description of what to compute.
+  </div>
+
+  <p class="prose"><strong>Mechanistic detail:</strong> A lazy sequence is a linked structure where each node holds either a computed value or a thunk — a zero-argument function that, when called, produces the next value and another thunk. The sequence realizes itself incrementally as elements are consumed. Once realized, the value is cached so the thunk runs at most once per element.</p>
+
+  <div class="compare-grid">
+    <div class="compare-col python">
+      <div class="compare-label">Python — generators are similar but different</div>
+      <pre id="py-lazy">import itertools
+
+# Python generators are lazy
+def naturals():
+    n = 0
+    while True:
+        yield n
+        n += 1
+
+nums = naturals()  # lazy, like Clojure
+list(itertools.islice(nums, 5))
+# => [0, 1, 2, 3, 4]
+
+# But: generators are stateful and one-shot
+# You cannot go back or share them safely</pre>
+    </div>
+    <div class="compare-col clojure">
+      <div class="compare-label">Clojure — lazy seqs are values</div>
+      <pre id="clj-lazy">(def naturals (range))  ; lazy, infinite
+
+(take 5 naturals)  ; => (0 1 2 3 4)
+(take 5 naturals)  ; => (0 1 2 3 4) AGAIN — safe!
+
+; Clojure lazy seqs are IMMUTABLE VALUES
+; You can share them, pass them to multiple
+; functions, and each gets the same result.
+; No stateful iterator that "runs out."</pre>
+    </div>
+  </div>
+
+  <div class="callout warning">
+    <strong>The key gotcha — don't mix laziness with side effects</strong>
+    Because lazy sequences compute on demand, side effects inside them fire at unpredictable times — or not at all. <code>(map println [1 2 3])</code> may print nothing if nothing consumes the result. Use <code>doseq</code> for side-effecting loops, or <code>run!</code>. Use <code>doall</code> to force a lazy seq when you need effects to happen immediately.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     9. MANAGED REFERENCES
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="managed-refs">
+  <div class="concept-header">
+    <span class="concept-number">10</span>
+    <div>
+      <div class="concept-title">Managed References</div>
+      <div class="concept-subtitle">Mutation is not forbidden — it is explicit, controlled, and coordinated</div>
+    </div>
+  </div>
+
+  <p class="prose">Clojure doesn't pretend the world is stateless. Programs need to model change — a counter that increments, a cache that fills, a user's session that updates. Clojure handles this by making mutation <strong>explicit, controlled, and limited to specific reference types</strong>. You cannot accidentally mutate a value — you must explicitly use a reference type and a coordinated update operation.</p>
+
+  <p class="prose">There are four reference types, each designed for a different concurrency scenario:</p>
+
+  <table class="ref-table">
+    <tr>
+      <th>Type</th>
+      <th>Coordination</th>
+      <th>When to use</th>
+      <th>Update function</th>
+    </tr>
+    <tr>
+      <td>atom</td>
+      <td>Uncoordinated, synchronous</td>
+      <td>Single independent piece of state. The default choice.</td>
+      <td>swap! reset!</td>
+    </tr>
+    <tr>
+      <td>ref</td>
+      <td>Coordinated (STM), synchronous</td>
+      <td>Multiple pieces of state that must change together consistently.</td>
+      <td>alter commute</td>
+    </tr>
+    <tr>
+      <td>agent</td>
+      <td>Uncoordinated, asynchronous</td>
+      <td>State that changes as a result of actions dispatched to it.</td>
+      <td>send send-off</td>
+    </tr>
+    <tr>
+      <td>var</td>
+      <td>Per-thread</td>
+      <td>Dynamic binding — different values in different threads.</td>
+      <td>binding set!</td>
+    </tr>
+  </table>
+
+  <pre class="code-block" id="refs-code">; ATOM — the everyday state container
+(def counter (atom 0))
+
+@counter           ; => 0   (deref to read current value)
+(swap! counter inc)        ; applies inc to current value atomically
+@counter           ; => 1
+(swap! counter + 10)       ; applies + with 10
+@counter           ; => 11
+
+; The key: swap! takes a PURE FUNCTION.
+; It may be retried if another thread updates concurrently.
+; Never use swap! with functions that have side effects.
+
+; REFS — coordinated updates across multiple values
+(def account-a (ref 1000))
+(def account-b (ref 500))
+
+(dosync                           ; transaction — all or nothing
+  (alter account-a - 200)
+  (alter account-b + 200))
+; Either both update or neither does. No inconsistent state.</pre>
+
+  <div class="callout key">
+    <strong>The model: identity + value + time</strong>
+    A reference type (atom, ref, agent) is an <em>identity</em>. At any point in time it holds an immutable <em>value</em>. <code>swap!</code> doesn't change the value — it atomically updates the reference to point at a new value. Anyone holding a reference to the old value (from before the swap) still sees the old immutable value. This is concept 02 — Values vs Identity — made concrete.
+  </div>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    Python's approach to shared mutable state is threading.Lock, queue.Queue, or multiprocessing.Value. These are manual — you are responsible for acquiring and releasing locks correctly. Forget a lock and you have a race condition. Clojure's reference types build the coordination semantics into the type itself: atoms use compare-and-swap internally, refs use Software Transactional Memory. You cannot do it wrong by accident.
+  </div>
+
+  <div class="diagram">
+    <div class="d-label">How swap! works internally (compare-and-swap loop):</div>
+    <pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.8;overflow-x:auto;white-space:pre;"><span class="d-acc">1.</span> <span class="d-grey">Read current value from atom:          </span><span class="d-green">old = @counter  (= 5)</span>
+<span class="d-acc">2.</span> <span class="d-grey">Apply your function to old value:       </span><span class="d-green">new = (inc 5)  (= 6)</span>
+<span class="d-acc">3.</span> <span class="d-grey">Compare-and-swap atomically:
+   If atom still holds 'old', set it to 'new'. Return new.
+   If atom was changed by another thread: </span><span class="d-acc">RETRY from step 1.</span>
+
+<span class="d-grey">This is why your swap! function must be pure — it may run 2, 5, 10 times
+if there is heavy contention. Side effects in the function would fire multiple times.</span></pre>
+  </div>
+</section>
+
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SUMMARY
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="summary">
+  <div class="concept-header">
+    <span class="concept-number" style="background:var(--surface2);border-color:var(--border2);color:var(--text2)">&#10003;</span>
+    <div>
+      <div class="concept-title">How the 11 concepts connect</div>
+    </div>
+  </div>
+
+  <p class="prose">These aren't nine independent ideas. They form a chain where each concept supports the next:</p>
+
+  <div class="state-flow" style="flex-direction:column; align-items:flex-start; gap:10px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Simple vs Easy</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">motivates choosing the harder-to-learn, simpler design</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">S-expressions, Forms &amp; cons</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">the uniform syntax everything is built from</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Values / Identity / State</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">the philosophy that justifies immutability</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Immutability</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">requires efficient data structures to be practical</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Persistent structures</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">makes immutability efficient via structural sharing</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Sequence abstraction</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">one interface over all immutable collections</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Everything is an expression</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">enables composition, enables homoiconicity</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Code as data</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">powers macros, metaprogramming, DSLs</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Lazy evaluation</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">makes infinite sequences and large pipelines efficient</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Managed references</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">adds controlled mutation back, explicit and safe</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="state-box highlight">Namespaces</div>
+      <div class="state-arrow">&#8594;</div>
+      <span style="font-size:14px;color:var(--text2)">organises, isolates, and connects code — the module system</span>
+    </div>
+  </div>
+
+  <p class="prose" style="margin-top:1.5rem">The strangeness you feel in Phase 1 is many of these concepts arriving simultaneously. The parentheses, the prefix notation, the nil returns, the immutability — none of it is arbitrary. Every piece connects back to the chain above. Once the chain clicks, the strange becomes obvious.</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     11. NAMESPACES
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="namespaces">
+  <div class="concept-header">
+    <span class="concept-number">11</span>
+    <div>
+      <div class="concept-title">Namespaces</div>
+      <div class="concept-subtitle">How Clojure organises, isolates, and connects code</div>
+    </div>
+  </div>
+
+  <p class="prose">Every Clojure source file starts with <code>(ns my.app.core)</code>. A namespace is a named container for vars — it's how Clojure keeps names from colliding and how code in one file refers to code in another. Understanding namespaces is essential because you encounter them in every session, every error message, and every <code>require</code> call.</p>
+
+  <div class="concept-pair">
+    <div class="concept-box">
+      <h4>A namespace is a mapping</h4>
+      <p>A namespace maps <em>symbols</em> to <em>vars</em>. When you write <code>(def x 42)</code>, Clojure creates a var named <code>x</code> in the current namespace. The fully qualified name is <code>my.ns/x</code>. Any other namespace that wants to use it must refer to it by that full name, or import it.</p>
+    </div>
+    <div class="concept-box">
+      <h4>Namespaces map to files</h4>
+      <p>The namespace name mirrors the file path: <code>my.app.core</code> lives in <code>src/my/app/core.clj</code>. Dots become directory separators, hyphens become underscores in the filename. This convention is enforced — violating it causes load errors.</p>
+    </div>
+  </div>
+
+  <pre class="code-block" id="ns-code">; Every file begins with ns — this is a macro form
+(ns my.app.core
+  (:require [clojure.string :as str]       ; load and alias
+            [clojure.set    :as set]        ; load and alias
+            [my.app.utils   :refer [helper-fn]]))  ; load and refer specific var
+
+; After this:
+(str/upper-case "hello")   ; => "HELLO"   — via alias
+(set/union #{1} #{2})      ; => #{1 2}    — via alias
+(helper-fn data)           ; => ...        — referred directly, no prefix needed
+
+; Fully qualified names always work without require:
+(clojure.string/upper-case "hello")  ; => "HELLO"
+
+; The current namespace
+*ns*           ; => #object[clojure.lang.Namespace "my.app.core"]
+(ns-name *ns*) ; => my.app.core</pre>
+
+  <div class="callout key">
+    <strong>:require vs :refer vs :as</strong>
+    These three options do different things and are worth knowing precisely. <code>:as str</code> loads the namespace and gives it an alias — you access its vars with the <code>str/</code> prefix. <code>:refer [fn1 fn2]</code> pulls specific vars into your namespace so you can call them without a prefix. <code>:refer :all</code> pulls everything in (avoid this — it pollutes your namespace and makes it hard to know where names come from). The idiomatic choice is always <code>:as</code> with a short alias.
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-col python">
+      <div class="compare-label">Python — imports</div>
+      <pre id="py-ns">import os
+import os.path as path
+from collections import defaultdict
+from typing import List, Dict
+
+# Module = file
+# Package = directory with __init__.py
+# No explicit namespace declaration needed
+# — the filename IS the module name</pre>
+    </div>
+    <div class="compare-col clojure">
+      <div class="compare-label">Clojure — namespaces</div>
+      <pre id="clj-ns">(ns my.app.core
+  (:require [clojure.string :as str]
+            [clojure.set    :as set]
+            [clojure.core.async :as async]))
+
+; ns declaration is explicit and always first
+; Namespace name must match file path
+; my.app.core → src/my/app/core.clj</pre>
+    </div>
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Keywords and namespaces</h3>
+
+  <p class="prose">Keywords can be namespaced too, using the <code>::</code> prefix or an explicit namespace. <code>::name</code> is shorthand for <code>:current.ns/name</code>. Namespaced keywords are the idiomatic way to add context to data, especially when maps from different domains might share key names.</p>
+
+  <pre class="code-block" id="ns-kw-code">; Plain keyword — no namespace
+:name            ; => :name
+
+; Auto-namespaced keyword (expands to current ns)
+::name           ; => :my.app.core/name  (in ns my.app.core)
+
+; Explicitly namespaced keyword
+:user/name       ; => :user/name
+:db/id           ; => :db/id
+
+; Useful for distinguishing domains in the same map
+{:user/name "Ada"
+ :db/id     42
+ :role/type :engineer}
+
+; Access with the full keyword
+(:user/name m)   ; => "Ada"</pre>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    Python modules and Clojure namespaces serve similar purposes — organising code and avoiding name collisions. The key difference: Python's import system is flexible (you can import anything, anywhere, in any order). Clojure's <code>ns</code> declaration is strict and front-loaded — the entire dependency structure of a file is declared at the top. This is the Simple vs Easy trade-off again: stricter upfront, easier to reason about as the codebase grows.
+  </div>
+</section>
+
+
+</main>
+
+<script>
+function initTheme() {
+  var saved = localStorage.getItem('clj-ref-theme');
+  var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme:dark)').matches;
+  applyTheme(dark);
+}
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = dark ? '\u2600' : '\u263e';
+  // Re-highlight all code blocks
+  document.querySelectorAll('pre.code-block, .compare-col pre').forEach(function(pre) {
+    if (pre.dataset.src) pre.innerHTML = highlight(pre.dataset.src);
+  });
+}
+function toggleTheme() {
+  var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  applyTheme(!dark);
+  localStorage.setItem('clj-ref-theme', !dark ? 'dark' : 'light');
+}
+
+// ── SYNTAX HIGHLIGHTER (identical to reference page) ──
+function highlight(code) {
+  var SPECIAL = new Set([
+    'def','defn','defn-','defmacro','defmethod','defmulti','defprotocol',
+    'defrecord','deftype','defstruct','declare','ns','in-ns','import',
+    'require','use','refer','fn','fn*','let','let*','letfn','loop','recur',
+    'if','if-not','if-let','if-some','when','when-not','when-let','when-first',
+    'when-some','cond','condp','case','and','or','not','do','try','catch',
+    'finally','throw','new','.','..','doto','->','->>','as->','cond->',
+    'cond->>','some->','some->>','binding','set!','var','quote','syntax-quote',
+    'unquote','unquote-splicing','monitor-enter','monitor-exit','reify',
+    'proxy','extend','extend-type','extend-protocol','with-meta','vary-meta',
+    'alter-meta!','reset-meta!','for','doseq','dotimes','while','locking',
+    'with-open','with-local-vars','lazy-seq','delay','future','promise',
+    'dosync','io!','with-precision','atom','ref','agent','send','send-off',
+    'swap!','reset!','deref','alter','commute','add-watch','remove-watch',
+  ]);
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function span(cls, s) { return '<span class="tok-' + cls + '">' + esc(s) + '</span>'; }
+  function processLine(line) {
+    var out = '', i = 0, len = line.length;
+    while (i < len) {
+      var ch = line[i];
+      if (ch === ';') {
+        var rest = line.slice(i);
+        out += /^;\s*(=+>|=>)/.test(rest) ? span('result', rest) : span('comment', rest);
+        break;
+      }
+      if (ch === '"') {
+        var j = i + 1;
+        while (j < len) { if (line[j] === '\\') { j += 2; continue; } if (line[j] === '"') { j++; break; } j++; }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+      if (ch === '#' && line[i+1] === '"') {
+        var j = i + 2;
+        while (j < len) { if (line[j] === '\\') { j += 2; continue; } if (line[j] === '"') { j++; break; } j++; }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+      if (ch === '#' && i+1 < len && '#{(_@^'.indexOf(line[i+1]) >= 0) {
+        out += span('dispatch', line.slice(i, i+2)); i += 2; continue;
+      }
+      if (ch === ':' && i+1 < len && /[a-zA-Z_\-!?*+<>=]/.test(line[i+1])) {
+        var j = i;
+        if (line[j+1] === ':') j++;
+        j++;
+        while (j < len && /[a-zA-Z0-9_\-!?*+<>=.\/]/.test(line[j])) j++;
+        out += span('keyword', line.slice(i, j)); i = j; continue;
+      }
+      if (/[0-9]/.test(ch) || (ch === '-' && /[0-9]/.test(line[i+1] || ''))) {
+        var prev = i > 0 ? line[i-1] : ' ';
+        if (ch === '-' && /[a-zA-Z]/.test(prev)) { out += esc(ch); i++; continue; }
+        var j = i;
+        if (line[j] === '-') j++;
+        if (line[j] === '0' && (line[j+1] === 'x' || line[j+1] === 'X')) {
+          j += 2; while (j < len && /[0-9a-fA-F]/.test(line[j])) j++;
+        } else if (line[j] === '2' && line[j+1] === 'r') {
+          j += 2; while (j < len && /[01]/.test(line[j])) j++;
+        } else {
+          while (j < len && /[0-9]/.test(line[j])) j++;
+          if (j < len && line[j] === '.') { j++; while (j < len && /[0-9]/.test(line[j])) j++; }
+          if (j < len && (line[j] === 'e' || line[j] === 'E')) {
+            j++; if (j < len && (line[j] === '+' || line[j] === '-')) j++;
+            while (j < len && /[0-9]/.test(line[j])) j++;
+          }
+          if (j < len && line[j] === '/' && /[0-9]/.test(line[j+1] || '')) {
+            j++; while (j < len && /[0-9]/.test(line[j])) j++;
+          }
+        }
+        out += span('number', line.slice(i, j)); i = j; continue;
+      }
+      if (/[a-zA-Z_\-!?*+<>=.\/^%$&]/.test(ch)) {
+        var j = i;
+        while (j < len && /[a-zA-Z0-9_\-!?*+<>=.\/^%$&'#@]/.test(line[j])) j++;
+        var word = line.slice(i, j);
+        if (word === 'nil') out += span('bool', word);
+        else if (word === 'true' || word === 'false') out += span('bool', word);
+        else if (SPECIAL.has(word)) out += span('special', word);
+        else out += esc(word);
+        i = j; continue;
+      }
+      out += esc(ch); i++;
+    }
+    return out;
+  }
+  return code.split('\n').map(processLine).join('\n');
+}
+
+// ── HIGHLIGHT ALL CODE BLOCKS ON LOAD ──
+function highlightAll() {
+  // code-block elements (standalone)
+  document.querySelectorAll('pre.code-block').forEach(function(pre) {
+    pre.dataset.src = pre.textContent;
+    pre.innerHTML = highlight(pre.dataset.src);
+  });
+  // compare-col pre elements
+  document.querySelectorAll('.compare-col pre').forEach(function(pre) {
+    pre.dataset.src = pre.textContent;
+    pre.innerHTML = highlight(pre.dataset.src);
+  });
+}
+
+// ── ACTIVE NAV PILL ON SCROLL ──
+function updateActiveNav() {
+  var sections = document.querySelectorAll('.concept-section[id]');
+  var pills = document.querySelectorAll('.nav-pill');
+  var scrollY = window.scrollY + 120;
+  var activeId = null;
+  sections.forEach(function(s) {
+    if (s.offsetTop <= scrollY) activeId = s.id;
+  });
+  pills.forEach(function(p) {
+    var href = p.getAttribute('href').slice(1);
+    p.classList.toggle('active', href === activeId);
+  });
+}
+window.addEventListener('scroll', updateActiveNav, { passive: true });
+
+// Desktop only: redirect vertical wheel to horizontal scroll on concept nav
+var isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+if (!isTouchDevice) {
+  var conceptNav = document.getElementById('concept-nav');
+  conceptNav.addEventListener('wheel', function(e) {
+    if (e.deltaY !== 0) {
+      e.preventDefault();
+      conceptNav.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+}
+
+// Smooth scroll for nav pills
+document.querySelectorAll('.nav-pill').forEach(function(pill) {
+  pill.addEventListener('click', function(e) {
+    e.preventDefault();
+    var id = pill.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+// Init
+initTheme();
+highlightAll();
+updateActiveNav();
+</script>
+</body>
+</html>

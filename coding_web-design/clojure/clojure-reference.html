@@ -524,6 +524,7 @@ main {
       </div>
       <div class="hdr-actions">
         <span class="count-badge" id="count-badge">229 functions</span>
+        <a href="clojure-concepts.html" class="ref-link" style="font-size:13px;color:var(--accent);text-decoration:none;border:1px solid var(--accent);border-radius:20px;padding:3px 10px;white-space:nowrap;transition:background .15s;" onmouseover="this.style.background='var(--accent-bg)'" onmouseout="this.style.background=''">&#8594; concepts</a>
         <button class="icon-btn" title="Help" onclick="toggleHelp()">?</button>
         <button class="icon-btn" id="theme-btn" title="Toggle theme" onclick="toggleTheme()">☾</button>
       </div>
@@ -644,6 +645,18 @@ function updateFilterFade() {
 }
 
 filtersEl.addEventListener('scroll', updateFilterFade, { passive: true });
+
+// Desktop only: redirect vertical wheel to horizontal scroll on pill bar
+var isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+if (!isTouchDevice) {
+  filtersEl.addEventListener('wheel', function(e) {
+    if (e.deltaY !== 0) {
+      e.preventDefault();
+      filtersEl.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+}
+
 FILTER_GROUPS.forEach((g, i) => {
   const btn = document.createElement('button');
   btn.className = 'pill' + (i === 0 ? ' active' : '');

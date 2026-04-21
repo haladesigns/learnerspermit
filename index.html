@@ -88,30 +88,32 @@
   /* Nested folders */
   .subfolder-list { display: none; list-style: none; margin: 0; padding: 0; }
 
-  /* Top-level: 2px, on-surface 18%, standard indent */
+  /* All open subfolder-lists share base open styles */
   .subfolder-list.open {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
     margin-top: 0.4rem;
     margin-bottom: 0.2rem;
+  }
+
+  /* Depth 1 — top-level: 2px bar, on-surface 18%, standard indent */
+  .subfolder-list.open[data-depth="1"] {
     padding-left: 1.25rem;
     border-left: 2px solid color-mix(in srgb, var(--on-surface) 18%, transparent);
   }
 
-  /* Nested: 1px, outline-variant colour, extra indent creates gap between bars */
-  .subfolder-list.open .subfolder-list.open {
-    border-left: 1px solid var(--outline-variant);
+  /* Depth 2+ — nested: 1px bar, outline-variant, extra margin gap from parent bar */
+  .subfolder-list.open[data-depth="2"] {
     padding-left: 1rem;
-    margin-left: 0.15rem;
+    margin-left: 0.2rem;
+    border-left: 1px solid rgba(173,179,178,0.55);
   }
 
-  /* Deep nesting: same as nested but extra margin offset */
-  .subfolder-list.open .subfolder-list.open .subfolder-list.open {
-    border-left: 1px solid var(--outline-variant);
+  .subfolder-list.open[data-depth="3"] {
     padding-left: 0.85rem;
-    margin-left: 0.25rem;
-    opacity: 0.8;
+    margin-left: 0.3rem;
+    border-left: 1px solid rgba(173,179,178,0.35);
   }
 
   /* Sticky context label — shown when folder toggle scrolls out of view */
@@ -474,6 +476,7 @@ function appendColumn(label, children, container) {
 
   const ul = document.createElement('ul');
   ul.style.cssText = 'list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.45rem;';
+  ul.dataset.depth = '0';
   renderEntries(children, ul);
 
   scroll.appendChild(sticky);
@@ -564,8 +567,13 @@ function renderEntries(entries, ul) {
       toggle.innerHTML = `<svg class="toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg><span class="folder-label">${entry.label}</span>`;
       const sub = document.createElement('ul');
       sub.className = 'subfolder-list';
-      sub.style.cssText = 'list-style:none; padding:0; margin:0;';
-      if (entry.children?.length) renderEntries(entry.children, sub);
+      // depth tracked via data attribute — no inline style overrides
+      const parentDepth = parseInt(ul.dataset.depth || '0');
+      sub.dataset.depth = parentDepth + 1;
+      if (entry.children?.length) {
+        ul.dataset.depth = ul.dataset.depth || '0';
+        renderEntries(entry.children, sub);
+      }
       toggle.addEventListener('click', () => {
         sub.classList.toggle('open');
         toggle.classList.toggle('open');

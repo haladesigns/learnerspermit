@@ -577,8 +577,53 @@ main {
 
   <div class="callout key">
     <strong>The key word: complect</strong>
-    Hickey uses the verb "to complect" — to interweave or braid things together that should be separate. Objects in OO languages complect state, identity, and value into one thing. Functions complect in Clojure are called out and eliminated. The goal is always: separate concerns that are logically separate.
+    Hickey uses the verb "to complect" — to interweave or braid things together that should be separate. The goal is always: keep logically separate concerns in separate constructs.
   </div>
+
+  <p class="prose">The clearest example of complecting is a plain OO object instance. Three things that are conceptually distinct get fused into one mutable heap object:</p>
+
+  <div class="concept-pair">
+    <div class="concept-box">
+      <h4>Identity</h4>
+      <p><em>Which thing this is.</em> The stable name or reference that persists over time. In Python: the variable <code>account</code> pointing to an object at a memory address.</p>
+    </div>
+    <div class="concept-box">
+      <h4>State</h4>
+      <p><em>What it holds right now.</em> The current snapshot of its fields. In Python: <code>account.balance</code> at this moment.</p>
+    </div>
+  </div>
+  <div class="concept-pair" style="margin-top:-6px">
+    <div class="concept-box" style="grid-column:1/-1">
+      <h4>Value</h4>
+      <p><em>The information itself.</em> The data: <code>{"balance": 100, "owner": "Hala"}</code>. In OO this is inseparable from the object — you can't get the value without going through the mutable identity, and updating state overwrites the value in place.</p>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="d-label">OO: all three fused in one mutable object</div>
+<pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;white-space:pre;"><span class="d-grey">account  ──►  0x4A2F  { balance: 100, owner: "Hala" }
+ ^identity       ^state+value (same thing, same place)
+
+account.balance = 200   # the value 100 is gone — overwritten
+                        # no "old" version exists anywhere</span></pre>
+  </div>
+
+  <div class="diagram">
+    <div class="d-label">Clojure: identity, state, and value are separate constructs</div>
+<pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;white-space:pre;"><span class="d-grey">account  — the atom (stable identity, lives forever)
+   │
+   ▼  (points to)
+</span><span class="d-green">{:balance 100 :owner "Hala"}   ← immutable value at t=0</span>
+
+<span class="d-grey">(swap! account assoc :balance 200)
+
+account still exists, now points to:
+</span><span class="d-acc">{:balance 200 :owner "Hala"}   ← immutable value at t=1</span>
+<span class="d-green">{:balance 100 :owner "Hala"}   ← t=0 value still exists</span>
+<span class="d-grey">                                 any thread holding t=0 ref still sees it</span></pre>
+  </div>
+
+  <p class="prose">In Clojure the <strong>atom</strong> is the identity. <strong>State</strong> is simply which value the atom currently points to. The <strong>value</strong> is an immutable map that lives on independently — it can be passed to other threads, compared against future values, or rolled back to. The three concerns are no longer braided together.</p>
 
   <div class="callout python">
     <strong>Python comparison</strong>

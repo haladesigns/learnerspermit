@@ -189,6 +189,12 @@
       },
       {
         "type": "file",
+        "name": "claude-code-power-user.html",
+        "label": "Claude Code Power User",
+        "path": "claude-code/claude-code-power-user.html"
+      },
+      {
+        "type": "file",
         "name": "readme",
         "label": "Readme",
         "path": "claude-code/readme"

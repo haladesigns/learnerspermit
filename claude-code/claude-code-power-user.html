@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code — Power User Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:            #0d0f14;
+    --bg-card:       #13161e;
+    --bg-code:       #0a0c10;
+    --border:        #1e2330;
+    --border-accent: #2e3550;
+    --text:          #c8d0e8;
+    --text-muted:    #5a6380;
+    --text-dim:      #3a4060;
+    --accent:        #4f8ef7;
+    --accent-glow:   rgba(79,142,247,0.15);
+    --accent2:       #e05f7a;
+    --accent2-glow:  rgba(224,95,122,0.12);
+    --accent3:       #3ecf8e;
+    --accent3-glow:  rgba(62,207,142,0.12);
+    --accent4:       #f7a23e;
+    --accent4-glow:  rgba(247,162,62,0.12);
+    --accent5:       #b57bf7;
+    --accent5-glow:  rgba(181,123,247,0.12);
+    --tag-bg:        #1a1f2e;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+    --toggle-bg:     #1e2330;
+  }
+  :root[data-theme="light"] {
+    --bg:            #f0f2f8;
+    --bg-card:       #ffffff;
+    --bg-code:       #e8ebf5;
+    --border:        #d4d9ec;
+    --border-accent: #b8c0dc;
+    --text:          #1a1f35;
+    --text-muted:    #6b748f;
+    --text-dim:      #adb5cc;
+    --accent:        #2563eb;
+    --accent-glow:   rgba(37,99,235,0.1);
+    --accent2:       #c9354f;
+    --accent2-glow:  rgba(201,53,79,0.1);
+    --accent3:       #0d7c4e;
+    --accent3-glow:  rgba(13,124,78,0.1);
+    --accent4:       #c47400;
+    --accent4-glow:  rgba(196,116,0,0.1);
+    --accent5:       #7c3aed;
+    --accent5-glow:  rgba(124,58,237,0.1);
+    --tag-bg:        #e8ebf5;
+    --shadow:        0 4px 24px rgba(0,0,0,0.08);
+    --toggle-bg:     #d4d9ec;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* HEADER */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600; font-size: 15px;
+    color: var(--accent); letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; padding: 2px 8px; border-radius: 3px;
+    background: var(--accent-glow); color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3); letter-spacing: 0.05em;
+  }
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+  .toggle {
+    width: 44px; height: 24px; background: var(--toggle-bg);
+    border: 1px solid var(--border-accent); border-radius: 12px;
+    cursor: pointer; position: relative; appearance: none; outline: none; transition: background 0.3s;
+  }
+  .toggle::after {
+    content: ''; position: absolute; width: 18px; height: 18px;
+    background: var(--accent); border-radius: 50%; top: 2px; left: 2px; transition: transform 0.3s;
+  }
+  [data-theme="light"] .toggle::after { transform: translateX(20px); }
+
+  /* NAV */
+  nav {
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    padding: 0 32px; display: flex; overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav button {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    padding: 10px 16px; background: none; border: none;
+    border-bottom: 2px solid transparent; color: var(--text-muted);
+    cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  nav button:hover  { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN */
+  main { max-width: 1100px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+  .section { display: none; flex-direction: column; gap: 20px; }
+  .section.active { display: flex; }
+  .section.active > * { animation: fadeUp 0.25s ease both; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* CARDS */
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px 24px;
+    box-shadow: var(--shadow); transition: background 0.3s, border 0.3s;
+  }
+  .card.blue   { border-left: 3px solid var(--accent);  }
+  .card.red    { border-left: 3px solid var(--accent2); }
+  .card.green  { border-left: 3px solid var(--accent3); }
+  .card.yellow { border-left: 3px solid var(--accent4); }
+  .card.purple { border-left: 3px solid var(--accent5); }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);
+    margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .card-title::before {
+    content: ''; display: inline-block; width: 3px; height: 12px;
+    background: var(--accent); border-radius: 2px;
+  }
+  .card-title.red::before    { background: var(--accent2); }
+  .card-title.green::before  { background: var(--accent3); }
+  .card-title.yellow::before { background: var(--accent4); }
+  .card-title.purple::before { background: var(--accent5); }
+
+  /* HERO */
+  .hero {
+    background: var(--bg-card); border: 1px solid var(--border-accent);
+    border-left: 3px solid var(--accent); border-radius: 8px; padding: 24px;
+    box-shadow: var(--shadow), inset 0 0 60px var(--accent-glow);
+  }
+  .hero h2 {
+    font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600;
+    color: var(--accent); margin-bottom: 8px; letter-spacing: -0.02em;
+  }
+  .hero p { color: var(--text); font-size: 15px; max-width: 760px; line-height: 1.7; }
+  .hero p strong { color: var(--accent); font-weight: 600; }
+
+  /* GRIDS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* RULE ROWS */
+  .rule-list { display: flex; flex-direction: column; gap: 10px; }
+  .rule-row {
+    display: grid; grid-template-columns: 20px 1fr; gap: 12px;
+    align-items: flex-start; padding: 10px 14px;
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 6px; transition: border-color 0.2s;
+  }
+  .rule-row:hover { border-color: var(--border-accent); }
+  .rule-icon { font-size: 14px; line-height: 1.5; }
+  .rule-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent4); font-weight: 600; }
+  .rule-text .neg   { color: var(--accent2); font-weight: 600; }
+  .rule-text .pos   { color: var(--accent3); font-weight: 600; }
+  .rule-text .pur   { color: var(--accent5); font-weight: 600; }
+  .rule-text code {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; color: var(--accent);
+  }
+
+  /* STEP ROWS */
+  .step-list { display: flex; flex-direction: column; gap: 10px; }
+  .step-row {
+    display: grid; grid-template-columns: 28px 1fr; gap: 14px;
+    align-items: flex-start; padding: 12px 16px;
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 6px; transition: border-color 0.2s;
+  }
+  .step-row:hover { border-color: var(--border-accent); }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600;
+    color: var(--accent); text-align: center; margin-top: 1px;
+  }
+  .step-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .step-body strong { color: var(--text); font-weight: 600; }
+  .step-body .note { color: var(--accent2); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .tip  { color: var(--accent4); font-size: 12px; display: block; margin-top: 4px; }
+  .step-body .good { color: var(--accent3); font-size: 12px; display: block; margin-top: 4px; }
+
+  /* CODE BLOCKS */
+  pre {
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 6px; padding: 14px 16px; overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    line-height: 1.7; color: var(--text); margin-top: 10px;
+  }
+  .cm { color: var(--text-muted); font-style: italic; }
+  .kw { color: var(--accent); }
+  .hd { color: var(--accent4); font-weight: 600; }
+  .li { color: var(--accent3); }
+  .fn { color: var(--accent2); }
+  .pu { color: var(--accent5); }
+  .str { color: var(--accent3); }
+
+  /* TABLES */
+  .ref-table { width: 100%; border-collapse: collapse; }
+  .ref-table th {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);
+    text-align: left; padding: 8px 12px; background: var(--bg-code);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--accent-glow); }
+  .ref-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    color: var(--accent); white-space: nowrap;
+  }
+  .ref-table td.muted { color: var(--text-muted); font-size: 12px; }
+  .ref-table td.warn  { color: var(--accent2); font-size: 12px; }
+  .ref-table td.good  { color: var(--accent3); font-size: 12px; }
+
+  /* DECISION GRID */
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .decision-grid { grid-template-columns: 1fr; } }
+  .decision-col { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .decision-col-header {
+    padding: 10px 16px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600;
+  }
+  .decision-col-header.use  { background: var(--accent3-glow); color: var(--accent3); border-bottom: 1px solid rgba(62,207,142,0.2); }
+  .decision-col-header.skip { background: var(--accent2-glow); color: var(--accent2); border-bottom: 1px solid rgba(224,95,122,0.2); }
+  .decision-item {
+    padding: 9px 16px; font-size: 13px; color: var(--text);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .decision-item:last-child { border-bottom: none; }
+  .decision-item .di { font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  /* CALLOUT */
+  .callout {
+    background: var(--bg-code); border: 1px solid var(--border-accent);
+    border-radius: 6px; padding: 16px 20px;
+  }
+  .callout.blue   { border-left: 3px solid var(--accent);  }
+  .callout.red    { border-left: 3px solid var(--accent2); }
+  .callout.green  { border-left: 3px solid var(--accent3); }
+  .callout.yellow { border-left: 3px solid var(--accent4); }
+  .callout.purple { border-left: 3px solid var(--accent5); }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;
+  }
+  .callout.blue   .callout-label { color: var(--accent);  }
+  .callout.red    .callout-label { color: var(--accent2); }
+  .callout.green  .callout-label { color: var(--accent3); }
+  .callout.yellow .callout-label { color: var(--accent4); }
+  .callout.purple .callout-label { color: var(--accent5); }
+  .callout p { font-size: 14px; color: var(--text); line-height: 1.6; }
+  .callout p em { font-style: normal; font-weight: 500; }
+  .callout.blue   p em { color: var(--accent);  }
+  .callout.red    p em { color: var(--accent2); }
+  .callout.green  p em { color: var(--accent3); }
+  .callout.yellow p em { color: var(--accent4); }
+  .callout.purple p em { color: var(--accent5); }
+
+  /* FEATURE MAP CARDS on overview */
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 800px) { .feature-grid { grid-template-columns: 1fr 1fr; } }
+  .feature-card {
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px; cursor: default;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .feature-card:hover { border-color: var(--border-accent); background: var(--bg-card); }
+  .feature-card-icon { font-size: 20px; margin-bottom: 8px; }
+  .feature-card-name {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    font-weight: 600; color: var(--accent); margin-bottom: 4px;
+  }
+  .feature-card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  /* CONTEXT LAYER STACK (visual hierarchy) */
+  .layer-stack { display: flex; flex-direction: column; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  .layer-row {
+    display: grid; grid-template-columns: 36px 160px 1fr 120px;
+    gap: 12px; align-items: center; padding: 12px 16px;
+    border-bottom: 1px solid var(--border); transition: background 0.15s;
+  }
+  .layer-row:last-child { border-bottom: none; }
+  .layer-row:hover { background: var(--accent-glow); }
+  .layer-row.lheader {
+    background: var(--bg-code); font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); cursor: default;
+  }
+  .layer-num  { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; text-align: center; }
+  .layer-name { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; }
+  .layer-desc { font-size: 13px; color: var(--text); line-height: 1.45; }
+  .layer-scope { font-size: 11px; border-radius: 4px; padding: 3px 8px; text-align: center; font-family: 'IBM Plex Mono', monospace; }
+  .scope-global  { background: rgba(79,142,247,0.12); color: var(--accent); border: 1px solid rgba(79,142,247,0.25); }
+  .scope-project { background: rgba(62,207,142,0.1); color: var(--accent3); border: 1px solid rgba(62,207,142,0.2); }
+  .scope-dir     { background: rgba(247,162,62,0.1); color: var(--accent4); border: 1px solid rgba(247,162,62,0.2); }
+  .scope-dynamic { background: rgba(181,123,247,0.1); color: var(--accent5); border: 1px solid rgba(181,123,247,0.2); }
+
+  /* AGENT ARCHITECTURE DIAGRAM */
+  .arch-diagram {
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 8px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .arch-box {
+    border-radius: 8px; padding: 10px 24px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; font-weight: 600; text-align: center; min-width: 180px;
+  }
+  .arch-box.master { background: var(--accent-glow); border: 2px solid var(--accent); color: var(--accent); }
+  .arch-box.sub-ui { background: var(--accent5-glow); border: 1px solid var(--accent5); color: var(--accent5); min-width: 140px; }
+  .arch-box.sub-db { background: var(--accent3-glow); border: 1px solid var(--accent3); color: var(--accent3); min-width: 140px; }
+  .arch-box.team   { background: var(--accent4-glow); border: 1px solid var(--accent4); color: var(--accent4); min-width: 130px; font-size: 11px; }
+  .arch-row { display: flex; gap: 24px; align-items: flex-start; justify-content: center; }
+  .arch-arrow { font-size: 11px; color: var(--text-muted); text-align: center; font-family: 'IBM Plex Mono', monospace; }
+  .arch-line { width: 2px; height: 20px; background: var(--border-accent); margin: 0 auto; }
+  .arch-connector { display: flex; align-items: center; gap: 0; }
+  .arch-h-line { height: 2px; flex: 1; background: var(--border-accent); min-width: 20px; }
+  .arch-label { font-size: 11px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; margin-top: 4px; text-align: center; }
+  .arch-vs { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim); background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; }
+
+  /* WORKTREE DIAGRAM */
+  .wt-diagram {
+    display: flex; flex-direction: column; gap: 16px;
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px;
+  }
+  .wt-row { display: flex; align-items: center; gap: 12px; }
+  .wt-box {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+    padding: 8px 14px; border-radius: 6px; text-align: center;
+    border: 1px solid; min-width: 130px;
+  }
+  .wt-box.origin { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+  .wt-box.w1     { background: var(--accent5-glow); border-color: var(--accent5); color: var(--accent5); }
+  .wt-box.w2     { background: var(--accent3-glow); border-color: var(--accent3); color: var(--accent3); }
+  .wt-box.w3     { background: var(--accent4-glow); border-color: var(--accent4); color: var(--accent4); }
+  .wt-arrow { color: var(--text-dim); font-size: 18px; }
+  .wt-desc { font-size: 12px; color: var(--text-muted); }
+
+  /* TAG PILLS */
+  .tag {
+    display: inline-block; font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; padding: 2px 7px; border-radius: 3px;
+    letter-spacing: 0.04em; margin-left: 4px;
+  }
+  .tag.exp { background: rgba(224,95,122,0.15); color: var(--accent2); border: 1px solid rgba(224,95,122,0.3); }
+  .tag.new { background: rgba(62,207,142,0.12); color: var(--accent3); border: 1px solid rgba(62,207,142,0.25); }
+  .tag.tip { background: rgba(247,162,62,0.12); color: var(--accent4); border: 1px solid rgba(247,162,62,0.25); }
+  .tag.pro { background: rgba(79,142,247,0.12); color: var(--accent);  border: 1px solid rgba(79,142,247,0.25); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+  /* inline sub-heading within cards */
+  .sub-heading {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim);
+    margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">claude code<span> — power user reference</span></div>
+    <div class="badge">CRASH COURSE</div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="toggle-label">DARK</span>
+    <input type="checkbox" class="toggle" id="themeToggle" aria-label="Toggle theme">
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="basics">Setup &amp; Basics</button>
+  <button data-tab="commands">Slash Commands</button>
+  <button data-tab="context">Context System</button>
+  <button data-tab="agents">Agents</button>
+  <button data-tab="worktrees">Worktrees</button>
+  <button data-tab="memory">Memory</button>
+</nav>
+
+<main>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       OVERVIEW
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="section active" id="tab-overview">
+
+    <div class="hero">
+      <h2>Claude Code — Agentic CLI Engineer</h2>
+      <p>Claude Code is a <strong>command-line AI agent</strong> that reads, writes, and runs code directly on your system. It's not just a chatbot with a file viewer — it has real tool access (bash, filesystem, git) and a layered extension system: CLAUDE.md → Skills → MCP → Plugins → Sub-agents → Teams. Knowing which layer to reach for is the difference between power use and toy use.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Full Feature Map</div>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-card-icon">⚙️</div>
+          <div class="feature-card-name">Slash Commands</div>
+          <div class="feature-card-desc">/model, /rewind, /resume, /usage, /stats, /config, /insights, /plugins — built-in control plane</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">📄</div>
+          <div class="feature-card-name">CLAUDE.md</div>
+          <div class="feature-card-desc">Persistent instructions in markdown. Project-scoped, global, or per-subdirectory.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">🔧</div>
+          <div class="feature-card-name">Skills</div>
+          <div class="feature-card-desc">Lazy-loaded instruction fragments. Claude picks them up only when relevant — no wasted context.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">🌐</div>
+          <div class="feature-card-name">MCP Servers</div>
+          <div class="feature-card-desc">Model Context Protocol — expose external APIs (Slack, Google Calendar, DeepWiki, etc.) as callable tools.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">📦</div>
+          <div class="feature-card-name">Plugins</div>
+          <div class="feature-card-desc">Marketplace bundles that package Skills + MCP servers together. Install once, use everywhere.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">🤖</div>
+          <div class="feature-card-name">Sub-agents</div>
+          <div class="feature-card-desc">Specialist workers spawned by the master agent. Each gets its own model, tools, and tool restrictions.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">👥</div>
+          <div class="feature-card-name">Agent Teams <span class="tag exp">EXPERIMENTAL</span></div>
+          <div class="feature-card-desc">Decentralized agent networks — agents communicate peer-to-peer, not through a single master.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">🌳</div>
+          <div class="feature-card-name">Worktrees</div>
+          <div class="feature-card-desc">Run N parallel Claude Code instances on the same codebase — each in an isolated git branch + directory.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">🧠</div>
+          <div class="feature-card-name">Memory</div>
+          <div class="feature-card-desc">Tell Claude to "remember" facts that persist across all future sessions automatically.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Model Selection — The Rule</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🔥</div>
+            <div class="rule-text"><strong>Opus 4.6</strong> — default for all serious work: refactoring, new features in large codebases, anything where correctness matters. <span class="tag pro">2× usage cost vs Sonnet</span></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Sonnet 4.6</strong> — default model in Claude Code. Use for faster/cheaper tasks. Switch with <code>/model</code>.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🏎️</div>
+            <div class="rule-text"><strong>Haiku</strong> — trivial tasks, quick lookups, high-volume sub-agent work. Very cheap, fast.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚠️</div>
+            <div class="rule-text"><span class="neg">Never use Sonnet by default for solid coding</span> — the presenter always switches to Opus for anything serious.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Context Layers — Cheat Sheet</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📄</div>
+            <div class="rule-text"><strong>CLAUDE.md</strong> → general project facts, structure, style rules, always-on instructions</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔧</div>
+            <div class="rule-text"><strong>Skills</strong> → specific tool how-tos (Docker, UV, your custom CLI) — loaded on demand</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🌐</div>
+            <div class="rule-text"><strong>MCP</strong> → real-time API access (Slack, Calendar, DeepWiki, databases)</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📦</div>
+            <div class="rule-text"><strong>Plugins</strong> → curated bundles of Skills + MCPs from a marketplace</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">💡 Mental Model</div>
+      <p>Think of Claude Code as a <em>senior engineer on your terminal</em>. You give it context (CLAUDE.md / Skills), tools (MCP), and then either work solo, spawn specialists (sub-agents), or run a full team. The bigger the task, the higher up this stack you climb.</p>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SETUP & BASICS
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-basics">
+
+    <div class="hero">
+      <h2>Setup &amp; Basic Usage</h2>
+      <p>Installation is platform-specific. Core usage is: run <strong><code>claude</code></strong> in a directory, authenticate, and start prompting. A few non-obvious workflow tricks make daily use much smoother.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Installation</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Check the official docs first</strong><br>
+            Installation method depends on your OS. The docs at <code>docs.anthropic.com</code> are the canonical source. Do <em>not</em> guess package names.
+            <span class="tip">💡 Arch Linux: use the AUR package <code>claude-code</code> via <code>yay</code> or your preferred AUR helper — don't use the generic instructions from the main docs page.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Available installation modes</strong><br>
+            Terminal application, desktop application, VS Code extension. Choose what fits your workflow.
+            <span class="tip">💡 The instructor uses the terminal version in all demos — this is the most powerful mode.</span>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Authenticate on first run</strong><br>
+            Run <code>claude</code> in any directory. On first launch it will ask you to authenticate with your Anthropic/Claude Code subscription account.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Trust the folder</strong><br>
+            Claude Code asks you to confirm you trust the current directory before operating in it. This is a safety gate.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title green">Core Workflow</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">①</div>
+            <div class="step-body">
+              <strong>Start in a project directory</strong><br>
+              <code>cd my-project && claude</code> — either an existing project or an empty folder for greenfield work.
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">②</div>
+            <div class="step-body">
+              <strong>Give your first instruction</strong><br>
+              Plain English: <code>create a basic hello world Flask application using UV</code>. Claude will run UV init, modify files, and ask permission for file writes.
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">③</div>
+            <div class="step-body">
+              <strong>Approve / reject tool use</strong><br>
+              For each file edit or command: <code>y</code> (yes), <code>n</code> (no), or <strong>"allow all edits this session"</strong> to skip prompts.
+              <span class="note">⚠ While rejecting, press Tab to provide context on what you want differently — without interrupting the full session.</span>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">④</div>
+            <div class="step-body">
+              <strong>Add context mid-task</strong><br>
+              You don't have to wait. While Claude is working, just type your additional info (e.g. <em>by the way I want it to be red</em>). Claude incorporates it into the <em>current</em> run without stopping.
+              <span class="good">✅ This is a major UX superpower — no need to interrupt and restart.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card red">
+        <div class="card-title red">Session Management</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⏹️</div>
+            <div class="rule-text"><strong>End session:</strong> <code>Ctrl+C</code> — Claude shows the session ID so you can resume later.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">▶️</div>
+            <div class="rule-text"><strong>Resume (choose):</strong> <code>claude --resume</code> — presents a list of past sessions to pick from.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">▶️</div>
+            <div class="rule-text"><strong>Resume (by ID):</strong> <code>claude -r &lt;id&gt;</code> — jump directly to a known session.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🆕</div>
+            <div class="rule-text"><strong>Fresh session:</strong> Just run <code>claude</code> without <code>--resume</code> for a clean start.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">↩️</div>
+            <div class="rule-text"><strong>Rewind:</strong> <code>/rewind</code> — undo to a conversation checkpoint. Reverses code changes. <span class="neg">No redo command exists</span> — use git as your safety net.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">🔑 By-the-Way Pattern</div>
+      <p>The <em>"by the way"</em> mid-task injection is one of Claude Code's most underused features. You do not need to stop the agent. Simply type your clarification or new constraint into the prompt while it's working and it will fold it in. This preserves flow and avoids wasted tokens from interrupts + restarts.</p>
+    </div>
+
+  </div><!-- /basics -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SLASH COMMANDS
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-commands">
+
+    <div class="hero">
+      <h2>Slash Commands</h2>
+      <p>Type <strong><code>/</code></strong> at any prompt to see the full list. These are Claude Code's built-in control plane — model switching, session management, analytics, configuration, and plugin discovery.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Command Reference</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>What It Does</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>/model</td>
+            <td>Switch the active LLM — Opus 4.6, Sonnet 4.6, Haiku, etc.</td>
+            <td class="muted">Default is Sonnet 4.6. Always switch to Opus for serious coding work.</td>
+          </tr>
+          <tr>
+            <td>/rewind</td>
+            <td>Undo to a previous conversation checkpoint. Reverses file changes. Restore code, conversation, or both.</td>
+            <td class="warn">No /redo exists. Use git stash/commits as backup before big tasks.</td>
+          </tr>
+          <tr>
+            <td>/resume</td>
+            <td>Pick up a previous session from an interactive list.</td>
+            <td class="muted">Equivalent to <code>claude --resume</code> from the shell.</td>
+          </tr>
+          <tr>
+            <td>/usage</td>
+            <td>Shows session usage %, weekly usage %, reset times, and your extra-usage balance.</td>
+            <td class="muted">Useful for knowing when to throttle expensive Opus calls.</td>
+          </tr>
+          <tr>
+            <td>/stats</td>
+            <td>Shows per-model usage breakdown, frequency, and session history.</td>
+            <td class="muted">Good for auditing which model you actually spend time in.</td>
+          </tr>
+          <tr>
+            <td>/config</td>
+            <td>Full configuration UI: fast mode, thinking mode, verbose output, progress bar, and more.</td>
+            <td class="muted">Persistent settings for the Claude Code application itself.</td>
+          </tr>
+          <tr>
+            <td>/insights</td>
+            <td>Analyzes all your past sessions and generates an HTML report — what you build, your patterns, what's slowing you down, token efficiency.</td>
+            <td class="good">Opens in browser. Great for retrospecting on your workflow habits.</td>
+          </tr>
+          <tr>
+            <td>/plugins</td>
+            <td>Discover, install, and manage plugins from the official marketplace (and custom marketplaces). Browse by capability.</td>
+            <td class="muted">Install scopes: user-wide, project-wide, or user+project only.</td>
+          </tr>
+          <tr>
+            <td>/agents</td>
+            <td>View, create, and configure sub-agents for the current project.</td>
+            <td class="muted">Assign models, restrict tools, set colors. See Agents tab.</td>
+          </tr>
+          <tr>
+            <td>/mcp</td>
+            <td>List and manage connected MCP servers. Shows status of local + remote connections.</td>
+            <td class="muted">Use <code>claude mcp add</code> from the shell to register new servers.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card yellow">
+        <div class="card-title yellow">Usage Limits — How They Work</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">⏱️</div>
+            <div class="rule-text"><strong>Session limit:</strong> resets on a rolling basis (e.g. every few hours). <code>/usage</code> shows time to reset.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📅</div>
+            <div class="rule-text"><strong>Weekly limit:</strong> resets on a fixed day each week. Shows % consumed for the period.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💳</div>
+            <div class="rule-text"><strong>Extra usage:</strong> pre-loaded account balance. If you hit both limits, Claude Code falls back to billing from this balance rather than going offline.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📊</div>
+            <div class="rule-text">Opus costs <strong>2× the usage</strong> vs Sonnet per token. Budget accordingly — use Haiku for sub-agent grunt work.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">/insights — What It Reveals</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📈</div>
+            <div class="rule-text"><strong>Session breakdown:</strong> frontend, backend, full-stack, Linux configs, etc. — what you actually spend time on.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🚧</div>
+            <div class="rule-text"><strong>Friction analysis:</strong> what Claude does wrong vs. what <em>you</em> do wrong (e.g. lightweight prompts triggering heavy tool use).</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⏱️</div>
+            <div class="rule-text"><strong>Response time distribution:</strong> how long your requests typically take.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">❌</div>
+            <div class="rule-text"><strong>Error + reject rates:</strong> how many commands fail or get manually rejected — a signal for prompt quality.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🕐</div>
+            <div class="rule-text"><strong>Time-of-day activity:</strong> when you tend to work with Claude Code.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <div class="callout-label">💡 Explore More</div>
+      <p>Just type <em><code>/</code></em> in any session to see the full command list — the ones above are the most useful ones covered in the crash course, but there are more. The <code>/config</code> command in particular has settings worth exploring for thinking mode and fast mode if you haven't already.</p>
+    </div>
+
+  </div><!-- /commands -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       CONTEXT SYSTEM
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-context">
+
+    <div class="hero">
+      <h2>The Context System</h2>
+      <p>Claude Code has a four-layer context architecture. Each layer serves a different purpose. Loading everything at once kills the context window — the system is designed for <strong>precision loading</strong>. Skills are the key innovation here: they're like CLAUDE.md with built-in RAG.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Layer Hierarchy — What Goes Where</div>
+      <div class="layer-stack">
+        <div class="layer-row lheader">
+          <div></div>
+          <div>Layer</div>
+          <div>Purpose &amp; Content</div>
+          <div>Scope</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-num" style="color:var(--accent)">①</div>
+          <div class="layer-name" style="color:var(--accent)">CLAUDE.md<br><small style="color:var(--text-muted);font-weight:400">(global)</small></div>
+          <div class="layer-desc">Universal preferences that apply across every project — your default coding style, personal preferences, global toolchain choices. Stored in <code>~/.claude/CLAUDE.md</code>.</div>
+          <div><span class="layer-scope scope-global">GLOBAL</span></div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-num" style="color:var(--accent3)">②</div>
+          <div class="layer-name" style="color:var(--accent3)">CLAUDE.md<br><small style="color:var(--text-muted);font-weight:400">(project root)</small></div>
+          <div class="layer-desc">Project-specific instructions: directory structure, key file locations, package manager rules (<em>always use <code>uv add</code> not pip install</em>), Docker/migration conventions, code style, things Claude should never do in this repo.</div>
+          <div><span class="layer-scope scope-project">PROJECT</span></div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-num" style="color:var(--accent4)">③</div>
+          <div class="layer-name" style="color:var(--accent4)">CLAUDE.md<br><small style="color:var(--text-muted);font-weight:400">(subdirectory)</small></div>
+          <div class="layer-desc">Fine-grained overrides for a specific feature or module. Can override parent-level instructions for that subtree. Useful for feature-specific constraints or alternate coding styles in a monorepo.</div>
+          <div><span class="layer-scope scope-dir">DIRECTORY</span></div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-num" style="color:var(--accent5)">④</div>
+          <div class="layer-name" style="color:var(--accent5)">Skills<br><small style="color:var(--text-muted);font-weight:400">(.claude/skills/)</small></div>
+          <div class="layer-desc">Lazy-loaded instruction fragments. Each skill is a directory with a <code>SKILL.md</code> containing a name, description, and instructions. Claude reads the description header and loads the full content <em>only when that skill is relevant</em> to the current task.</div>
+          <div><span class="layer-scope scope-dynamic">ON-DEMAND</span></div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-num" style="color:var(--accent2)">⑤</div>
+          <div class="layer-name" style="color:var(--accent2)">MCP Servers</div>
+          <div class="layer-desc">External APIs exposed as callable tools. Not static text — live connections to services (Google Calendar, Slack, DeepWiki, databases). Claude can call these tools during a session to retrieve real-time data.</div>
+          <div><span class="layer-scope scope-global">API/LIVE</span></div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-num" style="color:var(--text-muted)">⑥</div>
+          <div class="layer-name" style="color:var(--text-muted)">Plugins</div>
+          <div class="layer-desc">Marketplace packages that bundle Skills + MCP servers together. Install via <code>/plugins</code>. Can be scoped to: all users, all projects, or this user in this project only.</div>
+          <div><span class="layer-scope scope-project">BUNDLED</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Skills — File Structure</div>
+        <pre><span class="cm"># .claude/skills/ layout</span>
+<span class="hd">project-root/</span>
+<span class="li">└── .claude/</span>
+<span class="li">    └── skills/</span>
+<span class="li">        ├── python-package-install/</span>
+<span class="li">        │   └── skill.md</span>
+<span class="li">        ├── docker-workflow/</span>
+<span class="li">        │   └── skill.md</span>
+<span class="li">        └── custom-cli-tool/</span>
+<span class="li">            └── skill.md</span></pre>
+        <div class="sub-heading">skill.md format</div>
+        <pre><span class="cm">---</span>
+<span class="kw">name:</span> <span class="str">Python Package Installation</span>
+<span class="kw">description:</span> <span class="str">How to install Python packages</span>
+             <span class="str">in this project</span>
+<span class="cm">---</span>
+
+<span class="hd">## Instructions</span>
+
+<span class="li">Always use UV for Python packages.</span>
+<span class="li">Start with `uv init` if project is new.</span>
+<span class="li">Use `uv add`, NOT `pip install`.</span></pre>
+        <span class="tip" style="margin-top:12px;display:block">💡 The front-matter <code>name</code> + <code>description</code> are what Claude reads first to decide if this skill is relevant. Write them to be distinctive and accurate.</span>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">MCP — Adding a Server</div>
+        <pre><span class="cm"># Add an HTTP MCP server</span>
+<span class="kw">claude mcp add \</span>
+  <span class="fn">--transport http \</span>
+  <span class="str">https://mcp.deepwiki.com</span>
+
+<span class="cm"># Add a local stdio server</span>
+<span class="kw">claude mcp add \</span>
+  <span class="fn">--transport stdio \</span>
+  <span class="str">./my-local-mcp-server</span>
+
+<span class="cm"># Check connected MCPs</span>
+<span class="kw">/mcp</span></pre>
+        <div class="sub-heading">Common MCP Use Cases</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">📖</div>
+            <div class="rule-text"><strong>DeepWiki</strong> — query any GitHub repo's documentation live</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📅</div>
+            <div class="rule-text"><strong>Google Calendar</strong> — schedule tasks, check availability</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💬</div>
+            <div class="rule-text"><strong>Slack</strong> — post messages, read channels, look up threads</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title purple">Plugins — Install &amp; Scope</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Open the plugin browser</strong><br>
+            Type <code>/plugins</code> → choose <strong>Discover</strong> to browse the official marketplace. By default only Anthropic's official plugin repo is listed.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Choose a plugin</strong><br>
+            Example: <em>frontend-design</em> by Anthropic — packages the frontend design skill (creates production-grade HTML/CSS/JS UIs). You can read its description before installing.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Choose install scope</strong><br>
+            • <strong>All users, all projects</strong> — global install<br>
+            • <strong>All users, this project</strong> — project-wide<br>
+            • <strong>This user, this project</strong> — most isolated, recommended for testing
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Reload plugins</strong><br>
+            Run <code>/plugins reload</code> (or restart Claude Code) before the plugin's Skills and MCPs become active in your session.
+            <span class="note">⚠ Skipping the reload is a common gotcha — skills from new plugins won't be available until Claude reloads.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Put This In CLAUDE.md</div>
+        <div class="decision-item"><span class="di">✅</span>Project directory structure and key file locations</div>
+        <div class="decision-item"><span class="di">✅</span>Coding style rules (blank lines, naming conventions)</div>
+        <div class="decision-item"><span class="di">✅</span>Things Claude should NEVER do in this project</div>
+        <div class="decision-item"><span class="di">✅</span>Authentication / security sensitive file patterns</div>
+        <div class="decision-item"><span class="di">✅</span>General tone / response preferences</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Put This In Skills Instead</div>
+        <div class="decision-item"><span class="di">❌</span>Full Docker workflow instructions</div>
+        <div class="decision-item"><span class="di">❌</span>How to use your custom CLI tool</div>
+        <div class="decision-item"><span class="di">❌</span>Package manager setup and commands</div>
+        <div class="decision-item"><span class="di">❌</span>Migration procedures</div>
+        <div class="decision-item"><span class="di">❌</span>Any how-to that's only needed sometimes</div>
+      </div>
+    </div>
+
+    <div class="callout red">
+      <div class="callout-label">⚠ Context Window Trap</div>
+      <p>If you dump everything — Docker, UV, your CLI docs, migration notes, all your tools — into a single CLAUDE.md, you consume the context window <em>before Claude even reads your actual code files</em>. Skills exist precisely to avoid this: they're loaded lazily, only when needed. Think of CLAUDE.md as the <em>always-on</em> layer, and Skills as the <em>on-demand</em> layer.</p>
+    </div>
+
+  </div><!-- /context -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       AGENTS
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-agents">
+
+    <div class="hero">
+      <h2>Sub-agents &amp; Agent Teams</h2>
+      <p>Claude Code supports two distinct multi-agent modes. <strong>Sub-agents</strong> are specialists spawned and managed by your master session. <strong>Agent Teams</strong> <span class="tag exp">EXPERIMENTAL</span> are fully decentralized — agents communicate peer-to-peer without a central controller. They are architecturally different and not interchangeable.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <!-- Sub-agent architecture diagram -->
+      <div class="card blue">
+        <div class="card-title">Sub-agents — Centralized Architecture</div>
+        <div class="arch-diagram">
+          <div class="arch-box master">🧠 Master Agent<br><small style="font-weight:400;font-size:10px">(your claude session)</small></div>
+          <div class="arch-line"></div>
+          <div style="display:flex;align-items:center;gap:0;width:100%;justify-content:center;max-width:320px">
+            <div style="flex:1;height:2px;background:var(--border-accent)"></div>
+            <div style="width:2px;height:24px;background:var(--border-accent);margin:0 60px"></div>
+            <div style="flex:1;height:2px;background:var(--border-accent)"></div>
+          </div>
+          <div class="arch-row">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+              <div class="arch-box sub-ui">🎨 UI Agent<br><small style="font-size:10px;font-weight:400">Sonnet / CSS+JS only</small></div>
+              <div class="arch-label">← tools restricted</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+              <div class="arch-box sub-db">🗄️ DB Agent<br><small style="font-size:10px;font-weight:400">Opus / backend only</small></div>
+              <div class="arch-label">← separate model</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--text-muted);text-align:center;font-family:'IBM Plex Mono',monospace">
+            all communication flows ↑↓ through master
+          </div>
+        </div>
+        <div class="sub-heading">How to create sub-agents</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-body"><strong>Open agent manager:</strong> <code>/agents</code> → Library → New Agent</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-body"><strong>Describe the specialist:</strong> e.g. <em>"UI designer — HTML, CSS, JS animations only, no backend"</em>. Claude Code auto-generates the system prompt.</div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-body"><strong>Configure per-agent settings:</strong><br>
+              • <strong>Model</strong>: Opus for architecture/DB, Sonnet for UI/design work<br>
+              • <strong>Tool restrictions</strong>: disable specific MCP servers or tools for this agent<br>
+              • <strong>Color</strong>: visual ID in the multi-agent UI (e.g. purple=UI, green=backend)<br>
+              • <strong>Scope</strong>: project-level or global
+              <span class="tip">💡 "Show advanced options" to see all tool toggles. Press Enter on a tool to disable it for that agent.</span>
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">4</div>
+            <div class="step-body"><strong>Use them:</strong> Simply describe a task involving both domains. Claude automatically recognizes it can use both specialists in parallel.<br>
+              <em>e.g. "implement a to-do app in Flask. Front-end: bluish style with animations. Back-end: Flask."</em>
+              <span class="good">✅ Claude will say "let me use both specialized agents in parallel" — you don't need to explicitly invoke them.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent Teams diagram -->
+      <div class="card purple">
+        <div class="card-title purple">Agent Teams <span class="tag exp">EXPERIMENTAL</span> — Decentralized</div>
+        <div class="arch-diagram">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px">
+            NO MASTER — agents communicate peer-to-peer
+          </div>
+          <div class="arch-row" style="gap:16px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+              <div class="arch-box team">🎨 UX Agent</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+              <div class="arch-box team">🏗️ Arch Agent</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+              <div class="arch-box team">😈 Devil's Advocate</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;position:relative;width:280px;height:40px">
+            <svg width="280" height="40" style="overflow:visible">
+              <line x1="65" y1="0" x2="140" y2="0" stroke="var(--accent5)" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5"/>
+              <line x1="140" y1="0" x2="215" y2="0" stroke="var(--accent5)" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.5"/>
+              <line x1="65" y1="0" x2="215" y2="0" stroke="var(--accent5)" stroke-width="1" stroke-dasharray="4,3" opacity="0.25"/>
+            </svg>
+          </div>
+          <div style="margin-top:4px;font-size:11px;color:var(--text-muted);text-align:center;font-family:'IBM Plex Mono',monospace">
+            shared to-do list as coordination mechanism
+          </div>
+        </div>
+        <div class="sub-heading">How to enable + invoke</div>
+        <pre><span class="cm"># Enable experimental teams (env var required)</span>
+<span class="kw">export</span> <span class="str">CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1</span>
+<span class="kw">claude</span></pre>
+        <div class="rule-list" style="margin-top:12px">
+          <div class="rule-row">
+            <div class="rule-icon">📋</div>
+            <div class="rule-text">Teams use a <strong>shared to-do list</strong> as their coordination mechanism — each agent picks tasks and updates the list as it works.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🗣️</div>
+            <div class="rule-text">Must <strong>explicitly instruct</strong> Claude Code to create a team — it won't happen automatically. Use phrasing like <em>"create an agent team to explore X from three different angles."</em></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">👁️</div>
+            <div class="rule-text">Use <code>Ctrl+T</code> inside a running team session to inspect token usage and tool calls per agent in real time.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">💸</div>
+            <div class="rule-text"><span class="neg">Very token-expensive.</span> Three agents working in parallel = 3× the usage. Use selectively for brainstorming/exploration tasks, not routine implementation.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚗️</div>
+            <div class="rule-text">Results arrive as a combined summary once all agents finish. Currently not part of the default Claude Code install.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /grid-2 -->
+
+    <div class="card">
+      <div class="card-title yellow">Sub-agents vs Agent Teams — Side by Side</div>
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Sub-agents</th>
+            <th>Agent Teams (Experimental)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Architecture</td>
+            <td>Centralized — master controls everything</td>
+            <td class="muted">Decentralized — agents talk to each other</td>
+          </tr>
+          <tr>
+            <td>Communication</td>
+            <td>All messages flow through the master agent</td>
+            <td class="muted">Peer-to-peer via shared to-do list</td>
+          </tr>
+          <tr>
+            <td>Activation</td>
+            <td>Automatic — Claude detects multi-domain tasks</td>
+            <td class="muted">Must explicitly instruct team creation</td>
+          </tr>
+          <tr>
+            <td>Model per agent</td>
+            <td>✅ Yes — each agent can use a different model</td>
+            <td class="muted">✅ Yes</td>
+          </tr>
+          <tr>
+            <td>Tool restrictions</td>
+            <td>✅ Granular per-agent tool disabling</td>
+            <td class="muted">✅ Yes</td>
+          </tr>
+          <tr>
+            <td>Token cost</td>
+            <td>Medium — parallel but coordinated</td>
+            <td class="warn">High — 3+ agents running independently</td>
+          </tr>
+          <tr>
+            <td>Best use case</td>
+            <td>Parallel implementation (front-end + back-end)</td>
+            <td class="muted">Multi-angle brainstorming / exploration</td>
+          </tr>
+          <tr>
+            <td>Stability</td>
+            <td>Stable — part of default install</td>
+            <td class="warn">Experimental — interface may be buggy</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✅ When Sub-agents Shine</div>
+      <p>Full-stack features where front-end and back-end work is genuinely independent. Give each agent the right model (Opus for DB schema design, Sonnet for CSS animations) and restrict their tool access so they can't accidentally overwrite each other's domain. The master handles coordination; you handle the prompt.</p>
+    </div>
+
+  </div><!-- /agents -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       WORKTREES
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-worktrees">
+
+    <div class="hero">
+      <h2>Git Worktrees + Claude Code</h2>
+      <p>Worktrees are a <strong>git feature</strong>, not a Claude Code feature — but Claude Code integrates with them via <code>claude --worktree</code> to let you run <strong>N parallel Claude Code instances</strong> on the same codebase, each isolated in its own branch and directory. No interference, no merge conflicts mid-session.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">How It Works — Conceptual Diagram</div>
+      <div class="wt-diagram">
+        <div class="wt-row">
+          <div class="wt-box origin">📦 git repo<br>(main branch)</div>
+          <div class="wt-arrow">→</div>
+          <div class="wt-desc" style="font-size:13px">This is your source of truth. Must be committed + pushed to git before spawning worktrees.</div>
+        </div>
+        <div style="padding-left:20px;display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--border-accent)">
+          <div class="wt-row">
+            <div class="wt-box w1">🌳 branch: fancy-amber<br>dir: /project-fancy-amber</div>
+            <div class="wt-arrow">→</div>
+            <div class="wt-desc">Claude instance #1: <em>"change entire app style to blue"</em></div>
+          </div>
+          <div class="wt-row">
+            <div class="wt-box w2">🌳 branch: feature-one<br>dir: /project-feature-one</div>
+            <div class="wt-arrow">→</div>
+            <div class="wt-desc">Claude instance #2: <em>"change entire app style to green"</em></div>
+          </div>
+          <div class="wt-row">
+            <div class="wt-box w3">🌳 branch: db-redesign<br>dir: /project-db-redesign</div>
+            <div class="wt-arrow">→</div>
+            <div class="wt-desc">Claude instance #3: <em>"redesign the database schema"</em></div>
+          </div>
+        </div>
+        <div style="padding-left:20px;font-size:12px;color:var(--text-muted);border-left:2px solid var(--border-accent)">
+          Each branch starts from the <strong>same committed state</strong>. They diverge independently. You merge / compare / delete when done.
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card blue">
+        <div class="card-title">Usage Commands</div>
+        <pre><span class="cm"># Navigate to your project (must have git + commits)</span>
+<span class="kw">cd</span> <span class="str">my-project</span>
+
+<span class="cm"># Spawn a new worktree with auto-generated name</span>
+<span class="kw">claude --worktree</span>
+<span class="cm"># → creates branch + dir: fancy-coalescing-amber</span>
+
+<span class="cm"># Spawn with a specific branch name</span>
+<span class="kw">claude --worktree feature-one</span>
+<span class="cm"># → creates branch: feature-one</span>
+<span class="cm"># → checks it out in: /project-feature-one/</span>
+
+<span class="cm"># Run as many as you need — each is a separate terminal</span>
+<span class="cm"># + separate Claude Code session + separate directory</span></pre>
+        <span class="note" style="margin-top:10px;display:block">⚠ Your changes must be committed and pushed to git before using worktrees — the new branch is checked out from the latest committed state.</span>
+      </div>
+
+      <div class="card green">
+        <div class="card-title green">Use Cases</div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">🅰️</div>
+            <div class="rule-text"><strong>A/B testing implementations:</strong> Blue redesign vs. Green redesign — compare outputs before committing to one approach.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔀</div>
+            <div class="rule-text"><strong>Parallel feature development:</strong> Frontend redesign + database schema change + API refactor — all happening simultaneously in isolation.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">⚡</div>
+            <div class="rule-text"><strong>Maximizing throughput:</strong> Instead of waiting for one task to finish before starting the next, run 5–7 Claude Code instances in parallel.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🛡️</div>
+            <div class="rule-text"><strong>Safe experimentation:</strong> Each worktree is isolated — a failed experiment in branch #3 has zero effect on the others. Delete the branch and it's gone.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🔁</div>
+            <div class="rule-text"><strong>After completion:</strong> Push each branch, then use standard git merge or compare PRs. Merge conflict resolution is handled the usual git way.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <div class="callout-label">⚠ Git Prerequisite</div>
+      <p>Worktrees <em>require</em> the project to already be a git repo with committed changes pushed to remote (or at least committed locally). The <code>--worktree</code> flag creates a new branch from HEAD. If your working directory has uncommitted changes, commit them first or they won't appear in the new worktree.</p>
+    </div>
+
+    <div class="card yellow">
+      <div class="card-title yellow">Worktree Lifecycle</div>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Commit current state</strong><br>
+            Make sure your working directory is clean (or at a known-good commit). This is the starting point for all worktrees.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Spawn worktrees</strong><br>
+            Run <code>claude --worktree [name]</code> in multiple terminals. Each gets its own branch + directory + Claude session.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Work in parallel</strong><br>
+            Each Claude instance operates completely independently. No file locking, no shared state. They each get a full copy of the codebase at the branch start.
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Review + merge</strong><br>
+            Inspect each worktree's result. Push branches to remote, open PRs, or merge directly. Delete worktrees you don't need: <code>git worktree remove &lt;path&gt;</code>.
+            <span class="tip">💡 For A/B style experiments, open both in a browser side-by-side before deciding which to merge.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /worktrees -->
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       MEMORY
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="section" id="tab-memory">
+
+    <div class="hero">
+      <h2>Memory System</h2>
+      <p>Claude Code has a <strong>persistent memory</strong> layer separate from CLAUDE.md. When you tell Claude to "remember" something, it writes that fact to a memory store that is automatically loaded in all future sessions — no file editing required. This is for <em>user-level</em> preferences and facts, not project instructions.</p>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card blue">
+        <div class="card-title">How to Use Memory</div>
+        <div class="step-list">
+          <div class="step-row">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>Tell Claude to remember something</strong><br>
+              Just say it in natural language:
+              <pre><span class="kw">Please remember for future sessions</span>
+<span class="str">that my name is Florian.</span></pre>
+              Claude will respond with <em>"Recalling 1 memory... Writing 1 memory"</em> — confirming the write.
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>Start any new session</strong><br>
+              Close the current session with <code>Ctrl+C</code>. Start a fresh <code>claude</code> session anywhere.
+            </div>
+          </div>
+          <div class="step-row">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>The memory is already loaded</strong><br>
+              Ask: <em>"what is my name?"</em> — Claude will answer from memory without needing you to tell it again.
+              <span class="good">✅ Works across projects, directories, and sessions — truly global user context.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-title yellow">Memory vs CLAUDE.md — When to Use Which</div>
+        <table class="ref-table">
+          <thead>
+            <tr>
+              <th>Dimension</th>
+              <th>Memory</th>
+              <th>CLAUDE.md</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>How to set</td>
+              <td>Natural language during session</td>
+              <td class="muted">Edit markdown file manually</td>
+            </tr>
+            <tr>
+              <td>Scope</td>
+              <td>Global (all projects, all sessions)</td>
+              <td class="muted">Global file or per-project file</td>
+            </tr>
+            <tr>
+              <td>Best for</td>
+              <td>Personal facts (name, preferences, global style rules)</td>
+              <td class="muted">Project structure, tool commands, repo-specific conventions</td>
+            </tr>
+            <tr>
+              <td>Persistence</td>
+              <td>Automatic — survives restarts</td>
+              <td class="muted">File on disk — must be in the repo</td>
+            </tr>
+            <tr>
+              <td>Discoverability</td>
+              <td>Opaque — stored by Claude internally</td>
+              <td class="muted">Transparent — you can read and edit the file</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title green">Good Things to Store in Memory</div>
+      <div class="grid-2">
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">👤</div>
+            <div class="rule-text"><strong>Identity:</strong> your name, role, the team you work on</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🎨</div>
+            <div class="rule-text"><strong>Global style preferences:</strong> always use Oxford commas, prefer functional over OOP, always use type hints in Python</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🛠️</div>
+            <div class="rule-text"><strong>Toolchain preferences:</strong> always use UV for Python, always use pnpm not npm, prefer Bun for JS runtimes</div>
+          </div>
+        </div>
+        <div class="rule-list">
+          <div class="rule-row">
+            <div class="rule-icon">💬</div>
+            <div class="rule-text"><strong>Communication style:</strong> prefer concise responses, always explain the "why" behind code choices</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">🚫</div>
+            <div class="rule-text"><strong>Global never-dos:</strong> never use <code>any</code> type in TypeScript, never suggest jQuery, never use <code>subprocess.shell=True</code></div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon">📚</div>
+            <div class="rule-text"><strong>Context about you:</strong> I work primarily in Python + Lua, I'm learning LISP and Clojure, I use WSL on Windows</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-grid">
+      <div class="decision-col">
+        <div class="decision-col-header use">✓ Use Memory For</div>
+        <div class="decision-item"><span class="di">✅</span>Personal identity and preferences that cross all projects</div>
+        <div class="decision-item"><span class="di">✅</span>Global coding habits that never change</div>
+        <div class="decision-item"><span class="di">✅</span>Things you're tired of repeating every session</div>
+        <div class="decision-item"><span class="di">✅</span>Fast conversational storage — no file editing needed</div>
+      </div>
+      <div class="decision-col">
+        <div class="decision-col-header skip">✗ Don't Rely on Memory For</div>
+        <div class="decision-item"><span class="di">❌</span>Project structure and file locations (use CLAUDE.md)</div>
+        <div class="decision-item"><span class="di">❌</span>Tool workflows and how-tos (use Skills)</div>
+        <div class="decision-item"><span class="di">❌</span>Anything you need to version-control or share with teammates</div>
+        <div class="decision-item"><span class="di">❌</span>Secrets, API keys, or credentials</div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <div class="callout-label">✅ The Combined Setup</div>
+      <p>Power users layer all three: <em>Memory</em> for personal context → <em>global CLAUDE.md</em> for cross-project conventions → <em>project CLAUDE.md</em> for repo specifics → <em>Skills</em> for tool how-tos. Each layer stays lean because nothing overlaps. Result: Claude always has the right context loaded without burning the entire window on boilerplate.</p>
+    </div>
+
+  </div><!-- /memory -->
+
+</main>
+
+<script>
+  const tabs     = document.querySelectorAll('nav button');
+  const sections = document.querySelectorAll('.section');
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+
+  const toggle = document.getElementById('themeToggle');
+  const label  = document.getElementById('toggle-label');
+  const html   = document.documentElement;
+
+  toggle.addEventListener('change', () => {
+    const isLight = toggle.checked;
+    html.setAttribute('data-theme', isLight ? 'light' : 'dark');
+    label.textContent = isLight ? 'LIGHT' : 'DARK';
+  });
+</script>
+</body>
+</html>

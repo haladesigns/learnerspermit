@@ -513,6 +513,12 @@
           },
           {
             "type": "file",
+            "name": "clojure-cheatsheet.html",
+            "label": "Clojure Cheatsheet",
+            "path": "coding_web-design/clojure/clojure-cheatsheet.html"
+          },
+          {
+            "type": "file",
             "name": "clojure-common-functions.html",
             "label": "Clojure Common Functions",
             "path": "coding_web-design/clojure/clojure-common-functions.html"

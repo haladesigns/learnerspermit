@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clojure — Reader, Types & Collections</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f7f4; --surface: #ffffff; --surface2: #f2f0ec;
+    --border: #e5e2db; --border2: #d4d0c8; --text: #1a1916;
+    --text2: #5c5a55; --text3: #9b9890; --accent: #5b4ef8;
+    --accent-bg: #eeedfe; --accent-text: #3c3489;
+    --code-bg: #1c1b18; --code-text: #e8e4d9;
+    --green-bg: #eaf3de; --green-text: #3b6d11;
+    --teal-bg: #e1f5ee; --teal-text: #0f6e56;
+    --amber-bg: #faeeda; --amber-text: #854f0b;
+    --gray-bg: #f1efe8; --gray-text: #5f5e5a;
+    --coral-bg: #faece7; --coral-text: #993c1d;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  [data-theme="dark"] {
+    --bg: #141310; --surface: #1e1c18; --surface2: #252320;
+    --border: #2e2c27; --border2: #3a3830; --text: #f0ece3;
+    --text2: #a8a49a; --text3: #5a5850; --accent: #7c6ef9;
+    --accent-bg: #26215c; --accent-text: #afa9ec;
+    --code-bg: #0d0c0a; --code-text: #d4cfc3;
+    --green-bg: #173404; --green-text: #c0dd97;
+    --teal-bg: #04342c; --teal-text: #9fe1cb;
+    --amber-bg: #412402; --amber-text: #fac775;
+    --gray-bg: #2c2c2a; --gray-text: #b4b2a9;
+    --coral-bg: #4a1b0c; --coral-text: #f5c4b3;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.6; min-height: 100vh; transition: background 0.2s, color 0.2s; }
+
+  /* HEADER */
+  header { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+  .header-inner { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 0 0.6rem; gap: 12px; }
+  .logo { display: flex; align-items: baseline; gap: 10px; flex-shrink: 0; }
+  .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 500; color: var(--accent); letter-spacing: -0.02em; }
+  .logo-sub { font-size: 12px; color: var(--text3); }
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .theme-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border2); background: var(--surface2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--text2); transition: background 0.15s; }
+  .theme-btn:hover { background: var(--border); }
+
+  /* NAV TABS */
+  .nav-tabs { display: flex; gap: 0; border-top: 1px solid var(--border); }
+  .nav-tab { font-size: 13px; font-weight: 500; padding: 0.55rem 1.1rem; cursor: pointer; color: var(--text3); border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; font-family: 'DM Sans', sans-serif; }
+  .nav-tab:hover { color: var(--text2); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN */
+  main { max-width: 900px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* SECTION HEADER */
+  .section-intro { margin-bottom: 1.5rem; }
+  .section-intro h2 { font-size: 20px; font-weight: 500; color: var(--text); margin-bottom: 0.3rem; }
+  .section-intro p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  /* GROUP LABEL */
+  .group-label {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text3); padding: 0.4rem 0; margin: 1.75rem 0 0.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .group-label:first-of-type { margin-top: 0; }
+
+  /* CARDS */
+  .card-list { display: flex; flex-direction: column; gap: 4px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden; transition: border-color 0.15s;
+  }
+  .card:hover { border-color: var(--border2); }
+  .card.open { border-color: var(--accent); }
+
+  .card-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px; cursor: pointer; user-select: none;
+  }
+  .card-name {
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500;
+    color: var(--accent); min-width: 150px; flex-shrink: 0;
+  }
+  .card-tag {
+    font-size: 11px; padding: 2px 8px; border-radius: 20px;
+    flex-shrink: 0; font-weight: 500; letter-spacing: 0.01em;
+  }
+  .tag-reader   { background: var(--accent-bg); color: var(--accent-text); }
+  .tag-types    { background: var(--teal-bg);   color: var(--teal-text);   }
+  .tag-unique   { background: var(--amber-bg);  color: var(--amber-text);  }
+  .tag-number   { background: var(--green-bg);  color: var(--green-text);  }
+  .tag-immutable{ background: var(--coral-bg);  color: var(--coral-text);  }
+  .tag-list     { background: var(--coral-bg);  color: var(--coral-text);  }
+  .tag-vector   { background: var(--teal-bg);   color: var(--teal-text);   }
+  .tag-map      { background: var(--accent-bg); color: var(--accent-text); }
+  .tag-seq      { background: var(--green-bg);  color: var(--green-text);  }
+  .tag-core     { background: var(--gray-bg);   color: var(--gray-text);   }
+  .tag-warning  { background: #fcebeb; color: #a32d2d; }
+  [data-theme="dark"] .tag-warning { background: #501313; color: #f09595; }
+
+  .card-blurb { font-size: 13px; color: var(--text2); flex: 1; }
+  .card-chevron { font-size: 11px; color: var(--text3); flex-shrink: 0; transition: transform 0.2s; }
+  .card.open .card-chevron { transform: rotate(90deg); }
+
+  .card-body { display: none; padding: 0 14px 14px; border-top: 1px solid var(--border); }
+  .card.open .card-body { display: block; }
+
+  .card-note { font-size: 13px; color: var(--text2); line-height: 1.65; margin: 10px 0 8px; }
+
+  /* NUGGET */
+  .nugget {
+    font-size: 12px; color: var(--text2); background: var(--surface2);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 7px 11px; margin: 8px 0 0;
+    border-left: 3px solid var(--teal-text); line-height: 1.55;
+  }
+  .nugget.warn   { border-left-color: var(--amber-text); }
+  .nugget.purple { border-left-color: var(--accent); }
+  .nugget.danger { border-left-color: #e24b4a; }
+
+  /* CODE */
+  .code-wrap { margin-top: 10px; }
+  .code-block {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    background: var(--code-bg); color: var(--code-text);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 10px 14px; white-space: pre; line-height: 1.7;
+    overflow-x: auto;
+  }
+  .copy-btn {
+    display: block; width: 100%; font-size: 11px; padding: 6px;
+    background: #252320; border: none; border-top: 1px solid #2e2c27;
+    border-radius: 0 0 var(--radius) var(--radius);
+    color: #6b6860; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    text-align: center; letter-spacing: 0.04em; transition: background 0.15s, color 0.15s;
+  }
+  .copy-btn:hover { background: #2e2c27; color: #a8a49a; }
+  .copy-btn.copied { color: #9fe1cb; }
+  [data-theme="dark"] .code-block { background: var(--code-bg); }
+
+  /* PYTHON CALLOUT */
+  .py-note {
+    margin-top: 8px; font-size: 12px; color: var(--text3);
+    padding: 6px 10px; border-left: 2px solid var(--accent);
+    background: var(--accent-bg); border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .py-note code { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-text); }
+
+  /* PERF PILLS */
+  .perf-row { display: flex; gap: 6px; margin: 8px 0 0; flex-wrap: wrap; }
+  .perf-pill {
+    font-size: 11px; font-family: 'JetBrains Mono', monospace;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 3px 8px; color: var(--text2);
+  }
+  .perf-pill strong { color: var(--text); font-weight: 500; }
+
+  /* TABLE */
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  .ref-table td { padding: 5px 8px; color: var(--text2); vertical-align: top; line-height: 1.55; }
+  .ref-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--accent); width: 32%; white-space: nowrap; }
+  .ref-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+
+  /* FOOTER */
+  footer { text-align: center; font-size: 12px; color: var(--text3); padding: 1.5rem; border-top: 1px solid var(--border); background: var(--surface); margin-top: 2rem; }
+
+  @media (max-width: 600px) {
+    .header-inner { padding: 0 1rem; }
+    main { padding: 1rem 1rem 3rem; }
+    .card-head { flex-wrap: wrap; }
+    .card-name { min-width: unset; }
+    .code-block { font-size: 11px; white-space: pre-wrap; word-break: break-word; }
+    .nav-tab { font-size: 12px; padding: 0.5rem 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="logo">
+        <span class="logo-name">clojure</span>
+        <span class="logo-sub">reader · types · collections — Rich Hickey reference</span>
+      </div>
+      <div class="header-actions">
+        <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">☀</button>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showSection('reader')">Part 1 — Reader &amp; Types</button>
+      <button class="nav-tab" onclick="showSection('collections')">Part 2 — Collections</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  PART 1 — READER & TYPES                          -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section active" id="section-reader">
+
+  <div class="section-intro">
+    <h2>The Reader, Types &amp; Evaluation</h2>
+    <p>What happens before your code runs. The reader turns text into data structures; the evaluator acts on them. These are separate, independent stages — and that separation is what makes Clojure macros possible.</p>
+  </div>
+
+  <div class="group-label">The read → eval pipeline</div>
+  <div class="card-list">
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">read vs eval</span>
+        <span class="card-tag tag-reader">reader</span>
+        <span class="card-blurb">Two separate stages — text → data, then data → value</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <p class="card-note">The reader parses text into data structures. The evaluator then acts on those data structures. Most of the time they feel identical — but they're independent stages you can use separately.</p>
+        <div class="code-wrap">
+          <div class="code-block"><span style="color:#9fe1cb">; Atoms: read and eval give the same result</span>
+42          <span style="color:#6b6860">; read → Long    eval → Long 42</span>
+:name       <span style="color:#6b6860">; read → Keyword  eval → Keyword (itself)</span>
+"hello"     <span style="color:#6b6860">; read → String   eval → String</span>
+
+<span style="color:#9fe1cb">; Symbols & lists: eval does extra work</span>
+a           <span style="color:#6b6860">; read → Symbol 'a   eval → looks up its value</span>
+(1 2 3)     <span style="color:#6b6860">; read → List        eval → tries to CALL 1 (error!)</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget purple">The language is defined in terms of data structures, not grammar. A Clojure program is data. This is what makes macros possible — macros transform data before eval sees it.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">quote / '</span>
+        <span class="card-tag tag-reader">special form</span>
+        <span class="card-blurb">Suppress evaluation — return the form itself</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <p class="card-note">Tells the evaluator: return this thing as-is. The single quote <code style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--accent)">'</code> is shorthand for <code style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--accent)">(quote ...)</code>. Suppresses evaluation of the entire form — not just the outer wrapper.</p>
+        <div class="code-wrap">
+          <div class="code-block">'w           <span style="color:#6b6860">; => symbol w  (not its value)</span>
+(quote w)    <span style="color:#6b6860">; same thing</span>
+'(1 2 3)     <span style="color:#6b6860">; => list (1 2 3) — not a function call</span>
+'(a b c)     <span style="color:#6b6860">; => list of symbols — nothing evaluated</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget warn">Returns in W6D3 — macros. A quoted list is just a list; you can manipulate it as data, then hand it to eval. That's the macro system.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="group-label">Numbers</div>
+  <div class="card-list">
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">integer / BigInt</span>
+        <span class="card-tag tag-number">auto-promoting</span>
+        <span class="card-blurb">No silent overflow — grows to BigInt automatically</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="code-wrap">
+          <div class="code-block">42           <span style="color:#6b6860">; Long (small int)</span>
+42N          <span style="color:#6b6860">; BigInteger (explicit)</span>
+<span style="color:#9fe1cb">; Integers auto-promote — no overflow, ever</span>
+(* 1000000 1000000 1000000)  <span style="color:#6b6860">; => 1000000000000000000  (fine!)</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget">Unlike Java/C, integer math never silently wraps. If the result can't fit in 64 bits, Clojure transparently promotes to BigInt and keeps going.</div>
+        <div class="py-note">Python int: also arbitrary precision. Java/C int: wraps at 2³¹. Clojure: starts as Long, auto-promotes.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">Ratio</span>
+        <span class="card-tag tag-unique">no Python equivalent</span>
+        <span class="card-blurb">Exact fractions — no floating-point loss</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <p class="card-note">When you divide two integers that don't divide evenly, Clojure stores the result as a Ratio — two integers held together. No precision loss until you mix in a Double.</p>
+        <div class="code-wrap">
+          <div class="code-block">22/7         <span style="color:#6b6860">; => 22/7  (Ratio — exact)</span>
+(* 22/7 7)   <span style="color:#6b6860">; => 22   (reduces to integer!)</span>
+5/20         <span style="color:#6b6860">; => 1/4  (auto-reduces)</span>
+(+ 1/3 1/3)  <span style="color:#6b6860">; => 2/3  (exact)</span>
+
+<span style="color:#9fe1cb">; Mix with a Double → everything becomes Double</span>
+(+ 1/3 0.1)  <span style="color:#6b6860">; => 0.4333...  (precision lost)</span>
+(* 22/7 1.0) <span style="color:#6b6860">; => 3.1428...  (Double territory)</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget warn">As soon as a Ratio touches a Double, everything converts to Double. Keep computations in Ratio-land for exact arithmetic; only convert at the output boundary.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">variadic math</span>
+        <span class="card-tag tag-number">n-arity</span>
+        <span class="card-blurb">+, -, *, / take any number of arguments</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="code-wrap">
+          <div class="code-block">(+)          <span style="color:#6b6860">; => 0   (identity for addition)</span>
+(*)          <span style="color:#6b6860">; => 1   (identity for multiplication)</span>
+(+ 1 2 3 4)  <span style="color:#6b6860">; => 10</span>
+(&lt; 4 5 6)   <span style="color:#6b6860">; => true  (chained comparison!)</span>
+(&lt; 4 5 3)   <span style="color:#6b6860">; => false</span>
+(min 3 1 4 1 5 9)  <span style="color:#6b6860">; => 1</span>
+(inc 7)      <span style="color:#6b6860">; faster + clearer than (+ 7 1)</span>
+(zero? 0)    <span style="color:#6b6860">; faster + clearer than (= 0 n)</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget">Chained comparisons like <code style="font-size:11px">(< 4 5 6)</code> check the relationship across the whole set — there's no Python equivalent without writing <code style="font-size:11px">4 < 5 < 6</code>. Prefer <code style="font-size:11px">inc</code>/<code style="font-size:11px">dec</code>/<code style="font-size:11px">zero?</code> — they're faster and more descriptive.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="group-label">Keywords &amp; Symbols</div>
+  <div class="card-list">
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">keyword</span>
+        <span class="card-tag tag-unique">no Python equivalent</span>
+        <span class="card-blurb">Symbolic identifiers that always evaluate to themselves</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <p class="card-note">Keywords evaluate to themselves — no lookup, no error. Any two keywords with the same name are the exact same object (interned). This makes them extremely fast as map keys.</p>
+        <div class="code-wrap">
+          <div class="code-block">:name          <span style="color:#6b6860">; a keyword — means itself</span>
+:status/active <span style="color:#6b6860">; namespaced keyword</span>
+
+<span style="color:#9fe1cb">; Interning — same name = same object</span>
+(= :name :name)           <span style="color:#6b6860">; => true</span>
+(identical? :name :name)  <span style="color:#6b6860">; => true  (same object!)</span>
+
+<span style="color:#9fe1cb">; Strings: equal in value, NOT same object</span>
+(identical? "foo" "foo")  <span style="color:#6b6860">; => false</span>
+
+<span style="color:#9fe1cb">; Keywords are also functions — look themselves up in a map</span>
+(def person {:name "Ada" :age 36})
+(:name person)    <span style="color:#6b6860">; => "Ada"</span>
+(name :name)      <span style="color:#6b6860">; => "name"  (string, no colon)</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget purple">Because any two <code style="font-size:11px">:name</code> keywords are the same object, equality is an identity (pointer) check — the fastest possible comparison. This is why keywords are the idiomatic choice for map keys.</div>
+        <div class="py-note">Closest Python analogy: <code>Enum</code> members — named constants that mean themselves. But keywords need no class, no boilerplate, and are first-class function values.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">symbol</span>
+        <span class="card-tag tag-unique">no Python equivalent</span>
+        <span class="card-blurb">Names of things — eval looks up their value</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <p class="card-note">Symbols are objects with names. The evaluator treats them as names of things and tries to resolve what they refer to. Quote suppresses that resolution.</p>
+        <div class="code-wrap">
+          <div class="code-block">a           <span style="color:#6b6860">; symbol → eval looks up its value</span>
+'a          <span style="color:#6b6860">; quoted symbol → suppresses eval</span>
+'foo/bar    <span style="color:#6b6860">; namespaced: ns=foo, name=bar</span>
+
+(name 'foo/bar)       <span style="color:#6b6860">; => "bar"</span>
+(namespace 'foo/bar)  <span style="color:#6b6860">; => "foo"</span>
+
+(gensym "id")   <span style="color:#6b6860">; => id__123  (unique symbol — for macros)</span>
+(gensym)        <span style="color:#6b6860">; => G__456   (no prefix)</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget warn"><code style="font-size:11px">gensym</code> used in Phase 3 macros — when writing code that writes code, you need guaranteed-unique symbol names to avoid name collisions (macro hygiene).</div>
+        <div class="py-note">No Python equivalent. A symbol is a variable name treated as a value — a concept Python doesn't expose.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="group-label">nil &amp; truthiness</div>
+  <div class="card-list">
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">nil</span>
+        <span class="card-tag tag-types">falsy</span>
+        <span class="card-blurb">Nothing. Not an empty collection — nothing.</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <p class="card-note">nil means the absence of anything. Same as Java null. Sequence functions return nil when there's nothing left to iterate through.</p>
+        <div class="code-wrap">
+          <div class="code-block"><span style="color:#9fe1cb">; Only nil and false are logically false</span>
+(if nil   "yes" "no")  <span style="color:#6b6860">; => "no"</span>
+(if false "yes" "no")  <span style="color:#6b6860">; => "no"</span>
+
+<span style="color:#9fe1cb">; Everything else is truthy — including 0 and ""</span>
+(if 0     "yes" "no")  <span style="color:#6b6860">; => "yes"  (0 is TRUTHY!)</span>
+(if ""    "yes" "no")  <span style="color:#6b6860">; => "yes"  ("" is TRUTHY!)</span>
+(if []    "yes" "no")  <span style="color:#6b6860">; => "yes"  (empty vec is TRUTHY!)</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget danger">0 and "" are truthy in Clojure. Python developers expect 0, "", [], {} to be falsy — they are not. Only <code style="font-size:11px">nil</code> and <code style="font-size:11px">false</code> are falsy. This will catch you.</div>
+        <div class="py-note">Python: 0, "", [], {}, None are all falsy. Clojure: only nil and false. Everything else — including empty string, 0, empty vector — is truthy.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="group-label">Immutability &amp; equality</div>
+  <div class="card-list">
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">value equality</span>
+        <span class="card-tag tag-immutable">immutable</span>
+        <span class="card-blurb">All data is immutable → = is always safe and meaningful</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <p class="card-note">Because Clojure data structures never change, comparing them by value is always safe — the result of a comparison can never be invalidated by a later mutation.</p>
+        <div class="code-wrap">
+          <div class="code-block"><span style="color:#9fe1cb">; Strings: equal in value, but different objects</span>
+(= "foo" "foo")          <span style="color:#6b6860">; => true  (value equality)</span>
+(identical? "foo" "foo") <span style="color:#6b6860">; => false (diff objects)</span>
+
+<span style="color:#9fe1cb">; Keywords: equal AND same object (interned)</span>
+(= :foo :foo)            <span style="color:#6b6860">; => true</span>
+(identical? :foo :foo)   <span style="color:#6b6860">; => true</span>
+
+<span style="color:#9fe1cb">; Even large maps compared by value — hashes cached</span>
+(= {:a 1 :b 2} {:a 1 :b 2})  <span style="color:#6b6860">; => true</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget purple">Mutable objects should never be compared by value — the result could differ between two calls. Clojure's immutability makes <code style="font-size:11px">=</code> universally meaningful. Hash values are cached internally — comparing large structures is fast.</div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /section-reader -->
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  PART 2 — COLLECTIONS                             -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="section" id="section-collections">
+
+  <div class="section-intro">
+    <h2>Collections — Immutable &amp; Persistent</h2>
+    <p>All Clojure collections are immutable and persistent. "Persistent" means creating a modified version shares structure with the original — no full copy. Both copies can share safely because neither can ever change.</p>
+  </div>
+
+  <div class="group-label">The big idea</div>
+  <div class="card-list">
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">persistence</span>
+        <span class="card-tag tag-core">structural sharing</span>
+        <span class="card-blurb">Modified version shares structure with original — no full copy</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <p class="card-note">When you "modify" a collection you get a new value that shares most of its internal structure with the old one. Safe because neither can ever change.</p>
+        <div class="code-wrap">
+          <div class="code-block"><span style="color:#9fe1cb">; Original is NEVER changed</span>
+(def v [1 2 3])
+(conj v 4)    <span style="color:#6b6860">; => [1 2 3 4]  (new vector)</span>
+v             <span style="color:#6b6860">; => [1 2 3]    (untouched)</span>
+
+<span style="color:#9fe1cb">; List: new node points to existing list — zero copy</span>
+(def lst '(a b c))
+(def lst2 (conj lst :x))
+(identical? (rest lst2) lst)  <span style="color:#6b6860">; => true! (shared tail)</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget purple">Thread safety is a free side-effect. Any number of threads can read the same data structure simultaneously — nothing races because nothing changes. No locks needed.</div>
+        <div class="nugget">Performance: most operations are O(1) or near-O(1) for hash maps/vectors. Sorted maps/trees are O(log n). It's not a full copy — internally it's a 32-way branching tree (hash array mapped trie).</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">conj</span>
+        <span class="card-tag tag-core">all collections</span>
+        <span class="card-blurb">Universal add — where it goes depends on the collection type</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <p class="card-note">Short for "conjoin". Returns a new collection with the item added. The collection comes first. Where it lands is intentional design, not inconsistency.</p>
+        <div class="code-wrap">
+          <div class="code-block">(conj '(a b c) :x)     <span style="color:#6b6860">; => (:x a b c)    — FRONT (list)</span>
+(conj [1 2 3]  4)      <span style="color:#6b6860">; => [1 2 3 4]     — BACK  (vector)</span>
+(conj {:a 1}   {:b 2}) <span style="color:#6b6860">; => {:a 1 :b 2}   — merge (map)</span>
+(conj #{1 2}   3)      <span style="color:#6b6860">; => #{1 2 3}      — add   (set)</span>
+
+<span style="color:#9fe1cb">; Collections are heterogeneous — mix types freely</span>
+(conj [1 "two"] :three)  <span style="color:#6b6860">; => [1 "two" :three]</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget">Use <code style="font-size:11px">assoc</code> when you care about keys/values in maps. Use <code style="font-size:11px">conj</code> when you're writing code that works generically across collection types.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">seq</span>
+        <span class="card-tag tag-seq">abstraction bridge</span>
+        <span class="card-blurb">Turn any collection into a sequence of items</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <p class="card-note">A sequence is the simplest interface: <code style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--accent)">first</code> and <code style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--accent)">rest</code>. That's it. When nothing remains, <code style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--accent)">rest</code> returns nil.</p>
+        <div class="code-wrap">
+          <div class="code-block">(seq '(a b c))    <span style="color:#6b6860">; => (a b c)  — list IS its own seq</span>
+(seq [1 2 3])     <span style="color:#6b6860">; => (1 2 3)  — prints like list (it's a seq)</span>
+(seq {:a 1 :b 2}) <span style="color:#6b6860">; => ([:a 1] [:b 2])  — key-value pairs</span>
+(seq #{1 2 3})    <span style="color:#6b6860">; => (1 2 3)  — unordered</span>
+
+(first [1 2 3])   <span style="color:#6b6860">; => 1</span>
+(rest  [1 2 3])   <span style="color:#6b6860">; => (2 3)  — a seq, not a vector</span>
+(first nil)       <span style="color:#6b6860">; => nil   (no exception)</span>
+(rest  nil)       <span style="color:#6b6860">; => ()    (empty seq)</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget warn">When sequences print with parentheses it doesn't mean they're lists. Parentheses = "this is a sequence". The underlying type could be anything.</div>
+        <div class="nugget"><code style="font-size:11px">map</code>, <code style="font-size:11px">filter</code>, <code style="font-size:11px">reduce</code>, <code style="font-size:11px">take</code>, <code style="font-size:11px">drop</code> — all work on any sequence. Write to the seq abstraction and your code works on lists, vectors, maps, sets, and anything future.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="group-label">List</div>
+  <div class="card-list">
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">list</span>
+        <span class="card-tag tag-list">singly linked</span>
+        <span class="card-blurb">Linked list — fast at the front, slow random access</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="perf-row">
+          <div class="perf-pill">count <strong>O(1)</strong></div>
+          <div class="perf-pill">conj <strong>O(1) front</strong></div>
+          <div class="perf-pill">nth <strong>O(n)</strong></div>
+          <div class="perf-pill">peek/pop <strong>O(1) front</strong></div>
+        </div>
+        <div class="code-wrap" style="margin-top:10px">
+          <div class="code-block">'(1 2 3)          <span style="color:#6b6860">; literal (must quote — else it's a call)</span>
+(list 1 2 3)      <span style="color:#6b6860">; constructor</span>
+(list* 1 2 [3 4]) <span style="color:#6b6860">; => (1 2 3 4)  — prepend + flatten seq tail</span>
+
+(peek '(1 2 3))   <span style="color:#6b6860">; => 1    (first — stack front)</span>
+(pop  '(1 2 3))   <span style="color:#6b6860">; => (2 3) (rest — stack front)</span>
+
+<span style="color:#9fe1cb">; Structural sharing — zero copy on conj</span>
+(def a '(b c))
+(def a2 (conj a :x))
+(identical? (rest a2) a)  <span style="color:#6b6860">; => true  (shared tail)</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget">Use <code style="font-size:11px">peek</code>/<code style="font-size:11px">pop</code> instead of <code style="font-size:11px">first</code>/<code style="font-size:11px">rest</code> when thinking of a list as a stack — same result, clearer intent. Lets you swap list ↔ vector without changing algorithm logic.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="group-label">Vector</div>
+  <div class="card-list">
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">vector</span>
+        <span class="card-tag tag-vector">32-way hash trie</span>
+        <span class="card-blurb">Indexed collection — near-O(1) everywhere, including random access</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="perf-row">
+          <div class="perf-pill">count <strong>O(1)</strong></div>
+          <div class="perf-pill">nth <strong>≈O(1)</strong></div>
+          <div class="perf-pill">conj back <strong>≈O(1)</strong></div>
+          <div class="perf-pill">peek/pop <strong>O(1) back</strong></div>
+          <div class="perf-pill">rseq <strong>O(1)</strong></div>
+          <div class="perf-pill">subvec <strong>O(1)</strong></div>
+        </div>
+        <div class="code-wrap" style="margin-top:10px">
+          <div class="code-block">[1 2 3]              <span style="color:#6b6860">; literal</span>
+(vector 1 2 3)       <span style="color:#6b6860">; constructor</span>
+
+<span style="color:#9fe1cb">; Index access</span>
+(nth [1 2 3] 1)      <span style="color:#6b6860">; => 2   (throws if out of range)</span>
+(get [1 2 3] 9)      <span style="color:#6b6860">; => nil (safe, no throw)</span>
+(get [1 2 3] 1)      <span style="color:#6b6860">; => 2</span>
+
+<span style="color:#9fe1cb">; Vector is associative — indices are keys</span>
+(assoc [1 2 3] 1 99) <span style="color:#6b6860">; => [1 99 3]   (replace at index)</span>
+(assoc [1 2 3] 3 4)  <span style="color:#6b6860">; => [1 2 3 4]  (extend by exactly 1)</span>
+
+<span style="color:#9fe1cb">; Stack operations — back end</span>
+(peek [1 2 3])       <span style="color:#6b6860">; => 3   (last)</span>
+(pop  [1 2 3])       <span style="color:#6b6860">; => [1 2] (all-but-last)</span>
+
+<span style="color:#9fe1cb">; O(1) operations — no copying</span>
+(rseq [1 2 3])             <span style="color:#6b6860">; => (3 2 1)  reverse, O(1)!</span>
+(subvec [1 2 3 4 5] 1 4)   <span style="color:#6b6860">; => [2 3 4]  O(1) window, no copy</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget purple">Internally a 32-way branching trie. log₃₂(4 billion) = 6. That branching factor is so small operations are effectively constant time — hence "near-O(1)".</div>
+        <div class="nugget warn"><code style="font-size:11px">nth</code> vs <code style="font-size:11px">get</code>: use <code style="font-size:11px">nth</code> when out-of-range means something went wrong (want an exception). Use <code style="font-size:11px">get</code> when nil is a reasonable "not found" signal.</div>
+        <div class="nugget"><code style="font-size:11px">subvec</code> shares structure with the original — a 1000-item window over 10M elements is instantaneous. Use this freely for sliding windows, chunking, etc.</div>
+        <div class="py-note">Python list: mutable, O(1) append, O(n) insert. Clojure vector: immutable, O(1) add-to-end, O(1) random access — but every "change" returns a new vector.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="group-label">Map</div>
+  <div class="card-list">
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">hash-map</span>
+        <span class="card-tag tag-map">log₃₂ n ≈ O(1)</span>
+        <span class="card-blurb">Default map type — fast, unordered</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="code-wrap">
+          <div class="code-block">{:a 1 :b 2}          <span style="color:#6b6860">; literal → HashMap</span>
+{:a 1, :b 2}         <span style="color:#6b6860">; same — commas are whitespace</span>
+
+<span style="color:#9fe1cb">; assoc — add/replace, takes multiple k/v pairs</span>
+(assoc {:a 1} :b 2 :c 3)   <span style="color:#6b6860">; => {:a 1 :b 2 :c 3}</span>
+
+<span style="color:#9fe1cb">; dissoc — remove keys</span>
+(dissoc {:a 1 :b 2} :b)    <span style="color:#6b6860">; => {:a 1}</span>
+(dissoc {:a 1 :b 2} :z)    <span style="color:#6b6860">; => {:a 1 :b 2}  (no error)</span>
+(dissoc {:a 1 :b 2} :a :b) <span style="color:#6b6860">; => {}  (multiple keys)</span>
+
+<span style="color:#9fe1cb">; get — safe lookup</span>
+(get {:a 1} :a)             <span style="color:#6b6860">; => 1</span>
+(get {:a 1} :z)             <span style="color:#6b6860">; => nil</span>
+(get {:a 1} :z :not-found)  <span style="color:#6b6860">; => :not-found  (default value)</span>
+
+<span style="color:#9fe1cb">; contains? — tests key PRESENCE (not value)</span>
+(contains? {:a 1 :b nil} :b)  <span style="color:#6b6860">; => true  (key exists!)</span>
+(contains? {:a 1 :b nil} :z)  <span style="color:#6b6860">; => false</span>
+
+<span style="color:#9fe1cb">; find — returns [k v] pair or nil</span>
+(find {:a 1 :b nil} :b)  <span style="color:#6b6860">; => [:b nil]  (key exists)</span>
+(find {:a 1 :b nil} :z)  <span style="color:#6b6860">; => nil       (key absent)</span>
+
+<span style="color:#9fe1cb">; keys / vals</span>
+(keys {:a 1 :b 2})  <span style="color:#6b6860">; => (:a :b)</span>
+(vals {:a 1 :b 2})  <span style="color:#6b6860">; => (1 2)</span>
+
+<span style="color:#9fe1cb">; merge — last value wins on conflicts</span>
+(merge {:a 1 :b 2} {:b 9 :c 3})  <span style="color:#6b6860">; => {:a 1 :b 9 :c 3}</span>
+
+<span style="color:#9fe1cb">; merge-with — resolve conflicts with a function</span>
+(merge-with + {:a 1 :b 2} {:b 3 :a 4})  <span style="color:#6b6860">; => {:a 5 :b 5}</span>
+(merge-with list {:a 1} {:a 2})          <span style="color:#6b6860">; => {:a (1 2)}</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget danger">If you store <code style="font-size:11px">nil</code> as a value, <code style="font-size:11px">(get m :k)</code> returns nil whether the key exists or not. Use <code style="font-size:11px">contains?</code> to test key presence, <code style="font-size:11px">find</code> to get the [k v] pair, or <code style="font-size:11px">get</code> with a sentinel third arg.</div>
+        <div class="nugget">Commas are whitespace. <code style="font-size:11px">{:a 1, :b 2}</code> and <code style="font-size:11px">{:a 1 :b 2}</code> are identical. Clojure prints them for readability; you don't have to write them.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">sorted-map</span>
+        <span class="card-tag tag-map">O(log n)</span>
+        <span class="card-blurb">Red-black tree — maintains key sort order</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <div class="code-wrap">
+          <div class="code-block"><span style="color:#9fe1cb">; sorted-map — keys sorted by natural order</span>
+(sorted-map :b 2 :a 1 :c 3)
+<span style="color:#6b6860">; => {:a 1 :b 2 :c 3}  (always sorted)</span>
+
+<span style="color:#9fe1cb">; sorted-map-by — custom comparator</span>
+(sorted-map-by > 3 "c" 1 "a" 2 "b")
+<span style="color:#6b6860">; => {3 "c" 2 "b" 1 "a"}  (descending)</span>
+
+<span style="color:#9fe1cb">; rseq works on sorted maps too (O(1) reverse)</span>
+(rseq (sorted-map :a 1 :b 2 :c 3))
+<span style="color:#6b6860">; => ([:c 3] [:b 2] [:a 1])</span></div>
+          <button class="copy-btn" onclick="copyCode(this)">copy</button>
+        </div>
+        <div class="nugget">Use sorted-map when you need iteration in key order. For pure lookup performance, hash-map is faster (log₃₂ n vs log₂ n). Both implement the same map abstraction — code written for one works on the other.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="group-label">Quick reference — all collections</div>
+  <div class="card-list">
+
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-name">collection hierarchy</span>
+        <span class="card-tag tag-core">reference</span>
+        <span class="card-blurb">What every collection supports and what's type-specific</span>
+        <span class="card-chevron">▶</span>
+      </div>
+      <div class="card-body">
+        <table class="ref-table">
+          <tr><td>count</td><td>Every collection. O(1). <code style="font-size:11px">(count nil)</code> = 0, no exception.</td></tr>
+          <tr><td>conj</td><td>Every collection. Front for lists, back for vectors, merge for maps/sets.</td></tr>
+          <tr><td>seq</td><td>Every collection → sequence. Maps yield <code style="font-size:11px">[:k v]</code> pairs.</td></tr>
+          <tr><td>first / rest</td><td>Any sequence. <code style="font-size:11px">first nil</code> = nil, <code style="font-size:11px">rest nil</code> = () — never throws.</td></tr>
+          <tr><td>peek / pop</td><td>Lists (front) and vectors (back). Swap freely for stack algorithms.</td></tr>
+          <tr><td>assoc / dissoc</td><td>Maps and vectors (index = key). Core of map manipulation.</td></tr>
+          <tr><td>get</td><td>Maps and vectors. nil on miss — safe by design.</td></tr>
+          <tr><td>nth</td><td>Vectors + seqs. Throws on out-of-range.</td></tr>
+          <tr><td>contains?</td><td>Maps and sets — tests key/member presence. For vectors, tests index range.</td></tr>
+          <tr><td>find</td><td>Maps only. Returns <code style="font-size:11px">[k v]</code> or nil — distinguishes nil values from missing keys.</td></tr>
+          <tr><td>keys / vals</td><td>Maps only. Returns sequences of keys or values.</td></tr>
+          <tr><td>merge / merge-with</td><td>Maps only. merge-with resolves conflicts with a function.</td></tr>
+          <tr><td>rseq</td><td>Vectors and sorted-maps only. O(1) reverse sequence.</td></tr>
+          <tr><td>subvec</td><td>Vectors only. O(1) windowing — shares structure, no copy.</td></tr>
+        </table>
+        <div class="nugget purple">Everything is defined in terms of abstractions, not concrete types. Code written against the map abstraction works on hash-map, sorted-map, and any future map type — including ones you write yourself.</div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /section-collections -->
+
+</main>
+
+<footer>
+  Clojure learning reference — Rich Hickey talks (Parts 1 &amp; 2) &nbsp;·&nbsp; Part of the Clojure curriculum project
+</footer>
+
+<script>
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('section-' + id).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function toggleCard(head) {
+    const card = head.parentElement;
+    card.classList.toggle('open');
+  }
+
+  function copyCode(btn) {
+    const code = btn.previousElementSibling.innerText;
+    navigator.clipboard.writeText(code).then(() => {
+      btn.textContent = 'copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1500);
+    });
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? '' : 'dark');
+    document.querySelector('.theme-btn').textContent = isDark ? '☀' : '☾';
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+  }
+
+  // Restore saved theme
+  (function() {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.querySelector('.theme-btn').textContent = '☾';
+    }
+  })();
+</script>
+</body>
+</html>

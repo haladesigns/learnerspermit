@@ -531,6 +531,12 @@
           },
           {
             "type": "file",
+            "name": "clojure-forms.html",
+            "label": "Clojure Forms",
+            "path": "coding_web-design/clojure/clojure-forms.html"
+          },
+          {
+            "type": "file",
             "name": "clojure-reference.html",
             "label": "Clojure Reference",
             "path": "coding_web-design/clojure/clojure-reference.html"

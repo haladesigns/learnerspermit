@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clojure — Forms & Syntax Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS (identical to reference page) ── */
+:root {
+  --bg:       #f5f2eb;
+  --surface:  #ffffff;
+  --surface2: #ede9e0;
+  --border:   #ddd8cc;
+  --border2:  #ccc6b8;
+  --text:     #1c1a14;
+  --text2:    #5a5648;
+  --text3:    #9a9282;
+  --accent:   #c75a2c;
+  --accent2:  #e8936a;
+  --accent-bg:#fdf0e8;
+  --accent-t: #7a3018;
+  --core-bg:  #eaf3e8;
+  --core-t:   #2a5c25;
+  --str-bg:   #e8eef8;
+  --str-t:    #1e3a6e;
+  --set-bg:   #f0e8f5;
+  --set-t:    #5a1a7a;
+  --code-bg:      #f0ece2;
+  --code-t:       #2a2420;
+  --code-border:  #ccc6b4;
+  --code-footer-bg:     #e6e1d6;
+  --code-footer-border: #ccc6b4;
+  --code-footer-t:      #7a7060;
+  --code-footer-hover:  #ddd8cc;
+  --code-cm:      #9fd882;
+  --code-kw:      #e8936a;
+  --code-str:     #82c9d8;
+  --tok-comment:  #8a8a8a;
+  --tok-string:   #0070a0;
+  --tok-keyword:  #c75a2c;
+  --tok-number:   #2a7a2a;
+  --tok-special:  #7a28a0;
+  --tok-bool:     #0055aa;
+  --tok-result:   #5a8a3a;
+  --tok-dispatch: #a06000;
+  --shadow:       0 1px 4px rgba(0,0,0,.07);
+  --radius:   6px;
+  --radius-lg:10px;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+}
+[data-theme="dark"] {
+  --bg:       #141210;
+  --surface:  #1c1a16;
+  --surface2: #242018;
+  --border:   #2e2a22;
+  --border2:  #3a3428;
+  --text:     #ede8dc;
+  --text2:    #a09880;
+  --text3:    #5a5448;
+  --accent:   #e8784a;
+  --accent2:  #c75a2c;
+  --accent-bg:#2a1a0e;
+  --accent-t: #f0a882;
+  --core-bg:  #0e1e0c;
+  --core-t:   #7ad070;
+  --str-bg:   #0c1428;
+  --str-t:    #7aabee;
+  --set-bg:   #1a0c28;
+  --set-t:    #c070e8;
+  --code-bg:      #0c0a08;
+  --code-t:       #e0d8c8;
+  --code-border:  #2a2620;
+  --code-footer-bg:     #181510;
+  --code-footer-border: #2e2a22;
+  --code-footer-t:      #5a5448;
+  --code-footer-hover:  #242018;
+  --tok-comment:  #636366;
+  --tok-string:   #82c9d8;
+  --tok-keyword:  #e8936a;
+  --tok-number:   #b5cea8;
+  --tok-special:  #c586c0;
+  --tok-bool:     #569cd6;
+  --tok-result:   #6a9955;
+  --tok-dispatch: #dcdcaa;
+  --shadow:       0 1px 4px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.7;
+  min-height: 100vh;
+  transition: background .2s, color .2s;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+.hdr-inner {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+.hdr-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: .75rem 0 .65rem;
+}
+.logo { flex: 1; min-width: 0; }
+.logo-name {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: -.02em;
+}
+.logo-sub { font-size: 14px; color: var(--text3); margin-top: 1px; }
+.hdr-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--text2);
+  transition: background .15s;
+  flex-shrink: 0; text-decoration: none;
+}
+.icon-btn:hover { background: var(--border); }
+.ref-link {
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.ref-link:hover { background: var(--accent-bg); }
+
+/* ── NAV PILLS ── */
+.concept-nav {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: .6rem;
+}
+.concept-nav::-webkit-scrollbar { display: none; }
+.nav-pill {
+  font-size: 13px;
+  padding: 3px 11px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text2);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: all .15s;
+  font-family: var(--sans);
+}
+.nav-pill:hover { background: var(--surface2); color: var(--text); }
+.nav-pill.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── MAIN ── */
+main {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 2rem 1rem 5rem;
+}
+
+/* ── CONCEPT SECTIONS ── */
+.concept-section {
+  margin-bottom: 3.5rem;
+  scroll-margin-top: 80px;
+}
+.concept-section:last-child { margin-bottom: 0; }
+
+.concept-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+  padding-bottom: .75rem;
+  border-bottom: 2px solid var(--border);
+}
+.concept-number {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+.concept-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+.concept-subtitle {
+  font-size: 14px;
+  color: var(--text3);
+  font-style: italic;
+}
+
+/* Prose */
+.prose {
+  color: var(--text2);
+  font-size: 16px;
+  line-height: 1.75;
+  margin-bottom: 1.25rem;
+}
+.prose strong { color: var(--text); font-weight: 600; }
+.prose code {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.prose a { color: var(--accent); text-decoration: underline; }
+
+/* ── CALLOUT BOXES ── */
+.callout {
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+  font-size: 15px;
+  line-height: 1.65;
+  border-left: 3px solid;
+}
+.callout strong { display: block; font-size: 13px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; margin-bottom: .4rem; }
+.callout.key {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent-t);
+}
+.callout.key strong { color: var(--accent); }
+.callout.python {
+  background: var(--str-bg);
+  border-color: var(--str-t);
+  color: var(--str-t);
+}
+.callout.python strong { color: var(--str-t); }
+.callout.warning {
+  background: var(--set-bg);
+  border-color: var(--set-t);
+  color: var(--set-t);
+}
+.callout.warning strong { color: var(--set-t); }
+.callout.concept {
+  background: var(--core-bg);
+  border-color: var(--core-t);
+  color: var(--core-t);
+}
+.callout.concept strong { color: var(--core-t); }
+.callout code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: rgba(0,0,0,.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ── COMPARISON GRID ── */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.compare-col {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.compare-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  color: var(--text3);
+}
+.compare-col.python .compare-label { color: var(--str-t); background: var(--str-bg); border-color: var(--str-t); }
+.compare-col.clojure .compare-label { color: var(--accent); background: var(--accent-bg); border-color: var(--accent); }
+.compare-col pre {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--code-bg);
+  color: var(--code-t);
+  padding: 10px 12px;
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.65;
+  margin: 0;
+  border: none;
+}
+
+/* ── CODE BLOCK (standalone, no toggle) ── */
+.code-block {
+  font-family: var(--mono);
+  font-size: 14px;
+  background: var(--code-bg);
+  color: var(--code-t);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--code-border);
+  padding: 12px 14px;
+  white-space: pre;
+  line-height: 1.65;
+  overflow-x: auto;
+  tab-size: 2;
+  margin-bottom: 1.25rem;
+}
+
+/* ── DIAGRAM BOXES ── */
+.diagram {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.8;
+  overflow-x: auto;
+}
+.diagram .d-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: .5rem;
+  font-family: var(--sans);
+}
+.d-acc  { color: var(--accent); }
+.d-green{ color: var(--core-t); }
+.d-blue { color: var(--str-t); }
+.d-grey { color: var(--text3); }
+.d-purple { color: var(--set-t); }
+
+/* ── CONCEPT PAIRS ── */
+.concept-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.concept-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: .9rem 1rem;
+}
+.concept-box h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: .4rem;
+}
+.concept-box p {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.55;
+}
+.concept-box code {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ── TIMELINE / STATE FLOW ── */
+.state-flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: .9rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+}
+.state-box {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+}
+.state-box.highlight {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent-t);
+}
+.state-arrow { color: var(--text3); font-size: 16px; flex-shrink: 0; }
+.state-label { font-size: 12px; color: var(--text3); width: 100%; padding-top: .3rem; font-style: italic; }
+
+/* ── REFERENCE TABLE ── */
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  font-size: 14px;
+}
+.ref-table th {
+  text-align: left;
+  padding: 6px 10px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.ref-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.ref-table td:first-child {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.ref-table tr:last-child td { border-bottom: none; }
+.ref-table tr:hover td { background: var(--surface2); }
+
+/* Syntax highlight spans */
+.tok-comment  { color: var(--tok-comment);  font-style: italic; }
+.tok-string   { color: var(--tok-string); }
+.tok-keyword  { color: var(--tok-keyword); }
+.tok-number   { color: var(--tok-number); }
+.tok-special  { color: var(--tok-special);  font-weight: 500; }
+.tok-bool     { color: var(--tok-bool); }
+.tok-result   { color: var(--tok-result);   font-style: italic; }
+.tok-dispatch { color: var(--tok-dispatch); }
+
+/* ── SECTION DIVIDER ── */
+.section-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 3rem 0;
+}
+
+/* ── MOBILE ── */
+@media (max-width: 600px) {
+  .hdr-inner { padding: 0 .75rem; }
+  .logo-sub { display: none; }
+  main { padding: 1.25rem .75rem 4rem; }
+  .concept-title { font-size: 18px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .concept-pair { grid-template-columns: 1fr; }
+  .compare-col pre { font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  .code-block { font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+  .diagram { font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  .ref-table { font-size: 13px; }
+  .prose { font-size: 15px; }
+  .state-flow { gap: 5px; }
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-inner">
+    <div class="hdr-top">
+      <div class="logo">
+        <div class="logo-name">clojure — forms &amp; syntax</div>
+        <div class="logo-sub">every shape, symbol, and sigil you'll encounter</div>
+      </div>
+      <div class="hdr-actions">
+        <a href="clojure-concepts.html" class="ref-link">&#8592; concepts</a>
+        <button class="icon-btn" id="theme-btn" title="Toggle theme" onclick="toggleTheme()">&#9790;</button>
+      </div>
+    </div>
+    <nav class="concept-nav" id="concept-nav">
+      <a href="#taxonomy"        class="nav-pill">1 · The Four Meanings of "Form"</a>
+      <a href="#literals"         class="nav-pill">2 · Literal Syntax</a>
+      <a href="#special-forms"    class="nav-pill">3 · Special Forms</a>
+      <a href="#binding-forms"    class="nav-pill">4 · Binding &amp; Destructuring</a>
+      <a href="#reader-macros"    class="nav-pill">5 · Reader Macros</a>
+      <a href="#threading"        class="nav-pill">6 · Threading Forms</a>
+      <a href="#conditionals"     class="nav-pill">7 · Conditional Forms</a>
+      <a href="#metadata"         class="nav-pill">8 · Metadata (^)</a>
+      <a href="#interop"          class="nav-pill">9 · Java Interop (.)</a>
+      <a href="#quoting"          class="nav-pill">10 · Quote Family</a>
+      <a href="#cheatsheet"       class="nav-pill">11 · Sigil Cheatsheet</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     INTRO
+     ═══════════════════════════════════════════════════════════ -->
+<div class="prose" style="margin-bottom:2.5rem; padding:.9rem 1rem; background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:var(--radius-lg);">
+  <strong>How to use this page.</strong> Clojure's syntax is tiny, but it's dense. A single source file can contain parentheses, square brackets, curly braces, hash-sets, hash-functions, hash-regexes, hash-underscores, hash-quotes, at-signs, carets, dots, colons, double-colons, backticks, tildes, and more. Every one of them means something precise. This page is your map. It is organised from surface to depth: start with the taxonomy (§1), then use the pill nav or the cheatsheet (§11) to jump to whatever you're looking at. Every section has Python comparisons where they help.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     1. TAXONOMY — THE FOUR MEANINGS OF "FORM"
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="taxonomy">
+  <div class="concept-header">
+    <span class="concept-number">01</span>
+    <div>
+      <div class="concept-title">The Four Meanings of "Form"</div>
+      <div class="concept-subtitle">Why the word feels confusing — it means four related things</div>
+    </div>
+  </div>
+
+  <p class="prose">Documentation, tutorials, and error messages use the word <em>form</em> in four distinct (but overlapping) ways. Separating them mentally is the first step to making Clojure syntax feel less arbitrary. Every piece of syntax on this page fits into one of these four buckets.</p>
+
+  <div class="concept-pair">
+    <div class="concept-box">
+      <h4>1. Form = evaluable expression</h4>
+      <p>Anything the compiler can evaluate to a value. A number is a form. A string is a form. <code>(+ 1 2)</code> is a form. <code>{:a 1}</code> is a form. When the REPL docs say "evaluate the next form", they mean this.</p>
+    </div>
+    <div class="concept-box">
+      <h4>2. Special form = compiler primitive</h4>
+      <p>A specific, short list of forms the compiler handles directly — <code>if</code>, <code>let</code>, <code>fn</code>, <code>def</code>, <code>quote</code>, <code>.</code>, etc. They cannot be redefined or built from other forms. Everything else in the language is built on top of them.</p>
+    </div>
+  </div>
+  <div class="concept-pair" style="margin-top:-4px">
+    <div class="concept-box">
+      <h4>3. Binding form = the left-hand side</h4>
+      <p>The shape used to name things. In <code>(let [x 1] ...)</code>, the <code>x</code> is a binding form. In <code>(defn f [a b] ...)</code>, the vector <code>[a b]</code> is a binding form. Destructuring patterns are binding forms too.</p>
+    </div>
+    <div class="concept-box">
+      <h4>4. Reader form = textual syntax</h4>
+      <p>How characters on the page map to data structures. <code>'x</code>, <code>@x</code>, <code>#{...}</code>, <code>#(...)</code>, <code>^:tag</code> — these are <em>read</em> as specific data, before any evaluation happens. The reader runs first; the compiler runs on what the reader produced.</p>
+    </div>
+  </div>
+
+  <p class="prose">The layering matters. When Clojure processes a file, three phases run in order:</p>
+
+  <div class="diagram">
+    <div class="d-label">The three phases — read, macroexpand, evaluate:</div>
+    <pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;white-space:pre;"><span class="d-grey">    Source text              Data structures            Values
+     (characters)             (lists, maps, ...)
+
+</span><span class="d-blue">    "(when x (println x))"</span><span class="d-grey">    </span><span class="d-acc">────►</span><span class="d-grey">  </span><span class="d-green">(when x (println x))</span><span class="d-grey">   </span><span class="d-acc">────►</span><span class="d-grey">  </span><span class="d-purple">prints x, returns nil</span><span class="d-grey">
+          │                         │                      │
+          │                         │                      │
+       </span><span class="d-blue">READER</span><span class="d-grey">                  </span><span class="d-acc">MACROEXPANDER</span><span class="d-grey">           </span><span class="d-green">EVALUATOR</span><span class="d-grey">
+    (reader forms)           (macro &amp; special forms)   (produces values)
+    ' @ ^ # :: etc.          when → if + do           run compiled code</span></pre>
+  </div>
+
+  <p class="prose">This explains why the same symbol can do different things. <code>^</code> is a <em>reader macro</em> — it attaches metadata to the next form at <em>read time</em>, and never appears as a function. <code>if</code> is a <em>special form</em> — it's compiled directly. <code>when</code> is a <em>macro form</em> — it expands into <code>if</code> before compilation. All three look like normal syntax, but they fire at different phases.</p>
+
+  <div class="callout key">
+    <strong>The mental model that unlocks everything</strong>
+    Reader macros (phase 1) produce data. The data is either a special form (compiled directly) or a macro call (expanded, then compiled) or a function call (compiled as a call). There are no other categories. Once you can tell which phase a piece of syntax belongs to, nothing in Clojure looks mysterious.
+  </div>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    Python has nothing analogous to phase 1. Python's parser produces an AST directly from text, with no user-accessible intermediate. Clojure's reader is user-accessible: you can call <code>(read-string "(+ 1 2)")</code> and get back the list <code>(+ 1 2)</code> as data. That's why you can write macros in Clojure but not in Python.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     2. LITERAL SYNTAX
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="literals">
+  <div class="concept-header">
+    <span class="concept-number">02</span>
+    <div>
+      <div class="concept-title">Literal Syntax</div>
+      <div class="concept-subtitle">The data structures you can write directly in source code</div>
+    </div>
+  </div>
+
+  <p class="prose">Python has four literal data structures you can write inline: <code>[list]</code>, <code>(tuple)</code>, <code>{dict}</code>, <code>{set}</code>. Clojure has more, and each one has specific evaluation semantics. Here is every literal form you can write directly, and what it evaluates to.</p>
+
+  <table class="ref-table">
+    <tr><th>Literal</th><th>Type</th><th>Evaluation</th><th>Example</th></tr>
+    <tr><td>42  3.14  1/3</td><td>Number</td><td>Self-evaluating</td><td><code>42</code> → <code>42</code></td></tr>
+    <tr><td>"text"</td><td>String</td><td>Self-evaluating</td><td><code>"hi"</code> → <code>"hi"</code></td></tr>
+    <tr><td>\c</td><td>Character</td><td>Self-evaluating</td><td><code>\a</code> <code>\newline</code> <code>\u00e9</code></td></tr>
+    <tr><td>true false nil</td><td>Booleans &amp; nil</td><td>Self-evaluating</td><td><code>nil</code> → <code>nil</code></td></tr>
+    <tr><td>:kw</td><td>Keyword</td><td>Self-evaluating</td><td><code>:name</code> <code>:user/id</code></td></tr>
+    <tr><td>name</td><td>Symbol</td><td>Looked up as a var</td><td><code>inc</code> → <code>#'clojure.core/inc</code></td></tr>
+    <tr><td>(…)</td><td>List</td><td>Called as a form</td><td><code>(+ 1 2)</code> → <code>3</code></td></tr>
+    <tr><td>[…]</td><td>Vector</td><td>Contents evaluated, returns vector</td><td><code>[1 2 3]</code> → <code>[1 2 3]</code></td></tr>
+    <tr><td>{…}</td><td>Map</td><td>Contents evaluated, returns map</td><td><code>{:a 1}</code> → <code>{:a 1}</code></td></tr>
+    <tr><td>#{…}</td><td>Set</td><td>Contents evaluated, returns set</td><td><code>#{1 2 3}</code> → <code>#{1 3 2}</code></td></tr>
+    <tr><td>#"…"</td><td>Regex</td><td>Compiled at read time</td><td><code>#"\d+"</code></td></tr>
+    <tr><td>#(…)</td><td>Anon fn</td><td>Expands to <code>(fn …)</code></td><td><code>#(* % %)</code></td></tr>
+  </table>
+
+  <p class="prose">Two of these deserve special attention because they trip people up.</p>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Lists vs Vectors — why both exist</h3>
+
+  <p class="prose">Python has one general-purpose linear container (<code>list</code>). Clojure has two, and they look almost identical — but they play completely different roles. Mixing them up is a common source of confusion.</p>
+
+  <div class="compare-grid">
+    <div class="compare-col python">
+      <div class="compare-label">List — (...) — for code</div>
+      <pre>; A list evaluates by CALLING the first element:
+(+ 1 2)          ; => 3  — the list IS a function call
+(println "hi")   ; => nil — same
+
+; To write a list as DATA (not a call), quote it:
+'(1 2 3)         ; => (1 2 3) — just data, no call
+(list 1 2 3)     ; => (1 2 3) — same, built programmatically
+
+; Without the quote, Clojure tries to call 1:
+(1 2 3)          ; ERROR — 1 isn't a function</pre>
+    </div>
+    <div class="compare-col clojure">
+      <div class="compare-label">Vector — [...] — for data</div>
+      <pre>; A vector is just data — no call attempt:
+[1 2 3]          ; => [1 2 3]  — self-evaluating
+[inc dec +]      ; => [#'inc #'dec #'+] — three fns
+
+; Vectors are used for:
+;   - collection literals       [1 2 3]
+;   - binding forms             (let [x 1] ...)
+;   - function parameters       (defn f [a b] ...)
+;   - anything "structural"</pre>
+    </div>
+  </div>
+
+  <div class="callout key">
+    <strong>The rule</strong>
+    <strong>Lists are for code. Vectors are for data.</strong> When you see <code>[...]</code>, expect values. When you see <code>(...)</code>, expect a call. This is why <code>defn</code>'s parameter list uses <code>[...]</code> — the parameters are data, not a call. It's why <code>let</code>'s bindings use <code>[...]</code> — pairs of data.
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Character literals</h3>
+
+  <p class="prose">Clojure has a separate character type (unlike Python, which uses 1-length strings). Characters are written with a leading backslash:</p>
+
+  <pre class="code-block">\a      ; => \a        — the character 'a'
+\A      ; => \A        — uppercase
+\space  ; => \space    — named: space char
+\tab    ; => \tab
+\newline
+\return
+\u00e9  ; => \é        — Unicode escape (4 hex digits)
+\o101   ; => \A        — Octal escape
+
+(str \h \i)        ; => "hi"       — characters concat to a string
+(int \A)           ; => 65         — character to code point
+(char 65)          ; => \A         — code point to character</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Number literals</h3>
+
+  <p class="prose">Clojure inherits Java's numeric types and adds arbitrary-precision and ratios. Every number below is a distinct literal form:</p>
+
+  <pre class="code-block">42         ; => 42        — Long (64-bit integer)
+42N        ; => 42N       — BigInt (arbitrary precision)
+3.14       ; => 3.14      — Double
+3.14M      ; => 3.14M     — BigDecimal (exact decimal)
+1/3        ; => 1/3       — Ratio (exact fraction — no Python equivalent)
+0x1F       ; => 31        — Hex
+2r1011     ; => 11        — Binary (any base 2..36 via NrDDD)
+1e6        ; => 1000000.0 — Scientific
+-42        ; => -42       — Negative</pre>
+
+  <div class="callout key">
+    <strong>The ratio — a genuine Python surprise</strong>
+    <code>(/ 1 3)</code> in Clojure returns the exact ratio <code>1/3</code>, not <code>0.3333...</code>. This is a real value that participates in arithmetic: <code>(+ 1/3 1/3 1/3)</code> → <code>1N</code> exactly, not <code>0.9999...</code>. To force floating-point, use <code>(/ 1.0 3)</code> or <code>(double 1/3)</code>. Python 3 has <code>fractions.Fraction</code> but it's not the default.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     3. SPECIAL FORMS
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="special-forms">
+  <div class="concept-header">
+    <span class="concept-number">03</span>
+    <div>
+      <div class="concept-title">Special Forms</div>
+      <div class="concept-subtitle">The ~20 primitives the compiler handles directly</div>
+    </div>
+  </div>
+
+  <p class="prose">Special forms are the compiler's primitives — the forms that cannot be built from other forms and cannot be redefined. If you understand these, you understand 100% of Clojure's evaluation rules, because <em>everything else is built on top of them</em>. <code>when</code> is a macro expanding to <code>if</code> + <code>do</code>. <code>defn</code> is a macro expanding to <code>def</code> + <code>fn</code>. <code>and</code>, <code>or</code>, <code>cond</code>, <code>for</code>, <code>doseq</code>, <code>-&gt;</code>, <code>-&gt;&gt;</code> — all macros. The special forms are the bedrock beneath.</p>
+
+  <table class="ref-table">
+    <tr><th>Form</th><th>Purpose</th><th>Shape</th></tr>
+    <tr><td>def</td><td>Create a global var in the current namespace</td><td><code>(def name value)</code></td></tr>
+    <tr><td>if</td><td>Two-branch conditional — the only branching primitive</td><td><code>(if test then else)</code></td></tr>
+    <tr><td>do</td><td>Evaluate expressions in order, return the last</td><td><code>(do expr1 expr2 …)</code></td></tr>
+    <tr><td>let</td><td>Introduce local bindings for a scope</td><td><code>(let [x 1 y 2] body)</code></td></tr>
+    <tr><td>fn</td><td>Create an anonymous function</td><td><code>(fn [args] body)</code></td></tr>
+    <tr><td>loop / recur</td><td>Tail-recursive looping — recur jumps to loop</td><td><code>(loop [i 0] (recur (inc i)))</code></td></tr>
+    <tr><td>quote</td><td>Return the next form unevaluated — shorthand is <code>'</code></td><td><code>(quote x)</code> or <code>'x</code></td></tr>
+    <tr><td>var</td><td>Return the var itself, not its value — shorthand <code>#'</code></td><td><code>(var x)</code> or <code>#'x</code></td></tr>
+    <tr><td>try / catch / finally / throw</td><td>Exception handling</td><td><code>(try body (catch E e …))</code></td></tr>
+    <tr><td>.</td><td>Java method/field access (see §9)</td><td><code>(. obj method args)</code></td></tr>
+    <tr><td>new</td><td>Construct a Java object (usually written <code>Class.</code>)</td><td><code>(new Point 1 2)</code></td></tr>
+    <tr><td>set!</td><td>Mutate a var, field, or thread-local binding</td><td><code>(set! field val)</code></td></tr>
+    <tr><td>monitor-enter / monitor-exit</td><td>Low-level locking (use <code>locking</code> macro instead)</td><td>—</td></tr>
+  </table>
+
+  <p class="prose">The five you will meet every day are <code>def</code>, <code>if</code>, <code>let</code>, <code>fn</code>, and <code>do</code>. The others are either (a) infrastructure you rarely type directly, or (b) things you'll touch later (interop, exception handling, tail recursion).</p>
+
+  <pre class="code-block">; The five core special forms in combination — what every Clojure program is:
+
+(def greet            ; def:  create a var
+  (fn [name]          ; fn:   a function value
+    (let [upper       ; let:  local binding
+          (.toUpperCase name)]
+      (if (empty? name)          ; if:   branch
+        "Hello, stranger"
+        (do                       ; do:   sequence of expressions
+          (println "Greeting" upper)
+          (str "Hello, " name))))))
+
+(greet "Ada")
+; Greeting ADA
+;=> "Hello, Ada"</pre>
+
+  <div class="callout concept">
+    <strong>Why knowing the list helps</strong>
+    When you see a form you don't recognise, a useful question is: "is this a special form, a macro, or a function?" Special forms are on the list above. Macros you can ask the REPL: <code>(macroexpand '(when x y))</code> → <code>(if x (do y))</code>. Functions you can inspect: <code>(source +)</code>. The categorisation tells you what rules apply to argument evaluation — functions always evaluate all args; macros and special forms do not.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     4. BINDING FORMS & DESTRUCTURING
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="binding-forms">
+  <div class="concept-header">
+    <span class="concept-number">04</span>
+    <div>
+      <div class="concept-title">Binding Forms &amp; Destructuring</div>
+      <div class="concept-subtitle">The pattern-matching syntax on the left side of any binding</div>
+    </div>
+  </div>
+
+  <p class="prose">Everywhere Clojure introduces names — <code>let</code> bindings, <code>fn</code>/<code>defn</code> parameters, <code>loop</code>, <code>for</code>, <code>doseq</code> — it uses the same <em>binding form</em> syntax on the left-hand side. The simplest binding form is just a symbol. But the binding form can also be a pattern that pulls a data structure apart. This is called <strong>destructuring</strong>.</p>
+
+  <div class="callout key">
+    <strong>The one rule</strong>
+    Everywhere you can write a symbol on the left of a binding, you can write a vector or a map to destructure instead. The same syntax works in <code>let</code>, <code>fn</code> parameters, <code>defn</code>, <code>loop</code>, and <code>for</code>. Learning destructuring once pays off everywhere.
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Sequential destructuring — with <code>[…]</code></h3>
+
+  <p class="prose">A vector on the left-hand side pulls apart a sequential collection (vector, list, seq, string) by position. It mirrors Python's tuple unpacking but with more features.</p>
+
+  <div class="compare-grid">
+    <div class="compare-col python">
+      <div class="compare-label">Python — tuple unpacking</div>
+      <pre>point = (3, 4)
+x, y = point                # 3, 4
+
+# Nested
+((a, b), c) = ((1, 2), 3)   # 1, 2, 3
+
+# Rest with star
+first, *rest = [1, 2, 3, 4] # 1, [2,3,4]
+
+# Ignore with _
+_, y = point                # only y
+
+# No "keep the original" built in</pre>
+    </div>
+    <div class="compare-col clojure">
+      <div class="compare-label">Clojure — sequential destructuring</div>
+      <pre>(let [[x y] [3 4]]          ; 3, 4
+  ...)
+
+; Nested
+(let [[[a b] c] [[1 2] 3]]  ; 1, 2, 3
+  ...)
+
+; Rest with &amp;
+(let [[first &amp; rest] [1 2 3 4]]  ; 1, (2 3 4)
+  ...)
+
+; Keep the whole thing with :as
+(let [[x y :as pt] [3 4]]   ; x=3 y=4 pt=[3 4]
+  ...)</pre>
+    </div>
+  </div>
+
+  <pre class="code-block">; All four patterns together:
+(let [[first second &amp; rest :as all] [10 20 30 40 50]]
+  {:first first          ; => 10
+   :second second        ; => 20
+   :rest rest            ; => (30 40 50)
+   :all all})            ; => [10 20 30 40 50]
+
+; Works on any seqable — strings, lists, vectors, lazy seqs
+(let [[a b c] "xyz"]
+  (str a b c))           ; => "xyz"   — characters destructured
+
+; Ignore a position with _
+(let [[_ second] [10 20]]
+  second)                ; => 20</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Associative destructuring — with <code>{…}</code></h3>
+
+  <p class="prose">A map on the left-hand side pulls values out of a map by key. This has no direct Python equivalent — Python requires either explicit assignment or dict unpacking with <code>**</code> which is different in purpose. Clojure's map destructuring is extraordinarily common in real code.</p>
+
+  <pre class="code-block">; Full form — name → key
+(let [{name :name, age :age} {:name "Ada" :age 36}]
+  (str name " is " age))          ; => "Ada is 36"
+
+; :keys shortcut — when local name = keyword name
+(let [{:keys [name age]} {:name "Ada" :age 36}]
+  (str name " is " age))          ; => "Ada is 36"
+
+; :strs for string keys, :syms for symbol keys
+(let [{:strs [name age]} {"name" "Ada" "age" 36}]   ; string keys
+  ...)
+
+; Defaults with :or
+(let [{:keys [name role] :or {role :guest}}
+      {:name "Ada"}]
+  (str name " / " role))          ; => "Ada / :guest"
+
+; :as to keep the original map
+(let [{:keys [name] :as person} {:name "Ada" :age 36}]
+  [name person])                  ; => ["Ada" {:name "Ada" :age 36}]
+
+; Nested — maps inside maps
+(let [{{:keys [city]} :address} {:address {:city "Oslo"}}]
+  city)                           ; => "Oslo"</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Destructuring in function parameters</h3>
+
+  <p class="prose">The same patterns work directly in function parameter lists — no separate <code>let</code> needed. This is one of the most idiomatic ways Clojure code stays compact.</p>
+
+  <div class="compare-grid">
+    <div class="compare-col python">
+      <div class="compare-label">Python — manual unpacking in body</div>
+      <pre>def distance(p1, p2):
+    x1, y1 = p1
+    x2, y2 = p2
+    return ((x2-x1)**2 + (y2-y1)**2) ** 0.5
+
+def greet(user):
+    name = user["name"]
+    role = user.get("role", "guest")
+    return f"Hi {name}, {role}"</pre>
+    </div>
+    <div class="compare-col clojure">
+      <div class="compare-label">Clojure — destructure in params</div>
+      <pre>(defn distance [[x1 y1] [x2 y2]]
+  (Math/sqrt
+    (+ (Math/pow (- x2 x1) 2)
+       (Math/pow (- y2 y1) 2))))
+
+(defn greet
+  [{:keys [name role] :or {role "guest"}}]
+  (str "Hi " name ", " role))</pre>
+    </div>
+  </div>
+
+  <div class="callout concept">
+    <strong>Why this compounds</strong>
+    Map destructuring with <code>:keys</code> and <code>:or</code> is the closest thing Clojure has to "keyword arguments". A function taking one map can declare any number of named, optional parameters with defaults — without touching the function's arity. Combined with immutable maps, this gives you the flexibility of Python's <code>**kwargs</code> with the rigour of structural typing.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     5. READER MACROS
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="reader-macros">
+  <div class="concept-header">
+    <span class="concept-number">05</span>
+    <div>
+      <div class="concept-title">Reader Macros</div>
+      <div class="concept-subtitle">The single characters and <code>#</code>-prefixed forms that rewrite code at read time</div>
+    </div>
+  </div>
+
+  <p class="prose">A <strong>reader macro</strong> is a character (or <code>#</code>-prefixed character pair) that tells the reader to transform text into a different data structure than the literal suggests. They are shorthand — every reader macro has a longer form it expands to. Understanding them makes "weird" Clojure syntax suddenly obvious.</p>
+
+  <table class="ref-table">
+    <tr><th>Syntax</th><th>Name</th><th>Expands to</th><th>Purpose</th></tr>
+    <tr><td>'x</td><td>quote</td><td>(quote x)</td><td>Don't evaluate — treat as data</td></tr>
+    <tr><td>`x</td><td>syntax-quote</td><td>namespace-qualified quoted form</td><td>Macro templates</td></tr>
+    <tr><td>~x</td><td>unquote</td><td>(unquote x)</td><td>Inside <code>`</code>: evaluate this</td></tr>
+    <tr><td>~@x</td><td>unquote-splicing</td><td>(unquote-splicing x)</td><td>Inside <code>`</code>: evaluate and splice</td></tr>
+    <tr><td>@x</td><td>deref</td><td>(deref x)</td><td>Read the value out of an atom/ref/future/promise</td></tr>
+    <tr><td>^x y</td><td>metadata</td><td>(with-meta y {:tag x})</td><td>Attach metadata to next form (§8)</td></tr>
+    <tr><td>#{…}</td><td>set literal</td><td>—</td><td>Construct a set</td></tr>
+    <tr><td>#(…)</td><td>anonymous fn</td><td>(fn [%…] (…))</td><td>Very short inline fn</td></tr>
+    <tr><td>#"…"</td><td>regex</td><td>—</td><td>Compile a regex pattern at read time</td></tr>
+    <tr><td>#'x</td><td>var-quote</td><td>(var x)</td><td>The var, not the value it holds</td></tr>
+    <tr><td>#_x</td><td>ignore</td><td>—</td><td>Skip the next form entirely</td></tr>
+    <tr><td>#?(…)</td><td>reader conditional</td><td>—</td><td>Platform-specific code (clj/cljs/cljr)</td></tr>
+    <tr><td>#?@(…)</td><td>splicing reader cond.</td><td>—</td><td>Same, but splice contents into surrounding form</td></tr>
+    <tr><td>#tag x</td><td>tagged literal</td><td>(<em>reader-for-tag</em> x)</td><td>Custom literal — e.g. <code>#inst</code>, <code>#uuid</code></td></tr>
+  </table>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The single-character reader macros</h3>
+
+  <pre class="code-block">; ── ' quote ─── suppress evaluation, return as data ────────────
+'(1 2 3)          ; => (1 2 3)        — a list, not a call
+'x                ; => x              — the symbol x, not its value
+'(+ 1 2)          ; => (+ 1 2)        — the list, not the result 3
+
+; ── @ deref ─── extract value from a reference type ────────────
+(def counter (atom 0))
+@counter          ; => 0              — same as (deref counter)
+(swap! counter inc)
+@counter          ; => 1
+
+; @ also works on futures, promises, delays, agents
+@(future (+ 1 2)) ; => 3              — blocks until ready
+
+; ── ` syntax-quote ─── like quote but namespace-qualifies ──────
+`inc              ; => clojure.core/inc  — fully qualified!
+`(+ 1 2)          ; => (clojure.core/+ 1 2)
+
+; ── ~ unquote ─── inside syntax-quote, evaluate this part ──────
+(let [x 10]
+  `(+ 1 ~x))      ; => (clojure.core/+ 1 10) — x was evaluated
+
+; ── ~@ unquote-splicing ─── like ~ but splices a collection ────
+(let [xs [1 2 3]]
+  `(+ ~@xs))      ; => (clojure.core/+ 1 2 3) — contents inlined
+; Compare to just ~ which would insert the whole list:
+  `(+ ~xs)        ; => (clojure.core/+ [1 2 3]) — wrong shape</pre>
+
+  <div class="callout key">
+    <strong>The quote / syntax-quote / unquote family is for macros</strong>
+    Outside macro writing you rarely need <code>`</code>, <code>~</code>, or <code>~@</code>. They exist because macro templates need three things: freeze the whole structure (<code>`</code>), punch a hole to let a value in (<code>~</code>), and punch a hole that expands a collection (<code>~@</code>). Plain <code>'</code> is common; the others are specialized.
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The #-dispatch reader macros</h3>
+
+  <pre class="code-block">; ── #(...) anonymous function ─── short inline lambdas ─────────
+(map #(* % 2) [1 2 3])     ; => (2 4 6)       — % is the arg
+(map #(+ %1 %2) [1 2] [3 4]) ; => (4 6)       — %1, %2 for multi-arg
+(map #(apply + %&amp;) [[1 2][3 4 5]]) ; %&amp; = rest args
+
+; Expands to:
+#(* % 2)       ; ≡  (fn [x] (* x 2))
+
+; Rules: cannot be nested. For anything complex, use (fn [...] ...)
+
+; ── #{...} set literal ──────────────────────────────────────────
+#{1 2 3}                    ; => #{1 3 2}     — unique, unordered
+#{1 1}                      ; => ERROR — duplicate key
+
+; ── #"..." regex ─── compiled at READ time ─────────────────────
+(re-find #"\d+" "abc123def")   ; => "123"
+; Backslashes don't need escaping: #"\s+" not "\\s+"
+
+; ── #'x var-quote ─── the var itself, not its value ────────────
+(def x 42)
+x                 ; => 42           — the value
+#'x               ; => #'user/x     — the var (the reference)
+(meta #'x)        ; => {:line 1 ...} — vars carry metadata
+
+; ── #_ ignore ─── skip the next form entirely ──────────────────
+[1 2 #_3 4]       ; => [1 2 4]     — the 3 is skipped
+(+ 1 #_(println "hi") 2)  ; => 3 — println never runs
+; Useful for temporarily disabling code without commenting out
+
+; ── #?(...) reader conditional ─── cross-platform code ─────────
+#?(:clj  (println "I'm on the JVM")
+   :cljs (println "I'm in the browser")
+   :default (println "Somewhere else"))
+
+; Only the matching branch is READ — the others vanish
+; Used in .cljc files (cross-platform Clojure)
+
+; ── #inst / #uuid / #tag tagged literals ───────────────────────
+#inst "2026-01-15T12:00:00Z"   ; => java.util.Date
+#uuid "550e8400-e29b-41d4-a716-446655440000" ; => UUID
+; You can define your own via data_readers.clj</pre>
+
+  <div class="callout warning">
+    <strong>Gotcha — #() cannot be nested</strong>
+    <code>#(map #(* 2 %) %)</code> is a read-time error because <code>%</code> can't tell which <code>#(</code> it belongs to. For anything that would require nesting, use <code>(fn [x] ...)</code>.
+  </div>
+
+  <div class="callout python">
+    <strong>Python comparison — the @ specifically</strong>
+    Python uses <code>@</code> for decorators — a syntactic feature for functions. In Clojure, <code>@</code> is <code>deref</code> — it reads the current value out of a reference type (atom, ref, future). Same character, completely different meaning. If you see <code>@x</code> in Clojure, think "get the value of the reference x right now".
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     6. THREADING FORMS
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="threading">
+  <div class="concept-header">
+    <span class="concept-number">06</span>
+    <div>
+      <div class="concept-title">Threading Macros</div>
+      <div class="concept-subtitle">The arrows that turn nested calls into pipelines</div>
+    </div>
+  </div>
+
+  <p class="prose">Clojure code without threading can look like deeply-nested parentheses that you read inside-out. Threading macros — the <em>arrow</em> macros — rewrite nested calls into a top-to-bottom pipeline. They are all macros, not special forms, and they are among the most-used syntax in real code. You have probably already seen <code>-&gt;</code> and <code>-&gt;&gt;</code> in Episode 04.</p>
+
+  <table class="ref-table">
+    <tr><th>Form</th><th>Threads through</th><th>Use when</th></tr>
+    <tr><td>-&gt;</td><td>First position of each step</td><td>Working with maps / objects — <code>(assoc m …)</code>, <code>(get …)</code></td></tr>
+    <tr><td>-&gt;&gt;</td><td>Last position of each step</td><td>Working with collections — <code>(map …)</code>, <code>(filter …)</code>, <code>(reduce …)</code></td></tr>
+    <tr><td>as-&gt;</td><td>Named position (you choose)</td><td>Mixed pipelines where position varies</td></tr>
+    <tr><td>some-&gt;</td><td>First position — short-circuits on nil</td><td>Chain that might hit a nil partway</td></tr>
+    <tr><td>some-&gt;&gt;</td><td>Last position — short-circuits on nil</td><td>Same, but for last-position APIs</td></tr>
+    <tr><td>cond-&gt;</td><td>First position — conditional steps</td><td>Apply some steps only when a predicate is true</td></tr>
+    <tr><td>cond-&gt;&gt;</td><td>Last position — conditional steps</td><td>Same, last-position</td></tr>
+    <tr><td>doto</td><td>Each call on the same object</td><td>Multiple side-effecting calls on one Java object</td></tr>
+  </table>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">-&gt; and -&gt;&gt; — the two you'll use every day</h3>
+
+  <div class="compare-grid">
+    <div class="compare-col python">
+      <div class="compare-label">Nested — reads inside-out</div>
+      <pre>; Without threading — hard to read:
+(reduce +
+  (map #(* % %)
+    (filter even?
+      (range 10))))
+;=> 120
+
+; With -&gt;&gt; — reads top-down:</pre>
+    </div>
+    <div class="compare-col clojure">
+      <div class="compare-label">Threaded — reads top-down</div>
+      <pre>(-&gt;&gt; (range 10)        ; the seed
+     (filter even?)    ; then filter
+     (map #(* % %))    ; then square
+     (reduce +))       ; then sum
+;=> 120
+
+; Mechanically: take (range 10) and STUFF IT
+; into the LAST position of each form below.</pre>
+    </div>
+  </div>
+
+  <pre class="code-block">; ── -&gt; threads into FIRST position ─────────────────────────────
+; Most map/object APIs take the thing as the first arg:
+(-&gt; {:name "Ada"}
+    (assoc :age 36)         ; (assoc _ :age 36)
+    (update :age inc)       ; (update _ :age inc)
+    (dissoc :name))         ; (dissoc _ :name)
+;=> {:age 37}
+
+; ── -&gt;&gt; threads into LAST position ─────────────────────────────
+; Most collection APIs take the coll as the last arg:
+(-&gt;&gt; [1 2 3 4 5]
+     (filter odd?)          ; (filter odd? _)
+     (map #(* % 10))        ; (map #(* % 10) _)
+     (reduce +))            ; (reduce + _)
+;=> 90
+
+; Rule of thumb:
+;   -&gt;  for maps and single values      (data flows through 1st arg)
+;   -&gt;&gt; for collections and pipelines   (data flows through last arg)</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">as-&gt; — when position varies</h3>
+
+  <p class="prose">Some pipelines need the threaded value in different positions at different steps. <code>as-&gt;</code> lets you name the "current" value and put it wherever you want.</p>
+
+  <pre class="code-block">; as-&gt; names the current value, you decide where it goes
+(as-&gt; [1 2 3 4] $
+  (map inc $)          ; $ in last position — (map inc _)
+  (conj $ 99)          ; $ in first position — (conj _ 99)
+  (reverse $))         ; $ in last — (reverse _)
+;=> (99 5 4 3 2)</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">some-&gt; and some-&gt;&gt; — short-circuit on nil</h3>
+
+  <pre class="code-block">; Nested lookup that might fail:
+(-&gt; {:address {:city "Oslo"}}
+    :address :city :length)         ; :length of "Oslo" ... works
+; But:
+(-&gt; {:no-address true}
+    :address :city :length)         ; NullPointerException!
+
+; some-&gt; stops as soon as nil appears:
+(some-&gt; {:no-address true}
+        :address :city :length)     ; => nil   — safe
+
+(some-&gt; {:address {:city "Oslo"}}
+        :address :city count)       ; => 4</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">cond-&gt; and cond-&gt;&gt; — conditional steps</h3>
+
+  <pre class="code-block">; Apply some steps only if a condition holds.
+; Each pair: (predicate form) — form is threaded if predicate is truthy.
+
+(defn build-query [{:keys [name active? limit]}]
+  (cond-&gt; {}                        ; start with empty map
+    name       (assoc :name name)   ; only if name given
+    active?    (assoc :active true) ; only if active?
+    limit      (assoc :limit limit))) ; only if limit given
+
+(build-query {:name "Ada"})                  ; => {:name "Ada"}
+(build-query {:name "Ada" :active? true})    ; => {:name "Ada" :active true}
+(build-query {:name "Ada" :limit 10})        ; => {:name "Ada" :limit 10}
+
+; Replaces a lot of:   (if x (assoc m :k v) m)   chains</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">doto — for mutable Java objects</h3>
+
+  <pre class="code-block">; doto calls multiple methods ON the same object, returning the object.
+; It's for Java interop where you need to configure a mutable thing:
+
+(doto (java.util.HashMap.)
+  (.put "a" 1)
+  (.put "b" 2)
+  (.put "c" 3))
+;=> {"a" 1, "b" 2, "c" 3}
+
+; Expansion:
+; (let [obj (java.util.HashMap.)]
+;   (.put obj "a" 1)
+;   (.put obj "b" 2)
+;   (.put obj "c" 3)
+;   obj)</pre>
+
+  <div class="callout concept">
+    <strong>Why threading is a separate design choice</strong>
+    In most languages, chaining happens through method syntax — <code>list.filter(p).map(f).reduce(g)</code>. That only works when everything is a method on the object. Clojure functions are free-floating, so it invents syntax (threading macros) to give you the same readability without coupling operations to types. <code>(-&gt;&gt; coll (filter p) (map f) (reduce g))</code> does the same thing, but it works on any collection, string, or seqable.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     7. CONDITIONAL FORMS
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="conditionals">
+  <div class="concept-header">
+    <span class="concept-number">07</span>
+    <div>
+      <div class="concept-title">Conditional Forms</div>
+      <div class="concept-subtitle">if, when, cond, case — and the -let / -some variants</div>
+    </div>
+  </div>
+
+  <p class="prose">Clojure has one conditional special form — <code>if</code> — and a dozen macros built on top of it. Each macro expresses a specific pattern more clearly than <code>if</code> alone. Knowing which one to reach for is part of learning idiomatic Clojure.</p>
+
+  <table class="ref-table">
+    <tr><th>Form</th><th>Use when</th><th>Built from</th></tr>
+    <tr><td>if</td><td>Two branches, both return values</td><td>special form</td></tr>
+    <tr><td>if-not</td><td>Same, condition is negated</td><td>if</td></tr>
+    <tr><td>when</td><td>One branch, side-effecting body, no else</td><td>if + do</td></tr>
+    <tr><td>when-not</td><td>Same, negated</td><td>if + do</td></tr>
+    <tr><td>cond</td><td>Multi-branch — like elif chain</td><td>if chain</td></tr>
+    <tr><td>condp</td><td>Multi-branch, same predicate each time</td><td>cond</td></tr>
+    <tr><td>case</td><td>Multi-branch, compile-time constants, O(1)</td><td>Java switch</td></tr>
+    <tr><td>if-let</td><td>Bind a value, branch on its truthiness</td><td>if + let</td></tr>
+    <tr><td>when-let</td><td>Same, one-branch version</td><td>when + let</td></tr>
+    <tr><td>if-some</td><td>Bind a value, branch on (not= nil)</td><td>if + let</td></tr>
+    <tr><td>when-some</td><td>Same, one-branch version</td><td>when + let</td></tr>
+  </table>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">if, when, cond, case</h3>
+
+  <pre class="code-block">; ── if ─── two branches — always returns a value ──────────────
+(if (&gt; x 0) "positive" "not positive")
+
+; No "else" needed; returns nil if no else given:
+(if (&gt; x 0) "positive")    ; if x=0, returns nil
+
+; ── when ─── one branch with side effects ─────────────────────
+; Use when the "else" is nil and body has multiple expressions:
+(when (&gt; x 0)
+  (println "positive!")    ; multiple side effects
+  (println "confirmed")
+  x)                        ; returns x
+
+; Equivalent to:  (if (&gt; x 0) (do ... ... x) nil)
+
+; ── cond ─── multi-branch — like Python elif ─────────────────
+(defn grade [score]
+  (cond
+    (&gt;= score 90) "A"
+    (&gt;= score 80) "B"
+    (&gt;= score 70) "C"
+    (&gt;= score 60) "D"
+    :else         "F"))        ; :else is just a truthy keyword
+
+; ── case ─── O(1) dispatch on constants ──────────────────────
+; Like Python match but for literals only — no guards:
+(defn day-type [day]
+  (case day
+    (:sat :sun)              "weekend"        ; list groups keys
+    (:mon :tue :wed :thu :fri) "weekday"
+    "unknown"))                                ; default
+
+; case uses JVM tableswitch — fast, but keys MUST be compile-time
+; constants (keywords, strings, numbers). Will NOT work with
+; variables or expressions as keys.</pre>
+
+  <div class="callout key">
+    <strong>Choosing between cond and case</strong>
+    Use <code>case</code> when matching against fixed values (keywords, numbers, strings) — it compiles to a fast jump table. Use <code>cond</code> when branches depend on computed predicates or ranges. <code>case</code> requires literal keys; <code>cond</code> takes arbitrary expressions.
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">if-let, when-let, if-some, when-some</h3>
+
+  <p class="prose">These are two-in-one forms: they bind a name <em>and</em> branch on the bound value in a single step. They are idiomatic when you want to both test-for-presence and use the value.</p>
+
+  <pre class="code-block">; ── Without if-let ─── verbose ──────────────────────────────
+(let [user (find-user id)]
+  (if user
+    (greet user)
+    (println "not found")))
+
+; ── With if-let ─── combined ────────────────────────────────
+(if-let [user (find-user id)]
+  (greet user)                         ; user is bound here
+  (println "not found"))
+
+; ── when-let ─── no else branch ─────────────────────────────
+(when-let [user (find-user id)]
+  (greet user)
+  (update-last-seen user))
+
+; ── if-let vs if-some ── ─────────────────────────────────────
+; if-let tests truthiness — false and nil are both "missing"
+(if-let [x false] "yes" "no")     ; => "no"    (false is falsy)
+(if-let [x nil]   "yes" "no")     ; => "no"
+
+; if-some tests (not= nil) — only nil is "missing"
+(if-some [x false] "yes" "no")    ; => "yes"   (false is a value!)
+(if-some [x nil]   "yes" "no")    ; => "no"
+
+; Use if-some when false is a meaningful value in your domain
+; (e.g., a boolean flag that could legitimately be false)</pre>
+
+  <div class="callout warning">
+    <strong>Truthiness in Clojure — important</strong>
+    Only <code>false</code> and <code>nil</code> are falsy. <em>Everything else</em> is truthy — including <code>0</code>, empty strings, empty collections, and empty maps. This is different from Python where <code>0</code>, <code>""</code>, <code>[]</code>, and <code>{}</code> are all falsy. If you want Python-style "empty is falsy", use <code>(seq coll)</code> which returns nil for empty and the seq otherwise.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     8. METADATA
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="metadata">
+  <div class="concept-header">
+    <span class="concept-number">08</span>
+    <div>
+      <div class="concept-title">Metadata — the ^ symbol</div>
+      <div class="concept-subtitle">Attaching information to a form without affecting its value</div>
+    </div>
+  </div>
+
+  <p class="prose">The caret (<code>^</code>) is one of the stranger things in Clojure — it looks like an operator but behaves like an annotation. It attaches a <strong>metadata map</strong> to the next form at read time. Metadata is separate from the value: two values that are <code>=</code> can have different metadata, and vice versa. Metadata never participates in equality, hashing, or printing (except in <code>pr</code> with <code>*print-meta*</code> on).</p>
+
+  <div class="callout concept">
+    <strong>The three uses you will actually see</strong>
+    <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">(1) Type hints</strong> — <code>^String</code> tells the compiler "this is a String" to avoid reflection. <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">(2) Boolean flags on vars</strong> — <code>^:private</code>, <code>^:dynamic</code>, <code>^:const</code> — set a flag on the next thing. <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">(3) Arbitrary metadata</strong> — <code>^{:doc "..." :author "Ada"}</code> — any map you want. Everything else is variations on these.
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The three shorthand forms</h3>
+
+  <pre class="code-block">; ── ^Symbol ─── shorthand for {:tag Symbol} ───────────────
+; Used for type hints to avoid Java reflection:
+(defn upper ^String [^String s]       ; both params and returns
+  (.toUpperCase s))
+; Expands to: {:tag String}
+
+; ── ^:keyword ─── shorthand for {:keyword true} ────────────
+(def ^:private helper 42)              ; {:private true}
+(def ^:dynamic *config* {})             ; {:dynamic true}
+(def ^:const PI 3.14159)                ; {:const true}
+
+; ── ^{...} ─── full metadata map ──────────────────────────
+(def ^{:doc "The answer" :added "1.0"} answer 42)
+
+; All three can be combined by stacking:
+(def ^:private ^String ^{:doc "greeting"} hello "hi")
+; final meta: {:private true :tag String :doc "greeting"}</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Reading metadata back</h3>
+
+  <pre class="code-block">; The (meta x) function reads the metadata map
+(def ^:private ^{:doc "counts things"} counter (atom 0))
+
+(meta #'counter)
+;=> {:private true
+;    :doc "counts things"
+;    :line 1
+;    :column 1
+;    :file "..."
+;    :name counter
+;    :ns #object[...]}
+
+; Vars get line/column/file metadata automatically from the reader.
+
+; Metadata on data structures:
+(def v ^:immutable [1 2 3])
+(meta v)                      ; => {:immutable true}
+v                             ; => [1 2 3]   — metadata invisible
+(= v [1 2 3])                 ; => true      — doesn't affect equality</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Why type hints exist</h3>
+
+  <p class="prose">Clojure is dynamically typed. When you call <code>(.toUpperCase s)</code>, the compiler doesn't know at compile time what class <code>s</code> is, so it uses Java reflection at runtime — slow. A type hint tells the compiler "trust me, this is a String" so it can emit a direct method call instead. You will see type hints in performance-sensitive code and when the compiler warns you with <code>*warn-on-reflection*</code> on.</p>
+
+  <pre class="code-block">; Without hint — reflection warning (if enabled):
+(defn slow [s]
+  (.toUpperCase s))
+; Reflection warning, call to toUpperCase can't be resolved.
+
+; With hint — direct method call, much faster:
+(defn fast [^String s]
+  (.toUpperCase s))
+
+; Enable warnings with:
+(set! *warn-on-reflection* true)</pre>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    Python's closest analogue is <em>type annotations</em>: <code>def f(s: str) -&gt; str:</code>. But Python annotations are checked by external tools (mypy), not by the runtime. Clojure type hints go to the compiler, which uses them to generate faster bytecode. Different purpose: Python hints are for correctness; Clojure hints are for performance (and the occasional <code>^:private</code> for visibility).
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     9. JAVA INTEROP — THE DOT
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="interop">
+  <div class="concept-header">
+    <span class="concept-number">09</span>
+    <div>
+      <div class="concept-title">Java Interop — the dot family</div>
+      <div class="concept-subtitle">How Clojure talks to the JVM — methods, fields, constructors</div>
+    </div>
+  </div>
+
+  <p class="prose">Clojure runs on the JVM and every Clojure value is also a Java object. The <code>.</code> (dot) is the special form that accesses Java. But you will almost never write <code>.</code> directly — Clojure has <em>four</em> shorter syntactic forms that all expand to the dot. Knowing them helps you read Java interop code instantly.</p>
+
+  <div class="callout key">
+    <strong>The rule of thumb</strong>
+    <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">Dot goes first</strong> for instance members. <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">Dot goes last</strong> for constructors. <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">Slash</strong> is for static members. <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">Dash after dot</strong> is for field access (so the compiler knows it's a field, not a zero-arg method).
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The five interop shapes</h3>
+
+  <table class="ref-table">
+    <tr><th>Syntax</th><th>Meaning</th><th>Java equivalent</th></tr>
+    <tr><td>(.method obj args)</td><td>Call instance method</td><td><code>obj.method(args)</code></td></tr>
+    <tr><td>(.-field obj)</td><td>Read instance field</td><td><code>obj.field</code></td></tr>
+    <tr><td>(Class. args)</td><td>Call constructor</td><td><code>new Class(args)</code></td></tr>
+    <tr><td>(Class/method args)</td><td>Call static method</td><td><code>Class.method(args)</code></td></tr>
+    <tr><td>Class/FIELD</td><td>Read static field</td><td><code>Class.FIELD</code></td></tr>
+  </table>
+
+  <pre class="code-block">; ── (.method obj args)  instance method ─────────────────────
+(.toUpperCase "hello")          ; => "HELLO"
+(.indexOf "hello world" "world") ; => 6
+(.substring "hello" 1 4)         ; => "ell"
+
+; Reads as: "call .toUpperCase on this"
+; The leading dot is the key signal: this is Java interop.
+
+; ── (Class. args)  constructor ──────────────────────────────
+; The TRAILING dot is the constructor shorthand:
+(java.util.Date.)                ; => #inst "2026-04-24..."
+(java.util.HashMap. {"a" 1})     ; Construct from a Clojure map
+(StringBuilder. "hello")         ; => StringBuilder
+
+; Equivalent longhand (you'll occasionally see this):
+(new java.util.Date)             ; => same thing
+
+; ── (.-field obj)  field access ─────────────────────────────
+; Clojure needs the dash to distinguish field from 0-arg method:
+(def pt (java.awt.Point. 3 4))
+(.-x pt)                         ; => 3   — the x FIELD
+(.-y pt)                         ; => 4
+
+; Why the dash? Because some classes have BOTH a field 'x'
+; and a method 'x()'. The dash makes the intent explicit.
+
+; ── Class/method  static member ─────────────────────────────
+(Math/sqrt 16)                   ; => 4.0
+(Math/abs -5)                    ; => 5
+(Integer/parseInt "42")          ; => 42
+(System/getProperty "user.name")
+
+; ── Class/FIELD  static field (no parens for fields) ────────
+Math/PI                          ; => 3.141592653589793
+Math/E                           ; => 2.718281828459045
+Integer/MAX_VALUE                ; => 2147483647</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Chaining interop calls — .. and doto</h3>
+
+  <pre class="code-block">; ── .. chains method calls through the result ──────────────
+; Java:   someBuilder.append("a").append("b").toString()
+(.. (StringBuilder.)
+    (append "a")
+    (append "b")
+    toString)                     ; => "ab"
+
+; Same as:
+(-&gt; (StringBuilder.)
+    (.append "a")
+    (.append "b")
+    .toString)
+
+; ── doto performs many calls ON the same object ────────────
+; Used for side-effecting builders — returns the object:
+(doto (java.util.HashMap.)
+  (.put "a" 1)
+  (.put "b" 2)
+  (.put "c" 3))
+;=> {"a" 1, "b" 2, "c" 3}
+
+; Reads as: "do TO this object: call these methods"</pre>
+
+  <div class="callout concept">
+    <strong>Why the leading dot is a signal</strong>
+    Any time you see a symbol starting with <code>.</code>, you are looking at Java interop. Any time you see a symbol ending with <code>.</code>, you are looking at a constructor. Any time you see <code>Class/something</code>, you are looking at a static access. These three visual cues tell you "this code is talking to Java" without reading it in detail.
+  </div>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    Python has one dot — <code>obj.attr</code> and <code>Class(...)</code> and <code>Class.method</code> all look similar. Clojure has to distinguish instance methods, static methods, fields, and constructors because the language is different from the host (JVM), so syntax had to be invented to express Java concepts that Clojure itself doesn't have natively.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     10. QUOTE FAMILY
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="quoting">
+  <div class="concept-header">
+    <span class="concept-number">10</span>
+    <div>
+      <div class="concept-title">The Quote Family — ' ` ~ ~@</div>
+      <div class="concept-subtitle">Suppressing, templating, and punching holes in evaluation</div>
+    </div>
+  </div>
+
+  <p class="prose">The quote family is the single hardest thing about Lisp syntax for newcomers — but once it clicks, it's the gateway to understanding macros. Four characters, four related jobs, all about controlling <em>when</em> a form is evaluated.</p>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">' (quote) — "don't evaluate this"</h3>
+
+  <pre class="code-block">; Without quote — Clojure evaluates (+ 1 2) and returns 3:
+(+ 1 2)                 ; => 3
+
+; With quote — Clojure returns the LIST, unevaluated:
+'(+ 1 2)                ; => (+ 1 2)
+(quote (+ 1 2))         ; => (+ 1 2)  — same, longhand
+
+; Quote on a symbol — return the symbol, don't look it up:
+'foo                    ; => foo   (the symbol)
+foo                     ; ERROR — Unable to resolve symbol
+
+; Quote is useful for:
+;   (1) data that LOOKS like code but is just data
+'(apple banana cherry)
+;   (2) passing symbols to functions that take them
+(resolve 'clojure.core/map)</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">` (syntax-quote) — quote with namespace resolution</h3>
+
+  <p class="prose">Syntax-quote (the backtick) is like quote, with two extra features that make it indispensable for macros: it <em>namespace-qualifies symbols</em>, and it allows <em>holes</em> (<code>~</code> and <code>~@</code>) that evaluate inside the quoted form.</p>
+
+  <pre class="code-block">; ── Difference 1: symbols get namespace-qualified ─────────
+'inc                    ; => inc                 — bare symbol
+`inc                    ; => clojure.core/inc    — fully qualified!
+
+; Why this matters for macros:
+; When a macro generates code that uses inc, syntax-quote
+; ensures the inc refers to clojure.core/inc even if the
+; user's namespace has its own inc. This prevents name capture.
+
+; ── Difference 2: ~ (unquote) evaluates in place ───────────
+(let [x 10]
+  '(+ 1 x))             ; => (+ 1 x)       — literal x
+(let [x 10]
+  `(+ 1 ~x))            ; => (+ 1 10)      — x was unquoted
+
+; ── ~@ (unquote-splicing) evaluates AND splices ────────────
+(let [xs [1 2 3]]
+  `(+ ~xs))             ; => (+ [1 2 3])   — as one value
+(let [xs [1 2 3]]
+  `(+ ~@xs))            ; => (+ 1 2 3)     — spliced out!</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Putting it together — a simple macro</h3>
+
+  <pre class="code-block">; A macro that generates an if-not from an unless call:
+
+(defmacro unless [condition &amp; body]
+  `(if (not ~condition)         ; ` freeze the template
+     (do ~@body)                ; ~@ splice the body forms
+     nil))
+
+; Usage:
+(unless (zero? 5)
+  (println "not zero")
+  42)
+
+; Macroexpansion:
+(macroexpand-1 '(unless (zero? 5) (println "not zero") 42))
+;=&gt; (if (clojure.core/not (zero? 5))
+;     (do (println "not zero") 42)
+;     nil)
+
+; Notice:
+;   - `  freezes the template structure
+;   - ~condition  punches a hole for the condition
+;   - ~@body      splices all body forms into the do
+;   - not becomes clojure.core/not (namespace-resolved)</pre>
+
+  <div class="callout concept">
+    <strong>The mental model</strong>
+    Think of <code>`</code> as "template this, but allow holes". Think of <code>~</code> as "evaluate this one thing". Think of <code>~@</code> as "evaluate this collection and splice its contents". You won't write macros every day, but you will read them — every Clojure library uses them — and the quote family is the syntax you'll see.
+  </div>
+
+  <div class="callout warning">
+    <strong>Don't confuse ' with `</strong>
+    Plain quote <code>'</code> is for data (<code>'(1 2 3)</code>). Syntax-quote <code>`</code> is for macro templates. They look almost identical in some fonts — if code is inside a macro definition, it's likely <code>`</code>.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     11. SIGIL CHEATSHEET
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="cheatsheet">
+  <div class="concept-header">
+    <span class="concept-number">11</span>
+    <div>
+      <div class="concept-title">Sigil Cheatsheet</div>
+      <div class="concept-subtitle">Every punctuation character in one place — "what does this mean?"</div>
+    </div>
+  </div>
+
+  <p class="prose">When a character looks unfamiliar, start here. This is a one-shot lookup table for every non-alphanumeric sigil you'll encounter, pointing at the section where it's explained in full.</p>
+
+  <table class="ref-table">
+    <tr><th>Sigil</th><th>Meaning</th><th>Example</th><th>See</th></tr>
+    <tr><td>( )</td><td>List — function call or data</td><td><code>(+ 1 2)</code></td><td>§2</td></tr>
+    <tr><td>[ ]</td><td>Vector — data or binding form</td><td><code>[1 2 3]</code></td><td>§2, §4</td></tr>
+    <tr><td>{ }</td><td>Map — key/value pairs</td><td><code>{:a 1}</code></td><td>§2</td></tr>
+    <tr><td>#{ }</td><td>Set literal</td><td><code>#{1 2 3}</code></td><td>§5</td></tr>
+    <tr><td>:</td><td>Keyword prefix</td><td><code>:name</code></td><td>§2</td></tr>
+    <tr><td>::</td><td>Auto-qualified keyword (current ns)</td><td><code>::id</code></td><td>concepts §11</td></tr>
+    <tr><td>/</td><td>Namespace separator in symbols/keywords</td><td><code>str/join</code></td><td>concepts §11</td></tr>
+    <tr><td>\</td><td>Character literal</td><td><code>\a</code></td><td>§2</td></tr>
+    <tr><td>"</td><td>String</td><td><code>"hi"</code></td><td>§2</td></tr>
+    <tr><td>;</td><td>Line comment</td><td><code>; todo</code></td><td>—</td></tr>
+    <tr><td>'</td><td>Quote — don't evaluate</td><td><code>'(1 2)</code></td><td>§5, §10</td></tr>
+    <tr><td>`</td><td>Syntax-quote — template</td><td><code>`(+ 1 ~x)</code></td><td>§5, §10</td></tr>
+    <tr><td>~</td><td>Unquote inside `</td><td><code>~x</code></td><td>§10</td></tr>
+    <tr><td>~@</td><td>Unquote-splicing inside `</td><td><code>~@xs</code></td><td>§10</td></tr>
+    <tr><td>@</td><td>deref — read atom/ref/future/promise</td><td><code>@counter</code></td><td>§5</td></tr>
+    <tr><td>^</td><td>Metadata</td><td><code>^String</code> <code>^:private</code></td><td>§8</td></tr>
+    <tr><td>#"..."</td><td>Regex</td><td><code>#"\d+"</code></td><td>§5</td></tr>
+    <tr><td>#(...)</td><td>Anonymous function</td><td><code>#(* % 2)</code></td><td>§5</td></tr>
+    <tr><td>%  %1  %2  %&amp;</td><td>Args inside <code>#()</code></td><td><code>#(+ %1 %2)</code></td><td>§5</td></tr>
+    <tr><td>#'</td><td>Var-quote — the var, not its value</td><td><code>#'inc</code></td><td>§5</td></tr>
+    <tr><td>#_</td><td>Reader-ignore — skip the next form</td><td><code>[1 #_2 3]</code></td><td>§5</td></tr>
+    <tr><td>#?(...)</td><td>Reader conditional</td><td><code>#?(:clj ... :cljs ...)</code></td><td>§5</td></tr>
+    <tr><td>#?@(...)</td><td>Splicing reader conditional</td><td>—</td><td>§5</td></tr>
+    <tr><td>#inst #uuid</td><td>Tagged literal</td><td><code>#inst "2026-..."</code></td><td>§5</td></tr>
+    <tr><td>&amp;</td><td>Rest-args marker in binding forms</td><td><code>[a b &amp; rest]</code></td><td>§4</td></tr>
+    <tr><td>:as</td><td>Keep original in destructure</td><td><code>[x y :as pt]</code></td><td>§4</td></tr>
+    <tr><td>:keys :strs :syms</td><td>Map destructuring shortcuts</td><td><code>{:keys [a b]}</code></td><td>§4</td></tr>
+    <tr><td>:or</td><td>Defaults in destructure</td><td><code>{:or {x 0}}</code></td><td>§4</td></tr>
+    <tr><td>.method</td><td>Java instance method call</td><td><code>(.upper s)</code></td><td>§9</td></tr>
+    <tr><td>.-field</td><td>Java instance field read</td><td><code>(.-x pt)</code></td><td>§9</td></tr>
+    <tr><td>Class.</td><td>Java constructor</td><td><code>(Date.)</code></td><td>§9</td></tr>
+    <tr><td>Class/method</td><td>Java static member</td><td><code>(Math/sqrt 9)</code></td><td>§9</td></tr>
+    <tr><td>-&gt; -&gt;&gt;</td><td>Threading macros</td><td><code>(-&gt;&gt; xs (map f))</code></td><td>§6</td></tr>
+    <tr><td>as-&gt;</td><td>Named threading</td><td><code>(as-&gt; x $ ...)</code></td><td>§6</td></tr>
+    <tr><td>some-&gt; some-&gt;&gt;</td><td>Threading with nil short-circuit</td><td><code>(some-&gt; m :k :v)</code></td><td>§6</td></tr>
+    <tr><td>cond-&gt; cond-&gt;&gt;</td><td>Threading with conditions</td><td><code>(cond-&gt; m x (assoc ...))</code></td><td>§6</td></tr>
+    <tr><td>..</td><td>Chain Java method calls</td><td><code>(.. obj m1 m2)</code></td><td>§9</td></tr>
+    <tr><td>doto</td><td>Multi-method-call on one object</td><td><code>(doto o (.a) (.b))</code></td><td>§6, §9</td></tr>
+  </table>
+
+  <div class="callout key">
+    <strong>The reading strategy</strong>
+    When you hit unfamiliar syntax, ask: "is this one character doing something, or is this a function/macro name?" Single special characters (<code>' @ ^ ` ~</code>) are reader macros. <code>#X</code> where X is one character is a dispatch reader macro. Anything longer is a normal symbol — possibly a macro or function name — and you can look it up with <code>(doc name)</code> at the REPL.
+  </div>
+
+  <p class="prose" style="margin-top:1.5rem">That's it. Eleven sections, every sigil in the language, every form you'll see. Keep this page open in a tab while you read code — the pill nav at the top jumps straight to whatever you're looking at.</p>
+</section>
+
+
+</main>
+
+<script>
+function initTheme() {
+  var saved = localStorage.getItem('clj-ref-theme');
+  var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme:dark)').matches;
+  applyTheme(dark);
+}
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = dark ? '\u2600' : '\u263e';
+  // Re-highlight all code blocks
+  document.querySelectorAll('pre.code-block, .compare-col pre').forEach(function(pre) {
+    if (pre.dataset.src) pre.innerHTML = highlight(pre.dataset.src);
+  });
+}
+function toggleTheme() {
+  var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  applyTheme(!dark);
+  localStorage.setItem('clj-ref-theme', !dark ? 'dark' : 'light');
+}
+
+// ── SYNTAX HIGHLIGHTER (identical to reference page) ──
+function highlight(code) {
+  var SPECIAL = new Set([
+    'def','defn','defn-','defmacro','defmethod','defmulti','defprotocol',
+    'defrecord','deftype','defstruct','declare','ns','in-ns','import',
+    'require','use','refer','fn','fn*','let','let*','letfn','loop','recur',
+    'if','if-not','if-let','if-some','when','when-not','when-let','when-first',
+    'when-some','cond','condp','case','and','or','not','do','try','catch',
+    'finally','throw','new','.','..','doto','->','->>','as->','cond->',
+    'cond->>','some->','some->>','binding','set!','var','quote','syntax-quote',
+    'unquote','unquote-splicing','monitor-enter','monitor-exit','reify',
+    'proxy','extend','extend-type','extend-protocol','with-meta','vary-meta',
+    'alter-meta!','reset-meta!','for','doseq','dotimes','while','locking',
+    'with-open','with-local-vars','lazy-seq','delay','future','promise',
+    'dosync','io!','with-precision','atom','ref','agent','send','send-off',
+    'swap!','reset!','deref','alter','commute','add-watch','remove-watch',
+  ]);
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function span(cls, s) { return '<span class="tok-' + cls + '">' + esc(s) + '</span>'; }
+  function processLine(line) {
+    var out = '', i = 0, len = line.length;
+    while (i < len) {
+      var ch = line[i];
+      if (ch === ';') {
+        var rest = line.slice(i);
+        out += /^;\s*(=+>|=>)/.test(rest) ? span('result', rest) : span('comment', rest);
+        break;
+      }
+      if (ch === '"') {
+        var j = i + 1;
+        while (j < len) { if (line[j] === '\\') { j += 2; continue; } if (line[j] === '"') { j++; break; } j++; }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+      if (ch === '#' && line[i+1] === '"') {
+        var j = i + 2;
+        while (j < len) { if (line[j] === '\\') { j += 2; continue; } if (line[j] === '"') { j++; break; } j++; }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+      if (ch === '#' && i+1 < len && '#{(_@^'.indexOf(line[i+1]) >= 0) {
+        out += span('dispatch', line.slice(i, i+2)); i += 2; continue;
+      }
+      if (ch === ':' && i+1 < len && /[a-zA-Z_\-!?*+<>=]/.test(line[i+1])) {
+        var j = i;
+        if (line[j+1] === ':') j++;
+        j++;
+        while (j < len && /[a-zA-Z0-9_\-!?*+<>=.\/]/.test(line[j])) j++;
+        out += span('keyword', line.slice(i, j)); i = j; continue;
+      }
+      if (/[0-9]/.test(ch) || (ch === '-' && /[0-9]/.test(line[i+1] || ''))) {
+        var prev = i > 0 ? line[i-1] : ' ';
+        if (ch === '-' && /[a-zA-Z]/.test(prev)) { out += esc(ch); i++; continue; }
+        var j = i;
+        if (line[j] === '-') j++;
+        if (line[j] === '0' && (line[j+1] === 'x' || line[j+1] === 'X')) {
+          j += 2; while (j < len && /[0-9a-fA-F]/.test(line[j])) j++;
+        } else if (line[j] === '2' && line[j+1] === 'r') {
+          j += 2; while (j < len && /[01]/.test(line[j])) j++;
+        } else {
+          while (j < len && /[0-9]/.test(line[j])) j++;
+          if (j < len && line[j] === '.') { j++; while (j < len && /[0-9]/.test(line[j])) j++; }
+          if (j < len && (line[j] === 'e' || line[j] === 'E')) {
+            j++; if (j < len && (line[j] === '+' || line[j] === '-')) j++;
+            while (j < len && /[0-9]/.test(line[j])) j++;
+          }
+          if (j < len && line[j] === '/' && /[0-9]/.test(line[j+1] || '')) {
+            j++; while (j < len && /[0-9]/.test(line[j])) j++;
+          }
+        }
+        out += span('number', line.slice(i, j)); i = j; continue;
+      }
+      if (/[a-zA-Z_\-!?*+<>=.\/^%$&]/.test(ch)) {
+        var j = i;
+        while (j < len && /[a-zA-Z0-9_\-!?*+<>=.\/^%$&'#@]/.test(line[j])) j++;
+        var word = line.slice(i, j);
+        if (word === 'nil') out += span('bool', word);
+        else if (word === 'true' || word === 'false') out += span('bool', word);
+        else if (SPECIAL.has(word)) out += span('special', word);
+        else out += esc(word);
+        i = j; continue;
+      }
+      out += esc(ch); i++;
+    }
+    return out;
+  }
+  return code.split('\n').map(processLine).join('\n');
+}
+
+// ── HIGHLIGHT ALL CODE BLOCKS ON LOAD ──
+function highlightAll() {
+  document.querySelectorAll('pre.code-block').forEach(function(pre) {
+    pre.dataset.src = pre.textContent;
+    pre.innerHTML = highlight(pre.dataset.src);
+  });
+  document.querySelectorAll('.compare-col pre').forEach(function(pre) {
+    pre.dataset.src = pre.textContent;
+    pre.innerHTML = highlight(pre.dataset.src);
+  });
+}
+
+// ── ACTIVE NAV PILL ON SCROLL ──
+function updateActiveNav() {
+  var sections = document.querySelectorAll('.concept-section[id]');
+  var pills = document.querySelectorAll('.nav-pill');
+  var scrollY = window.scrollY + 120;
+  var activeId = null;
+  sections.forEach(function(s) {
+    if (s.offsetTop <= scrollY) activeId = s.id;
+  });
+  pills.forEach(function(p) {
+    var href = p.getAttribute('href').slice(1);
+    p.classList.toggle('active', href === activeId);
+  });
+}
+window.addEventListener('scroll', updateActiveNav, { passive: true });
+
+// Desktop only: redirect vertical wheel to horizontal scroll on concept nav
+var isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+if (!isTouchDevice) {
+  var conceptNav = document.getElementById('concept-nav');
+  conceptNav.addEventListener('wheel', function(e) {
+    if (e.deltaY !== 0) {
+      e.preventDefault();
+      conceptNav.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+}
+
+// Smooth scroll for nav pills
+document.querySelectorAll('.nav-pill').forEach(function(pill) {
+  pill.addEventListener('click', function(e) {
+    e.preventDefault();
+    var id = pill.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+// Init
+initTheme();
+highlightAll();
+updateActiveNav();
+</script>
+</body>
+</html>

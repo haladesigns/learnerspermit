@@ -532,9 +532,10 @@ main {
       <a href="#threading"        class="nav-pill">6 · Threading Forms</a>
       <a href="#conditionals"     class="nav-pill">7 · Conditional Forms</a>
       <a href="#metadata"         class="nav-pill">8 · Metadata (^)</a>
-      <a href="#interop"          class="nav-pill">9 · Java Interop (.)</a>
-      <a href="#quoting"          class="nav-pill">10 · Quote Family</a>
-      <a href="#cheatsheet"       class="nav-pill">11 · Sigil Cheatsheet</a>
+      <a href="#quoting"          class="nav-pill">9 · Quote Family</a>
+      <a href="#interop"          class="nav-pill">10 · Java Interop (.)</a>
+      <a href="#keywords"         class="nav-pill">11 · Special Keywords</a>
+      <a href="#cheatsheet"       class="nav-pill">12 · Sigil Cheatsheet</a>
     </nav>
   </div>
 </header>
@@ -805,7 +806,7 @@ main {
     <tr><td>quote</td><td>Return the next form unevaluated — shorthand is <code>'</code></td><td><code>(quote x)</code> or <code>'x</code></td></tr>
     <tr><td>var</td><td>Return the var itself, not its value — shorthand <code>#'</code></td><td><code>(var x)</code> or <code>#'x</code></td></tr>
     <tr><td>try / catch / finally / throw</td><td>Exception handling</td><td><code>(try body (catch E e …))</code></td></tr>
-    <tr><td>.</td><td>Java method/field access (see §9)</td><td><code>(. obj method args)</code></td></tr>
+    <tr><td>.</td><td>Java method/field access (see §10)</td><td><code>(. obj method args)</code></td></tr>
     <tr><td>new</td><td>Construct a Java object (usually written <code>Class.</code>)</td><td><code>(new Point 1 2)</code></td></tr>
     <tr><td>set!</td><td>Mutate a var, field, or thread-local binding</td><td><code>(set! field val)</code></td></tr>
     <tr><td>monitor-enter / monitor-exit</td><td>Low-level locking (use <code>locking</code> macro instead)</td><td>—</td></tr>
@@ -1044,57 +1045,40 @@ def greet(user):
 
   <p class="prose">A <strong>reader macro</strong> is a character (or <code>#</code>-prefixed character pair) that tells the reader to transform text into a different data structure than the literal suggests. They are shorthand — every reader macro has a longer form it expands to. Understanding them makes "weird" Clojure syntax suddenly obvious.</p>
 
+  <p class="prose">This section is the <strong>complete index</strong> of reader macros. A few of them — the quote family, metadata, reader conditionals — are deep enough that they get their own dedicated sections later. Those are listed here for completeness with a pointer; this section's full treatment focuses on the ones unique to it.</p>
+
   <table class="ref-table">
-    <tr><th>Syntax</th><th>Name</th><th>Expands to</th><th>Purpose</th></tr>
-    <tr><td>'x</td><td>quote</td><td>(quote x)</td><td>Don't evaluate — treat as data</td></tr>
-    <tr><td>`x</td><td>syntax-quote</td><td>namespace-qualified quoted form</td><td>Macro templates</td></tr>
-    <tr><td>~x</td><td>unquote</td><td>(unquote x)</td><td>Inside <code>`</code>: evaluate this</td></tr>
-    <tr><td>~@x</td><td>unquote-splicing</td><td>(unquote-splicing x)</td><td>Inside <code>`</code>: evaluate and splice</td></tr>
-    <tr><td>@x</td><td>deref</td><td>(deref x)</td><td>Read the value out of an atom/ref/future/promise</td></tr>
-    <tr><td>^x y</td><td>metadata</td><td>(with-meta y {:tag x})</td><td>Attach metadata to next form (§8)</td></tr>
-    <tr><td>#{…}</td><td>set literal</td><td>—</td><td>Construct a set</td></tr>
-    <tr><td>#(…)</td><td>anonymous fn</td><td>(fn [%…] (…))</td><td>Very short inline fn</td></tr>
-    <tr><td>#"…"</td><td>regex</td><td>—</td><td>Compile a regex pattern at read time</td></tr>
-    <tr><td>#'x</td><td>var-quote</td><td>(var x)</td><td>The var, not the value it holds</td></tr>
-    <tr><td>#_x</td><td>ignore</td><td>—</td><td>Skip the next form entirely</td></tr>
-    <tr><td>#?(…)</td><td>reader conditional</td><td>—</td><td>Platform-specific code (clj/cljs/cljr)</td></tr>
-    <tr><td>#?@(…)</td><td>splicing reader cond.</td><td>—</td><td>Same, but splice contents into surrounding form</td></tr>
-    <tr><td>#tag x</td><td>tagged literal</td><td>(<em>reader-for-tag</em> x)</td><td>Custom literal — e.g. <code>#inst</code>, <code>#uuid</code></td></tr>
+    <tr><th>Syntax</th><th>Name</th><th>Expands to</th><th>Covered in</th></tr>
+    <tr><td>'x</td><td>quote</td><td>(quote x)</td><td>§9 (Quote Family)</td></tr>
+    <tr><td>`x</td><td>syntax-quote</td><td>namespace-qualified quote</td><td>§9</td></tr>
+    <tr><td>~x</td><td>unquote</td><td>(unquote x)</td><td>§9</td></tr>
+    <tr><td>~@x</td><td>unquote-splicing</td><td>(unquote-splicing x)</td><td>§9</td></tr>
+    <tr><td>^x y</td><td>metadata</td><td>(with-meta y {:tag x})</td><td>§8 (Metadata)</td></tr>
+    <tr><td>#?(…)</td><td>reader conditional</td><td>—</td><td>this section + §11</td></tr>
+    <tr><td>#?@(…)</td><td>splicing reader cond.</td><td>—</td><td>this section + §11</td></tr>
+    <tr><td>@x</td><td>deref</td><td>(deref x)</td><td><strong>this section</strong></td></tr>
+    <tr><td>#{…}</td><td>set literal</td><td>—</td><td><strong>this section</strong></td></tr>
+    <tr><td>#(…)</td><td>anonymous fn</td><td>(fn [%…] (…))</td><td><strong>this section</strong></td></tr>
+    <tr><td>#"…"</td><td>regex</td><td>—</td><td><strong>this section</strong></td></tr>
+    <tr><td>#'x</td><td>var-quote</td><td>(var x)</td><td><strong>this section</strong></td></tr>
+    <tr><td>#_x</td><td>ignore</td><td>—</td><td><strong>this section</strong></td></tr>
+    <tr><td>#tag x</td><td>tagged literal</td><td>(<em>reader-for-tag</em> x)</td><td><strong>this section</strong></td></tr>
   </table>
 
-  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The single-character reader macros</h3>
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">@ deref — read the value out of a reference</h3>
 
-  <pre class="code-block">; ── ' quote ─── suppress evaluation, return as data ────────────
-'(1 2 3)          ; => (1 2 3)        — a list, not a call
-'x                ; => x              — the symbol x, not its value
-'(+ 1 2)          ; => (+ 1 2)        — the list, not the result 3
-
-; ── @ deref ─── extract value from a reference type ────────────
+  <pre class="code-block">; @ extracts the current value from a reference type
 (def counter (atom 0))
 @counter          ; => 0              — same as (deref counter)
 (swap! counter inc)
 @counter          ; => 1
 
 ; @ also works on futures, promises, delays, agents
-@(future (+ 1 2)) ; => 3              — blocks until ready
+@(future (+ 1 2)) ; => 3              — blocks until ready</pre>
 
-; ── ` syntax-quote ─── like quote but namespace-qualifies ──────
-`inc              ; => clojure.core/inc  — fully qualified!
-`(+ 1 2)          ; => (clojure.core/+ 1 2)
-
-; ── ~ unquote ─── inside syntax-quote, evaluate this part ──────
-(let [x 10]
-  `(+ 1 ~x))      ; => (clojure.core/+ 1 10) — x was evaluated
-
-; ── ~@ unquote-splicing ─── like ~ but splices a collection ────
-(let [xs [1 2 3]]
-  `(+ ~@xs))      ; => (clojure.core/+ 1 2 3) — contents inlined
-; Compare to just ~ which would insert the whole list:
-  `(+ ~xs)        ; => (clojure.core/+ [1 2 3]) — wrong shape</pre>
-
-  <div class="callout key">
-    <strong>The quote / syntax-quote / unquote family is for macros</strong>
-    Outside macro writing you rarely need <code>`</code>, <code>~</code>, or <code>~@</code>. They exist because macro templates need three things: freeze the whole structure (<code>`</code>), punch a hole to let a value in (<code>~</code>), and punch a hole that expands a collection (<code>~@</code>). Plain <code>'</code> is common; the others are specialized.
+  <div class="callout python">
+    <strong>Python comparison — the @ specifically</strong>
+    Python uses <code>@</code> for decorators — a syntactic feature for functions. In Clojure, <code>@</code> is <code>deref</code> — it reads the current value out of a reference type (atom, ref, future). Same character, completely different meaning. If you see <code>@x</code> in Clojure, think "get the value of the reference x right now".
   </div>
 
   <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The #-dispatch reader macros</h3>
@@ -1128,14 +1112,6 @@ x                 ; => 42           — the value
 (+ 1 #_(println "hi") 2)  ; => 3 — println never runs
 ; Useful for temporarily disabling code without commenting out
 
-; ── #?(...) reader conditional ─── cross-platform code ─────────
-#?(:clj  (println "I'm on the JVM")
-   :cljs (println "I'm in the browser")
-   :default (println "Somewhere else"))
-
-; Only the matching branch is READ — the others vanish
-; Used in .cljc files (cross-platform Clojure)
-
 ; ── #inst / #uuid / #tag tagged literals ───────────────────────
 #inst "2026-01-15T12:00:00Z"   ; => java.util.Date
 #uuid "550e8400-e29b-41d4-a716-446655440000" ; => UUID
@@ -1146,9 +1122,22 @@ x                 ; => 42           — the value
     <code>#(map #(* 2 %) %)</code> is a read-time error because <code>%</code> can't tell which <code>#(</code> it belongs to. For anything that would require nesting, use <code>(fn [x] ...)</code>.
   </div>
 
-  <div class="callout python">
-    <strong>Python comparison — the @ specifically</strong>
-    Python uses <code>@</code> for decorators — a syntactic feature for functions. In Clojure, <code>@</code> is <code>deref</code> — it reads the current value out of a reference type (atom, ref, future). Same character, completely different meaning. If you see <code>@x</code> in Clojure, think "get the value of the reference x right now".
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">#?(…) reader conditional — brief shape</h3>
+
+  <p class="prose">Reader conditionals select code by platform. Only the matching branch is <em>read</em> — the others vanish before the compiler ever sees them. The platform keywords (<code>:clj</code>, <code>:cljs</code>, <code>:cljr</code>, <code>:bb</code>, <code>:default</code>) are explained in §11.</p>
+
+  <pre class="code-block">#?(:clj  (println "I'm on the JVM")
+   :cljs (println "I'm in the browser")
+   :default (println "Somewhere else"))
+
+; Splicing variant — contents inlined into the surrounding form:
+#?@(:clj  [1 2 3]
+    :cljs [4 5 6])
+; Used in .cljc files (cross-platform Clojure)</pre>
+
+  <div class="callout concept">
+    <strong>Cross-references for the rest</strong>
+    The four members of the quote family — <code>'</code>, <code>` </code>, <code>~</code>, <code>~@</code> — are detailed in §9. Metadata <code>^</code> is detailed in §8. Both are listed in the index above for completeness.
   </div>
 </section>
 
@@ -1491,11 +1480,107 @@ v                             ; => [1 2 3]   — metadata invisible
 
 
 <!-- ═══════════════════════════════════════════════════════════
-     9. JAVA INTEROP — THE DOT
+     9. QUOTE FAMILY
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="quoting">
+  <div class="concept-header">
+    <span class="concept-number">09</span>
+    <div>
+      <div class="concept-title">The Quote Family — ' ` ~ ~@</div>
+      <div class="concept-subtitle">Suppressing, templating, and punching holes in evaluation</div>
+    </div>
+  </div>
+
+  <p class="prose">The quote family is the single hardest thing about Lisp syntax for newcomers — but once it clicks, it's the gateway to understanding macros. Four characters, four related jobs, all about controlling <em>when</em> a form is evaluated.</p>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">' (quote) — "don't evaluate this"</h3>
+
+  <pre class="code-block">; Without quote — Clojure evaluates (+ 1 2) and returns 3:
+(+ 1 2)                 ; => 3
+
+; With quote — Clojure returns the LIST, unevaluated:
+'(+ 1 2)                ; => (+ 1 2)
+(quote (+ 1 2))         ; => (+ 1 2)  — same, longhand
+
+; Quote on a symbol — return the symbol, don't look it up:
+'foo                    ; => foo   (the symbol)
+foo                     ; ERROR — Unable to resolve symbol
+
+; Quote is useful for:
+;   (1) data that LOOKS like code but is just data
+'(apple banana cherry)
+;   (2) passing symbols to functions that take them
+(resolve 'clojure.core/map)</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">` (syntax-quote) — quote with namespace resolution</h3>
+
+  <p class="prose">Syntax-quote (the backtick) is like quote, with two extra features that make it indispensable for macros: it <em>namespace-qualifies symbols</em>, and it allows <em>holes</em> (<code>~</code> and <code>~@</code>) that evaluate inside the quoted form.</p>
+
+  <pre class="code-block">; ── Difference 1: symbols get namespace-qualified ─────────
+'inc                    ; => inc                 — bare symbol
+`inc                    ; => clojure.core/inc    — fully qualified!
+
+; Why this matters for macros:
+; When a macro generates code that uses inc, syntax-quote
+; ensures the inc refers to clojure.core/inc even if the
+; user's namespace has its own inc. This prevents name capture.
+
+; ── Difference 2: ~ (unquote) evaluates in place ───────────
+(let [x 10]
+  '(+ 1 x))             ; => (+ 1 x)       — literal x
+(let [x 10]
+  `(+ 1 ~x))            ; => (+ 1 10)      — x was unquoted
+
+; ── ~@ (unquote-splicing) evaluates AND splices ────────────
+(let [xs [1 2 3]]
+  `(+ ~xs))             ; => (+ [1 2 3])   — as one value
+(let [xs [1 2 3]]
+  `(+ ~@xs))            ; => (+ 1 2 3)     — spliced out!</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Putting it together — a simple macro</h3>
+
+  <pre class="code-block">; A macro that generates an if-not from an unless call:
+
+(defmacro unless [condition &amp; body]
+  `(if (not ~condition)         ; ` freeze the template
+     (do ~@body)                ; ~@ splice the body forms
+     nil))
+
+; Usage:
+(unless (zero? 5)
+  (println "not zero")
+  42)
+
+; Macroexpansion:
+(macroexpand-1 '(unless (zero? 5) (println "not zero") 42))
+;=&gt; (if (clojure.core/not (zero? 5))
+;     (do (println "not zero") 42)
+;     nil)
+
+; Notice:
+;   - `  freezes the template structure
+;   - ~condition  punches a hole for the condition
+;   - ~@body      splices all body forms into the do
+;   - not becomes clojure.core/not (namespace-resolved)</pre>
+
+  <div class="callout concept">
+    <strong>The mental model</strong>
+    Think of <code>`</code> as "template this, but allow holes". Think of <code>~</code> as "evaluate this one thing". Think of <code>~@</code> as "evaluate this collection and splice its contents". You won't write macros every day, but you will read them — every Clojure library uses them — and the quote family is the syntax you'll see.
+  </div>
+
+  <div class="callout warning">
+    <strong>Don't confuse ' with `</strong>
+    Plain quote <code>'</code> is for data (<code>'(1 2 3)</code>). Syntax-quote <code>`</code> is for macro templates. They look almost identical in some fonts — if code is inside a macro definition, it's likely <code>`</code>.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     10. JAVA INTEROP — THE DOT
      ═══════════════════════════════════════════════════════════ -->
 <section class="concept-section" id="interop">
   <div class="concept-header">
-    <span class="concept-number">09</span>
+    <span class="concept-number">10</span>
     <div>
       <div class="concept-title">Java Interop — the dot family</div>
       <div class="concept-subtitle">How Clojure talks to the JVM — methods, fields, constructors</div>
@@ -1595,107 +1680,219 @@ Integer/MAX_VALUE                ; => 2147483647</pre>
 
 
 <!-- ═══════════════════════════════════════════════════════════
-     10. QUOTE FAMILY
+     11. SPECIAL-POSITION KEYWORDS
      ═══════════════════════════════════════════════════════════ -->
-<section class="concept-section" id="quoting">
+<section class="concept-section" id="keywords">
   <div class="concept-header">
-    <span class="concept-number">10</span>
+    <span class="concept-number">11</span>
     <div>
-      <div class="concept-title">The Quote Family — ' ` ~ ~@</div>
-      <div class="concept-subtitle">Suppressing, templating, and punching holes in evaluation</div>
+      <div class="concept-title">Special-Position Keywords</div>
+      <div class="concept-subtitle">Why <code>:as</code>, <code>:keys</code>, <code>:or</code>, <code>:when</code>, <code>:else</code> seem to "do something"</div>
     </div>
   </div>
 
-  <p class="prose">The quote family is the single hardest thing about Lisp syntax for newcomers — but once it clicks, it's the gateway to understanding macros. Four characters, four related jobs, all about controlling <em>when</em> a form is evaluated.</p>
+  <p class="prose">A keyword like <code>:as</code> looks identical to any other keyword you'd use as a map key. There's no syntactic distinction. Yet in certain places — inside a destructuring map, inside a <code>for</code> loop, inside an <code>ns</code> form — these keywords behave like <em>structural markers</em> that the surrounding macro recognises and acts on. Understanding why is simple once you see it.</p>
 
-  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">' (quote) — "don't evaluate this"</h3>
-
-  <pre class="code-block">; Without quote — Clojure evaluates (+ 1 2) and returns 3:
-(+ 1 2)                 ; => 3
-
-; With quote — Clojure returns the LIST, unevaluated:
-'(+ 1 2)                ; => (+ 1 2)
-(quote (+ 1 2))         ; => (+ 1 2)  — same, longhand
-
-; Quote on a symbol — return the symbol, don't look it up:
-'foo                    ; => foo   (the symbol)
-foo                     ; ERROR — Unable to resolve symbol
-
-; Quote is useful for:
-;   (1) data that LOOKS like code but is just data
-'(apple banana cherry)
-;   (2) passing symbols to functions that take them
-(resolve 'clojure.core/map)</pre>
-
-  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">` (syntax-quote) — quote with namespace resolution</h3>
-
-  <p class="prose">Syntax-quote (the backtick) is like quote, with two extra features that make it indispensable for macros: it <em>namespace-qualifies symbols</em>, and it allows <em>holes</em> (<code>~</code> and <code>~@</code>) that evaluate inside the quoted form.</p>
-
-  <pre class="code-block">; ── Difference 1: symbols get namespace-qualified ─────────
-'inc                    ; => inc                 — bare symbol
-`inc                    ; => clojure.core/inc    — fully qualified!
-
-; Why this matters for macros:
-; When a macro generates code that uses inc, syntax-quote
-; ensures the inc refers to clojure.core/inc even if the
-; user's namespace has its own inc. This prevents name capture.
-
-; ── Difference 2: ~ (unquote) evaluates in place ───────────
-(let [x 10]
-  '(+ 1 x))             ; => (+ 1 x)       — literal x
-(let [x 10]
-  `(+ 1 ~x))            ; => (+ 1 10)      — x was unquoted
-
-; ── ~@ (unquote-splicing) evaluates AND splices ────────────
-(let [xs [1 2 3]]
-  `(+ ~xs))             ; => (+ [1 2 3])   — as one value
-(let [xs [1 2 3]]
-  `(+ ~@xs))            ; => (+ 1 2 3)     — spliced out!</pre>
-
-  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Putting it together — a simple macro</h3>
-
-  <pre class="code-block">; A macro that generates an if-not from an unless call:
-
-(defmacro unless [condition &amp; body]
-  `(if (not ~condition)         ; ` freeze the template
-     (do ~@body)                ; ~@ splice the body forms
-     nil))
-
-; Usage:
-(unless (zero? 5)
-  (println "not zero")
-  42)
-
-; Macroexpansion:
-(macroexpand-1 '(unless (zero? 5) (println "not zero") 42))
-;=&gt; (if (clojure.core/not (zero? 5))
-;     (do (println "not zero") 42)
-;     nil)
-
-; Notice:
-;   - `  freezes the template structure
-;   - ~condition  punches a hole for the condition
-;   - ~@body      splices all body forms into the do
-;   - not becomes clojure.core/not (namespace-resolved)</pre>
-
-  <div class="callout concept">
+  <div class="callout key">
     <strong>The mental model</strong>
-    Think of <code>`</code> as "template this, but allow holes". Think of <code>~</code> as "evaluate this one thing". Think of <code>~@</code> as "evaluate this collection and splice its contents". You won't write macros every day, but you will read them — every Clojure library uses them — and the quote family is the syntax you'll see.
+    These keywords have <em>no special meaning by themselves</em> — <code>:as</code>, <code>:keys</code>, <code>:or</code>, <code>:when</code>, <code>:else</code> are all just plain keywords. <code>(keyword? :as)</code> is <code>true</code>. You can put any of them in a map as a key. What makes them feel special is that <strong>specific macros and forms scan their arguments looking for these particular keywords in particular positions</strong>, and treat them as instructions when found. The "specialness" lives in the consumer (the macro), not in the keyword itself.
   </div>
 
+  <p class="prose">A useful way to think about it: these keywords are <em>like named flags or section dividers</em> that the macro reads as syntax. Outside the contexts where the macro looks for them, they're just data. This is also why you can introduce your own keywords with similar conventions — there's nothing privileged about <code>:as</code>; library macros routinely invent their own positional keywords.</p>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Group 1 — Destructuring keywords</h3>
+
+  <p class="prose">These appear inside binding forms (§4) and are recognised by <code>let</code>, <code>fn</code>, <code>defn</code>, <code>loop</code>, <code>for</code>, and any macro built on them.</p>
+
+  <table class="ref-table">
+    <tr><th>Keyword</th><th>Where</th><th>Effect</th></tr>
+    <tr><td>:as</td><td>Inside <code>[...]</code> or <code>{...}</code> destructure</td><td>Bind a name to the whole original value</td></tr>
+    <tr><td>:keys</td><td>Inside a map destructure</td><td>Pull keyword keys into same-named locals</td></tr>
+    <tr><td>:strs</td><td>Inside a map destructure</td><td>Same, for string keys</td></tr>
+    <tr><td>:syms</td><td>Inside a map destructure</td><td>Same, for symbol keys</td></tr>
+    <tr><td>:or</td><td>Inside a map destructure</td><td>Provide defaults for missing keys</td></tr>
+    <tr><td>:ns/keys</td><td>Inside a map destructure (1.9+)</td><td>Pull namespaced keys; e.g. <code>:user/keys</code> matches <code>:user/name</code></td></tr>
+  </table>
+
+  <pre class="code-block">; All five common destructuring keywords in one binding form:
+(let [{:keys [name age]      ; pull :name and :age
+       :strs [email]         ; pull "email" (string key)
+       :or   {age 0}          ; default for missing :age
+       :as   person}          ; capture the whole map too
+      {:name "Ada" "email" "a@x.com"}]
+  [name age email person])
+;=&gt; ["Ada" 0 "a@x.com" {:name "Ada" "email" "a@x.com"}]
+
+; Namespaced keys variant — Clojure 1.9+:
+(let [{:user/keys [name id]} {:user/name "Ada" :user/id 42}]
+  [name id])
+;=&gt; ["Ada" 42]</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Group 2 — <code>for</code> and <code>doseq</code> modifiers</h3>
+
+  <p class="prose">Inside list comprehensions, three keywords act as in-line directives that modify the iteration. They appear <em>between</em> binding pairs and are recognised positionally by the <code>for</code> and <code>doseq</code> macros.</p>
+
+  <table class="ref-table">
+    <tr><th>Keyword</th><th>Effect</th><th>Roughly equivalent Python</th></tr>
+    <tr><td>:let [bindings]</td><td>Introduce locals for the rest of the iteration</td><td>Assignment inside a comprehension's <code>for</code> clause</td></tr>
+    <tr><td>:when test</td><td>Skip iterations where test is falsy (filter)</td><td><code>if</code> filter in a comprehension</td></tr>
+    <tr><td>:while test</td><td>Stop the inner loop the moment test is falsy</td><td>No direct equivalent — early break</td></tr>
+  </table>
+
+  <pre class="code-block">; All three modifiers, working together:
+(for [x (range 10)
+      :let  [sq (* x x)]              ; bind sq for each x
+      :when (even? x)                  ; only even x
+      :while (&lt; sq 50)]                ; stop when sq &gt;= 50
+  [x sq])
+;=&gt; ([0 0] [2 4] [4 16] [6 36])
+
+; :when filters but keeps going; :while halts:
+(for [x (range 10) :when (odd? x)]   x)  ;=&gt; (1 3 5 7 9)
+(for [x (range 10) :while (&lt; x 5)]   x)  ;=&gt; (0 1 2 3 4)
+(for [x (range 10) :when  (&lt; x 5)]   x)  ;=&gt; (0 1 2 3 4)  ; same here
+(for [x [1 3 5 4 7 9] :while (odd? x)] x);=&gt; (1 3 5)       ; stops at 4</pre>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    Python comprehensions allow filters: <code>[x for x in range(10) if x % 2 == 0]</code>. That's roughly Clojure's <code>:when</code>. Python has no inline <code>:let</code> (you'd use a generator expression or a separate variable) and no <code>:while</code> for early termination from inside a comprehension (you'd <code>break</code> in a regular loop instead). Clojure's <code>for</code> packs all three into one form.
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Group 3 — <code>cond</code>, <code>case</code>, <code>condp</code> sentinels</h3>
+
+  <p class="prose">In <code>cond</code> and friends, two keywords appear as <em>conventions</em>, not as macro-recognised syntax. They work because they happen to be truthy — but they're written this way to make the "default" case visually obvious.</p>
+
+  <table class="ref-table">
+    <tr><th>Keyword</th><th>Where</th><th>Why it works</th></tr>
+    <tr><td>:else</td><td>Last branch of <code>cond</code></td><td>Just a truthy keyword — <code>cond</code> doesn't care which truthy value, but <code>:else</code> reads as "default branch"</td></tr>
+    <tr><td>:default</td><td>Default branch of <code>condp</code></td><td>Same idea — convention, not syntax</td></tr>
+  </table>
+
+  <pre class="code-block">; :else is just a truthy keyword — cond evaluates branches top-to-bottom
+; and takes the first whose test is truthy. The keyword :else is truthy, so
+; it always matches if reached. ANY truthy value would work — :default,
+; true, "anything" — but :else is the convention.
+
+(defn grade [score]
+  (cond
+    (&gt;= score 90) "A"
+    (&gt;= score 80) "B"
+    (&gt;= score 70) "C"
+    :else         "F"))      ; convention; could also be (true "F")
+
+; condp uses :default as the keyword for the default branch:
+(condp = 5
+  1  "one"
+  5  "five"
+  :default "other")          ;=&gt; "five"</pre>
+
   <div class="callout warning">
-    <strong>Don't confuse ' with `</strong>
-    Plain quote <code>'</code> is for data (<code>'(1 2 3)</code>). Syntax-quote <code>`</code> is for macro templates. They look almost identical in some fonts — if code is inside a macro definition, it's likely <code>`</code>.
+    <strong>Don't try this with <code>case</code></strong>
+    <code>case</code> is different — its default is just a single trailing expression with no key. Writing <code>:else</code> as a key in <code>case</code> would make <code>:else</code> an actual key to match, not a default. Use the trailing-expression form instead: <code>(case x 1 "one" 2 "two" "default")</code>.
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Group 4 — <code>ns</code>, <code>require</code>, <code>import</code> keywords</h3>
+
+  <p class="prose">The <code>ns</code> form is built almost entirely out of keyword markers. Each keyword introduces a different kind of declaration. These are recognised by the <code>ns</code> macro itself, and the same keywords appear in <code>require</code> libspecs.</p>
+
+  <table class="ref-table">
+    <tr><th>Keyword</th><th>Position</th><th>Effect</th></tr>
+    <tr><td>:require</td><td>Inside <code>ns</code></td><td>Load and (optionally) alias another namespace</td></tr>
+    <tr><td>:import</td><td>Inside <code>ns</code></td><td>Import Java classes</td></tr>
+    <tr><td>:use</td><td>Inside <code>ns</code> (legacy)</td><td>Like <code>:require</code> + <code>:refer :all</code> — discouraged</td></tr>
+    <tr><td>:refer-clojure</td><td>Inside <code>ns</code></td><td>Customise what's pulled from <code>clojure.core</code></td></tr>
+    <tr><td>:as</td><td>Inside a libspec</td><td>Alias the namespace — e.g. <code>[clojure.string :as str]</code></td></tr>
+    <tr><td>:as-alias</td><td>Inside a libspec</td><td>Alias <em>without</em> loading — for keyword namespacing</td></tr>
+    <tr><td>:refer</td><td>Inside a libspec</td><td>Pull specific symbols into current ns</td></tr>
+    <tr><td>:refer :all</td><td>Inside a libspec</td><td>Pull every public symbol — usually avoided</td></tr>
+    <tr><td>:exclude</td><td>Inside <code>:refer-clojure</code></td><td>Don't auto-refer these core symbols</td></tr>
+    <tr><td>:rename</td><td>Inside a libspec</td><td>Rename refers</td></tr>
+    <tr><td>:reload</td><td>To <code>require</code> directly</td><td>Force reload</td></tr>
+    <tr><td>:reload-all</td><td>To <code>require</code> directly</td><td>Reload this and all transitive deps</td></tr>
+    <tr><td>:verbose</td><td>To <code>require</code> directly</td><td>Print loading info</td></tr>
+  </table>
+
+  <pre class="code-block">; A typical ns form using most of these:
+(ns my.app
+  (:refer-clojure :exclude [str])      ; don't pull in core's str
+  (:require [clojure.string :as s]      ; alias clojure.string as s
+            [clojure.set :refer [union difference]]   ; pull two names
+            [my.spec :as-alias spec])   ; alias-only, don't load
+  (:import (java.util Date UUID)         ; Java classes
+           (java.io File)))
+
+; And the same keywords used directly at the REPL via require:
+(require '[clojure.string :as str])
+(require 'my.lib :reload)
+(require 'my.lib :verbose)</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Group 5 — Reader conditional platform tags</h3>
+
+  <p class="prose">Inside <code>#?(...)</code> and <code>#?@(...)</code> reader conditionals (§5), keywords act as platform selectors. Each branch is keyed by which Clojure dialect is reading the file. Only the matching branch is read; the others vanish before the compiler ever sees them.</p>
+
+  <table class="ref-table">
+    <tr><th>Keyword</th><th>Platform</th></tr>
+    <tr><td>:clj</td><td>Clojure on the JVM</td></tr>
+    <tr><td>:cljs</td><td>ClojureScript (compiles to JavaScript)</td></tr>
+    <tr><td>:cljr</td><td>ClojureCLR (compiles to .NET)</td></tr>
+    <tr><td>:bb</td><td>Babashka (a Clojure scripting runtime)</td></tr>
+    <tr><td>:default</td><td>Fallback when no platform matches</td></tr>
+  </table>
+
+  <pre class="code-block">; Used in .cljc files (cross-platform Clojure):
+(defn now []
+  #?(:clj  (java.util.Date.)
+     :cljs (js/Date.)
+     :default (throw (ex-info "no clock here" {}))))
+
+; Splicing variant: contents are spliced into the surrounding form:
+(defn parse-int [s]
+  #?@(:clj  [(Integer/parseInt s)]
+      :cljs [(js/parseInt s 10)]))</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Group 6 — Special metadata keys</h3>
+
+  <p class="prose">When metadata is attached with <code>^</code> (§8), most keys are arbitrary. But a handful are <em>recognised by the compiler</em> and influence how the var or value is treated. Listed here for completeness — see §8 for the metadata mechanism itself.</p>
+
+  <table class="ref-table">
+    <tr><th>Keyword</th><th>Effect</th></tr>
+    <tr><td>:private</td><td>Restrict access to the defining namespace</td></tr>
+    <tr><td>:dynamic</td><td>Allow rebinding via <code>binding</code> form</td></tr>
+    <tr><td>:const</td><td>Inline the value at compile time (no var lookup)</td></tr>
+    <tr><td>:tag</td><td>Type hint — <code>^String s</code> is shorthand for <code>^{:tag String} s</code></td></tr>
+    <tr><td>:doc</td><td>Documentation string — readable via <code>(doc name)</code></td></tr>
+    <tr><td>:arglists</td><td>Override the displayed argument lists in docs</td></tr>
+    <tr><td>:added</td><td>Version string — when this var was added (used in core)</td></tr>
+    <tr><td>:deprecated</td><td>Mark as deprecated (string or boolean)</td></tr>
+    <tr><td>:test</td><td>Test fn body — used by <code>clojure.test/test-vars</code></td></tr>
+  </table>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The big-picture takeaway</h3>
+
+  <div class="callout concept">
+    <strong>Why this design works</strong>
+    Clojure's macros routinely extend syntax by inventing new positional keywords. <code>clojure.spec</code> uses <code>:req</code>, <code>:opt</code>, <code>:req-un</code>. Test libraries use <code>:fixtures</code>, <code>:setup</code>. Web frameworks use <code>:get</code>, <code>:post</code>, <code>:middleware</code>. The pattern is the same: keywords are cheap (no syntax to learn — they're just data), self-documenting (you read <code>:as</code> and you know what it does), and any macro can recognise them. So when you see a new library, expect to encounter its own positional keywords. The mental tool is identical: <em>the keyword is data; the macro decides what it means in this position.</em>
+  </div>
+
+  <div class="callout key">
+    <strong>Quick lookup — "I see this keyword, where does it apply?"</strong>
+    <code>:as</code> &amp; <code>:keys</code> &amp; <code>:strs</code> &amp; <code>:syms</code> &amp; <code>:or</code> → destructuring (§4).
+    <code>:let</code> &amp; <code>:when</code> &amp; <code>:while</code> → <code>for</code>/<code>doseq</code> modifiers.
+    <code>:else</code> → <code>cond</code> default convention.
+    <code>:default</code> → <code>condp</code> default; also reader conditional fallback.
+    <code>:require</code> &amp; <code>:import</code> &amp; <code>:refer</code> &amp; <code>:as-alias</code> &amp; <code>:exclude</code> → namespace declarations.
+    <code>:clj</code> &amp; <code>:cljs</code> &amp; <code>:cljr</code> &amp; <code>:bb</code> → reader conditional platforms.
+    <code>:private</code> &amp; <code>:dynamic</code> &amp; <code>:const</code> &amp; <code>:tag</code> &amp; <code>:doc</code> → compiler-recognised metadata (§8).
   </div>
 </section>
 
 
 <!-- ═══════════════════════════════════════════════════════════
-     11. SIGIL CHEATSHEET
+     12. SIGIL CHEATSHEET
      ═══════════════════════════════════════════════════════════ -->
 <section class="concept-section" id="cheatsheet">
   <div class="concept-header">
-    <span class="concept-number">11</span>
+    <span class="concept-number">12</span>
     <div>
       <div class="concept-title">Sigil Cheatsheet</div>
       <div class="concept-subtitle">Every punctuation character in one place — "what does this mean?"</div>
@@ -1716,10 +1913,10 @@ foo                     ; ERROR — Unable to resolve symbol
     <tr><td>\</td><td>Character literal</td><td><code>\a</code></td><td>§2</td></tr>
     <tr><td>"</td><td>String</td><td><code>"hi"</code></td><td>§2</td></tr>
     <tr><td>;</td><td>Line comment</td><td><code>; todo</code></td><td>—</td></tr>
-    <tr><td>'</td><td>Quote — don't evaluate</td><td><code>'(1 2)</code></td><td>§5, §10</td></tr>
-    <tr><td>`</td><td>Syntax-quote — template</td><td><code>`(+ 1 ~x)</code></td><td>§5, §10</td></tr>
-    <tr><td>~</td><td>Unquote inside `</td><td><code>~x</code></td><td>§10</td></tr>
-    <tr><td>~@</td><td>Unquote-splicing inside `</td><td><code>~@xs</code></td><td>§10</td></tr>
+    <tr><td>'</td><td>Quote — don't evaluate</td><td><code>'(1 2)</code></td><td>§5, §9</td></tr>
+    <tr><td>`</td><td>Syntax-quote — template</td><td><code>`(+ 1 ~x)</code></td><td>§5, §9</td></tr>
+    <tr><td>~</td><td>Unquote inside `</td><td><code>~x</code></td><td>§9</td></tr>
+    <tr><td>~@</td><td>Unquote-splicing inside `</td><td><code>~@xs</code></td><td>§9</td></tr>
     <tr><td>@</td><td>deref — read atom/ref/future/promise</td><td><code>@counter</code></td><td>§5</td></tr>
     <tr><td>^</td><td>Metadata</td><td><code>^String</code> <code>^:private</code></td><td>§8</td></tr>
     <tr><td>#"..."</td><td>Regex</td><td><code>#"\d+"</code></td><td>§5</td></tr>
@@ -1731,19 +1928,24 @@ foo                     ; ERROR — Unable to resolve symbol
     <tr><td>#?@(...)</td><td>Splicing reader conditional</td><td>—</td><td>§5</td></tr>
     <tr><td>#inst #uuid</td><td>Tagged literal</td><td><code>#inst "2026-..."</code></td><td>§5</td></tr>
     <tr><td>&amp;</td><td>Rest-args marker in binding forms</td><td><code>[a b &amp; rest]</code></td><td>§4</td></tr>
-    <tr><td>:as</td><td>Keep original in destructure</td><td><code>[x y :as pt]</code></td><td>§4</td></tr>
-    <tr><td>:keys :strs :syms</td><td>Map destructuring shortcuts</td><td><code>{:keys [a b]}</code></td><td>§4</td></tr>
-    <tr><td>:or</td><td>Defaults in destructure</td><td><code>{:or {x 0}}</code></td><td>§4</td></tr>
-    <tr><td>.method</td><td>Java instance method call</td><td><code>(.upper s)</code></td><td>§9</td></tr>
-    <tr><td>.-field</td><td>Java instance field read</td><td><code>(.-x pt)</code></td><td>§9</td></tr>
-    <tr><td>Class.</td><td>Java constructor</td><td><code>(Date.)</code></td><td>§9</td></tr>
-    <tr><td>Class/method</td><td>Java static member</td><td><code>(Math/sqrt 9)</code></td><td>§9</td></tr>
+    <tr><td>:as</td><td>Keep original in destructure / namespace alias</td><td><code>[x y :as pt]</code></td><td>§4, §11</td></tr>
+    <tr><td>:keys :strs :syms</td><td>Map destructuring shortcuts</td><td><code>{:keys [a b]}</code></td><td>§4, §11</td></tr>
+    <tr><td>:or</td><td>Defaults in destructure</td><td><code>{:or {x 0}}</code></td><td>§4, §11</td></tr>
+    <tr><td>:let :when :while</td><td><code>for</code>/<code>doseq</code> modifiers</td><td><code>(for [x xs :when (odd? x)] x)</code></td><td>§11</td></tr>
+    <tr><td>:else :default</td><td>Default branch convention</td><td><code>(cond ... :else x)</code></td><td>§7, §11</td></tr>
+    <tr><td>:require :import :refer</td><td>Namespace declarations</td><td><code>(:require [s :as a])</code></td><td>§11</td></tr>
+    <tr><td>:clj :cljs :cljr</td><td>Reader conditional platforms</td><td><code>#?(:clj ... :cljs ...)</code></td><td>§5, §11</td></tr>
+    <tr><td>:private :dynamic :tag :doc</td><td>Compiler-recognised metadata</td><td><code>^:private</code></td><td>§8, §11</td></tr>
+    <tr><td>.method</td><td>Java instance method call</td><td><code>(.upper s)</code></td><td>§10</td></tr>
+    <tr><td>.-field</td><td>Java instance field read</td><td><code>(.-x pt)</code></td><td>§10</td></tr>
+    <tr><td>Class.</td><td>Java constructor</td><td><code>(Date.)</code></td><td>§10</td></tr>
+    <tr><td>Class/method</td><td>Java static member</td><td><code>(Math/sqrt 9)</code></td><td>§10</td></tr>
     <tr><td>-&gt; -&gt;&gt;</td><td>Threading macros</td><td><code>(-&gt;&gt; xs (map f))</code></td><td>§6</td></tr>
     <tr><td>as-&gt;</td><td>Named threading</td><td><code>(as-&gt; x $ ...)</code></td><td>§6</td></tr>
     <tr><td>some-&gt; some-&gt;&gt;</td><td>Threading with nil short-circuit</td><td><code>(some-&gt; m :k :v)</code></td><td>§6</td></tr>
     <tr><td>cond-&gt; cond-&gt;&gt;</td><td>Threading with conditions</td><td><code>(cond-&gt; m x (assoc ...))</code></td><td>§6</td></tr>
-    <tr><td>..</td><td>Chain Java method calls</td><td><code>(.. obj m1 m2)</code></td><td>§9</td></tr>
-    <tr><td>doto</td><td>Multi-method-call on one object</td><td><code>(doto o (.a) (.b))</code></td><td>§6, §9</td></tr>
+    <tr><td>..</td><td>Chain Java method calls</td><td><code>(.. obj m1 m2)</code></td><td>§10</td></tr>
+    <tr><td>doto</td><td>Multi-method-call on one object</td><td><code>(doto o (.a) (.b))</code></td><td>§6, §10</td></tr>
   </table>
 
   <div class="callout key">

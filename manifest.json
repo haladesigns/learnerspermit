@@ -213,6 +213,12 @@
         "children": [
           {
             "type": "file",
+            "name": "nvidia-jetson-agx-orin-llm.html",
+            "label": "Nvidia Jetson Agx Orin Llm",
+            "path": "coding_web-design/ai/nvidia-jetson-agx-orin-llm.html"
+          },
+          {
+            "type": "file",
             "name": "t",
             "label": "T",
             "path": "coding_web-design/ai/t"

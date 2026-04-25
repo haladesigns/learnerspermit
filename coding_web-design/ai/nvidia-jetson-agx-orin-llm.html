@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jetson AGX Orin — LLM Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS (matched to Clojure reference suite) ── */
+:root {
+  --bg:       #f5f2eb;
+  --surface:  #ffffff;
+  --surface2: #ede9e0;
+  --border:   #ddd8cc;
+  --border2:  #ccc6b8;
+  --text:     #1c1a14;
+  --text2:    #5a5648;
+  --text3:    #9a9282;
+  --accent:   #c75a2c;
+  --accent2:  #e8936a;
+  --accent-bg:#fdf0e8;
+  --accent-t: #7a3018;
+  --core-bg:  #eaf3e8;
+  --core-t:   #2a5c25;
+  --str-bg:   #e8eef8;
+  --str-t:    #1e3a6e;
+  --set-bg:   #f0e8f5;
+  --set-t:    #5a1a7a;
+  --code-bg:      #f0ece2;
+  --code-t:       #2a2420;
+  --code-border:  #ccc6b4;
+  --tok-comment:  #8a8a8a;
+  --tok-string:   #0070a0;
+  --tok-keyword:  #c75a2c;
+  --tok-number:   #2a7a2a;
+  --tok-special:  #7a28a0;
+  --tok-flag:     #a06000;
+  --tok-path:     #1e3a6e;
+  --shadow:       0 1px 4px rgba(0,0,0,.07);
+  --radius:   6px;
+  --radius-lg:10px;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+}
+[data-theme="dark"] {
+  --bg:       #141210;
+  --surface:  #1c1a16;
+  --surface2: #242018;
+  --border:   #2e2a22;
+  --border2:  #3a3428;
+  --text:     #ede8dc;
+  --text2:    #a09880;
+  --text3:    #5a5448;
+  --accent:   #e8784a;
+  --accent2:  #c75a2c;
+  --accent-bg:#2a1a0e;
+  --accent-t: #f0a882;
+  --core-bg:  #0e1e0c;
+  --core-t:   #7ad070;
+  --str-bg:   #0c1428;
+  --str-t:    #7aabee;
+  --set-bg:   #1a0c28;
+  --set-t:    #c070e8;
+  --code-bg:      #0c0a08;
+  --code-t:       #e0d8c8;
+  --code-border:  #2a2620;
+  --tok-comment:  #636366;
+  --tok-string:   #82c9d8;
+  --tok-keyword:  #e8936a;
+  --tok-number:   #b5cea8;
+  --tok-special:  #c586c0;
+  --tok-flag:     #dcdcaa;
+  --tok-path:     #7aabee;
+  --shadow:       0 1px 4px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.7;
+  min-height: 100vh;
+  transition: background .2s, color .2s;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+.hdr-inner { max-width: 860px; margin: 0 auto; padding: 0 1rem; }
+.hdr-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: .75rem 0 .65rem;
+}
+.logo { flex: 1; min-width: 0; }
+.logo-name {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: -.02em;
+}
+.logo-sub { font-size: 14px; color: var(--text3); margin-top: 1px; }
+.hdr-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--text2);
+  transition: background .15s;
+  flex-shrink: 0; text-decoration: none;
+}
+.icon-btn:hover { background: var(--border); }
+
+/* ── NAV PILLS ── */
+.concept-nav {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: .6rem;
+}
+.concept-nav::-webkit-scrollbar { display: none; }
+.nav-pill {
+  font-size: 13px;
+  padding: 3px 11px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text2);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: all .15s;
+  font-family: var(--sans);
+}
+.nav-pill:hover { background: var(--surface2); color: var(--text); }
+.nav-pill.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── MAIN ── */
+main { max-width: 860px; margin: 0 auto; padding: 2rem 1rem 5rem; }
+
+.concept-section { margin-bottom: 3.5rem; scroll-margin-top: 80px; }
+.concept-section:last-child { margin-bottom: 0; }
+
+.concept-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+  padding-bottom: .75rem;
+  border-bottom: 2px solid var(--border);
+}
+.concept-number {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+.concept-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+.concept-subtitle { font-size: 14px; color: var(--text3); font-style: italic; }
+
+.prose {
+  color: var(--text2);
+  font-size: 16px;
+  line-height: 1.75;
+  margin-bottom: 1.25rem;
+}
+.prose strong { color: var(--text); font-weight: 600; }
+.prose code {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.prose a { color: var(--accent); text-decoration: underline; }
+
+/* ── CALLOUT BOXES ── */
+.callout {
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+  font-size: 15px;
+  line-height: 1.65;
+  border-left: 3px solid;
+}
+.callout strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  margin-bottom: .4rem;
+}
+.callout.key { background: var(--accent-bg); border-color: var(--accent); color: var(--accent-t); }
+.callout.key strong { color: var(--accent); }
+.callout.tip { background: var(--str-bg); border-color: var(--str-t); color: var(--str-t); }
+.callout.tip strong { color: var(--str-t); }
+.callout.warning { background: var(--set-bg); border-color: var(--set-t); color: var(--set-t); }
+.callout.warning strong { color: var(--set-t); }
+.callout.good { background: var(--core-bg); border-color: var(--core-t); color: var(--core-t); }
+.callout.good strong { color: var(--core-t); }
+.callout code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: rgba(0,0,0,.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ── CODE BLOCK ── */
+.code-block {
+  font-family: var(--mono);
+  font-size: 14px;
+  background: var(--code-bg);
+  color: var(--code-t);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--code-border);
+  padding: 12px 14px;
+  white-space: pre;
+  line-height: 1.65;
+  overflow-x: auto;
+  tab-size: 2;
+  margin-bottom: 1.25rem;
+}
+
+/* ── REFERENCE TABLE ── */
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  font-size: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.ref-table th {
+  text-align: left;
+  padding: 8px 12px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.ref-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.ref-table td:first-child {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  white-space: nowrap;
+  font-weight: 500;
+}
+.ref-table tr:last-child td { border-bottom: none; }
+.ref-table tr:hover td { background: var(--surface2); }
+.ref-table .num { font-family: var(--mono); color: var(--text); font-weight: 500; }
+.ref-table .good-row td:first-child { color: var(--core-t); }
+.ref-table .warn-row td:first-child { color: var(--set-t); }
+
+/* ── SPEC GRID ── */
+.spec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin-bottom: 1.25rem;
+}
+.spec-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .7rem .9rem;
+}
+.spec-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: .25rem;
+}
+.spec-value {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+}
+.spec-value.accent { color: var(--accent); }
+
+/* ── CHEAT-SHEET CARDS ── */
+.path-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.path-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: .9rem 1rem;
+}
+.path-card h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: .35rem;
+  letter-spacing: .02em;
+}
+.path-card .tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 1px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-bottom: .5rem;
+}
+.path-card p {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.55;
+}
+
+/* ── FLOW DIAGRAM ── */
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+}
+.flow-step {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 5px 11px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+}
+.flow-step.start { background: var(--core-bg); border-color: var(--core-t); color: var(--core-t); }
+.flow-step.end { background: var(--accent-bg); border-color: var(--accent); color: var(--accent-t); }
+.flow-arrow { color: var(--text3); font-size: 16px; flex-shrink: 0; }
+
+/* Syntax highlight spans */
+.tok-comment { color: var(--tok-comment); font-style: italic; }
+.tok-string  { color: var(--tok-string); }
+.tok-keyword { color: var(--tok-keyword); font-weight: 500; }
+.tok-number  { color: var(--tok-number); }
+.tok-special { color: var(--tok-special); font-weight: 500; }
+.tok-flag    { color: var(--tok-flag); }
+.tok-path    { color: var(--tok-path); }
+
+/* ── MOBILE ── */
+@media (max-width: 600px) {
+  .hdr-inner { padding: 0 .75rem; }
+  .logo-sub { display: none; }
+  main { padding: 1.25rem .75rem 4rem; }
+  .concept-title { font-size: 18px; }
+  .code-block { font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+  .ref-table { font-size: 13px; }
+  .ref-table th, .ref-table td { padding: 7px 8px; }
+  .prose { font-size: 15px; }
+  .path-grid { grid-template-columns: 1fr; }
+  .flow { gap: 5px; }
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-inner">
+    <div class="hdr-top">
+      <div class="logo">
+        <div class="logo-name">jetson agx orin — llm reference</div>
+        <div class="logo-sub">running Gemma 4 &amp; friends on edge silicon</div>
+      </div>
+      <div class="hdr-actions">
+        <button class="icon-btn" id="theme-btn" title="Toggle theme" onclick="toggleTheme()">&#9790;</button>
+      </div>
+    </div>
+    <nav class="concept-nav" id="concept-nav">
+      <a href="#hardware"     class="nav-pill">1 · Your Hardware</a>
+      <a href="#model-fit"    class="nav-pill">2 · Model Fit</a>
+      <a href="#paths"        class="nav-pill">3 · Three Paths</a>
+      <a href="#setup"        class="nav-pill">4 · First Boot</a>
+      <a href="#ollama"       class="nav-pill">5 · Ollama Quickstart</a>
+      <a href="#jetson-lab"   class="nav-pill">6 · Jetson AI Lab</a>
+      <a href="#monitoring"   class="nav-pill">7 · Monitoring</a>
+      <a href="#tuning"       class="nav-pill">8 · Tuning</a>
+      <a href="#gotchas"      class="nav-pill">9 · Gotchas</a>
+      <a href="#cheatsheet"   class="nav-pill">10 · Cheat Sheet</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<div class="prose" style="margin-bottom:2.5rem; padding:.9rem 1rem; background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:var(--radius-lg);">
+  <strong>How to use this page.</strong> A living one-pager for running LLMs on the Jetson AGX Orin 64GB Developer Kit. Specs, model size estimates, the three deployment paths, copy-paste commands, monitoring, performance tuning, and known gotchas. Numbers reflect public benchmarks as of April 2026 — your mileage will vary by quantization, JetPack version, and prompt length.
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     1. HARDWARE
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="hardware">
+  <div class="concept-header">
+    <span class="concept-number">01</span>
+    <div>
+      <div class="concept-title">Your Hardware</div>
+      <div class="concept-subtitle">What the AGX Orin 64GB actually gives you</div>
+    </div>
+  </div>
+
+  <p class="prose">The AGX Orin 64GB is the high-end Jetson — the same silicon NVIDIA points to when they say "frontier-class edge AI." The defining feature isn't raw TOPS; it's the <strong>64 GB of unified LPDDR5</strong> shared between CPU and GPU. No PCIe transfers, no VRAM partition. Whatever fits in system memory can be operated on by the GPU at ~205 GB/s.</p>
+
+  <div class="spec-grid">
+    <div class="spec-card">
+      <div class="spec-label">Architecture</div>
+      <div class="spec-value">Ampere (sm_87)</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">CUDA cores</div>
+      <div class="spec-value accent">2048</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Tensor cores</div>
+      <div class="spec-value accent">64</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">CPU</div>
+      <div class="spec-value">12× Cortex-A78AE</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Unified memory</div>
+      <div class="spec-value accent">64 GB LPDDR5</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Memory bandwidth</div>
+      <div class="spec-value">204.8 GB/s</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">AI throughput</div>
+      <div class="spec-value">275 TOPS (INT8)</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Storage</div>
+      <div class="spec-value">64 GB eMMC</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-label">Power envelope</div>
+      <div class="spec-value">15–60 W</div>
+    </div>
+  </div>
+
+  <div class="callout key">
+    <strong>The bandwidth-bound truth</strong>
+    LLM inference is memory-bandwidth-bound, not compute-bound. The AGX Orin's 205 GB/s is what really sets your token/sec ceiling — not the 275 TOPS marketing figure. For comparison: an RTX 4090 has ~1 TB/s, ~5× higher. That's why a 4090 generates more tokens/sec than an AGX Orin even though the Orin can hold larger models.
+  </div>
+
+  <div class="callout tip">
+    <strong>Why unified memory wins</strong>
+    On a discrete GPU, model weights have to fit in VRAM (24 GB on a 4090). On the AGX Orin you have 64 GB to play with — you can comfortably load a quantized 31B dense model with room left over for KV cache, system processes, and a desktop environment. This is the AGX Orin's superpower.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     2. MODEL FIT
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="model-fit">
+  <div class="concept-header">
+    <span class="concept-number">02</span>
+    <div>
+      <div class="concept-title">Model Fit &amp; Expected Speed</div>
+      <div class="concept-subtitle">What runs, how fast, how much memory</div>
+    </div>
+  </div>
+
+  <p class="prose">Three numbers matter for any model: <strong>memory footprint</strong> (weights + KV cache), <strong>memory bandwidth needed per token</strong> (roughly = footprint), and <strong>active parameters</strong> (different from total for MoE). Divide bandwidth ÷ footprint and you get a rough tokens/sec ceiling.</p>
+
+  <table class="ref-table">
+    <thead>
+      <tr><th>Model</th><th>Quant</th><th>VRAM</th><th>tok/s (est)</th><th>Verdict</th></tr>
+    </thead>
+    <tbody>
+      <tr class="good-row">
+        <td>Gemma 4 E2B</td>
+        <td>Q4</td>
+        <td class="num">~3 GB</td>
+        <td class="num">45–60</td>
+        <td>Snappy. Good for testing pipelines.</td>
+      </tr>
+      <tr class="good-row">
+        <td>Gemma 4 E4B</td>
+        <td>Q4</td>
+        <td class="num">~5 GB</td>
+        <td class="num">25–35</td>
+        <td>Sweet spot for chat-quality + speed.</td>
+      </tr>
+      <tr class="good-row">
+        <td>Gemma 3 12B</td>
+        <td>Q4</td>
+        <td class="num">~8 GB</td>
+        <td class="num">15–22</td>
+        <td>Solid quality, comfortable.</td>
+      </tr>
+      <tr class="good-row">
+        <td>Gemma 4 26B-A4B (MoE)</td>
+        <td>Q4</td>
+        <td class="num">~16 GB</td>
+        <td class="num">15–25</td>
+        <td>Big-model quality at small-model speed (3.8B active).</td>
+      </tr>
+      <tr>
+        <td>Gemma 3 27B</td>
+        <td>Q4</td>
+        <td class="num">~17 GB</td>
+        <td class="num">7–12</td>
+        <td>Usable but slow. MoE is faster for similar quality.</td>
+      </tr>
+      <tr>
+        <td>Gemma 4 31B Dense</td>
+        <td>Q4</td>
+        <td class="num">~20 GB</td>
+        <td class="num">5–10</td>
+        <td>Highest quality. Patience required.</td>
+      </tr>
+      <tr class="warn-row">
+        <td>Gemma 4 31B Dense</td>
+        <td>BF16</td>
+        <td class="num">~62 GB</td>
+        <td class="num">2–4</td>
+        <td>Fits, but tight. Quantize.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout good">
+    <strong>Recommendation: start with E4B, end with 26B-A4B</strong>
+    The Gemma 4 26B-A4B Mixture-of-Experts is the standout for the AGX Orin. It activates only 3.8B parameters per token, so it runs at small-model speed — but the routing across 26B total parameters gives it big-model knowledge. Better tokens/sec than the 27B dense and often better answers.
+  </div>
+
+  <div class="callout warning">
+    <strong>What "VRAM" really means here</strong>
+    These figures are <em>weights only</em>. Real usage adds KV cache (grows with context length), the runtime, and system overhead. Rule of thumb: budget 30–40% extra for a 32K context window. For the 31B dense at long contexts, expect total memory pressure around 28–30 GB.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     3. THREE PATHS
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="paths">
+  <div class="concept-header">
+    <span class="concept-number">03</span>
+    <div>
+      <div class="concept-title">Three Paths to Inference</div>
+      <div class="concept-subtitle">Pick one, not all</div>
+    </div>
+  </div>
+
+  <p class="prose">There are three reasonable ways to run an LLM on a Jetson, ordered by setup effort. They all produce tokens; they differ in optimization headroom and operational complexity.</p>
+
+  <div class="path-grid">
+    <div class="path-card">
+      <span class="tag">easiest</span>
+      <h4>Ollama</h4>
+      <p>One-line install. Auto-detects CUDA. Pull a model, chat. Best for prototyping and "is this thing fast enough?" sanity checks. Performance is good but not optimal — abstracted GGUF runtime.</p>
+    </div>
+    <div class="path-card">
+      <span class="tag">recommended</span>
+      <h4>Jetson AI Lab containers</h4>
+      <p>NVIDIA-curated Docker containers with vLLM or llama.cpp, pre-tuned for each Jetson module. Auto-generated launch commands. Best balance of performance and effort. Use this for Gemma 4.</p>
+    </div>
+    <div class="path-card">
+      <span class="tag">advanced</span>
+      <h4>vLLM / TensorRT-LLM direct</h4>
+      <p>Manual install, manual tuning, manual everything. Highest throughput, full control over batching and serving. Worth it only when you're building a real service and need maximum tokens/sec/$.</p>
+    </div>
+  </div>
+
+  <div class="flow">
+    <span class="flow-step start">Just curious?</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-step">Ollama</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-step">Hit a wall?</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-step">Jetson AI Lab</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-step end">Production?</span>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     4. FIRST BOOT
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="setup">
+  <div class="concept-header">
+    <span class="concept-number">04</span>
+    <div>
+      <div class="concept-title">First-Boot Checklist</div>
+      <div class="concept-subtitle">Things to do before pulling any models</div>
+    </div>
+  </div>
+
+  <p class="prose">Before you download a single byte of model weights, do these four things. They make every subsequent benchmark believable.</p>
+
+  <p class="prose"><strong>1. Confirm JetPack version &amp; CUDA.</strong> Models and containers are built against specific JetPack versions; mismatches cause silent failures.</p>
+
+<pre class="code-block"># Check JetPack version (look for L4T release)
+sudo apt show nvidia-jetpack 2>/dev/null | grep Version
+
+# Check CUDA toolkit
+nvcc --version
+
+# Check Tegra release
+cat /etc/nv_tegra_release</pre>
+
+  <p class="prose"><strong>2. Set max performance mode.</strong> By default the Jetson throttles. For benchmarks and demos, unlock everything.</p>
+
+<pre class="code-block"># MAXN power profile (mode 0 on AGX Orin = unrestricted)
+sudo nvpmodel -m 0
+
+# Lock CPU/GPU/EMC clocks to max
+sudo jetson_clocks
+
+# Verify
+sudo nvpmodel -q
+sudo jetson_clocks --show | head -20</pre>
+
+  <p class="prose"><strong>3. Install jtop.</strong> The only monitoring tool you'll actually use.</p>
+
+<pre class="code-block">sudo apt install python3-pip -y
+sudo pip3 install -U jetson-stats
+sudo systemctl restart jtop.service
+
+# Run it
+sudo jtop</pre>
+
+  <p class="prose"><strong>4. Free up disk space.</strong> 64 GB eMMC fills fast. Move model storage to NVMe (M.2 Key M slot) if you have one.</p>
+
+<pre class="code-block"># Check free space
+df -h /
+
+# If you have an NVMe drive at /mnt/nvme, point Ollama there
+echo 'OLLAMA_MODELS=/mnt/nvme/ollama' | sudo tee -a /etc/environment</pre>
+
+  <div class="callout warning">
+    <strong>The eMMC trap</strong>
+    The 64 GB eMMC is shared with the OS. After JetPack install you have ~50 GB free. A single Gemma 4 31B model is ~20 GB. Plan for an NVMe SSD if you'll keep more than two large models around. The M.2 Key M slot supports NVMe directly.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     5. OLLAMA QUICKSTART
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="ollama">
+  <div class="concept-header">
+    <span class="concept-number">05</span>
+    <div>
+      <div class="concept-title">Ollama Quickstart</div>
+      <div class="concept-subtitle">~10 minutes to your first token</div>
+    </div>
+  </div>
+
+  <p class="prose">Ollama is the fastest path. It detects the Jetson's CUDA stack, downloads quantized GGUF weights, and serves them. The trade-off is some performance left on the table compared to optimized runtimes.</p>
+
+<pre class="code-block"># Install (auto-detects ARM64 + CUDA)
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Verify it's using the GPU
+ollama --version
+journalctl -u ollama --no-pager -n 20 | grep -i cuda
+
+# Pull a small model first to validate the pipeline
+ollama pull gemma3:4b
+ollama run gemma3:4b --verbose
+# &gt; type a prompt, then exit with /bye
+
+# Step up
+ollama pull gemma3:12b
+ollama run gemma3:12b --verbose
+
+# Big model (will take a few minutes to download)
+ollama pull gemma3:27b
+ollama run gemma3:27b --verbose</pre>
+
+  <p class="prose">The <code>--verbose</code> flag is the magic ingredient — it prints timing data after each response:</p>
+
+<pre class="code-block"><span class="tok-comment"># What you'll see after each generation:</span>
+total duration:       4.821s
+load duration:        38ms
+prompt eval count:    24 token(s)
+prompt eval rate:     412.50 tokens/s   <span class="tok-comment"># prompt processing</span>
+eval count:           187 token(s)
+eval duration:        4.78s
+eval rate:            <span class="tok-keyword">39.12 tokens/s</span>   <span class="tok-comment"># this is your real number</span></pre>
+
+  <div class="callout tip">
+    <strong>Useful Ollama env vars on Jetson</strong>
+    Set these in <code>/etc/systemd/system/ollama.service.d/override.conf</code> (then <code>sudo systemctl daemon-reload &amp;&amp; sudo systemctl restart ollama</code>):
+    <br><code>OLLAMA_FLASH_ATTENTION=1</code> — faster attention, lower memory
+    <br><code>OLLAMA_KV_CACHE_TYPE=q8_0</code> — quantize KV cache (saves ~50% cache memory at minor quality cost)
+    <br><code>OLLAMA_NUM_PARALLEL=1</code> — single-stream is faster on Jetson than parallel
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     6. JETSON AI LAB
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="jetson-lab">
+  <div class="concept-header">
+    <span class="concept-number">06</span>
+    <div>
+      <div class="concept-title">Jetson AI Lab Containers</div>
+      <div class="concept-subtitle">NVIDIA-tuned Docker images for Gemma 4</div>
+    </div>
+  </div>
+
+  <p class="prose">The Jetson AI Lab is NVIDIA's official catalog of pre-built containers for edge LLM inference. It auto-generates the exact <code>docker run</code> command for your specific Jetson module. This is the recommended path for Gemma 4 specifically, since Ollama support lags behind day-one model releases.</p>
+
+  <p class="prose"><a href="https://www.jetson-ai-lab.com/models/" target="_blank">jetson-ai-lab.com/models</a> — pick AGX Orin 64GB, pick the model, pick vLLM or llama.cpp container, copy the command.</p>
+
+<pre class="code-block"><span class="tok-comment"># Typical pattern for Gemma 4 26B-A4B via vLLM container:</span>
+docker run --runtime nvidia <span class="tok-flag">-it</span> --rm \
+  --network=host \
+  --volume <span class="tok-path">/mnt/nvme/cache</span>:<span class="tok-path">/root/.cache</span> \
+  --env HF_TOKEN=$HF_TOKEN \
+  dustynv/vllm:0.8-r36.4.0 \
+    vllm serve google/gemma-4-26b-a4b \
+    <span class="tok-flag">--max-model-len</span> <span class="tok-number">32768</span> \
+    <span class="tok-flag">--gpu-memory-utilization</span> <span class="tok-number">0.85</span></pre>
+
+  <p class="prose">Once running, vLLM exposes an OpenAI-compatible HTTP API on port 8000. From any other terminal:</p>
+
+<pre class="code-block">curl http://localhost:8000/v1/chat/completions \
+  <span class="tok-flag">-H</span> <span class="tok-string">"Content-Type: application/json"</span> \
+  <span class="tok-flag">-d</span> <span class="tok-string">'{
+    "model": "google/gemma-4-26b-a4b",
+    "messages": [{"role": "user", "content": "Explain unified memory in one sentence."}]
+  }'</span></pre>
+
+  <div class="callout key">
+    <strong>Why containers, not bare-metal</strong>
+    The CUDA / cuDNN / TensorRT / PyTorch / vLLM dependency graph on Jetson is delicate. Containers freeze a known-good combination. Bare-metal installs work, but every JetPack upgrade can break them. Containers survive upgrades.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     7. MONITORING
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="monitoring">
+  <div class="concept-header">
+    <span class="concept-number">07</span>
+    <div>
+      <div class="concept-title">Monitoring While Running</div>
+      <div class="concept-subtitle">Confirm the GPU is actually doing the work</div>
+    </div>
+  </div>
+
+  <p class="prose">The number one Jetson failure mode is "it's running, but on the CPU." Tokens still come out, just 5–10× slower than they should. <code>jtop</code> tells you instantly.</p>
+
+<pre class="code-block">sudo jtop</pre>
+
+  <table class="ref-table">
+    <thead>
+      <tr><th>What to check</th><th>Healthy</th><th>Suspicious</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>GPU %</td><td>80–99% during gen</td><td>&lt; 20% → CPU fallback</td></tr>
+      <tr><td>RAM</td><td>Stable around model size</td><td>Climbing → memory leak / swap</td></tr>
+      <tr><td>SWAP</td><td>0 MB</td><td>&gt; 0 → kill, you're thrashing</td></tr>
+      <tr><td>Temp</td><td>&lt; 80 °C</td><td>&gt; 90 °C → throttling soon</td></tr>
+      <tr><td>Power</td><td>40–60 W under load</td><td>&lt; 25 W → throttled or idle</td></tr>
+      <tr><td>EMC freq</td><td>3199 MHz (locked)</td><td>Lower → run jetson_clocks</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <strong>Don't trust nvidia-smi</strong>
+    <code>nvidia-smi</code> doesn't work on Jetson — Tegra GPUs aren't supported by the standard driver query path. Use <code>jtop</code> or <code>tegrastats</code>:
+    <br><code>sudo tegrastats --interval 1000</code> — text-only one-line-per-second stats.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     8. TUNING
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="tuning">
+  <div class="concept-header">
+    <span class="concept-number">08</span>
+    <div>
+      <div class="concept-title">Performance Tuning</div>
+      <div class="concept-subtitle">Squeezing tokens/sec out of the silicon</div>
+    </div>
+  </div>
+
+  <p class="prose">In rough order of impact:</p>
+
+  <table class="ref-table">
+    <thead>
+      <tr><th>Lever</th><th>How</th><th>Typical gain</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>MAXN power</td><td><code>nvpmodel -m 0 + jetson_clocks</code></td><td>+30–70%</td></tr>
+      <tr><td>Quantization</td><td>Q4 instead of Q8/FP16</td><td>+50–100%</td></tr>
+      <tr><td>Flash attention</td><td><code>OLLAMA_FLASH_ATTENTION=1</code></td><td>+10–25%</td></tr>
+      <tr><td>KV cache quant</td><td><code>OLLAMA_KV_CACHE_TYPE=q8_0</code></td><td>memory mostly</td></tr>
+      <tr><td>Right runtime</td><td>vLLM &gt; llama.cpp &gt; Ollama for serving</td><td>+20–40%</td></tr>
+      <tr><td>MoE over dense</td><td>26B-A4B vs 27B</td><td>+50–100%</td></tr>
+      <tr><td>Shorter prompts</td><td>Trim system prompts</td><td>linear in tokens</td></tr>
+      <tr><td>Larger fan / case</td><td>Sustained vs throttled</td><td>varies</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout good">
+    <strong>The 80/20</strong>
+    Run <code>sudo nvpmodel -m 0 &amp;&amp; sudo jetson_clocks</code> on every boot, use Q4 quantization, and prefer MoE models. That gets you ~80% of the achievable throughput. Everything else is incremental.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     9. GOTCHAS
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="gotchas">
+  <div class="concept-header">
+    <span class="concept-number">09</span>
+    <div>
+      <div class="concept-title">Known Gotchas</div>
+      <div class="concept-subtitle">Things that will bite you, in order of likelihood</div>
+    </div>
+  </div>
+
+  <div class="callout warning">
+    <strong>1. llama.cpp + Gemma 3n full GPU offload broken on AGX Orin (CUDA 8.7)</strong>
+    Open issue: setting <code>n_gpu_layers</code> at or above the layer count on Gemma 3n produces empty/garbage output. Partial offload also corrupts. Workaround: CPU-only, or use vLLM instead. Check before committing to llama.cpp for Gemma 3n. <a href="https://github.com/ggml-org/llama.cpp/issues/16370" target="_blank">github.com/ggml-org/llama.cpp/issues/16370</a>
+  </div>
+
+  <div class="callout warning">
+    <strong>2. Silent CPU fallback</strong>
+    If the CUDA allocator fails (often on first load of a borderline-sized model), some runtimes silently fall back to CPU inference instead of erroring. Symptom: tokens/sec is half what you expected. Always verify GPU% in jtop.
+  </div>
+
+  <div class="callout warning">
+    <strong>3. Swap will destroy you</strong>
+    The eMMC is slow. If a model spills to swap, generation drops from 20 tok/s to 0.5 tok/s. Either fits in RAM or it doesn't — don't run anything if jtop shows swap usage.
+  </div>
+
+  <div class="callout warning">
+    <strong>4. Day-one model availability</strong>
+    Ollama's registry typically lags 1–4 weeks behind brand-new models like Gemma 4. For day-one, use llama.cpp or vLLM via the Jetson AI Lab containers. Check <a href="https://ollama.com/library" target="_blank">ollama.com/library</a> for current availability.
+  </div>
+
+  <div class="callout warning">
+    <strong>5. Container runtime mismatch</strong>
+    Containers built for JetPack 5 won't run on JetPack 6 and vice versa. Always pull the tag matching your L4T version (<code>r36.x</code> = JetPack 6, <code>r35.x</code> = JetPack 5).
+  </div>
+
+  <div class="callout warning">
+    <strong>6. Power supply matters</strong>
+    The dev kit ships with a 90 W adapter. It's enough — barely. If you see unexplained throttling under sustained load, check that you're using the supplied adapter and a good USB-C cable, not a phone charger.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     10. CHEAT SHEET
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="cheatsheet">
+  <div class="concept-header">
+    <span class="concept-number">10</span>
+    <div>
+      <div class="concept-title">Cheat Sheet</div>
+      <div class="concept-subtitle">Commands you'll run weekly</div>
+    </div>
+  </div>
+
+  <table class="ref-table">
+    <thead>
+      <tr><th>Command</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>sudo nvpmodel -m 0</td><td>Set MAXN power profile</td></tr>
+      <tr><td>sudo jetson_clocks</td><td>Lock all clocks to max</td></tr>
+      <tr><td>sudo jtop</td><td>Live GPU/CPU/RAM/temp dashboard</td></tr>
+      <tr><td>sudo tegrastats</td><td>One-line-per-sec text stats</td></tr>
+      <tr><td>cat /etc/nv_tegra_release</td><td>Show JetPack/L4T version</td></tr>
+      <tr><td>nvcc --version</td><td>CUDA toolkit version</td></tr>
+      <tr><td>ollama list</td><td>List downloaded models</td></tr>
+      <tr><td>ollama run MODEL --verbose</td><td>Chat with timing data</td></tr>
+      <tr><td>ollama ps</td><td>Currently loaded models</td></tr>
+      <tr><td>ollama rm MODEL</td><td>Free disk by removing model</td></tr>
+      <tr><td>docker ps</td><td>Running inference containers</td></tr>
+      <tr><td>docker logs -f &lt;id&gt;</td><td>Follow container output</td></tr>
+      <tr><td>df -h /</td><td>Check eMMC free space</td></tr>
+      <tr><td>free -h</td><td>RAM usage (unified — don't trust GPU breakdown)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout key">
+    <strong>The minimum-effort warm-up ritual</strong>
+    Three commands, every session, before benchmarking anything:
+    <br><code>sudo nvpmodel -m 0 &amp;&amp; sudo jetson_clocks &amp;&amp; sudo jtop</code>
+    <br>Now you know clocks are maxed and you can see what's happening.
+  </div>
+</section>
+
+</main>
+
+<script>
+function initTheme() {
+  var saved = localStorage.getItem('jetson-ref-theme');
+  var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme:dark)').matches;
+  applyTheme(dark);
+}
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = dark ? '\u2600' : '\u263e';
+  document.querySelectorAll('pre.code-block').forEach(function(pre) {
+    if (pre.dataset.src) pre.innerHTML = highlight(pre.dataset.src);
+  });
+}
+function toggleTheme() {
+  var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  applyTheme(!dark);
+  localStorage.setItem('jetson-ref-theme', !dark ? 'dark' : 'light');
+}
+
+// ── BASH / SHELL TOKENIZER ──
+function highlight(code) {
+  var KEYWORDS = new Set([
+    'sudo','curl','docker','run','exec','ps','logs','pull','rm','build',
+    'apt','pip','pip3','install','update','upgrade','systemctl','start','stop',
+    'restart','enable','disable','status','journalctl','grep','cat','echo',
+    'tee','df','free','ls','cd','mkdir','export','source','if','then','fi',
+    'for','do','done','while','case','esac','return','exit','set','unset',
+    'ollama','jtop','tegrastats','nvpmodel','jetson_clocks','nvcc','vllm',
+    'serve','show','version'
+  ]);
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function span(cls, s) { return '<span class="tok-' + cls + '">' + esc(s) + '</span>'; }
+
+  function processLine(line) {
+    var out = '', i = 0, len = line.length;
+    while (i < len) {
+      var ch = line[i];
+
+      // Comments
+      if (ch === '#' && (i === 0 || /\s/.test(line[i-1]))) {
+        out += span('comment', line.slice(i));
+        break;
+      }
+
+      // Double-quoted strings
+      if (ch === '"') {
+        var j = i + 1;
+        while (j < len) {
+          if (line[j] === '\\') { j += 2; continue; }
+          if (line[j] === '"') { j++; break; }
+          j++;
+        }
+        out += span('string', line.slice(i, j));
+        i = j; continue;
+      }
+
+      // Single-quoted strings
+      if (ch === "'") {
+        var j = i + 1;
+        while (j < len && line[j] !== "'") j++;
+        if (j < len) j++;
+        out += span('string', line.slice(i, j));
+        i = j; continue;
+      }
+
+      // Long flags --flag
+      if (ch === '-' && line[i+1] === '-') {
+        var j = i + 2;
+        while (j < len && /[a-zA-Z0-9_-]/.test(line[j])) j++;
+        out += span('flag', line.slice(i, j));
+        i = j; continue;
+      }
+
+      // Short flags -x or -xyz (only at word boundary)
+      if (ch === '-' && (i === 0 || /\s/.test(line[i-1])) && /[a-zA-Z]/.test(line[i+1] || '')) {
+        var j = i + 1;
+        while (j < len && /[a-zA-Z0-9]/.test(line[j])) j++;
+        out += span('flag', line.slice(i, j));
+        i = j; continue;
+      }
+
+      // Paths /foo/bar
+      if (ch === '/' && i+1 < len && /[a-zA-Z._]/.test(line[i+1]) && (i === 0 || /[\s=:]/.test(line[i-1]))) {
+        var j = i;
+        while (j < len && /[a-zA-Z0-9_\-./]/.test(line[j])) j++;
+        out += span('path', line.slice(i, j));
+        i = j; continue;
+      }
+
+      // Numbers
+      if (/[0-9]/.test(ch)) {
+        var j = i;
+        while (j < len && /[0-9.]/.test(line[j])) j++;
+        out += span('number', line.slice(i, j));
+        i = j; continue;
+      }
+
+      // Variables $VAR
+      if (ch === '$' && /[A-Za-z_{]/.test(line[i+1] || '')) {
+        var j = i + 1;
+        if (line[j] === '{') {
+          while (j < len && line[j] !== '}') j++;
+          if (j < len) j++;
+        } else {
+          while (j < len && /[A-Za-z0-9_]/.test(line[j])) j++;
+        }
+        out += span('special', line.slice(i, j));
+        i = j; continue;
+      }
+
+      // Words (potential keywords)
+      if (/[a-zA-Z_]/.test(ch)) {
+        var j = i;
+        while (j < len && /[a-zA-Z0-9_]/.test(line[j])) j++;
+        var word = line.slice(i, j);
+        if (KEYWORDS.has(word)) out += span('keyword', word);
+        else out += esc(word);
+        i = j; continue;
+      }
+
+      out += esc(ch);
+      i++;
+    }
+    return out;
+  }
+
+  return code.split('\n').map(processLine).join('\n');
+}
+
+function highlightAll() {
+  document.querySelectorAll('pre.code-block').forEach(function(pre) {
+    pre.dataset.src = pre.textContent;
+    pre.innerHTML = highlight(pre.dataset.src);
+  });
+}
+
+// ── ACTIVE NAV PILL ON SCROLL ──
+function updateActiveNav() {
+  var sections = document.querySelectorAll('.concept-section[id]');
+  var pills = document.querySelectorAll('.nav-pill');
+  var scrollY = window.scrollY + 120;
+  var activeId = null;
+  sections.forEach(function(s) {
+    if (s.offsetTop <= scrollY) activeId = s.id;
+  });
+  pills.forEach(function(p) {
+    var href = p.getAttribute('href').slice(1);
+    p.classList.toggle('active', href === activeId);
+  });
+}
+window.addEventListener('scroll', updateActiveNav, { passive: true });
+
+// Desktop only: wheel-to-horizontal on nav
+var isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+if (!isTouchDevice) {
+  var conceptNav = document.getElementById('concept-nav');
+  conceptNav.addEventListener('wheel', function(e) {
+    if (e.deltaY !== 0) {
+      e.preventDefault();
+      conceptNav.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+}
+
+// Smooth scroll for nav pills
+document.querySelectorAll('.nav-pill').forEach(function(pill) {
+  pill.addEventListener('click', function(e) {
+    e.preventDefault();
+    var id = pill.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+initTheme();
+highlightAll();
+updateActiveNav();
+</script>
+</body>
+</html>

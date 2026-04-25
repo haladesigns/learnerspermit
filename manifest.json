@@ -208,6 +208,19 @@
     "children": [
       {
         "type": "folder",
+        "name": "ai",
+        "label": "Ai",
+        "children": [
+          {
+            "type": "file",
+            "name": "t",
+            "label": "T",
+            "path": "coding_web-design/ai/t"
+          }
+        ]
+      },
+      {
+        "type": "folder",
         "name": "chase-ai-content-skills",
         "label": "Chase Ai Content Skills",
         "children": [

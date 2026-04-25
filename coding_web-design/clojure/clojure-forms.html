@@ -112,7 +112,7 @@ header {
   box-shadow: var(--shadow);
 }
 .hdr-inner {
-  max-width: 1260px;
+  max-width: 860px;
   margin: 0 auto;
   padding: 0 1rem;
 }
@@ -189,7 +189,7 @@ header {
 
 /* ── MAIN ── */
 main {
-  max-width: 1260px;
+  max-width: 860px;
   margin: 0 auto;
   padding: 2rem 1rem 5rem;
 }
@@ -298,6 +298,7 @@ main {
   gap: 10px;
   margin-bottom: 1.25rem;
 }
+.compare-grid.stacked { grid-template-columns: 1fr; }
 .compare-col {
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -647,7 +648,7 @@ main {
 
   <p class="prose">Python has one general-purpose linear container (<code>list</code>). Clojure has two, and they look almost identical — but they play completely different roles. Mixing them up is a common source of confusion.</p>
 
-  <div class="compare-grid">
+  <div class="compare-grid stacked">
     <div class="compare-col python">
       <div class="compare-label">List — (...) — for code</div>
       <pre>; A list evaluates by CALLING the first element:
@@ -732,6 +733,67 @@ main {
 
   <p class="prose">Special forms are the compiler's primitives — the forms that cannot be built from other forms and cannot be redefined. If you understand these, you understand 100% of Clojure's evaluation rules, because <em>everything else is built on top of them</em>. <code>when</code> is a macro expanding to <code>if</code> + <code>do</code>. <code>defn</code> is a macro expanding to <code>def</code> + <code>fn</code>. <code>and</code>, <code>or</code>, <code>cond</code>, <code>for</code>, <code>doseq</code>, <code>-&gt;</code>, <code>-&gt;&gt;</code> — all macros. The special forms are the bedrock beneath.</p>
 
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">What "the compiler handles directly" actually means</h3>
+
+  <p class="prose">When the compiler sees a list form like <code>(something arg1 arg2)</code>, it runs a decision tree to figure out what kind of thing <code>something</code> is. Three categories, three different code paths:</p>
+
+  <div class="diagram">
+    <div class="d-label">The compiler's decision when it sees a list form:</div>
+    <pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;white-space:pre;"><span class="d-grey">                       </span><span class="d-blue">(something arg1 arg2)</span><span class="d-grey">
+                                │
+                                ▼
+                </span><span class="d-acc">Is "something" a special form?</span><span class="d-grey">
+                    ├── YES ──►</span><span class="d-green"> compile it directly
+                    │           (hard-coded compiler logic
+                    │            for that exact symbol)</span><span class="d-grey">
+                    │
+                    └── NO  ──► </span><span class="d-acc">Is it a macro?</span><span class="d-grey">
+                                ├── YES ──►</span><span class="d-purple"> expand it,
+                                │           then re-compile
+                                │           the result</span><span class="d-grey">
+                                │
+                                └── NO  ──►</span><span class="d-blue"> it's a function call.
+                                            evaluate all args,
+                                            then invoke.</span></pre>
+  </div>
+
+  <p class="prose">"Handles directly" means the compiler has <strong>hard-coded logic</strong> for that specific symbol. When it sees <code>if</code>, there is literally a branch in the compiler's source that says "this is <code>if</code> — emit a conditional jump." It does not look <code>if</code> up as a function or expand it as a macro. The symbol is recognised and dedicated bytecode-emitting code runs.</p>
+
+  <div class="callout key">
+    <strong>Why special forms have to exist</strong>
+    Functions follow a fixed rule: every argument is evaluated before the function is called. But <code>if</code> can't work that way — it has to skip evaluating the not-taken branch. <code>(if true (println "yes") (println "no"))</code> only prints "yes". A regular function couldn't do that, because both <code>println</code> calls would run before <code>if</code> ever saw them. The same is true for <code>quote</code> (its argument must arrive unevaluated), for <code>fn</code> (its body must not run when the <code>fn</code> form is evaluated), for <code>let</code> (its bindings have to be staged correctly). These behaviours <em>require</em> the compiler to handle them specially. There's no way to write them as functions.
+  </div>
+
+  <p class="prose">Three concrete consequences flow from this:</p>
+
+  <div class="concept-pair">
+    <div class="concept-box">
+      <h4>Cannot be redefined</h4>
+      <p>You can shadow <code>inc</code> with your own function. You cannot redefine <code>if</code>. The compiler doesn't look it up — it just recognises the symbol. There's no var to override.</p>
+    </div>
+    <div class="concept-box">
+      <h4>Cannot be passed as values</h4>
+      <p>You can write <code>(map inc [1 2 3])</code>. You cannot write <code>(map if ...)</code>. <code>if</code> isn't a value; it's a syntactic construct. There's no function object behind it to pass around.</p>
+    </div>
+  </div>
+  <div class="concept-pair" style="margin-top:-4px">
+    <div class="concept-box">
+      <h4>Can break evaluation rules</h4>
+      <p>Special forms decide when (or whether) to evaluate their operands. <code>if</code> evaluates one branch. <code>quote</code> evaluates none. <code>and</code>/<code>or</code> short-circuit — that's why they had to be macros, ultimately resting on <code>if</code>.</p>
+    </div>
+    <div class="concept-box">
+      <h4>Are a closed list</h4>
+      <p>You can write new functions and new macros forever. You cannot write a new special form — that would require modifying the compiler. The list of ~20 is fixed by the language.</p>
+    </div>
+  </div>
+
+  <div class="callout python">
+    <strong>Python comparison</strong>
+    Python has the same split, just hidden. <code>if</code>, <code>for</code>, <code>while</code>, <code>def</code>, <code>return</code>, <code>lambda</code>, <code>import</code> are keywords baked into the parser — Python's compiler "handles them directly" in exactly this sense. You can't redefine them or pass them as values. The difference is that Python has no macros, so the middle category in the diagram doesn't exist. Clojure exposes the layering: macros bridge the gap, letting you build new control-flow constructs on top of the small set of true primitives.
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The complete list</h3>
+
   <table class="ref-table">
     <tr><th>Form</th><th>Purpose</th><th>Shape</th></tr>
     <tr><td>def</td><td>Create a global var in the current namespace</td><td><code>(def name value)</code></td></tr>
@@ -786,12 +848,58 @@ main {
     </div>
   </div>
 
-  <p class="prose">Everywhere Clojure introduces names — <code>let</code> bindings, <code>fn</code>/<code>defn</code> parameters, <code>loop</code>, <code>for</code>, <code>doseq</code> — it uses the same <em>binding form</em> syntax on the left-hand side. The simplest binding form is just a symbol. But the binding form can also be a pattern that pulls a data structure apart. This is called <strong>destructuring</strong>.</p>
+  <p class="prose">A <strong>binding form</strong> is the position in any Clojure construct where you write a name to introduce. The simplest binding form is just a symbol — like <code>x</code> in <code>(let [x 5] ...)</code>. But Clojure lets you write a <em>shape</em> in that position instead of a single name. The shape is a template that pulls the incoming value apart and routes the pieces into multiple names at once. This is called <strong>destructuring</strong>.</p>
 
   <div class="callout key">
-    <strong>The one rule</strong>
-    Everywhere you can write a symbol on the left of a binding, you can write a vector or a map to destructure instead. The same syntax works in <code>let</code>, <code>fn</code> parameters, <code>defn</code>, <code>loop</code>, and <code>for</code>. Learning destructuring once pays off everywhere.
+    <strong>The mental model — a shaped catcher</strong>
+    A binding form is a <em>template of names you set up in advance</em>, ready to catch a value when it arrives. The shape of the template <em>is the shape it expects to receive</em>. <code>[a b c]</code> expects something sequential with three elements. <code>{:keys [name age]}</code> expects a map with <code>:name</code> and <code>:age</code> keys. When the value arrives, each piece falls into its matching slot, and the names become locally available in the body that follows.
   </div>
+
+  <div class="diagram">
+    <div class="d-label">A binding form as a catcher — sequential:</div>
+    <pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;white-space:pre;"><span class="d-grey">     Binding form:    </span><span class="d-acc">[a       b       c]</span><span class="d-grey">
+                         │       │       │
+                         ▼       ▼       ▼
+                      (catches)(catches)(catches)
+                         ▲       ▲       ▲
+                         │       │       │
+     Incoming value:   </span><span class="d-blue">[10      20      30]</span><span class="d-grey">
+
+     Result: a→10, b→20, c→30</span></pre>
+  </div>
+
+  <div class="diagram" style="margin-top:-.6rem">
+    <div class="d-label">A binding form as a catcher — associative (by key):</div>
+    <pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;white-space:pre;"><span class="d-grey">     Binding form:   </span><span class="d-acc">{name :name,  age :age}</span><span class="d-grey">
+                        │              │
+                        ▼              ▼
+                    (catches the    (catches the
+                     :name slot)     :age slot)
+                        ▲              ▲
+                        │              │
+     Incoming value:  </span><span class="d-blue">{:name "Ada"  :age 36}</span><span class="d-grey">
+
+     Result: name→"Ada", age→36</span></pre>
+  </div>
+
+  <p class="prose">Where the value comes from depends on the construct. In <code>(let [shape value] ...)</code> it's the expression on the right. In <code>(defn f [shape] ...)</code> it's whatever the caller passes when they call <code>f</code>. In <code>(for [shape coll] ...)</code> it's each element as the loop walks through. The binding form sits there, set up once, ready to catch every value that comes through.</p>
+
+  <div class="callout concept">
+    <strong>Soft contract — missing pieces become nil, not errors</strong>
+    The shape describes <em>what works cleanly</em>, not what's enforced. If the actual value doesn't match the shape — too few elements, missing keys — Clojure does its best and fills the unmatched names with <code>nil</code>. <code>(let [[a b c] [10 20]] [a b c])</code> yields <code>[10 20 nil]</code>. No exception. This is sometimes a feature (graceful handling of optional fields) and sometimes a footgun (silent nils propagating where you expected a value). It's a Clojure-ism worth knowing.
+  </div>
+
+  <p class="prose">Binding forms appear in many constructs — and the same destructuring rules apply in all of them. Set up the shape once; learn the patterns once.</p>
+
+  <table class="ref-table">
+    <tr><th>Construct</th><th>The binding form is...</th><th>The value comes from...</th></tr>
+    <tr><td>let</td><td>each left-hand position in the binding vector</td><td>the right-hand expression</td></tr>
+    <tr><td>fn / defn</td><td>each parameter in the parameter vector</td><td>the caller's arguments</td></tr>
+    <tr><td>loop</td><td>each left-hand position in the binding vector</td><td>the initial values, then each <code>recur</code></td></tr>
+    <tr><td>for / doseq</td><td>each left-hand position before <code>:let</code>/<code>:when</code>/<code>:while</code></td><td>each element of the collection iterated</td></tr>
+    <tr><td>if-let / when-let</td><td>the single binding</td><td>the test expression</td></tr>
+    <tr><td>catch</td><td>the exception name</td><td>the thrown exception (no destructuring here)</td></tr>
+  </table>
 
   <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Sequential destructuring — with <code>[…]</code></h3>
 
@@ -846,7 +954,15 @@ _, y = point                # only y
 
 ; Ignore a position with _
 (let [[_ second] [10 20]]
-  second)                ; => 20</pre>
+  second)                ; => 20
+
+; Partial shapes — describe only what you want; the rest is dropped
+(let [[first] [10 20 30 40]]
+  first)                 ; => 10   — extras are simply ignored
+
+; Shape mismatch — unmatched names are nil, no error thrown
+(let [[a b c d] [10 20]]
+  [a b c d])             ; => [10 20 nil nil]   (soft contract)</pre>
 
   <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Associative destructuring — with <code>{…}</code></h3>
 

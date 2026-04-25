@@ -534,8 +534,9 @@ main {
       <a href="#metadata"         class="nav-pill">8 · Metadata (^)</a>
       <a href="#quoting"          class="nav-pill">9 · Quote Family</a>
       <a href="#interop"          class="nav-pill">10 · Java Interop (.)</a>
-      <a href="#keywords"         class="nav-pill">11 · Special Keywords</a>
-      <a href="#cheatsheet"       class="nav-pill">12 · Sigil Cheatsheet</a>
+      <a href="#regex"            class="nav-pill">11 · Regex</a>
+      <a href="#keywords"         class="nav-pill">12 · Special Keywords</a>
+      <a href="#cheatsheet"       class="nav-pill">13 · Sigil Cheatsheet</a>
     </nav>
   </div>
 </header>
@@ -546,7 +547,7 @@ main {
      INTRO
      ═══════════════════════════════════════════════════════════ -->
 <div class="prose" style="margin-bottom:2.5rem; padding:.9rem 1rem; background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:var(--radius-lg);">
-  <strong>How to use this page.</strong> Clojure's syntax is tiny, but it's dense. A single source file can contain parentheses, square brackets, curly braces, hash-sets, hash-functions, hash-regexes, hash-underscores, hash-quotes, at-signs, carets, dots, colons, double-colons, backticks, tildes, and more. Every one of them means something precise. This page is your map. It is organised from surface to depth: start with the taxonomy (§1), then use the pill nav or the cheatsheet (§11) to jump to whatever you're looking at. Every section has Python comparisons where they help.
+  <strong>How to use this page.</strong> Clojure's syntax is tiny, but it's dense. A single source file can contain parentheses, square brackets, curly braces, hash-sets, hash-functions, hash-regexes, hash-underscores, hash-quotes, at-signs, carets, dots, colons, double-colons, backticks, tildes, and more. Every one of them means something precise. This page is your map. It is organised from surface to depth: start with the taxonomy (§1), then use the pill nav or the cheatsheet (§12) to jump to whatever you're looking at. Every section has Python comparisons where they help.
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
@@ -1054,12 +1055,12 @@ def greet(user):
     <tr><td>~x</td><td>unquote</td><td>(unquote x)</td><td>§9</td></tr>
     <tr><td>~@x</td><td>unquote-splicing</td><td>(unquote-splicing x)</td><td>§9</td></tr>
     <tr><td>^x y</td><td>metadata</td><td>(with-meta y {:tag x})</td><td>§8 (Metadata)</td></tr>
-    <tr><td>#?(…)</td><td>reader conditional</td><td>—</td><td>this section + §11</td></tr>
-    <tr><td>#?@(…)</td><td>splicing reader cond.</td><td>—</td><td>this section + §11</td></tr>
+    <tr><td>#?(…)</td><td>reader conditional</td><td>—</td><td>this section + §12</td></tr>
+    <tr><td>#?@(…)</td><td>splicing reader cond.</td><td>—</td><td>this section + §12</td></tr>
     <tr><td>@x</td><td>deref</td><td>(deref x)</td><td><strong>this section</strong></td></tr>
     <tr><td>#{…}</td><td>set literal</td><td>—</td><td><strong>this section</strong></td></tr>
     <tr><td>#(…)</td><td>anonymous fn</td><td>(fn [%…] (…))</td><td><strong>this section</strong></td></tr>
-    <tr><td>#"…"</td><td>regex</td><td>—</td><td><strong>this section</strong></td></tr>
+    <tr><td>#"…"</td><td>regex</td><td>—</td><td>this section + §11 (Regex)</td></tr>
     <tr><td>#'x</td><td>var-quote</td><td>(var x)</td><td><strong>this section</strong></td></tr>
     <tr><td>#_x</td><td>ignore</td><td>—</td><td><strong>this section</strong></td></tr>
     <tr><td>#tag x</td><td>tagged literal</td><td>(<em>reader-for-tag</em> x)</td><td><strong>this section</strong></td></tr>
@@ -1124,7 +1125,7 @@ x                 ; => 42           — the value
 
   <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">#?(…) reader conditional — brief shape</h3>
 
-  <p class="prose">Reader conditionals select code by platform. Only the matching branch is <em>read</em> — the others vanish before the compiler ever sees them. The platform keywords (<code>:clj</code>, <code>:cljs</code>, <code>:cljr</code>, <code>:bb</code>, <code>:default</code>) are explained in §11.</p>
+  <p class="prose">Reader conditionals select code by platform. Only the matching branch is <em>read</em> — the others vanish before the compiler ever sees them. The platform keywords (<code>:clj</code>, <code>:cljs</code>, <code>:cljr</code>, <code>:bb</code>, <code>:default</code>) are explained in §12.</p>
 
   <pre class="code-block">#?(:clj  (println "I'm on the JVM")
    :cljs (println "I'm in the browser")
@@ -1680,11 +1681,279 @@ Integer/MAX_VALUE                ; => 2147483647</pre>
 
 
 <!-- ═══════════════════════════════════════════════════════════
-     11. SPECIAL-POSITION KEYWORDS
+     11. REGEX
+     ═══════════════════════════════════════════════════════════ -->
+<section class="concept-section" id="regex">
+  <div class="concept-header">
+    <span class="concept-number">11</span>
+    <div>
+      <div class="concept-title">Regex</div>
+      <div class="concept-subtitle">The <code>#"…"</code> literal, the four matching verbs, and the Java pattern flavor</div>
+    </div>
+  </div>
+
+  <p class="prose">Regular expressions in Clojure are a <strong>thin layer over Java</strong>. The Clojure-specific surface is small: one reader literal (<code>#"…"</code>) and a handful of functions in <code>clojure.core</code> and <code>clojure.string</code>. The pattern language itself — <code>\d</code>, <code>[abc]</code>, <code>(?:...)</code>, lookahead, backreferences, and so on — comes straight from <code>java.util.regex.Pattern</code>. This section covers the Clojure-specific parts in full and lists the most common metacharacters as a courtesy reference.</p>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The <code>#"…"</code> literal — pattern as a first-class value</h3>
+
+  <p class="prose">A regex in Clojure is written with the <code>#"…"</code> reader literal. The reader compiles the pattern to a <code>java.util.regex.Pattern</code> object at <em>read time</em> — once, when the file is loaded — not every time the form is evaluated. The pattern is then a regular value you can pass around, store in vars, and use with the matching functions.</p>
+
+  <pre class="code-block">; The literal compiles ONCE, at read time:
+#"\d+"            ; => #"\d+"   — a Pattern object
+(class #"\d+")    ; => java.util.regex.Pattern
+
+; You can store it like any other value:
+(def email-rx #"[\w.+-]+@[\w-]+\.[\w.-]+")
+
+; And build one programmatically with re-pattern:
+(re-pattern "\\d+")   ; => #"\d+"   — note: string needs \\</pre>
+
+  <div class="callout key">
+    <strong>The big win — no double-escaping</strong>
+    Inside <code>#"…"</code>, backslashes go straight to the regex engine. <code>#"\s+"</code> matches whitespace. Compare to a string-built pattern where you'd need <code>"\\s+"</code> (escape the backslash for the string parser, so the regex engine sees <code>\s+</code>). This is the same benefit Python's <code>r"\s+"</code> raw strings provide — but in Clojure it's the default for regex literals, no special prefix needed.
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The four matching verbs</h3>
+
+  <p class="prose">Where Python folds matching into one module with several method names (<code>re.match</code>, <code>re.search</code>, <code>re.findall</code>, <code>re.finditer</code>), Clojure exposes four free-standing functions. Each does one job. Knowing which to reach for is half of regex in Clojure.</p>
+
+  <table class="ref-table">
+    <tr><th>Function</th><th>Returns</th><th>Use when</th></tr>
+    <tr><td>re-find</td><td>First match (string or vector)</td><td>"Is there a match anywhere?" — most common</td></tr>
+    <tr><td>re-matches</td><td>Match if pattern matches the WHOLE string, else nil</td><td>Validating an entire string against a pattern</td></tr>
+    <tr><td>re-seq</td><td>Lazy seq of all matches</td><td>Pulling out every match in a string</td></tr>
+    <tr><td>re-pattern</td><td>Compiles a string into a Pattern</td><td>When the pattern is built dynamically</td></tr>
+  </table>
+
+  <pre class="code-block">; ── re-find ── first match anywhere in the string ───────────
+(re-find #"\d+" "abc 42 def 99")    ; => "42"
+(re-find #"xyz" "abc 42 def 99")    ; => nil   — no match
+
+; ── re-matches ── whole string must match ──────────────────
+(re-matches #"\d+"     "12345")     ; => "12345"   — match
+(re-matches #"\d+"     "12abc")     ; => nil       — full match required
+(re-matches #"\d+\w+"  "12abc")     ; => "12abc"   — now whole string matches
+
+; ── re-seq ── lazy seq of all matches ──────────────────────
+(re-seq #"\d+" "abc 42 def 99")     ; => ("42" "99")
+(re-seq #"\w+" "hello world there") ; => ("hello" "world" "there")
+
+; ── re-pattern ── build a pattern from a string ────────────
+(def n 3)
+(re-pattern (str "\\d{" n "}"))      ; => #"\d{3}"
+(re-find (re-pattern (str "\\d{" n "}")) "abc 1234")  ; => "123"</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The "what gets returned" gotcha</h3>
+
+  <p class="prose">This trips up almost everyone the first time. The shape of what <code>re-find</code> and <code>re-matches</code> return depends on whether your pattern has <em>capturing groups</em>:</p>
+
+  <div class="callout warning">
+    <strong>The rule</strong>
+    Pattern with <strong>no capture groups</strong> → returns a string (or nil). Pattern with <strong>capture groups</strong> → returns a vector: whole-match first, then each group.
+  </div>
+
+  <pre class="code-block">; No groups — returns a string:
+(re-find #"\d+" "age 42")              ; => "42"
+
+; With one group — returns a vector [whole-match, group1]:
+(re-find #"age (\d+)" "age 42")        ; => ["age 42" "42"]
+
+; Multiple groups — vector with all of them:
+(re-find #"(\w+)@(\w+)" "ada@example") ; => ["ada@example" "ada" "example"]
+
+; re-matches follows the same rule:
+(re-matches #"(\d+)-(\d+)" "10-20")    ; => ["10-20" "10" "20"]
+
+; Destructure to grab the parts cleanly:
+(let [[_ user host] (re-find #"(\w+)@(\w+)" "ada@example")]
+  {:user user :host host})              ; => {:user "ada" :host "example"}
+
+; re-seq when groups are present yields a seq of vectors:
+(re-seq #"(\w+)=(\d+)" "x=1 y=2 z=3")
+;=> (["x=1" "x" "1"] ["y=2" "y" "2"] ["z=3" "z" "3"])</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Replacing and splitting — <code>clojure.string</code></h3>
+
+  <p class="prose">Replacement and splitting live in <code>clojure.string</code>, not <code>clojure.core</code>. Both functions accept a regex anywhere they accept a string, so you don't need a separate <code>re-sub</code> like Python's <code>re.sub</code>.</p>
+
+  <pre class="code-block">(require '[clojure.string :as str])
+
+; ── str/replace — string OR regex OR character ─────────────
+(str/replace "hello world" "world" "Clojure")   ; string match
+;=> "hello Clojure"
+
+(str/replace "abc 42 def 99" #"\d+" "N")        ; regex match
+;=> "abc N def N"
+
+; Replacement can be a function — receives each match:
+(str/replace "abc 42 def 99" #"\d+"
+             #(str "[" % "]"))
+;=> "abc [42] def [99]"
+
+; With groups, the function receives the whole vector:
+(str/replace "ada@example.com" #"(\w+)@(\w+)"
+             (fn [[_ user host]] (str host "/" user)))
+;=> "example/ada.com"
+
+; Backreferences with $1, $2 (string replacement form):
+(str/replace "ada example" #"(\w+) (\w+)" "$2 $1")
+;=> "example ada"
+
+; ── str/split — split a string by a regex ─────────────────
+(str/split "a,b,,c" #",")           ; => ["a" "b" "" "c"]
+(str/split "  one   two  three"
+           #"\s+")                   ; => ["" "one" "two" "three"]
+(str/split "1-2-3-4-5" #"-" 3)       ; => ["1" "2" "3-4-5"]   ; limit</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Named groups — the Java syntax</h3>
+
+  <pre class="code-block">; Named groups use Java's syntax: (?&lt;name&gt;...)
+; The match result is still a vector — names don't appear there.
+; To access by name, use re-matcher + .group:
+
+(let [m (re-matcher #"(?&lt;user&gt;\w+)@(?&lt;host&gt;[\w.]+)" "ada@example.com")]
+  (when (.find m)
+    {:user (.group m "user")
+     :host (.group m "host")}))
+;=> {:user "ada" :host "example.com"}
+
+; In practice, destructuring the vector is far more common in Clojure code
+; than named groups — they show up mostly in code shared with Java tooling.</pre>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Python comparison — verb-by-verb</h3>
+
+  <div class="compare-grid">
+    <div class="compare-col python">
+      <div class="compare-label">Python — re module</div>
+      <pre>import re
+
+# Search anywhere
+m = re.search(r"\d+", "abc 42")
+m.group() if m else None        # "42"
+
+# Whole string only
+m = re.fullmatch(r"\d+", "12345")
+m.group() if m else None        # "12345"
+
+# All matches
+re.findall(r"\d+", "1 2 3")     # ["1","2","3"]
+
+# Replace
+re.sub(r"\d+", "N", "abc 42")   # "abc N"
+
+# Split
+re.split(r",", "a,b,c")         # ["a","b","c"]</pre>
+    </div>
+    <div class="compare-col clojure">
+      <div class="compare-label">Clojure — core + clojure.string</div>
+      <pre>(require '[clojure.string :as str])
+
+; Search anywhere
+(re-find #"\d+" "abc 42")
+;=&gt; "42"
+
+; Whole string only
+(re-matches #"\d+" "12345")
+;=&gt; "12345"
+
+; All matches
+(re-seq #"\d+" "1 2 3")
+;=&gt; ("1" "2" "3")
+
+; Replace
+(str/replace "abc 42" #"\d+" "N")
+;=&gt; "abc N"
+
+; Split
+(str/split "a,b,c" #",")
+;=&gt; ["a" "b" "c"]</pre>
+    </div>
+  </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Java regex flavor — courtesy reference</h3>
+
+  <div class="callout concept">
+    <strong>This is Java's regex, not Clojure's</strong>
+    Everything below is the syntax of <code>java.util.regex.Pattern</code> — what goes <em>inside</em> the <code>#"…"</code> literal. Clojure inherits the entire flavor from Java without modification. Included here for everyday lookup; for the complete reference see the <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/regex/Pattern.html">JDK Pattern docs</a> or use <a href="https://regex101.com/">regex101.com</a> set to "Java" flavor.
+  </div>
+
+  <h4 style="font-size:15px;font-weight:600;color:var(--text);margin:1.25rem 0 .5rem">Character classes</h4>
+  <table class="ref-table">
+    <tr><th>Token</th><th>Matches</th><th>Example</th></tr>
+    <tr><td>.</td><td>Any single character (except newline by default)</td><td><code>#"a.c"</code> matches "abc", "axc"</td></tr>
+    <tr><td>\d</td><td>Digit — <code>[0-9]</code></td><td><code>#"\d+"</code> matches "42"</td></tr>
+    <tr><td>\D</td><td>Non-digit</td><td><code>#"\D+"</code> matches "abc"</td></tr>
+    <tr><td>\w</td><td>Word char — <code>[A-Za-z0-9_]</code></td><td><code>#"\w+"</code> matches "hello_2"</td></tr>
+    <tr><td>\W</td><td>Non-word char</td><td><code>#"\W+"</code> matches " !@#"</td></tr>
+    <tr><td>\s</td><td>Whitespace — space, tab, newline, etc.</td><td><code>#"\s+"</code> matches any run of whitespace</td></tr>
+    <tr><td>\S</td><td>Non-whitespace</td><td><code>#"\S+"</code> matches a "word" loosely defined</td></tr>
+  </table>
+
+  <h4 style="font-size:15px;font-weight:600;color:var(--text);margin:1.25rem 0 .5rem">Custom character classes — <code>[…]</code></h4>
+  <table class="ref-table">
+    <tr><th>Token</th><th>Matches</th><th>Example</th></tr>
+    <tr><td>[abc]</td><td>Any one of a, b, or c</td><td><code>#"[aeiou]"</code> matches a vowel</td></tr>
+    <tr><td>[a-z]</td><td>Range — any lowercase letter</td><td><code>#"[A-Za-z0-9]"</code> alphanumeric</td></tr>
+    <tr><td>[^abc]</td><td>Negated — anything BUT a, b, or c</td><td><code>#"[^0-9]"</code> any non-digit</td></tr>
+    <tr><td>[a-z&amp;&amp;[^aeiou]]</td><td>Intersection — Java-specific</td><td>Consonants — rarely used in practice</td></tr>
+  </table>
+
+  <h4 style="font-size:15px;font-weight:600;color:var(--text);margin:1.25rem 0 .5rem">Quantifiers</h4>
+  <table class="ref-table">
+    <tr><th>Token</th><th>Matches</th><th>Example</th></tr>
+    <tr><td>*</td><td>Zero or more (greedy)</td><td><code>#"a*"</code> matches "", "a", "aaaa"</td></tr>
+    <tr><td>+</td><td>One or more (greedy)</td><td><code>#"\d+"</code> matches "1", "999"</td></tr>
+    <tr><td>?</td><td>Zero or one (optional)</td><td><code>#"colou?r"</code> matches "color", "colour"</td></tr>
+    <tr><td>{n}</td><td>Exactly n</td><td><code>#"\d{4}"</code> matches "2026"</td></tr>
+    <tr><td>{n,m}</td><td>Between n and m</td><td><code>#"\d{2,4}"</code> matches "12", "123", "1234"</td></tr>
+    <tr><td>{n,}</td><td>n or more</td><td><code>#"\w{3,}"</code> matches words 3+ chars</td></tr>
+    <tr><td>*?  +?  ??</td><td>Lazy variants — match as little as possible</td><td><code>#"&lt;.+?&gt;"</code> matches one tag, not all</td></tr>
+  </table>
+
+  <h4 style="font-size:15px;font-weight:600;color:var(--text);margin:1.25rem 0 .5rem">Anchors &amp; word boundaries</h4>
+  <table class="ref-table">
+    <tr><th>Token</th><th>Matches</th><th>Example</th></tr>
+    <tr><td>^</td><td>Start of string (or line, with multiline flag)</td><td><code>#"^abc"</code> matches "abc..." only at start</td></tr>
+    <tr><td>$</td><td>End of string (or line, with multiline flag)</td><td><code>#"\d+$"</code> trailing digits</td></tr>
+    <tr><td>\b</td><td>Word boundary (between \w and \W)</td><td><code>#"\bcat\b"</code> matches "cat" but not "category"</td></tr>
+    <tr><td>\B</td><td>Non-word boundary</td><td><code>#"\Bcat"</code> matches "cat" inside "concatenate"</td></tr>
+  </table>
+
+  <h4 style="font-size:15px;font-weight:600;color:var(--text);margin:1.25rem 0 .5rem">Groups &amp; alternation</h4>
+  <table class="ref-table">
+    <tr><th>Token</th><th>Matches / does</th><th>Example</th></tr>
+    <tr><td>(…)</td><td>Capturing group — caught by <code>re-find</code> result</td><td><code>#"(\d+)-(\d+)"</code> two groups</td></tr>
+    <tr><td>(?:…)</td><td>Non-capturing group — for grouping only</td><td><code>#"(?:abc)+"</code> match "abcabc" without capturing</td></tr>
+    <tr><td>(?&lt;name&gt;…)</td><td>Named group — Java syntax</td><td><code>#"(?&lt;y&gt;\d{4})"</code> see "Named groups" above</td></tr>
+    <tr><td>a|b</td><td>Alternation — match a OR b</td><td><code>#"cat|dog"</code> matches either</td></tr>
+  </table>
+
+  <h4 style="font-size:15px;font-weight:600;color:var(--text);margin:1.25rem 0 .5rem">Lookahead, lookbehind, backreferences (advanced)</h4>
+  <table class="ref-table">
+    <tr><th>Token</th><th>Matches</th><th>Example</th></tr>
+    <tr><td>(?=…)</td><td>Positive lookahead — match if followed by …</td><td><code>#"\d+(?=px)"</code> digits followed by "px"</td></tr>
+    <tr><td>(?!…)</td><td>Negative lookahead — match if NOT followed by …</td><td><code>#"\d+(?!px)"</code> digits not followed by "px"</td></tr>
+    <tr><td>(?&lt;=…)</td><td>Positive lookbehind — match if preceded by …</td><td><code>#"(?&lt;=\$)\d+"</code> digits after a $</td></tr>
+    <tr><td>(?&lt;!…)</td><td>Negative lookbehind</td><td><code>#"(?&lt;!\$)\d+"</code> digits not after $</td></tr>
+    <tr><td>\1, \2</td><td>Backreference — match the same text as group N</td><td><code>#"(\w+) \1"</code> matches doubled words</td></tr>
+    <tr><td>\k&lt;name&gt;</td><td>Backreference to named group</td><td>—</td></tr>
+  </table>
+
+  <p class="prose">Lookaround and backreferences are powerful but rarely needed in everyday Clojure code. If you find yourself reaching for them often, consider whether the problem might be cleaner as a parser (e.g. <code>clojure.spec</code> or <code>instaparse</code>) rather than a regex.</p>
+
+  <div class="callout key">
+    <strong>Practical advice — what to actually remember</strong>
+    Most Clojure regex you'll write or read uses about ten things: <code>\d</code>, <code>\w</code>, <code>\s</code>, <code>.</code>, <code>[…]</code>, <code>[^…]</code>, <code>*</code>, <code>+</code>, <code>?</code>, <code>(…)</code>, <code>|</code>, <code>^</code>, <code>$</code>. Internalize those and reach for the table for the rest. The Clojure-specific things to keep in mind: <code>#"…"</code> means no double-escaping, <code>re-find</code> for "is it there", <code>re-matches</code> for "does the whole string match", <code>re-seq</code> for "give me all of them", and groups change the return shape from string to vector.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     12. SPECIAL-POSITION KEYWORDS
      ═══════════════════════════════════════════════════════════ -->
 <section class="concept-section" id="keywords">
   <div class="concept-header">
-    <span class="concept-number">11</span>
+    <span class="concept-number">12</span>
     <div>
       <div class="concept-title">Special-Position Keywords</div>
       <div class="concept-subtitle">Why <code>:as</code>, <code>:keys</code>, <code>:or</code>, <code>:when</code>, <code>:else</code> seem to "do something"</div>
@@ -1888,11 +2157,11 @@ Integer/MAX_VALUE                ; => 2147483647</pre>
 
 
 <!-- ═══════════════════════════════════════════════════════════
-     12. SIGIL CHEATSHEET
+     13. SIGIL CHEATSHEET
      ═══════════════════════════════════════════════════════════ -->
 <section class="concept-section" id="cheatsheet">
   <div class="concept-header">
-    <span class="concept-number">12</span>
+    <span class="concept-number">13</span>
     <div>
       <div class="concept-title">Sigil Cheatsheet</div>
       <div class="concept-subtitle">Every punctuation character in one place — "what does this mean?"</div>
@@ -1919,7 +2188,7 @@ Integer/MAX_VALUE                ; => 2147483647</pre>
     <tr><td>~@</td><td>Unquote-splicing inside `</td><td><code>~@xs</code></td><td>§9</td></tr>
     <tr><td>@</td><td>deref — read atom/ref/future/promise</td><td><code>@counter</code></td><td>§5</td></tr>
     <tr><td>^</td><td>Metadata</td><td><code>^String</code> <code>^:private</code></td><td>§8</td></tr>
-    <tr><td>#"..."</td><td>Regex</td><td><code>#"\d+"</code></td><td>§5</td></tr>
+    <tr><td>#"..."</td><td>Regex</td><td><code>#"\d+"</code></td><td>§5, §11</td></tr>
     <tr><td>#(...)</td><td>Anonymous function</td><td><code>#(* % 2)</code></td><td>§5</td></tr>
     <tr><td>%  %1  %2  %&amp;</td><td>Args inside <code>#()</code></td><td><code>#(+ %1 %2)</code></td><td>§5</td></tr>
     <tr><td>#'</td><td>Var-quote — the var, not its value</td><td><code>#'inc</code></td><td>§5</td></tr>
@@ -1928,14 +2197,14 @@ Integer/MAX_VALUE                ; => 2147483647</pre>
     <tr><td>#?@(...)</td><td>Splicing reader conditional</td><td>—</td><td>§5</td></tr>
     <tr><td>#inst #uuid</td><td>Tagged literal</td><td><code>#inst "2026-..."</code></td><td>§5</td></tr>
     <tr><td>&amp;</td><td>Rest-args marker in binding forms</td><td><code>[a b &amp; rest]</code></td><td>§4</td></tr>
-    <tr><td>:as</td><td>Keep original in destructure / namespace alias</td><td><code>[x y :as pt]</code></td><td>§4, §11</td></tr>
-    <tr><td>:keys :strs :syms</td><td>Map destructuring shortcuts</td><td><code>{:keys [a b]}</code></td><td>§4, §11</td></tr>
-    <tr><td>:or</td><td>Defaults in destructure</td><td><code>{:or {x 0}}</code></td><td>§4, §11</td></tr>
-    <tr><td>:let :when :while</td><td><code>for</code>/<code>doseq</code> modifiers</td><td><code>(for [x xs :when (odd? x)] x)</code></td><td>§11</td></tr>
-    <tr><td>:else :default</td><td>Default branch convention</td><td><code>(cond ... :else x)</code></td><td>§7, §11</td></tr>
-    <tr><td>:require :import :refer</td><td>Namespace declarations</td><td><code>(:require [s :as a])</code></td><td>§11</td></tr>
-    <tr><td>:clj :cljs :cljr</td><td>Reader conditional platforms</td><td><code>#?(:clj ... :cljs ...)</code></td><td>§5, §11</td></tr>
-    <tr><td>:private :dynamic :tag :doc</td><td>Compiler-recognised metadata</td><td><code>^:private</code></td><td>§8, §11</td></tr>
+    <tr><td>:as</td><td>Keep original in destructure / namespace alias</td><td><code>[x y :as pt]</code></td><td>§4, §12</td></tr>
+    <tr><td>:keys :strs :syms</td><td>Map destructuring shortcuts</td><td><code>{:keys [a b]}</code></td><td>§4, §12</td></tr>
+    <tr><td>:or</td><td>Defaults in destructure</td><td><code>{:or {x 0}}</code></td><td>§4, §12</td></tr>
+    <tr><td>:let :when :while</td><td><code>for</code>/<code>doseq</code> modifiers</td><td><code>(for [x xs :when (odd? x)] x)</code></td><td>§12</td></tr>
+    <tr><td>:else :default</td><td>Default branch convention</td><td><code>(cond ... :else x)</code></td><td>§7, §12</td></tr>
+    <tr><td>:require :import :refer</td><td>Namespace declarations</td><td><code>(:require [s :as a])</code></td><td>§12</td></tr>
+    <tr><td>:clj :cljs :cljr</td><td>Reader conditional platforms</td><td><code>#?(:clj ... :cljs ...)</code></td><td>§5, §12</td></tr>
+    <tr><td>:private :dynamic :tag :doc</td><td>Compiler-recognised metadata</td><td><code>^:private</code></td><td>§8, §12</td></tr>
     <tr><td>.method</td><td>Java instance method call</td><td><code>(.upper s)</code></td><td>§10</td></tr>
     <tr><td>.-field</td><td>Java instance field read</td><td><code>(.-x pt)</code></td><td>§10</td></tr>
     <tr><td>Class.</td><td>Java constructor</td><td><code>(Date.)</code></td><td>§10</td></tr>

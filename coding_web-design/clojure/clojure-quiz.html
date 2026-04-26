@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clojure — Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f5f2eb;
+  --surface:  #ffffff;
+  --surface2: #ede9e0;
+  --border:   #ddd8cc;
+  --border2:  #ccc6b8;
+  --text:     #1c1a14;
+  --text2:    #5a5648;
+  --text3:    #9a9282;
+  --accent:   #c75a2c;
+  --accent2:  #e8936a;
+  --accent-bg:#fdf0e8;
+  --accent-t: #7a3018;
+  --core-bg:  #eaf3e8;
+  --core-t:   #2a5c25;
+  --str-bg:   #e8eef8;
+  --str-t:    #1e3a6e;
+  --set-bg:   #f0e8f5;
+  --set-t:    #5a1a7a;
+  --code-bg:      #f0ece2;
+  --code-t:       #2a2420;
+  --code-border:  #ccc6b4;
+  --tok-comment:  #8a8a8a;
+  --tok-string:   #0070a0;
+  --tok-keyword:  #c75a2c;
+  --tok-number:   #2a7a2a;
+  --tok-special:  #7a28a0;
+  --tok-bool:     #0055aa;
+  --tok-result:   #5a8a3a;
+  --tok-dispatch: #a06000;
+  --shadow:       0 1px 4px rgba(0,0,0,.07);
+  --radius:   6px;
+  --radius-lg:10px;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+  --ok-bg:    #eaf3e8;
+  --ok-t:     #2a5c25;
+  --err-bg:   #f5e8e8;
+  --err-t:    #8a2c2c;
+}
+[data-theme="dark"] {
+  --bg:       #141210;
+  --surface:  #1c1a16;
+  --surface2: #242018;
+  --border:   #2e2a22;
+  --border2:  #3a3428;
+  --text:     #ede8dc;
+  --text2:    #a09880;
+  --text3:    #5a5448;
+  --accent:   #e8784a;
+  --accent2:  #c75a2c;
+  --accent-bg:#2a1a0e;
+  --accent-t: #f0a882;
+  --core-bg:  #0e1e0c;
+  --core-t:   #7ad070;
+  --str-bg:   #0c1428;
+  --str-t:    #7aabee;
+  --set-bg:   #1a0c28;
+  --set-t:    #c070e8;
+  --code-bg:      #0c0a08;
+  --code-t:       #e0d8c8;
+  --code-border:  #2a2620;
+  --tok-comment:  #636366;
+  --tok-string:   #82c9d8;
+  --tok-keyword:  #e8936a;
+  --tok-number:   #b5cea8;
+  --tok-special:  #c586c0;
+  --tok-bool:     #569cd6;
+  --tok-result:   #6a9955;
+  --tok-dispatch: #dcdcaa;
+  --shadow:       0 1px 4px rgba(0,0,0,.4);
+  --ok-bg:    #0e1e0c;
+  --ok-t:     #7ad070;
+  --err-bg:   #2a1010;
+  --err-t:    #e8908a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+.hdr-inner { max-width: 860px; margin: 0 auto; padding: .75rem 1rem; display: flex; align-items: center; gap: 10px; }
+.logo { flex: 1; min-width: 0; }
+.logo-name {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: -.02em;
+}
+.logo-sub { font-size: 14px; color: var(--text3); margin-top: 1px; }
+.hdr-actions { display: flex; gap: 6px; align-items: center; }
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--text2);
+  transition: background .15s;
+  flex-shrink: 0; text-decoration: none;
+}
+.icon-btn:hover { background: var(--border); }
+.ref-link {
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.ref-link:hover { background: var(--accent-bg); }
+
+/* ── MAIN ── */
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+.control-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: .75rem;
+}
+.control-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: .3rem;
+}
+select {
+  width: 100%;
+  padding: 6px 10px;
+  font-family: var(--sans);
+  font-size: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+}
+select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.mode-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: .9rem;
+  background: var(--surface2);
+  padding: 3px;
+  border-radius: var(--radius);
+}
+.mode-tab {
+  flex: 1;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-family: var(--sans);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .15s;
+}
+.mode-tab:hover { background: var(--border); color: var(--text); }
+.mode-tab.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 500;
+}
+.btn-primary {
+  width: 100%;
+  padding: 9px 16px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: opacity .15s, transform .05s;
+}
+.btn-primary:hover { opacity: .9; }
+.btn-primary:active { transform: scale(.99); }
+.btn-primary:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.btn-secondary {
+  width: 100%;
+  padding: 8px 14px;
+  font-family: var(--sans);
+  font-size: 13px;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-secondary:hover { background: var(--border); }
+
+/* ── EXERCISE CARD ── */
+.exercise {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1rem;
+  min-height: 100px;
+}
+.exercise-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: .75rem;
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-weight: 600;
+}
+.tag {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 1px 7px;
+  border-radius: 12px;
+  font-size: 10px;
+}
+.tag.diff-simple       { background: var(--core-bg);   color: var(--core-t);   border-color: var(--core-t); }
+.tag.diff-intermediate { background: var(--str-bg);    color: var(--str-t);    border-color: var(--str-t); }
+.tag.diff-complex      { background: var(--set-bg);    color: var(--set-t);    border-color: var(--set-t); }
+.exercise-question {
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.65;
+  margin-bottom: .9rem;
+}
+.exercise-question code,
+.feedback code,
+.history-q code {
+  font-family: var(--mono);
+  font-size: 13.5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.code-block {
+  font-family: var(--mono);
+  font-size: 14px;
+  background: var(--code-bg);
+  color: var(--code-t);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--code-border);
+  padding: 12px 14px;
+  white-space: pre;
+  line-height: 1.65;
+  overflow-x: auto;
+  tab-size: 2;
+  margin: .25rem 0 .75rem;
+}
+.empty-state {
+  color: var(--text3);
+  font-size: 14px;
+  font-style: italic;
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+/* ── ANSWER AREA ── */
+.answer-area {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+.answer-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: .4rem;
+}
+.answer-input {
+  width: 100%;
+  min-height: 70px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 14px;
+  background: var(--code-bg);
+  color: var(--code-t);
+  border: 1px solid var(--code-border);
+  border-radius: var(--radius);
+  resize: vertical;
+  line-height: 1.55;
+}
+.answer-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.answer-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: .65rem;
+}
+.answer-actions .btn-primary { flex: 2; }
+.answer-actions .btn-secondary { flex: 1; }
+
+/* ── FEEDBACK ── */
+.feedback {
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+  font-size: 15px;
+  line-height: 1.6;
+  border-left: 3px solid;
+}
+.feedback strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  margin-bottom: .4rem;
+}
+.feedback.ok {
+  background: var(--ok-bg);
+  color: var(--ok-t);
+  border-color: var(--ok-t);
+}
+.feedback.err {
+  background: var(--err-bg);
+  color: var(--err-t);
+  border-color: var(--err-t);
+}
+.feedback p { margin-bottom: .5rem; }
+.feedback p:last-child { margin-bottom: 0; }
+.feedback .code-block { margin: .5rem 0; }
+
+/* ── HISTORY ── */
+.history {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: .85rem 1rem;
+}
+.history-header {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: .5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.history-clear {
+  background: none;
+  border: none;
+  color: var(--text3);
+  font-size: 11px;
+  font-family: var(--sans);
+  cursor: pointer;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.history-clear:hover { color: var(--accent); }
+.history-empty {
+  color: var(--text3);
+  font-size: 13px;
+  font-style: italic;
+  padding: .25rem 0;
+}
+.history-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.history-item:first-of-type { border-top: none; }
+.history-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.history-icon.ok  { background: var(--ok-bg);  color: var(--ok-t); }
+.history-icon.err { background: var(--err-bg); color: var(--err-t); }
+.history-q {
+  flex: 1;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.history-mode {
+  flex-shrink: 0;
+  font-size: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+/* ── LOADING ── */
+.loading-dots {
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  font-family: var(--mono);
+}
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── SYNTAX HIGHLIGHT ── */
+.tok-comment  { color: var(--tok-comment);  font-style: italic; }
+.tok-string   { color: var(--tok-string); }
+.tok-keyword  { color: var(--tok-keyword); }
+.tok-number   { color: var(--tok-number); }
+.tok-special  { color: var(--tok-special);  font-weight: 500; }
+.tok-bool     { color: var(--tok-bool); }
+.tok-result   { color: var(--tok-result);   font-style: italic; }
+.tok-dispatch { color: var(--tok-dispatch); }
+.tok-blank    { background: var(--accent-bg); color: var(--accent); border-bottom: 2px dashed var(--accent); padding: 0 4px; }
+
+/* ── MOBILE ── */
+@media (max-width: 600px) {
+  .control-row { grid-template-columns: 1fr; }
+  .logo-sub { display: none; }
+  main { padding: 1rem .75rem 3rem; }
+  .answer-actions { flex-direction: column; }
+  .code-block { font-size: 12.5px; white-space: pre-wrap; word-break: break-word; }
+  .answer-input { font-size: 13px; }
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-inner">
+    <div class="logo">
+      <div class="logo-name">clojure — practice</div>
+      <div class="logo-sub">syntax drills powered by Claude</div>
+    </div>
+    <div class="hdr-actions">
+      <a href="clojure-forms.html" class="ref-link" target="_blank" title="Opens clojure-forms.html — host it alongside this file on GitHub Pages.">forms ref &#8599;</a>
+      <button class="icon-btn" id="theme-btn" title="Toggle theme" onclick="toggleTheme()">&#9790;</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- CONTROLS -->
+  <section class="controls">
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="fill"    onclick="setMode('fill')">Fill blank</button>
+      <button class="mode-tab"        data-mode="predict" onclick="setMode('predict')">Predict output</button>
+      <button class="mode-tab"        data-mode="explain" onclick="setMode('explain')">Explain</button>
+    </div>
+
+    <div class="control-row">
+      <div class="control-group">
+        <label for="topic">Topic</label>
+        <select id="topic">
+          <option value="mixed">Mixed (random)</option>
+          <option value="literals">Literal syntax</option>
+          <option value="special-forms">Special forms</option>
+          <option value="binding">Binding &amp; destructuring</option>
+          <option value="reader-macros">Reader macros</option>
+          <option value="threading">Threading macros</option>
+          <option value="conditionals">Conditionals</option>
+          <option value="hofs">Higher-order functions</option>
+          <option value="interop">Java interop</option>
+          <option value="regex">Regex</option>
+          <option value="keywords">Special keywords</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="difficulty">Difficulty</label>
+        <select id="difficulty">
+          <option value="simple">Simple</option>
+          <option value="intermediate" selected>Intermediate</option>
+          <option value="complex">Complex</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="generate-btn" class="btn-primary" onclick="generateExercise()">
+      Generate new exercise
+    </button>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise" id="exercise-card">
+    <div class="empty-state">
+      Pick a topic and difficulty, then generate an exercise to begin.
+    </div>
+  </section>
+
+  <!-- ANSWER -->
+  <section class="answer-area" id="answer-area" style="display:none">
+    <label class="answer-label" for="answer-input">Your answer</label>
+    <textarea id="answer-input" class="answer-input" placeholder="Type your answer here..." spellcheck="false"></textarea>
+    <div class="answer-actions">
+      <button class="btn-primary" id="check-btn" onclick="checkAnswer()">Check my answer</button>
+      <button class="btn-secondary" onclick="revealAnswer()">Show solution</button>
+    </div>
+  </section>
+
+  <!-- FEEDBACK -->
+  <section id="feedback-area"></section>
+
+  <!-- HISTORY -->
+  <section class="history">
+    <div class="history-header">
+      <span>Recent exercises</span>
+      <button class="history-clear" onclick="clearHistory()">Clear</button>
+    </div>
+    <div id="history-list">
+      <div class="history-empty">Your last 10 exercises will appear here.</div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ───── CONFIG ─────
+// Replace this with the URL of your deployed Cloudflare Worker.
+// Until you do, the page will show a friendly error explaining what to set.
+// Example after deploy:
+//   var WORKER_URL = 'https://clojure-practice.your-username.workers.dev/';
+var WORKER_URL = 'clj-fund.mangobasin.workers.dev';
+
+// ───── STATE ─────
+var state = {
+  mode: 'fill',
+  currentExercise: null,    // {question, code, answer, explanation, mode, difficulty, topic}
+  history: [],              // [{q, ok, mode}]
+  busy: false,
+};
+
+// ───── THEME ─────
+function initTheme() {
+  var dark = window.matchMedia('(prefers-color-scheme:dark)').matches;
+  applyTheme(dark);
+}
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = dark ? '\u2600' : '\u263e';
+  // Re-render any visible code blocks
+  document.querySelectorAll('pre.code-block').forEach(function(pre) {
+    if (pre.dataset.src) pre.innerHTML = highlight(pre.dataset.src);
+  });
+}
+function toggleTheme() {
+  var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  applyTheme(!dark);
+}
+
+// ───── MODE TABS ─────
+function setMode(m) {
+  state.mode = m;
+  document.querySelectorAll('.mode-tab').forEach(function(t) {
+    t.classList.toggle('active', t.dataset.mode === m);
+  });
+}
+
+// ───── SYNTAX HIGHLIGHTER (matches forms reference page) ─────
+function highlight(code) {
+  var SPECIAL = new Set([
+    'def','defn','defn-','defmacro','defmethod','defmulti','defprotocol',
+    'defrecord','deftype','defstruct','declare','ns','in-ns','import',
+    'require','use','refer','fn','fn*','let','let*','letfn','loop','recur',
+    'if','if-not','if-let','if-some','when','when-not','when-let','when-first',
+    'when-some','cond','condp','case','and','or','not','do','try','catch',
+    'finally','throw','new','.','..','doto','->','->>','as->','cond->',
+    'cond->>','some->','some->>','binding','set!','var','quote',
+    'unquote','unquote-splicing','reify','proxy','extend','extend-type',
+    'extend-protocol','with-meta','for','doseq','dotimes','while','locking',
+    'with-open','lazy-seq','delay','future','promise','dosync','atom','ref',
+    'agent','send','swap!','reset!','deref','alter','commute',
+  ]);
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function span(cls, s) { return '<span class="tok-' + cls + '">' + esc(s) + '</span>'; }
+  function processLine(line) {
+    var out = '', i = 0, len = line.length;
+    while (i < len) {
+      var ch = line[i];
+      // ___ blanks (for fill mode)
+      if (ch === '_' && line.substr(i, 3) === '___') {
+        var j = i + 3;
+        while (j < len && line[j] === '_') j++;
+        out += '<span class="tok-blank">' + esc(line.slice(i, j)) + '</span>';
+        i = j; continue;
+      }
+      if (ch === ';') {
+        var rest = line.slice(i);
+        out += /^;\s*(=+>|=>)/.test(rest) ? span('result', rest) : span('comment', rest);
+        break;
+      }
+      if (ch === '"') {
+        var j = i + 1;
+        while (j < len) { if (line[j] === '\\') { j += 2; continue; } if (line[j] === '"') { j++; break; } j++; }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+      if (ch === '#' && line[i+1] === '"') {
+        var j = i + 2;
+        while (j < len) { if (line[j] === '\\') { j += 2; continue; } if (line[j] === '"') { j++; break; } j++; }
+        out += span('string', line.slice(i, j)); i = j; continue;
+      }
+      if (ch === '#' && i+1 < len && '#{(_@^'.indexOf(line[i+1]) >= 0) {
+        out += span('dispatch', line.slice(i, i+2)); i += 2; continue;
+      }
+      if (ch === ':' && i+1 < len && /[a-zA-Z_\-!?*+<>=]/.test(line[i+1])) {
+        var j = i;
+        if (line[j+1] === ':') j++;
+        j++;
+        while (j < len && /[a-zA-Z0-9_\-!?*+<>=.\/]/.test(line[j])) j++;
+        out += span('keyword', line.slice(i, j)); i = j; continue;
+      }
+      if (/[0-9]/.test(ch) || (ch === '-' && /[0-9]/.test(line[i+1] || ''))) {
+        var prev = i > 0 ? line[i-1] : ' ';
+        if (ch === '-' && /[a-zA-Z]/.test(prev)) { out += esc(ch); i++; continue; }
+        var j = i;
+        if (line[j] === '-') j++;
+        while (j < len && /[0-9]/.test(line[j])) j++;
+        if (j < len && line[j] === '.') { j++; while (j < len && /[0-9]/.test(line[j])) j++; }
+        if (j < len && line[j] === '/' && /[0-9]/.test(line[j+1] || '')) {
+          j++; while (j < len && /[0-9]/.test(line[j])) j++;
+        }
+        out += span('number', line.slice(i, j)); i = j; continue;
+      }
+      if (/[a-zA-Z_\-!?*+<>=.\/^%$&]/.test(ch)) {
+        var j = i;
+        while (j < len && /[a-zA-Z0-9_\-!?*+<>=.\/^%$&'#@]/.test(line[j])) j++;
+        var word = line.slice(i, j);
+        if (word === 'nil') out += span('bool', word);
+        else if (word === 'true' || word === 'false') out += span('bool', word);
+        else if (SPECIAL.has(word)) out += span('special', word);
+        else out += esc(word);
+        i = j; continue;
+      }
+      out += esc(ch); i++;
+    }
+    return out;
+  }
+  return code.split('\n').map(processLine).join('\n');
+}
+
+function renderCode(code) {
+  var pre = document.createElement('pre');
+  pre.className = 'code-block';
+  pre.dataset.src = code;
+  pre.innerHTML = highlight(code);
+  return pre;
+}
+
+// ───── CLAUDE API (via your Cloudflare Worker) ─────
+function callClaude(systemPrompt, userPrompt) {
+  if (WORKER_URL === 'PASTE_YOUR_WORKER_URL_HERE' || !WORKER_URL) {
+    return Promise.reject(new Error(
+      'Worker URL not configured. Edit the WORKER_URL constant near the top of the <script> in this HTML file. See the deploy guide for setup steps.'
+    ));
+  }
+  return fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    })
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('Worker call failed: ' + r.status + ' ' + r.statusText);
+    return r.json();
+  })
+  .then(function(data) {
+    var text = data.content
+      .filter(function(b) { return b.type === 'text'; })
+      .map(function(b) { return b.text; })
+      .join('\n');
+    return text;
+  });
+}
+
+function parseJSON(raw) {
+  // Strip ```json fences if present
+  var cleaned = raw.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
+  // Find first { and last }
+  var s = cleaned.indexOf('{');
+  var e = cleaned.lastIndexOf('}');
+  if (s === -1 || e === -1) throw new Error('No JSON object found');
+  return JSON.parse(cleaned.slice(s, e + 1));
+}
+
+// ───── PROMPT BUILDERS ─────
+var TOPIC_DESCRIPTIONS = {
+  'mixed': 'any concept covered in the reference (literals, special forms, destructuring, reader macros, threading, conditionals, higher-order functions, Java interop, regex, special keywords)',
+  'literals': 'Clojure literal syntax: numbers (including ratios 1/3), strings, characters \\a, keywords :foo, symbols, lists vs vectors vs maps vs sets, regex literals',
+  'special-forms': 'the core compiler primitives: def, if, do, let, fn, loop/recur, quote, var, try/catch, ., new, set!',
+  'binding': 'binding forms and destructuring: sequential [a b & rest :as all], associative {:keys [...] :strs [...] :or {...} :as m}, nested patterns, in let and function parameters',
+  'reader-macros': 'reader macros: \' quote, @ deref, ^metadata, #{} set, #() anon fn with %, #"" regex, #\' var-quote, #_ ignore, #?() reader conditionals',
+  'threading': 'threading macros: -> first-position, ->> last-position, as-> named, some-> nil-shortcircuit, cond-> conditional, doto for Java',
+  'conditionals': 'conditionals: if, when, cond with :else, case, condp, if-let, when-let, if-some, when-some. Truthiness: only false and nil are falsy',
+  'hofs': 'higher-order functions: map, filter, reduce, frequencies, group-by, partition, sort-by, take, drop, repeat, range, into',
+  'interop': 'Java interop: (.method obj) instance, (.-field obj) field, (Class. args) constructor, Class/method static, Class/FIELD static field, doto for builders',
+  'regex': 'regex: #"" literal, re-find first match, re-matches whole-string, re-seq lazy seq of all, re-pattern, capture groups returning vectors, clojure.string/replace and split',
+  'keywords': 'special-position keywords: :as :keys :strs :syms :or in destructuring; :let :when :while in for/doseq; :else in cond; :require :as :refer in ns forms'
+};
+
+var MODE_INSTRUCTIONS = {
+  'fill': 'Generate a "fill in the blank" exercise. Show working Clojure code with one or more parts replaced by ___ (three underscores). The student must figure out what goes in the blanks.',
+  'predict': 'Generate a "predict the output" exercise. Show a complete, runnable Clojure expression. The student must determine what value it evaluates to.',
+  'explain': 'Generate an "explain the concept" exercise. Show a small idiomatic Clojure snippet. The student must explain in a sentence or two what the code does and why a Clojure programmer would write it this way.'
+};
+
+var DIFFICULTY_NOTES = {
+  'simple': 'Use a single concept in isolation. The example should be short (1–2 lines of Clojure) and the answer obvious to anyone who knows the concept.',
+  'intermediate': 'Combine 2 concepts. Code can be 2–4 lines. The student should need to think briefly but not struggle.',
+  'complex': 'Combine 3+ concepts in idiomatic real-code shape. Code can be 4–8 lines. Should feel like something from real Clojure code.'
+};
+
+function buildGeneratorPrompt(topic, difficulty, mode) {
+  var system = "You are a Clojure tutor generating practice exercises. You produce ONE exercise at a time, in strict JSON format. Always respond with valid JSON only — no preamble, no code fences, no explanatory text outside the JSON. The Clojure code you generate must be syntactically valid and idiomatic.";
+
+  var topicDesc = TOPIC_DESCRIPTIONS[topic] || TOPIC_DESCRIPTIONS.mixed;
+  var modeInst = MODE_INSTRUCTIONS[mode];
+  var diffNote = DIFFICULTY_NOTES[difficulty];
+
+  var jsonShape;
+  if (mode === 'fill') {
+    jsonShape = '{\n' +
+      '  "question": "Brief instruction (e.g. \\"Fill in the blanks so this returns [2 4 6].\\")",\n' +
+      '  "code": "Clojure code with ___ blanks. Use real newlines, not \\\\n.",\n' +
+      '  "answer": "What goes in the blank(s). If multiple blanks, list them in order separated by ;",\n' +
+      '  "explanation": "1-3 sentences explaining why this is the answer."\n' +
+      '}';
+  } else if (mode === 'predict') {
+    jsonShape = '{\n' +
+      '  "question": "Brief instruction (typically \\"What does this expression evaluate to?\\")",\n' +
+      '  "code": "Complete, runnable Clojure code. Use real newlines, not \\\\n.",\n' +
+      '  "answer": "The value it evaluates to, written exactly as the REPL would print it (e.g. \\"(2 4 6)\\" or \\"#{1 2 3}\\" or \\"42\\" or \\"nil\\").",\n' +
+      '  "explanation": "1-3 sentences explaining how the evaluation produces that result."\n' +
+      '}';
+  } else {
+    jsonShape = '{\n' +
+      '  "question": "Brief prompt (e.g. \\"Explain in 1-2 sentences what this code does and why it is written this way.\\")",\n' +
+      '  "code": "Idiomatic Clojure snippet. Use real newlines, not \\\\n.",\n' +
+      '  "answer": "A model 1-3 sentence explanation a competent Clojure programmer would give.",\n' +
+      '  "explanation": "Optional further detail or alternative phrasings (can be empty string)."\n' +
+      '}';
+  }
+
+  var user = "Generate one Clojure practice exercise.\n\n" +
+    "Topic: " + topicDesc + "\n\n" +
+    "Mode: " + modeInst + "\n\n" +
+    "Difficulty: " + diffNote + "\n\n" +
+    "Avoid recently-used questions; produce something fresh and pedagogically useful.\n\n" +
+    "Respond with ONLY this JSON structure (no markdown fences, no preamble):\n" +
+    jsonShape;
+
+  return { system: system, user: user };
+}
+
+function buildCheckerPrompt(exercise, userAnswer) {
+  var system = "You are a Clojure tutor evaluating student answers. You are FAIR and ENCOURAGING. You recognize when an answer is equivalent to the expected one even if phrased or formatted differently (e.g. (fn [x] (* x 2)) and #(* % 2) are equivalent; \"3\" and \"3N\" may both be acceptable depending on context; \"(2 4 6)\" and \"'(2 4 6)\" represent the same value). For 'explain' mode, accept any answer that captures the key idea, even imperfectly. Respond with strict JSON only.";
+
+  var user = "Evaluate this student answer.\n\n" +
+    "EXERCISE\n" +
+    "Mode: " + exercise.mode + "\n" +
+    "Question: " + exercise.question + "\n" +
+    "Code:\n" + exercise.code + "\n\n" +
+    "EXPECTED ANSWER\n" + exercise.answer + "\n\n" +
+    "EXPECTED EXPLANATION\n" + (exercise.explanation || '(none provided)') + "\n\n" +
+    "STUDENT ANSWER\n" + userAnswer + "\n\n" +
+    "Respond with ONLY this JSON (no markdown fences, no preamble):\n" +
+    '{\n' +
+    '  "correct": true or false,\n' +
+    '  "feedback": "1-3 sentences. If correct, briefly affirm and add one extra insight. If not correct, gently explain why and what the right answer is. Be specific about WHAT went wrong rather than just stating the right answer."\n' +
+    '}';
+
+  return { system: system, user: user };
+}
+
+// ───── ACTIONS ─────
+function setBusy(busy) {
+  state.busy = busy;
+  document.getElementById('generate-btn').disabled = busy;
+  var checkBtn = document.getElementById('check-btn');
+  if (checkBtn) checkBtn.disabled = busy;
+}
+
+function generateExercise() {
+  if (state.busy) return;
+  var topic = document.getElementById('topic').value;
+  var difficulty = document.getElementById('difficulty').value;
+  var mode = state.mode;
+
+  var card = document.getElementById('exercise-card');
+  card.innerHTML = '<div class="empty-state"><span class="loading-dots" id="dots">.</span> Generating exercise...</div>';
+  animateDots();
+  document.getElementById('answer-area').style.display = 'none';
+  document.getElementById('feedback-area').innerHTML = '';
+
+  setBusy(true);
+  var prompts = buildGeneratorPrompt(topic, difficulty, mode);
+
+  callClaude(prompts.system, prompts.user)
+    .then(function(text) {
+      var ex = parseJSON(text);
+      ex.mode = mode;
+      ex.difficulty = difficulty;
+      ex.topic = topic;
+      state.currentExercise = ex;
+      renderExercise(ex);
+      document.getElementById('answer-area').style.display = '';
+      document.getElementById('answer-input').value = '';
+      document.getElementById('answer-input').focus();
+      setBusy(false);
+      stopDots();
+    })
+    .catch(function(err) {
+      card.innerHTML = '<div class="empty-state" style="color:var(--err-t)">Could not generate exercise: ' + err.message + '. Try again.</div>';
+      setBusy(false);
+      stopDots();
+    });
+}
+
+function renderExercise(ex) {
+  var card = document.getElementById('exercise-card');
+  card.innerHTML = '';
+
+  var meta = document.createElement('div');
+  meta.className = 'exercise-meta';
+  var modeLabel = ex.mode === 'fill' ? 'Fill blank' : ex.mode === 'predict' ? 'Predict output' : 'Explain';
+  meta.innerHTML = '<span>' + modeLabel + '</span>' +
+    '<span class="tag diff-' + ex.difficulty + '">' + ex.difficulty + '</span>' +
+    '<span>' + (ex.topic === 'mixed' ? 'mixed' : ex.topic.replace('-', ' ')) + '</span>';
+  card.appendChild(meta);
+
+  var q = document.createElement('div');
+  q.className = 'exercise-question';
+  q.textContent = ex.question;
+  card.appendChild(q);
+
+  if (ex.code) {
+    card.appendChild(renderCode(ex.code));
+  }
+}
+
+function checkAnswer() {
+  if (state.busy || !state.currentExercise) return;
+  var ans = document.getElementById('answer-input').value.trim();
+  if (!ans) {
+    document.getElementById('answer-input').focus();
+    return;
+  }
+
+  var fb = document.getElementById('feedback-area');
+  fb.innerHTML = '<div class="feedback ok" style="background:var(--surface);color:var(--text2);border-color:var(--border2)"><span class="spinner" style="border-color:rgba(0,0,0,.2);border-top-color:var(--accent)"></span>Checking your answer...</div>';
+
+  setBusy(true);
+  var prompts = buildCheckerPrompt(state.currentExercise, ans);
+
+  callClaude(prompts.system, prompts.user)
+    .then(function(text) {
+      var result = parseJSON(text);
+      renderFeedback(result.correct, result.feedback);
+      addToHistory(state.currentExercise, result.correct);
+      setBusy(false);
+    })
+    .catch(function(err) {
+      fb.innerHTML = '<div class="feedback err"><strong>Could not check answer</strong><p>' + err.message + '. Try again.</p></div>';
+      setBusy(false);
+    });
+}
+
+function renderFeedback(ok, message) {
+  var fb = document.getElementById('feedback-area');
+  fb.innerHTML = '';
+
+  var card = document.createElement('div');
+  card.className = 'feedback ' + (ok ? 'ok' : 'err');
+
+  var label = document.createElement('strong');
+  label.textContent = ok ? '\u2713  Correct' : '\u2717  Not quite';
+  card.appendChild(label);
+
+  var p = document.createElement('p');
+  p.textContent = message;
+  card.appendChild(p);
+
+  if (!ok && state.currentExercise) {
+    var ans = document.createElement('p');
+    ans.innerHTML = '<strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">Expected:</strong>';
+    card.appendChild(ans);
+    var pre = document.createElement('pre');
+    pre.className = 'code-block';
+    pre.dataset.src = state.currentExercise.answer;
+    pre.innerHTML = highlight(state.currentExercise.answer);
+    card.appendChild(pre);
+    if (state.currentExercise.explanation) {
+      var exp = document.createElement('p');
+      exp.textContent = state.currentExercise.explanation;
+      card.appendChild(exp);
+    }
+  }
+
+  fb.appendChild(card);
+}
+
+function revealAnswer() {
+  if (!state.currentExercise) return;
+  var ex = state.currentExercise;
+  var fb = document.getElementById('feedback-area');
+  fb.innerHTML = '';
+
+  var card = document.createElement('div');
+  card.className = 'feedback';
+  card.style.background = 'var(--surface)';
+  card.style.color = 'var(--text2)';
+  card.style.borderColor = 'var(--accent)';
+
+  var label = document.createElement('strong');
+  label.textContent = 'Solution';
+  label.style.color = 'var(--accent)';
+  card.appendChild(label);
+
+  var pre = document.createElement('pre');
+  pre.className = 'code-block';
+  pre.dataset.src = ex.answer;
+  pre.innerHTML = highlight(ex.answer);
+  card.appendChild(pre);
+
+  if (ex.explanation) {
+    var exp = document.createElement('p');
+    exp.textContent = ex.explanation;
+    card.appendChild(exp);
+  }
+
+  fb.appendChild(card);
+}
+
+// ───── HISTORY ─────
+function addToHistory(ex, ok) {
+  state.history.unshift({
+    q: ex.question,
+    code: ex.code,
+    mode: ex.mode,
+    ok: ok
+  });
+  if (state.history.length > 10) state.history = state.history.slice(0, 10);
+  renderHistory();
+}
+
+function clearHistory() {
+  state.history = [];
+  renderHistory();
+}
+
+function renderHistory() {
+  var list = document.getElementById('history-list');
+  if (state.history.length === 0) {
+    list.innerHTML = '<div class="history-empty">Your last 10 exercises will appear here.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  state.history.forEach(function(h) {
+    var row = document.createElement('div');
+    row.className = 'history-item';
+    var icon = document.createElement('div');
+    icon.className = 'history-icon ' + (h.ok ? 'ok' : 'err');
+    icon.textContent = h.ok ? '\u2713' : '\u2717';
+    row.appendChild(icon);
+    var q = document.createElement('div');
+    q.className = 'history-q';
+    q.textContent = h.q;
+    row.appendChild(q);
+    var m = document.createElement('div');
+    m.className = 'history-mode';
+    m.textContent = h.mode;
+    row.appendChild(m);
+    list.appendChild(row);
+  });
+}
+
+// ───── DOT ANIMATION ─────
+var dotsTimer = null;
+function animateDots() {
+  var el = document.getElementById('dots');
+  if (!el) return;
+  var n = 1;
+  stopDots();
+  dotsTimer = setInterval(function() {
+    el.textContent = '.'.repeat(n);
+    n = (n % 3) + 1;
+  }, 350);
+}
+function stopDots() {
+  if (dotsTimer) { clearInterval(dotsTimer); dotsTimer = null; }
+}
+
+// ───── KEYBOARD ─────
+document.addEventListener('keydown', function(e) {
+  // Ctrl/Cmd + Enter checks answer
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    var area = document.getElementById('answer-area');
+    if (area.style.display !== 'none') {
+      e.preventDefault();
+      checkAnswer();
+    }
+  }
+});
+
+// ───── INIT ─────
+initTheme();
+</script>
+</body>
+</html>

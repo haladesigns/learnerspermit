@@ -1095,6 +1095,105 @@ _, y = point                # only y
 (let [{{:keys [city]} :address} {:address {:city "Oslo"}}]
   city)                           ; => "Oslo"</pre>
 
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Nested destructuring — patterns inside patterns</h3>
+
+  <p class="prose">When data is nested — a map inside a map, a vector inside a vector, a map inside a vector — the destructuring shape can mirror the data's structure exactly. The rule is one principle, applied recursively:</p>
+
+  <div class="callout key">
+    <strong>The one rule for nesting</strong>
+    Anywhere you'd write a name on the left of a binding, you can write another destructuring shape instead. Sequential shapes nest. Associative shapes nest. They can mix. The pattern just keeps mirroring the data's shape, however deep it goes.
+  </div>
+
+  <p class="prose">The infamous-looking case is nested map destructuring, because of the double curly brace. Let's pull it apart carefully — once you see it, the magic disappears.</p>
+
+  <pre class="code-block">; The data:
+{:address {:city "D.C."}}    ; outer map → :address → inner map → :city → "D.C."
+
+; Goal: get "D.C." in one destructuring step.
+
+; Without nesting (two separate lets):
+(let [{address :address} {:address {:city "D.C."}}]
+  (let [{:keys [city]} address]
+    city))                        ; => "D.C."
+
+; With nesting (collapsed into one):
+(let [{{:keys [city]} :address} {:address {:city "D.C."}}]
+  city)                            ; => "D.C."
+
+; The two are EXACTLY equivalent. Nesting just skips
+; the intermediate name.</pre>
+
+  <h4 style="font-size:15px;font-weight:600;color:var(--text);margin:1.25rem 0 .5rem">Reading the double-curly form</h4>
+
+  <p class="prose">In a destructuring map, the layout is the <em>opposite</em> of a regular map: <strong>the binding form is on the left, the key to look up is on the right.</strong> When the binding form on the left is itself a shape, you get the double curly.</p>
+
+  <div class="diagram">
+    <div class="d-label">Anatomy of <code>{{:keys [city]} :address}</code>:</div>
+    <pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;white-space:pre;"><span class="d-grey">           </span><span class="d-acc">{ {:keys [city]}        :address }</span><span class="d-grey">
+             └──────┬──────┘        └────┬────┘
+                    │                    │
+              </span><span class="d-acc">binding form</span><span class="d-grey">          </span><span class="d-blue">key to look up</span><span class="d-grey">
+              (what to do          (in the outer map)
+               with what we find)
+
+                                         │
+                                         ▼
+                          </span><span class="d-blue">{ :address {:city "D.C."} }</span><span class="d-grey">     ← actual map
+                                       └──────┬─────┘
+                                              │
+                                              ▼
+                                     </span><span class="d-acc">{:keys [city]}</span><span class="d-grey">         ← applied to this
+                                              │
+                                              ▼
+                                        </span><span class="d-green">city = "D.C."</span></pre>
+  </div>
+
+  <p class="prose">The right-hand side <code>:address</code> says "look up this key." The left-hand side, instead of being a name like <code>x</code>, is a destructuring shape that gets applied to whatever was found.</p>
+
+  <h4 style="font-size:15px;font-weight:600;color:var(--text);margin:1.25rem 0 .5rem">Sequential nesting works the same way</h4>
+
+  <pre class="code-block">; A vector with two pairs inside:
+(let [[[a b] [c d]] [[1 2] [3 4]]]
+  [a b c d])                      ; => [1 2 3 4]
+
+; A vector containing a map:
+(let [[{:keys [name]} score] [{:name "Ada"} 95]]
+  (str name ": " score))          ; => "Ada: 95"
+
+; A map containing a vector:
+(let [{[x y] :point} {:point [10 20]}]
+  [x y])                          ; => [10 20]
+
+; Mix and match to any depth:
+(let [{:keys [users]
+       :as   data}
+      {:users [{:name "Ada" :role :admin}
+               {:name "Alan" :role :user}]}]
+  [(count users) (-&gt; users first :name)])
+;=&gt; [2 "Ada"]</pre>
+
+  <h4 style="font-size:15px;font-weight:600;color:var(--text);margin:1.25rem 0 .5rem">A useful tactic when nesting confuses you</h4>
+
+  <p class="prose">If a deeply nested destructuring is hard to follow, mentally (or actually) <em>uncollapse</em> it into multiple <code>let</code> bindings. They're equivalent, and the uncollapsed form names every intermediate value:</p>
+
+  <pre class="code-block">; Confusing nested form:
+(let [{[{:keys [name]}] :users} data]
+  name)
+
+; Uncollapsed — every step has a name:
+(let [users (:users data)             ; pull the :users vector
+      first-user (first users)        ; grab the first one
+      name (:name first-user)]        ; pull :name from it
+  name)
+
+; Both produce the same result. Use the uncollapsed form
+; when reading; collapse when writing once it's clear.</pre>
+
+  <div class="callout concept">
+    <strong>When to nest, when to flatten</strong>
+    Nested destructuring is most readable at <em>two levels deep</em>. Beyond that, prefer naming intermediate values with separate <code>let</code> bindings or threading (<code>some-&gt;</code>, <code>get-in</code>) — readability falls off a cliff once a destructuring pattern crosses three levels. The point of destructuring is clarity at the binding site; if it's no longer clear, it's no longer earning its place.
+  </div>
+
   <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">Destructuring in function parameters</h3>
 
   <p class="prose">The same patterns work directly in function parameter lists — no separate <code>let</code> needed. This is one of the most idiomatic ways Clojure code stays compact.</p>

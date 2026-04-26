@@ -607,7 +607,7 @@ select:focus {
 // Until you do, the page will show a friendly error explaining what to set.
 // Example after deploy:
 //   var WORKER_URL = 'https://clojure-practice.your-username.workers.dev/';
-var WORKER_URL = 'https://clj-fund.mangobasin.workers.dev';
+var WORKER_URL = 'PASTE_YOUR_WORKER_URL_HERE';
 
 // ───── STATE ─────
 var state = {
@@ -895,7 +895,12 @@ function generateExercise() {
       renderExercise(ex);
       document.getElementById('answer-area').style.display = '';
       document.getElementById('answer-input').value = '';
-      document.getElementById('answer-input').focus();
+      // On touch devices, skip auto-focus so the soft keyboard doesn't cover
+      // the question. Desktop users keep the convenience.
+      var isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      if (!isTouchDevice) {
+        document.getElementById('answer-input').focus();
+      }
       setBusy(false);
       stopDots();
     })

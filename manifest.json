@@ -576,6 +576,19 @@
       },
       {
         "type": "folder",
+        "name": "deploy",
+        "label": "Deploy",
+        "children": [
+          {
+            "type": "file",
+            "name": "d",
+            "label": "D",
+            "path": "coding_web-design/deploy/d"
+          }
+        ]
+      },
+      {
+        "type": "folder",
         "name": "python",
         "label": "Python",
         "children": [

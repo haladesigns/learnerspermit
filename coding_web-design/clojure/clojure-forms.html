@@ -1267,6 +1267,68 @@ def greet(user):
 
   <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">@ deref — read the value out of a reference</h3>
 
+  <p class="prose">A natural question on first encounter: <em>why is this needed at all?</em> If <code>counter</code> holds a value, why not just write <code>counter</code> and get the value? The answer reveals something fundamental about how Clojure models state. Worth pausing on, because once it clicks, atoms (and their cousins) stop feeling arbitrary.</p>
+
+  <div class="callout key">
+    <strong>The core idea — container vs contents</strong>
+    An atom is not a value; it's a <em>box</em> that holds a value. The box has a stable identity that lasts forever. The value inside it can change over time. <code>counter</code> refers to the box; <code>@counter</code> says "open the box right now and give me whatever's inside." The two are deliberately kept separate.
+  </div>
+
+  <p class="prose">This separation is core to Clojure's philosophy. Values are immutable — <code>0</code> is <code>0</code> forever, you can't "change" it into <code>1</code>. But programs need state. Clojure's answer: don't model state by mutating values; model state by having a <strong>stable identity</strong> point at <strong>different immutable values over time</strong>. The atom is that identity. <code>@</code> is how you ask it for its current state.</p>
+
+  <div class="diagram">
+    <div class="d-label">Container vs contents over time:</div>
+    <pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;white-space:pre;"><span class="d-grey">     </span><span class="d-acc">counter</span><span class="d-grey">       (the atom — a stable identity, lives forever)
+        │
+        │  </span><span class="d-blue">at time t1:</span><span class="d-grey">   ──►   </span><span class="d-green">0</span><span class="d-grey">       ← @counter returns 0
+        │
+        │  (swap! counter inc)
+        │
+        │  </span><span class="d-blue">at time t2:</span><span class="d-grey">   ──►   </span><span class="d-green">1</span><span class="d-grey">       ← @counter returns 1
+        │
+        │  (swap! counter inc)
+        │
+        │  </span><span class="d-blue">at time t3:</span><span class="d-grey">   ──►   </span><span class="d-green">2</span><span class="d-grey">       ← @counter returns 2
+
+     The atom never "becomes" a different atom.
+     The values it points at are different immutable facts.
+     </span><span class="d-acc">@counter</span><span class="d-grey"> is a snapshot read at one moment.</span></pre>
+  </div>
+
+  <h4 style="font-size:15px;font-weight:600;color:var(--text);margin:1.25rem 0 .5rem">Three reasons the unwrap is explicit</h4>
+
+  <p class="prose">If <code>counter</code> auto-unwrapped to its current value, you'd lose three things — and each matters:</p>
+
+  <div class="concept-pair">
+    <div class="concept-box">
+      <h4>1. Passing the atom around</h4>
+      <p>Functions that need to <em>update</em> state need the atom itself, not a snapshot. <code>(swap! a inc)</code> can't work if <code>a</code> auto-dereferenced — it'd see only the value, with no way to update what the atom points at.</p>
+    </div>
+    <div class="concept-box">
+      <h4>2. Snapshot timing</h4>
+      <p>Each <code>@</code> is a point-in-time read. In multi-threaded code, the value can change between reads. Making each read explicit lets you see exactly when state is observed — vital for reasoning about concurrency.</p>
+    </div>
+  </div>
+  <div class="concept-pair" style="margin-top:-4px">
+    <div class="concept-box">
+      <h4>3. Identity is preserved</h4>
+      <p>Two atoms with the same value are still different atoms. Updating one doesn't update the other. The atom's identity is its own thing — meaningful and stable. Auto-unwrapping would erase that distinction.</p>
+    </div>
+    <div class="concept-box">
+      <h4>The mental shortcut</h4>
+      <p><code>counter</code> asks <em>"what container is this?"</em> &nbsp;<code>@counter</code> asks <em>"what's in the container right now?"</em> The same character that decorates Python functions is, here, the question mark you're putting to a reference type.</p>
+    </div>
+  </div>
+
+  <p class="prose">This same <code>@</code> works on every reference type Clojure offers — <code>atom</code>, <code>ref</code>, <code>agent</code>, <code>future</code>, <code>promise</code>, <code>delay</code>. They all share the "stable identity holding a current value" pattern. Knowing the principle once carries you through all of them.</p>
+
+  <div class="callout concept">
+    <strong>Rich Hickey's triad — identity, state, value</strong>
+    This is the conceptual frame from <em>Simple Made Easy</em>: <strong>value</strong> = an immutable fact (<code>0</code>, <code>{:a 1}</code>); <strong>identity</strong> = a stable name for "the same thing across time" (the atom); <strong>state</strong> = the value an identity holds at a given moment (the result of <code>@atom</code>). OO languages fuse all three into "the object." Clojure pulls them apart on purpose, and <code>@</code> is the syntax that says "I want to ask this identity what its state is right now."
+  </div>
+
+  <h4 style="font-size:15px;font-weight:600;color:var(--text);margin:1.25rem 0 .5rem">In code</h4>
+
   <pre class="code-block">; @ extracts the current value from a reference type
 (def counter (atom 0))
 @counter          ; => 0              — same as (deref counter)
@@ -1274,7 +1336,17 @@ def greet(user):
 @counter          ; => 1
 
 ; @ also works on futures, promises, delays, agents
-@(future (+ 1 2)) ; => 3              — blocks until ready</pre>
+@(future (+ 1 2)) ; => 3              — blocks until ready
+
+; The atom itself vs. its current value:
+counter           ; => the atom itself (e.g. clojure.lang.Atom)
+@counter          ; => 1              — what it holds right now
+
+; Identity is preserved across time and copies:
+(def x (atom 0))
+(def y x)         ; y is the SAME atom as x (not a copy)
+(swap! x inc)
+@y                ; => 1              — y sees the change because y IS x</pre>
 
   <div class="callout python">
     <strong>Python comparison — the @ specifically</strong>

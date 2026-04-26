@@ -835,6 +835,48 @@ main {
     <strong>Why knowing the list helps</strong>
     When you see a form you don't recognise, a useful question is: "is this a special form, a macro, or a function?" Special forms are on the list above. Macros you can ask the REPL: <code>(macroexpand '(when x y))</code> → <code>(if x (do y))</code>. Functions you can inspect: <code>(source +)</code>. The categorisation tells you what rules apply to argument evaluation — functions always evaluate all args; macros and special forms do not.
   </div>
+
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">A note on arity — what <code>fn</code> actually dispatches on</h3>
+
+  <p class="prose">The word <em>arity</em> is just the math term for "how many arguments a function takes" — a binary function has arity 2, a ternary function arity 3, a function with no arguments arity 0. Clojure leans on the term because that's <strong>exactly what it dispatches on</strong> — nothing more, nothing less.</p>
+
+  <p class="prose">A single function can define multiple <em>arities</em>, each with its own parameter list and body. When the function is called, Clojure picks the matching arity by counting the arguments. This is the same idea as method overloading in Java/C#, with one key restriction: Clojure dispatches only on <em>count</em>, never on type.</p>
+
+  <pre class="code-block">; Multi-arity fn — each clause is wrapped in its own (...)
+(defn greet
+  ([]              (greet "world"))            ; 0-arg
+  ([name]          (greet "Hello" name))       ; 1-arg
+  ([greeting name] (str greeting ", " name)))  ; 2-arg
+
+(greet)              ;=&gt; "Hello, world"
+(greet "Ada")        ;=&gt; "Hello, Ada"
+(greet "Hi" "Ada")   ;=&gt; "Hi, Ada"
+
+; Variadic arity with &amp; — collects extras into a seq
+(defn flexible
+  ([]          "no args")
+  ([x]         "one arg")
+  ([x &amp; more]  (str "many: " x " + " (count more) " more")))
+
+(flexible)           ;=&gt; "no args"
+(flexible 1)         ;=&gt; "one arg"
+(flexible 1 2 3 4)   ;=&gt; "many: 1 + 3 more"
+
+; A common idiom — lower arities call higher ones with defaults:
+(defn connect
+  ([host]      (connect host 80))
+  ([host port] (connect host port {:timeout 5000}))
+  ([host port opts] (str "connecting to " host ":" port " with " opts)))</pre>
+
+  <div class="callout python">
+    <strong>Comparison — Java overloading, Python defaults</strong>
+    <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">Java</strong> overloads on count <em>and</em> types: <code>process(int)</code> and <code>process(String)</code> are distinct overloads. Clojure cannot do this — only count matters. <strong style="display:inline;font-size:inherit;text-transform:none;letter-spacing:0">Python</strong> handles "different shapes" via default arguments: <code>def greet(name="world", greeting="Hello"): ...</code>. Clojure handles it by writing multiple arities that delegate to each other — the example above. Both express the same intent; the syntax is different.
+  </div>
+
+  <div class="callout key">
+    <strong>If you need type-based dispatch</strong>
+    <code>defn</code> can't do it — only arity. For dispatch on argument <em>type</em> or <em>value</em>, Clojure has dedicated tools: <code>defmulti</code> + <code>defmethod</code> (multimethods, dispatching on the result of any function you choose) and <code>defprotocol</code> (protocols, dispatching on the type of the first argument). Those are out of scope for this page but worth knowing as the answer when "I need to pick behavior based on what's passed in" comes up.
+  </div>
 </section>
 
 
@@ -886,12 +928,70 @@ main {
 
   <p class="prose">Where the value comes from depends on the construct. In <code>(let [shape value] ...)</code> it's the expression on the right. In <code>(defn f [shape] ...)</code> it's whatever the caller passes when they call <code>f</code>. In <code>(for [shape coll] ...)</code> it's each element as the loop walks through. The binding form sits there, set up once, ready to catch every value that comes through.</p>
 
+  <h3 style="font-size:17px;font-weight:600;color:var(--text);margin:1.5rem 0 .75rem">The colon is the directive marker</h3>
+
+  <p class="prose">Before diving into the patterns, one thing about destructuring syntax that bites everyone at least once: <strong>the colon prefix is what turns a keyword into an instruction the destructuring engine watches for.</strong> Without the colon, the same word is just a symbol — used as a regular map key like any other. With the colon, it's a directive — a special signal that says "this isn't data; this is a command to the destructuring engine."</p>
+
+  <div class="callout key">
+    <strong>The rule</strong>
+    Inside a destructuring map, anything starting with <code>:</code> may be a directive (<code>:keys</code>, <code>:strs</code>, <code>:syms</code>, <code>:or</code>, <code>:as</code>). Without the colon, it's a plain symbol — and the destructuring engine treats the whole entry as a regular "lookup this key, bind to this name" pair. <code>{:keys [name age]}</code> and <code>{keys [name age]}</code> look almost identical but mean completely different things.
+  </div>
+
+  <div class="compare-grid stacked">
+    <div class="compare-col clojure">
+      <div class="compare-label">With colon — directive interpreted</div>
+      <pre>(let [{:keys [name role]
+       :or   {role "guest"}}
+      {:name "Ada"}]
+  (str name " | " role))
+;=&gt; "Ada | guest"
+
+; The destructuring engine sees :keys and :or
+; as directives. It pulls :name and :role out
+; of the map and applies the default for :role.</pre>
+    </div>
+    <div class="compare-col python">
+      <div class="compare-label">No colon — treated as a map key</div>
+      <pre>(let [{keys [name role]
+       :or  {role "guest"}}
+      {:name "Ada"}]
+  (str name " | " role))
+;=&gt; ERROR or surprising nil
+
+; The engine reads {keys [name role]} as
+; "look up the key [name role] (a vector!)
+;  and bind the result to local 'keys'."
+; name and role are never bound at all.</pre>
+    </div>
+  </div>
+
+  <p class="prose">A useful mental rephrasing of the same idea:</p>
+
+  <div class="diagram">
+    <div class="d-label">How the destructuring engine reads each entry:</div>
+    <pre style="background:none;border:none;padding:0;margin:0;font-family:var(--mono);font-size:13px;line-height:1.9;overflow-x:auto;white-space:pre;"><span class="d-grey">    </span><span class="d-acc">{ :keys  [...] }</span><span class="d-grey">   →  "directive: pull these keyword keys, bind same-named locals"
+    </span><span class="d-acc">{ :strs  [...] }</span><span class="d-grey">   →  "directive: pull these string keys, bind same-named locals"
+    </span><span class="d-acc">{ :syms  [...] }</span><span class="d-grey">   →  "directive: pull these symbol keys, bind same-named locals"
+    </span><span class="d-acc">{ :or    {...} }</span><span class="d-grey">   →  "directive: defaults for missing keys"
+    </span><span class="d-acc">{ :as    name  }</span><span class="d-grey">   →  "directive: also bind the whole value to this name"
+
+    </span><span class="d-blue">{ keys   [...] }</span><span class="d-grey">   →  "look up the map key </span><span class="d-blue">[...]</span><span class="d-grey"> and bind result to </span><span class="d-blue">keys</span><span class="d-grey">"
+    </span><span class="d-blue">{ name   :n    }</span><span class="d-grey">   →  "look up </span><span class="d-blue">:n</span><span class="d-grey"> in the map and bind result to </span><span class="d-blue">name</span><span class="d-grey">"</span></pre>
+  </div>
+
+  <p class="prose">The five colon-prefixed names above are the entire destructuring vocabulary. Everything else in a destructuring map is interpreted as ordinary "bind this name to the value at this key" — that's how the workhorse pattern <code>{name :name}</code> works.</p>
+
+  <div class="callout warning">
+    <strong>The sneaky failure mode</strong>
+    The trap isn't usually a missing colon — that errors loudly. The trap is the <em>opposite</em>: a map whose keys aren't the type the directive assumes. <code>{:keys [name]}</code> looks for keyword keys; if the actual map has string or symbol keys, the lookup quietly returns <code>nil</code> and the local binds to nothing. No error — just unexpected nils. If a destructured local is mysteriously nil, check whether the map's keys are actually keywords (use <code>:strs</code> for strings, <code>:syms</code> for symbols).
+  </div>
+
+  <p class="prose">Binding forms appear in many constructs — and the same destructuring rules apply in all of them. Set up the shape once; learn the patterns once.</p>
+
   <div class="callout concept">
     <strong>Soft contract — missing pieces become nil, not errors</strong>
     The shape describes <em>what works cleanly</em>, not what's enforced. If the actual value doesn't match the shape — too few elements, missing keys — Clojure does its best and fills the unmatched names with <code>nil</code>. <code>(let [[a b c] [10 20]] [a b c])</code> yields <code>[10 20 nil]</code>. No exception. This is sometimes a feature (graceful handling of optional fields) and sometimes a footgun (silent nils propagating where you expected a value). It's a Clojure-ism worth knowing.
   </div>
-
-  <p class="prose">Binding forms appear in many constructs — and the same destructuring rules apply in all of them. Set up the shape once; learn the patterns once.</p>
 
   <table class="ref-table">
     <tr><th>Construct</th><th>The binding form is...</th><th>The value comes from...</th></tr>

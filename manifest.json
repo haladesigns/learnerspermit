@@ -556,6 +556,12 @@
           },
           {
             "type": "file",
+            "name": "clojure-quiz.html",
+            "label": "Clojure Quiz",
+            "path": "coding_web-design/clojure/clojure-quiz.html"
+          },
+          {
+            "type": "file",
             "name": "clojure-reference.html",
             "label": "Clojure Reference",
             "path": "coding_web-design/clojure/clojure-reference.html"

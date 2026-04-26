@@ -584,6 +584,12 @@
             "name": "d",
             "label": "D",
             "path": "coding_web-design/deploy/d"
+          },
+          {
+            "type": "file",
+            "name": "deploy-playbook.pdf",
+            "label": "Deploy Playbook",
+            "path": "coding_web-design/deploy/deploy-playbook.pdf"
           }
         ]
       },

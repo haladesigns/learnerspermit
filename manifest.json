@@ -674,6 +674,12 @@
       },
       {
         "type": "file",
+        "name": "regex-tutor.html",
+        "label": "Regex Tutor",
+        "path": "coding_web-design/regex-tutor.html"
+      },
+      {
+        "type": "file",
         "name": "siteteardown-skill.md",
         "label": "Siteteardown Skill",
         "path": "coding_web-design/siteteardown-skill.md"

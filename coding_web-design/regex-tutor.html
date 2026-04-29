@@ -74,7 +74,7 @@
   .chat::-webkit-scrollbar-track{background:transparent;}
   .chat::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
 
-  /* ── Shared side-kb styles (desktop + mobile) ── */
+  /* ── Shared side-kb styles (desktop panel) ── */
   .side-kb{
     width:var(--kb-width);min-width:var(--kb-width);flex-shrink:0;
     background:var(--bg2);border-left:1px solid var(--border);
@@ -106,6 +106,76 @@
   .app.kb-side-mode .side-kb{display:flex;}
   /* Desktop: hide horizontal toolbar when side mode is on */
   .app.kb-side-mode .toolbar{display:none;}
+
+  /* ── Mobile drawer overlay ── */
+  .kb-drawer{
+    position:fixed;top:0;right:0;bottom:0;
+    width:220px;
+    background:var(--bg2);border-left:1px solid var(--border2);
+    overflow-y:auto;overflow-x:hidden;
+    padding:8px 6px 32px;
+    display:flex;flex-direction:column;gap:0;
+    transform:translateX(100%);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+    z-index:200;
+    will-change:transform;
+  }
+  .kb-drawer.open{transform:translateX(0);}
+  .kb-drawer::-webkit-scrollbar{width:3px;}
+  .kb-drawer::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+  /* drawer uses same inner styles as side-kb */
+  .kb-drawer .kb-sec-label{
+    font-size:11px;color:var(--text3);font-family:var(--font-sans);letter-spacing:0.5px;
+    text-transform:uppercase;padding:10px 4px 5px;
+    border-top:1px solid var(--border);margin-top:4px;
+  }
+  .kb-drawer .kb-sec-label:first-child{border-top:none;margin-top:0;padding-top:4px;}
+  .kb-drawer .kb-row{display:flex;gap:4px;flex-wrap:wrap;padding:0 2px;}
+  .kb-drawer .tb-btn{
+    font-family:var(--font-mono);font-size:13px;
+    padding:0;height:36px;
+    border-radius:6px;border:1px solid var(--border2);background:var(--bg3);
+    color:var(--text2);cursor:pointer;transition:all .1s;white-space:nowrap;
+    flex:1 1 calc(50% - 3px);min-width:0;display:flex;align-items:center;justify-content:center;
+    -webkit-tap-highlight-color:transparent;user-select:none;
+  }
+  .kb-drawer .tb-btn:active{transform:scale(0.92);background:var(--accent-bg);color:var(--accent2);border-color:var(--accent);}
+  .kb-drawer .tb-btn.kb-full{flex:0 0 100%;}
+  /* drawer close button */
+  .kb-drawer-close{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:6px 4px 10px;margin-bottom:4px;
+    border-bottom:1px solid var(--border);flex-shrink:0;
+  }
+  .kb-drawer-close span{font-size:11px;color:var(--text3);font-family:var(--font-sans);text-transform:uppercase;letter-spacing:0.5px;}
+  .kb-drawer-close button{
+    background:none;border:none;color:var(--text3);cursor:pointer;
+    font-size:16px;padding:2px 4px;line-height:1;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .kb-drawer-close button:hover{color:var(--text);}
+
+  /* Backdrop */
+  .kb-backdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,0.45);
+    z-index:199;opacity:0;pointer-events:none;
+    transition:opacity .28s ease;
+  }
+  .kb-backdrop.visible{opacity:1;pointer-events:all;}
+
+  /* Mobile FAB keyboard button */
+  .kb-fab{
+    position:fixed;bottom:80px;right:14px;
+    width:44px;height:44px;border-radius:50%;
+    background:var(--accent);border:none;color:#fff;
+    font-size:18px;cursor:pointer;z-index:190;
+    display:none;align-items:center;justify-content:center;
+    box-shadow:0 4px 16px rgba(0,0,0,0.35);
+    -webkit-tap-highlight-color:transparent;
+    transition:transform .15s,background .15s;
+  }
+  .kb-fab:active{transform:scale(0.92);}
+  .kb-fab.open{background:var(--bg4);}
 
   /* ── Messages ── */
   .msg{display:flex;gap:10px;animation:fadeUp .25s ease;}
@@ -227,11 +297,14 @@
     .header{padding:8px 10px;}
     .logo{font-size:15px;}
     .pill{font-size:11px;padding:3px 8px;}
-    /* On mobile: hide horizontal toolbar always; side-kb shown via JS */
+    /* hide horizontal toolbar — drawer used instead */
     .toolbar{display:none!important;}
-    /* Override desktop kb-side-mode — mobile always uses the JS-controlled side-kb */
-    .app.kb-side-mode .side-kb{display:none;}
-    .bubble{max-width:90%;font-size:14px;}
+    /* side-kb panel never shows inline on mobile */
+    .side-kb{display:none!important;}
+    .app.kb-side-mode .side-kb{display:none!important;}
+    /* show FAB when session started (toggled via JS) */
+    .kb-fab{display:flex;}
+    .bubble{max-width:92%;font-size:14px;}
     .input-zone{padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));}
     #answer-input{font-size:13px;min-height:40px;}
     .send-btn{height:40px;padding:0 13px;font-size:13px;}
@@ -239,7 +312,6 @@
     .start-screen{padding:30px 18px;}
     .start-title{font-size:22px;}
     .start-sub{font-size:14px;}
-    /* hide desktop kb-toggle on mobile */
     #kb-toggle-btn{display:none;}
   }
 
@@ -436,6 +508,72 @@
 
 </div><!-- /.app -->
 
+<!-- ── Mobile keyboard drawer ── -->
+<div class="kb-backdrop" id="kb-backdrop"></div>
+
+<button class="kb-fab" id="kb-fab" style="display:none" aria-label="open keyboard">⌨</button>
+
+<div class="kb-drawer" id="kb-drawer">
+  <div class="kb-drawer-close">
+    <span>keys</span>
+    <button id="kb-drawer-close-btn" aria-label="close keyboard">✕</button>
+  </div>
+  <div class="kb-sec-label">groups</div>
+  <div class="kb-row">
+    <button class="tb-btn" data-insert="()" data-cur="-1">()</button>
+    <button class="tb-btn" data-insert="(?:)" data-cur="-1">(?:)</button>
+    <button class="tb-btn" data-insert="(?=)" data-cur="-1">(?=)</button>
+    <button class="tb-btn" data-insert="(?!)" data-cur="-1">(?!)</button>
+    <button class="tb-btn" data-insert="(?<=)" data-cur="-1">(?&lt;=)</button>
+    <button class="tb-btn" data-insert="(?<!)" data-cur="-1">(?&lt;!)</button>
+  </div>
+  <div class="kb-sec-label">sets</div>
+  <div class="kb-row">
+    <button class="tb-btn" data-insert="[]" data-cur="-1">[]</button>
+    <button class="tb-btn" data-insert="[^]" data-cur="-2">[^]</button>
+    <button class="tb-btn" data-insert="[a-z]">[a-z]</button>
+    <button class="tb-btn" data-insert="[A-Z]">[A-Z]</button>
+    <button class="tb-btn" data-insert="[0-9]">[0-9]</button>
+  </div>
+  <div class="kb-sec-label">quantifiers</div>
+  <div class="kb-row">
+    <button class="tb-btn" data-insert="*">*</button>
+    <button class="tb-btn" data-insert="+">+</button>
+    <button class="tb-btn" data-insert="?">?</button>
+    <button class="tb-btn" data-insert="{n}" data-cur="-2">{n}</button>
+    <button class="tb-btn" data-insert="{n,m}" data-cur="-4">{n,m}</button>
+    <button class="tb-btn" data-insert="{n,}" data-cur="-3">{n,}</button>
+    <button class="tb-btn" data-insert="*?">*?</button>
+    <button class="tb-btn" data-insert="+?">+?</button>
+  </div>
+  <div class="kb-sec-label">chars</div>
+  <div class="kb-row">
+    <button class="tb-btn" data-insert="\d">\d</button>
+    <button class="tb-btn" data-insert="\D">\D</button>
+    <button class="tb-btn" data-insert="\w">\w</button>
+    <button class="tb-btn" data-insert="\W">\W</button>
+    <button class="tb-btn" data-insert="\s">\s</button>
+    <button class="tb-btn" data-insert="\S">\S</button>
+    <button class="tb-btn" data-insert="\b">\b</button>
+    <button class="tb-btn" data-insert="\B">\B</button>
+    <button class="tb-btn kb-full" data-insert=".">.</button>
+  </div>
+  <div class="kb-sec-label">anchors</div>
+  <div class="kb-row">
+    <button class="tb-btn" data-insert="^">^</button>
+    <button class="tb-btn" data-insert="$">$</button>
+    <button class="tb-btn" data-insert="|">|</button>
+  </div>
+  <div class="kb-sec-label">escape</div>
+  <div class="kb-row">
+    <button class="tb-btn" data-insert="\.">\.</button>
+    <button class="tb-btn" data-insert="\(">\(</button>
+    <button class="tb-btn" data-insert="\[">\[</button>
+    <button class="tb-btn" data-insert="\*">\*</button>
+    <button class="tb-btn" data-insert="\+">\+</button>
+  </div>
+</div>
+
 <script>
 /* ── Grade functions (kept separate to avoid parser edge cases) ──
    Each function receives the raw pattern string (stripped of /.../ delimiters)
@@ -479,10 +617,10 @@ const GRADES = {
 ── */
 const QUESTIONS = {
   easy:[
-    {type:"explain",regex:"/\\d/",hint:"Think about what class \\d represents",explanation:"Matches any single digit (0–9). \\d is shorthand for the character class [0-9].",keywords:["digit","number","0-9","numeric","integer"]},
-    {type:"explain",regex:"/\\w+/",hint:"\\w is a word character class",explanation:"Matches one or more word characters: letters, digits, and underscore. Equivalent to [a-zA-Z0-9_]+.",keywords:["word","letter","digit","underscore","alphanumeric"]},
-    {type:"explain",regex:"/^hello/",hint:"Think about what ^ anchors",explanation:'Matches "hello" only at the very start of the string. ^ is the start-of-string anchor.',keywords:["start","beginning","hello","anchor"]},
-    {type:"explain",regex:"/cat|dog/",hint:"The pipe symbol separates alternatives",explanation:'Matches either "cat" or "dog". The | operator means OR — it tries the left side first, then the right.',keywords:["or","either","cat","dog","alternative"]},
+    {type:"explain",regex:"/\\d/",hint:"Think about what class \\d represents",explanation:"Matches any single digit (0–9). \\d is shorthand for the character class [0-9].",keywords:["digit","number","0-9","numeric","integer","single digit","one digit"]},
+    {type:"explain",regex:"/\\w+/",hint:"\\w is a word character class",explanation:"Matches one or more word characters: letters, digits, and underscore. Equivalent to [a-zA-Z0-9_]+.",keywords:["word","letter","digit","underscore","alphanumeric","character","one or more","1 or more","multiple"]},
+    {type:"explain",regex:"/^hello/",hint:"Think about what ^ anchors",explanation:'Matches "hello" only at the very start of the string. ^ is the start-of-string anchor.',keywords:["start","beginning","hello","anchor","beginning of","start of"]},
+    {type:"explain",regex:"/cat|dog/",hint:"The pipe symbol separates alternatives",explanation:'Matches either "cat" or "dog". The | operator means OR — it tries the left side first, then the right.',keywords:["or","either","cat","dog","alternative","alternation","pipe","both"]},
     {
       type:"write", prompt:"Match any single digit",
       hint:"Use the shorthand digit class \\d",
@@ -517,9 +655,9 @@ const QUESTIONS = {
     },
   ],
   "easy-hard":[
-    {type:"explain",regex:"/[aeiou]/i",hint:"The i flag is a regex modifier — what does it change?",explanation:"Matches any single vowel (a, e, i, o, u). The /i flag makes the match case-insensitive, so A, E, I, O, U also match.",keywords:["vowel","case","insensitive","flag"]},
-    {type:"explain",regex:"/\\d{3}-\\d{4}/",hint:"What does {n} mean as a quantifier?",explanation:'Matches a 7-digit phone number format: exactly 3 digits, a literal hyphen, then exactly 4 digits — e.g. "555-1234".',keywords:["phone","digit","exactly","three","four","hyphen"]},
-    {type:"explain",regex:"/\\bword\\b/",hint:"\\b is a zero-width boundary assertion",explanation:'Matches the whole word "word" — not "words", "sword", or "password". \\b asserts a boundary between a word character and a non-word character.',keywords:["boundary","whole word","word boundary"]},
+    {type:"explain",regex:"/[aeiou]/i",hint:"The i flag is a regex modifier — what does it change?",explanation:"Matches any single vowel (a, e, i, o, u). The /i flag makes the match case-insensitive, so A, E, I, O, U also match.",keywords:["vowel","case","insensitive","flag","case-insensitive","ignore case","a e i o u"]},
+    {type:"explain",regex:"/\\d{3}-\\d{4}/",hint:"What does {n} mean as a quantifier?",explanation:'Matches a 7-digit phone number format: exactly 3 digits, a literal hyphen, then exactly 4 digits — e.g. "555-1234".',keywords:["phone","digit","exactly","three","four","hyphen","dash","7 digit","seven","number"]},
+    {type:"explain",regex:"/\\bword\\b/",hint:"\\b is a zero-width boundary assertion",explanation:'Matches the whole word "word" — not "words", "sword", or "password". \\b asserts a boundary between a word character and a non-word character.',keywords:["boundary","whole word","word boundary","exact word","not part","isolated","complete word"]},
     {
       type:"write", prompt:"Match exactly 3 consecutive digits",
       hint:"\\d matches one digit; {3} means exactly three",
@@ -544,12 +682,12 @@ const QUESTIONS = {
       canonical:"[cb]at",
       canonicalWhy:'[cb] matches exactly one character — either c or b — followed by the literal "at". Tighter than cat|bat because it avoids repeating "at" twice.'
     },
-    {type:"explain",regex:"/https?:\\/\\//",hint:"The ? quantifier makes the preceding token optional",explanation:'Matches "http://" or "https://". The s is made optional by ?. The forward slashes must be escaped as \\/ inside a regex literal.',keywords:["optional","http","https","question mark","escape"]},
+    {type:"explain",regex:"/https?:\\/\\//",hint:"The ? quantifier makes the preceding token optional",explanation:'Matches "http://" or "https://". The s is made optional by ?. The forward slashes must be escaped as \\/ inside a regex literal.',keywords:["optional","http","https","question mark","escape","s optional","with or without","protocol"]},
   ],
   medium:[
-    {type:"explain",regex:"/^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/i",hint:"Break it into three parts: local part, @, domain",explanation:"A basic email pattern. [\\w.-]+ allows word chars, dots, and hyphens before @. The domain repeats that, then requires a dot and a TLD of 2+ letters. /i makes the TLD case-insensitive.",keywords:["email","@","domain","tld","at sign"]},
-    {type:"explain",regex:"/(?:https?:\\/\\/)([\\w-]+\\.)+[\\w]{2,}/",hint:"(?:...) groups without capturing — what is that useful for?",explanation:"Matches a URL. (?:https?://) groups the protocol without capturing it. ([\\w-]+\\.)+ handles one or more subdomains/domain parts. [\\w]{2,} matches the TLD.",keywords:["url","non-capturing","group","domain","repeat"]},
-    {type:"explain",regex:"/^(?=.*[A-Z])(?=.*\\d).{8,}$/",hint:"(?=...) looks ahead without moving the cursor — how does that help here?",explanation:"A password rule: two lookaheads check that the string contains at least one uppercase letter AND at least one digit anywhere. .{8,} then requires 8 or more characters total.",keywords:["password","lookahead","uppercase","digit","length"]},
+    {type:"explain",regex:"/^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/i",hint:"Break it into three parts: local part, @, domain",explanation:"A basic email pattern. [\\w.-]+ allows word chars, dots, and hyphens before @. The domain repeats that, then requires a dot and a TLD of 2+ letters. /i makes the TLD case-insensitive.",keywords:["email","@","domain","tld","at sign","address","username","dot","valid email"]},
+    {type:"explain",regex:"/(?:https?:\\/\\/)([\\w-]+\\.)+[\\w]{2,}/",hint:"(?:...) groups without capturing — what is that useful for?",explanation:"Matches a URL. (?:https?://) groups the protocol without capturing it. ([\\w-]+\\.)+ handles one or more subdomains/domain parts. [\\w]{2,} matches the TLD.",keywords:["url","non-capturing","group","domain","repeat","subdomain","protocol","website","link"]},
+    {type:"explain",regex:"/^(?=.*[A-Z])(?=.*\\d).{8,}$/",hint:"(?=...) looks ahead without moving the cursor — how does that help here?",explanation:"A password rule: two lookaheads check that the string contains at least one uppercase letter AND at least one digit anywhere. .{8,} then requires 8 or more characters total.",keywords:["password","lookahead","uppercase","digit","length","8","minimum","capital","number"]},
     {
       type:"write", prompt:"Match a valid hex colour code — either 3 or 6 hex digits after #",
       hint:"# is literal. Hex digits are [0-9a-fA-F]. Use alternation for the two lengths.",
@@ -566,11 +704,11 @@ const QUESTIONS = {
       canonical:"^\\w",
       canonicalWhy:"^ asserts the start of the string, \\w matches exactly one word character (letter, digit, or underscore) at that position. Nothing more needed — we only care about the first character."
     },
-    {type:"explain",regex:"/([\"']).*?\\1/",hint:"\\1 refers back to whatever the first group captured",explanation:"Matches a quoted string. The group ([\"']) captures either a double or single quote. .*? lazily matches the content inside. \\1 backreferences the same quote type, so opening and closing quotes must match.",keywords:["backreference","group","quote","matched","capture"]},
+    {type:"explain",regex:"/([\"']).*?\\1/",hint:"\\1 refers back to whatever the first group captured",explanation:"Matches a quoted string. The group ([\"']) captures either a double or single quote. .*? lazily matches the content inside. \\1 backreferences the same quote type, so opening and closing quotes must match.",keywords:["backreference","group","quote","matched","capture","same quote","back reference","\\1","reference"]},
   ],
   "medium-hard":[
-    {type:"explain",regex:"/^(\\d{1,3}\\.){3}\\d{1,3}$/",hint:"What does the {3} outside the group repeat?",explanation:"Matches an IPv4-like pattern. (\\d{1,3}\\.) matches 1–3 digits followed by a dot, repeated exactly 3 times. Then \\d{1,3} matches the final octet. Note: this matches structure only, not valid IP ranges.",keywords:["ip","ipv4","repeat","group","dot","address"]},
-    {type:"explain",regex:"/(?<=@)[\\w.-]+/",hint:"(?<=...) checks what came before without including it in the match",explanation:"Uses a positive lookbehind (?<=@) to assert the @ precedes the current position, then [\\w.-]+ matches the domain. The @ itself is not part of the match result.",keywords:["lookbehind","domain","email","assertion","after"]},
+    {type:"explain",regex:"/^(\\d{1,3}\\.){3}\\d{1,3}$/",hint:"What does the {3} outside the group repeat?",explanation:"Matches an IPv4-like pattern. (\\d{1,3}\\.) matches 1–3 digits followed by a dot, repeated exactly 3 times. Then \\d{1,3} matches the final octet. Note: this matches structure only, not valid IP ranges.",keywords:["ip","ipv4","repeat","group","dot","address","four","octet","dotted","internet"]},
+    {type:"explain",regex:"/(?<=@)[\\w.-]+/",hint:"(?<=...) checks what came before without including it in the match",explanation:"Uses a positive lookbehind (?<=@) to assert the @ precedes the current position, then [\\w.-]+ matches the domain. The @ itself is not part of the match result.",keywords:["lookbehind","domain","email","assertion","after","behind","precedes","not included","without @"]},
     {
       type:"write", prompt:"Match a date in YYYY-MM-DD format",
       hint:"Four digits, a hyphen, two digits, a hyphen, two digits",
@@ -587,11 +725,11 @@ const QUESTIONS = {
       canonical:"^[^\\d]",
       canonicalWhy:"^[^\\d] anchors to start, then [^\\d] matches any single character that is not a digit. Cleaner and more readable than a negative lookahead for this simple case."
     },
-    {type:"explain",regex:"/^(?!.*password)(?=.*[!@#$%]).*$/i",hint:"Read the two lookaheads separately — one forbids, one requires",explanation:"Combines a negative lookahead (?!.*password) — the string must not contain \"password\" anywhere — and a positive lookahead (?=.*[!@#$%]) — it must contain at least one special character. The /i flag makes the password check case-insensitive.",keywords:["negative lookahead","positive lookahead","combined","password","special char"]},
+    {type:"explain",regex:"/^(?!.*password)(?=.*[!@#$%]).*$/i",hint:"Read the two lookaheads separately — one forbids, one requires",explanation:"Combines a negative lookahead (?!.*password) — the string must not contain \"password\" anywhere — and a positive lookahead (?=.*[!@#$%]) — it must contain at least one special character. The /i flag makes the password check case-insensitive.",keywords:["negative lookahead","positive lookahead","combined","password","special char","forbid","require","must not","must have","special character"]},
   ],
   complex:[
-    {type:"explain",regex:"/^([01]?\\d|2[0-3]):([0-5]?\\d)$/",hint:"Split it at the colon — what does each side validate?",explanation:"Validates 24-hour time. Hours: [01]?\\d covers 0–19, 2[0-3] covers 20–23. Minutes: [0-5]?\\d covers 0–59. Anchors ensure the full string is matched.",keywords:["time","hours","minutes","alternation","range","24 hour"]},
-    {type:"explain",regex:"/\\b(?:(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\b/",hint:"Each octet has three alternations — what range does each cover?",explanation:"A strict IPv4 validator. Each octet uses three alternations: 25[0-5] for 250–255, 2[0-4]\\d for 200–249, and [01]?\\d\\d? for 0–199. The octet pattern repeats 3 times with a dot, then once more for the final octet.",keywords:["ipv4","strict","octet","255","range","alternation"]},
+    {type:"explain",regex:"/^([01]?\\d|2[0-3]):([0-5]?\\d)$/",hint:"Split it at the colon — what does each side validate?",explanation:"Validates 24-hour time. Hours: [01]?\\d covers 0–19, 2[0-3] covers 20–23. Minutes: [0-5]?\\d covers 0–59. Anchors ensure the full string is matched.",keywords:["time","hours","minutes","alternation","range","24 hour","hh:mm","clock","colon","24h","0-23","0-59"]},
+    {type:"explain",regex:"/\\b(?:(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\b/",hint:"Each octet has three alternations — what range does each cover?",explanation:"A strict IPv4 validator. Each octet uses three alternations: 25[0-5] for 250–255, 2[0-4]\\d for 200–249, and [01]?\\d\\d? for 0–199. The octet pattern repeats 3 times with a dot, then once more for the final octet.",keywords:["ipv4","strict","octet","255","range","alternation","0-255","ip address","valid","internet"]},
     {
       type:"write", prompt:"Match a Markdown link — [link text](url) — and capture the text and URL in separate groups",
       hint:"The brackets and parens are literal characters and must be escaped with \\",
@@ -600,7 +738,7 @@ const QUESTIONS = {
       canonical:"\\[(.+?)\\]\\((.+?)\\)",
       canonicalWhy:"\\[ and \\] match literal brackets; (.+?) captures the link text lazily. \\( and \\) match literal parentheses; (.+?) captures the URL lazily. Lazy quantifiers prevent over-matching when multiple links appear in one string."
     },
-    {type:"explain",regex:"/^(?:[A-Z]{1,2}\\d{1,2}[A-Z]?\\s?\\d[A-Z]{2})$/i",hint:"UK postcodes have a rigid structure — read each token in order",explanation:"Matches UK postcodes. [A-Z]{1,2} is the area code, \\d{1,2} the district, [A-Z]? an optional sub-district letter, \\s? an optional space, \\d the sector digit, [A-Z]{2} the unit. /i makes it case-insensitive.",keywords:["postcode","uk","format","optional","district","area"]},
+    {type:"explain",regex:"/^(?:[A-Z]{1,2}\\d{1,2}[A-Z]?\\s?\\d[A-Z]{2})$/i",hint:"UK postcodes have a rigid structure — read each token in order",explanation:"Matches UK postcodes. [A-Z]{1,2} is the area code, \\d{1,2} the district, [A-Z]? an optional sub-district letter, \\s? an optional space, \\d the sector digit, [A-Z]{2} the unit. /i makes it case-insensitive.",keywords:["postcode","uk","format","optional","district","area","postal","zip","british","sector","unit"]},
     {
       type:"write", prompt:'Match a doubled word — e.g. "the the" or "hello hello" (words separated by spaces)',
       hint:"Capture the first word in a group, then use a backreference to match the same word again",
@@ -609,7 +747,7 @@ const QUESTIONS = {
       canonical:"\\b(\\w+)\\s+\\1\\b",
       canonicalWhy:"(\\w+) captures a word. \\s+ requires one or more spaces. \\1 backreferences the exact same captured word. \\b boundaries prevent partial matches inside longer words."
     },
-    {type:"explain",regex:"/(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})/",hint:"(?<name>...) is a named capture group — what advantage does naming give you?",explanation:"Named capture groups (?<year>...) etc. let you access match.groups.year instead of match[1]. The pattern itself is identical to numbered groups — naming just makes the code that consumes the match far more readable.",keywords:["named groups","capture","named capture","year","month","day"]},
+    {type:"explain",regex:"/(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})/",hint:"(?<name>...) is a named capture group — what advantage does naming give you?",explanation:"Named capture groups (?<year>...) etc. let you access match.groups.year instead of match[1]. The pattern itself is identical to numbered groups — naming just makes the code that consumes the match far more readable.",keywords:["named groups","capture","named capture","year","month","day","groups.year","match.groups","name","readable","access by name"]},
   ]
 };
 
@@ -640,14 +778,38 @@ const kbToggle = document.getElementById('kb-toggle-btn');
 /* ── Responsive helpers ── */
 function isMobile(){ return window.matchMedia('(max-width:600px)').matches; }
 
+const kbFab      = document.getElementById('kb-fab');
+const kbDrawer   = document.getElementById('kb-drawer');
+const kbBackdrop = document.getElementById('kb-backdrop');
+
+function openDrawer(){
+  kbDrawer.classList.add('open');
+  kbBackdrop.classList.add('visible');
+  kbFab.classList.add('open');
+  kbFab.textContent = '✕';
+}
+function closeDrawer(){
+  kbDrawer.classList.remove('open');
+  kbBackdrop.classList.remove('visible');
+  kbFab.classList.remove('open');
+  kbFab.textContent = '⌨';
+}
+
+kbFab.addEventListener('click', ()=> kbDrawer.classList.contains('open') ? closeDrawer() : openDrawer());
+kbBackdrop.addEventListener('click', closeDrawer);
+document.getElementById('kb-drawer-close-btn').addEventListener('click', closeDrawer);
+
 function applyKbLayout(){
   if(isMobile()){
-    // Mobile: side-kb always visible when started, desktop class irrelevant
     appEl.classList.remove('kb-side-mode');
-    sideKb.style.display = state.started ? 'flex' : 'none';
+    sideKb.style.display = 'none';
+    /* show FAB only after session started */
+    kbFab.style.display = state.started ? 'flex' : 'none';
   } else {
-    // Desktop: controlled by toggle
-    sideKb.style.display = '';   // let CSS class handle it
+    /* close drawer if we resized to desktop */
+    closeDrawer();
+    kbFab.style.display = 'none';
+    sideKb.style.display = '';
     if(state.kbSide){
       appEl.classList.add('kb-side-mode');
       kbToggle.classList.add('active');
@@ -741,19 +903,24 @@ function askQuestion(){
   if(!isMobile()) input.focus();
 }
 
-/* ── Grading ── */
-function gradeExplain(answer,q){
-  const a = answer.toLowerCase();
-  return q.keywords.filter(k=>a.includes(k.toLowerCase())).length >= 2;
+/* ── Grading via Cloudflare Worker ── */
+const WORKER_URL = 'https://returor.mangobasin.workers.dev';
+
+async function gradeViaWorker(questionType, question, userAnswer){
+  const res = await fetch(`${WORKER_URL}/grade`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ questionType, question, userAnswer })
+  });
+  if(!res.ok) throw new Error(`Worker error: ${res.status}`);
+  return await res.json(); // { correct: bool, feedback: string }
 }
-function gradeWrite(answer, q){
+
+/* Client-side syntax check only — no grading logic */
+function checkSyntax(answer){
   const raw = answer.trim().replace(/^\/|\/[gimsuy]*$/g,'');
-  try{
-    new RegExp(raw); // validate syntax first — throws if invalid
-    const fn = GRADES[q.gradeKey];
-    if(!fn) return { ok:false, error:'no grade function for this question' };
-    return { ok: fn(raw), raw };
-  }catch(e){ return { ok:false, error:e.message }; }
+  try{ new RegExp(raw); return { ok:true, raw }; }
+  catch(e){ return { ok:false, error:e.message }; }
 }
 
 function submitAnswer(){
@@ -869,8 +1036,9 @@ document.querySelectorAll('.tb-btn').forEach(btn => {
     const wasFired = holdFired;
     cancelHold();
     if(!wasFired){
-      /* normal tap/click — insert as before */
+      /* normal tap/click — insert then close drawer on mobile */
       insertAtCursor(btn.dataset.insert, parseInt(btn.dataset.cur||'0'));
+      if(isMobile()) closeDrawer();
     }
   }
 
@@ -1034,64 +1202,87 @@ function showNudgeBanner(count){
   scrollBottom();
 }
 
-/* ── submitAnswer with tracking baked in ── */
-window.submitAnswer = function submitAnswerWithTracking(){
+/* ── submitAnswer — async, graded via Worker ── */
+window.submitAnswer = async function submitAnswerWithTracking(){
   if(state.answered||!state.current) return;
   const answer = input.value.trim();
   if(!answer) return;
-  state.attemptCount++;                          // count every submit attempt
-  state.answered=true; state.total++;
-  totalVal.textContent=state.total;
+
+  const q = state.current;
+
+  /* For write questions — syntax check instantly client-side */
+  if(q.type === 'write'){
+    const syntax = checkSyntax(answer);
+    if(!syntax.ok){
+      addUserMsg(answer);
+      addBotMsg(`<div class="feedback-err">✗ Invalid regex syntax: <code>${syntax.error}</code></div><div class="feedback-warn">Check your pattern and try again.</div>`);
+      state.attemptCount++;
+      return; // don't lock input, let them fix it
+    }
+  }
+
+  state.attemptCount++;
+  state.answered = true;
+  state.total++;
+  totalVal.textContent = state.total;
   addUserMsg(answer);
-  input.disabled=true; sendBtn.disabled=true; hintBtn.style.display='none';
-  const t=showTyping();
-  setTimeout(()=>{
-    t.remove();
-    const q=state.current;
-    let correct=false, html='';
-    if(q.type==='explain'){
-      correct=gradeExplain(answer,q);
-      html=correct
-        ?`<div class="feedback-ok">✓ Nice! ${q.explanation}</div>`
-        :`<div class="feedback-err">✗ Not quite.</div><div class="feedback-warn">The answer: ${q.explanation}</div>`;
+  input.disabled = true;
+  sendBtn.disabled = true;
+  hintBtn.style.display = 'none';
+
+  const t = showTyping();
+
+  let correct = false;
+  let html = '';
+
+  try{
+    const question = q.type === 'explain' ? q.regex : q.prompt;
+    const result = await gradeViaWorker(q.type, question, answer);
+
+    correct = !!result.correct;
+
+    if(correct){
+      html = `<div class="feedback-ok">✓ ${result.feedback}</div>`;
     } else {
-      const r=gradeWrite(answer,q);
-      if(r.error){
-        html=`<div class="feedback-err">✗ Invalid regex: <code>${r.error}</code></div><div class="feedback-warn">Check syntax and try again.</div>`;
-        state.answered=false; state.total--;     // don't count invalid syntax as a scored attempt
-        totalVal.textContent=state.total;
-        input.disabled=false; sendBtn.disabled=false;
-        input.value=answer; hintBtn.style.display='';
-        addBotMsg(html); return;
-      }
-      correct=r.ok;
-      if(correct){
-        html=`<div class="feedback-ok">✓ Correct! <code>${r.raw}</code> passes all test cases.</div>`;
-      } else {
-        html=`<div class="feedback-err">✗ Not quite — your pattern didn't pass all test cases.</div>`;
-        html+=`<div class="feedback-warn" style="margin-top:8px;">`;
-        html+=`<strong style="display:block;margin-bottom:4px;">One clean solution: <code>${q.canonical}</code></strong>`;
-        html+=`${q.canonicalWhy}`;
-        html+=`</div>`;
+      html = `<div class="feedback-err">✗ ${result.feedback}</div>`;
+      /* For write questions also show canonical answer */
+      if(q.type === 'write' && q.canonical){
+        html += `<div class="feedback-warn" style="margin-top:8px;">`;
+        html += `<strong style="display:block;margin-bottom:4px;">Clean solution: <code>${q.canonical}</code></strong>`;
+        html += `${q.canonicalWhy}</div>`;
       }
     }
-    if(correct){ state.score++; scoreVal.textContent=state.score; }
+  } catch(err){
+    /* Worker unreachable — fall back gracefully */
+    html = `<div class="feedback-warn">⚠ Couldn't reach the grading server. Check your connection and try again.</div>`;
+    state.answered = false;
+    state.total--;
+    totalVal.textContent = state.total;
+    input.disabled = false;
+    sendBtn.disabled = false;
+    input.value = answer;
+    hintBtn.style.display = '';
+    t.remove();
     addBotMsg(html);
-    nextBtn.style.display='';
+    return;
+  }
 
-    /* ── Record this attempt ── */
-    recordAttempt({
-      question:           q.type==='explain' ? q.regex : q.prompt,
-      questionType:       q.type,
-      difficulty:         state.difficulty,
-      userAnswer:         answer,
-      correct,
-      hintUsed:           state.hintUsed,
-      descriptionLookups: [...state.descriptionLookups],
-      attemptCount:       state.attemptCount
-    });
+  t.remove();
+  if(correct){ state.score++; scoreVal.textContent = state.score; }
+  addBotMsg(html);
+  nextBtn.style.display = '';
 
-  },700);
+  /* ── Record this attempt ── */
+  recordAttempt({
+    question:           q.type === 'explain' ? q.regex : q.prompt,
+    questionType:       q.type,
+    difficulty:         state.difficulty,
+    userAnswer:         answer,
+    correct,
+    hintUsed:           state.hintUsed,
+    descriptionLookups: [...state.descriptionLookups],
+    attemptCount:       state.attemptCount
+  });
 };
 
 /* Rebind send button to the tracking version */

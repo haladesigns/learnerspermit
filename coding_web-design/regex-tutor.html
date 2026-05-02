@@ -839,7 +839,11 @@ document.getElementById('theme-btn').addEventListener('click', ()=>{
 function setDiff(d){
   state.difficulty = d;
   document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.diff === d));
-  if(state.started){ addBotMsg(`Switched to <strong>${d}</strong>. Next question:`); setTimeout(askQuestion, 400); }
+  if(state.started){
+    seenQuestions.clear(); // fresh slate for new difficulty
+    addBotMsg(`Switched to <strong>${d}</strong>. Generating your next question...`);
+    setTimeout(askQuestion, 400);
+  }
 }
 document.querySelectorAll('.pill').forEach(p => p.addEventListener('click', ()=> setDiff(p.dataset.diff)));
 
@@ -874,31 +878,105 @@ function showTyping(){
   chat.appendChild(d); scrollBottom(); return d;
 }
 
-/* ── Questions ── */
-function pickQuestion(){
-  const pool = QUESTIONS[state.difficulty];
-  return pool[Math.floor(Math.random()*pool.length)];
+/* ── Question generation ── */
+
+/* Question type balance per difficulty
+   [explainWeight, writeWeight] — must sum to 10 */
+const TYPE_WEIGHTS = {
+  'easy':        [6, 4],
+  'easy-hard':   [5, 5],
+  'medium':      [4, 6],
+  'medium-hard': [3, 7],
+  'complex':     [3, 7],
+};
+
+function pickQuestionType(difficulty){
+  const [ew] = TYPE_WEIGHTS[difficulty] || [5, 5];
+  return Math.random() * 10 < ew ? 'explain' : 'write';
 }
-function askQuestion(){
+
+/* Seen questions set — persists for the whole browser session */
+const seenQuestions = new Set();
+
+function markSeen(q){
+  /* Use regex or prompt as the identifier */
+  const id = q.regex || q.prompt || '';
+  if(id) seenQuestions.add(id);
+}
+
+/* Fallback: pick from hardcoded bank filtering already-seen */
+function pickFallback(difficulty){
+  const pool = QUESTIONS[difficulty] || QUESTIONS['easy'];
+  const unseen = pool.filter(q => {
+    const id = q.regex || q.prompt || '';
+    return !seenQuestions.has(id);
+  });
+  /* If all seen, reset and use full pool */
+  const source = unseen.length > 0 ? unseen : pool;
+  return source[Math.floor(Math.random() * source.length)];
+}
+
+/* Normalise question shape from Worker to match internal format */
+function normaliseQuestion(q){
+  if(q.type === 'write' && q.testCases){
+    q.matches    = q.testCases.matches    || [];
+    q.nonMatches = q.testCases.nonMatches || [];
+  }
+  return q;
+}
+
+async function fetchQuestion(difficulty){
+  const questionType = pickQuestionType(difficulty);
+  const seenList     = [...seenQuestions];
+
+  const res = await fetch(`${WORKER_URL}/question`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ difficulty, questionType, seenQuestions: seenList })
+  });
+  if(!res.ok) throw new Error(`Worker error: ${res.status}`);
+  const q = await res.json();
+  if(q.error) throw new Error(q.error);
+  return normaliseQuestion(q);
+}
+
+async function askQuestion(){
   state.answered=false; state.hintUsed=false;
   state.descriptionLookups=[]; state.attemptCount=0;
   hintBtn.style.display=''; hintBtn.textContent='show hint'; hintBtn.style.color='';
   nextBtn.style.display='none';
-  sendBtn.disabled=false; input.value=''; input.disabled=false;
-  state.current = pickQuestion();
-  const q = state.current;
+  sendBtn.disabled=true; input.value=''; input.disabled=true;
+
+  /* Show typing while question loads */
+  const t = showTyping();
+
+  let q;
+  try{
+    q = await fetchQuestion(state.difficulty);
+  } catch(err){
+    /* Fallback to hardcoded bank */
+    console.warn('Question generation failed, using fallback:', err.message);
+    q = pickFallback(state.difficulty);
+  }
+
+  t.remove();
+  markSeen(q);
+  state.current = q;
+
   let html = `${getDiffTag(state.difficulty)} ${getTypeTag(q.type)}<br>`;
-  if(q.type==='explain'){
+  if(q.type === 'explain'){
     html += `What does this regex do?<div class="regex-block">${q.regex}</div>`;
   } else {
     html += `Write a regex that: <strong>${q.prompt}</strong>`;
-    if(q.matches){
+    if(q.matches && q.matches.length){
       html += `<div class="test-cases">`;
-      q.matches.forEach(m => html+=`<div class="test-case match"><span class="tc-label">✓ should match</span>${m}</div>`);
-      q.nonMatches.slice(0,2).forEach(m => html+=`<div class="test-case no-match"><span class="tc-label">✗ no match</span>${m}</div>`);
+      q.matches.forEach(m => html += `<div class="test-case match"><span class="tc-label">✓ should match</span>${m}</div>`);
+      q.nonMatches.slice(0,3).forEach(m => html += `<div class="test-case no-match"><span class="tc-label">✗ no match</span>${m}</div>`);
       html += `</div>`;
     }
   }
+
+  sendBtn.disabled=false; input.disabled=false;
   addBotMsg(html);
   if(!isMobile()) input.focus();
 }

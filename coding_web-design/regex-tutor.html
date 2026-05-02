@@ -982,7 +982,7 @@ async function askQuestion(){
 }
 
 /* ── Grading via Cloudflare Worker ── */
-const WORKER_URL = 'https://returor.mangobasin.workers.dev';
+const WORKER_URL = 'https://clj-fund.mangobasin.workers.dev';
 
 async function gradeViaWorker(questionType, question, userAnswer){
   const res = await fetch(WORKER_URL, {

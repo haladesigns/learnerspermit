@@ -929,10 +929,10 @@ async function fetchQuestion(difficulty){
   const questionType = pickQuestionType(difficulty);
   const seenList     = [...seenQuestions];
 
-  const res = await fetch(`${WORKER_URL}/question`, {
+  const res = await fetch(WORKER_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ difficulty, questionType, seenQuestions: seenList })
+    body: JSON.stringify({ type: 'question', difficulty, questionType, seenQuestions: seenList })
   });
   if(!res.ok) throw new Error(`Worker error: ${res.status}`);
   const q = await res.json();
@@ -985,13 +985,13 @@ async function askQuestion(){
 const WORKER_URL = 'https://returor.mangobasin.workers.dev';
 
 async function gradeViaWorker(questionType, question, userAnswer){
-  const res = await fetch(`${WORKER_URL}/grade`, {
+  const res = await fetch(WORKER_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ questionType, question, userAnswer })
+    body: JSON.stringify({ type: 'grade', questionType, question, userAnswer })
   });
   if(!res.ok) throw new Error(`Worker error: ${res.status}`);
-  return await res.json(); // { correct: bool, feedback: string }
+  return await res.json();
 }
 
 /* Client-side syntax check only — no grading logic */

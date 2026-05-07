@@ -1,0 +1,2202 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-mode="search">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>YARA-L · Section Relationships Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Major+Mono+Display&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     Theme tokens
+  ============================================================ */
+  html[data-theme="dark"] {
+    --bg-0: #0a0e0a;
+    --bg-1: #0f1410;
+    --bg-2: #161d18;
+    --line: #1f2a22;
+    --line-bright: #2d3d31;
+    --text: #c8d4ca;
+    --text-dim: #6b7d70;
+    --text-faint: #3d4f43;
+    --green: #6dffa8;
+    --green-dim: #3a8e5e;
+    --amber: #ffb547;
+    --amber-dim: #8a5e1e;
+    --red: #ff5f5f;
+    --blue: #5fb8ff;
+    --magenta: #d96bff;
+    --cyan: #5fffd6;
+    --grid-overlay: rgba(109,255,168,0.012);
+    --halo: rgba(109,255,168,0.04);
+  }
+  html[data-theme="light"] {
+    --bg-0: #f7f5ee;
+    --bg-1: #ede9dc;
+    --bg-2: #e2ddca;
+    --line: #cfc8b0;
+    --line-bright: #b8af90;
+    --text: #2a2820;
+    --text-dim: #6b6850;
+    --text-faint: #9a9678;
+    --green: #1f7a4a;
+    --green-dim: #2c9a5e;
+    --amber: #b8770f;
+    --amber-dim: #d99a3a;
+    --red: #b03030;
+    --blue: #1f63a8;
+    --magenta: #8b3aa5;
+    --cyan: #1a8a8a;
+    --grid-overlay: rgba(0,0,0,0.018);
+    --halo: rgba(31,122,74,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg-0);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.55;
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background 0.25s, color 0.25s;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, var(--halo), transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 2px, var(--grid-overlay) 2px, var(--grid-overlay) 3px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .frame {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 40px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    border: 1px solid var(--line);
+    background: var(--bg-1);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity: 0.6;
+  }
+  .header-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: center;
+  }
+  .crumbs {
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .crumbs span.dot { color: var(--green); }
+  h1 {
+    font-family: 'Major Mono Display', monospace;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  h1 .accent { color: var(--green); }
+  .sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    max-width: 680px;
+  }
+  .meta-row {
+    display: flex;
+    gap: 24px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+  }
+  .meta-row span b { color: var(--green-dim); font-weight: 500; }
+
+  /* Header controls cluster */
+  .header-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .ctrl-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ctrl-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  /* Switch (mode + theme) */
+  .switch {
+    display: inline-flex;
+    border: 1px solid var(--line-bright);
+    background: var(--bg-2);
+    position: relative;
+  }
+  .switch button {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 7px 14px;
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    z-index: 2;
+  }
+  .switch button.active {
+    color: var(--green);
+  }
+  .switch button:not(.active):hover {
+    color: var(--text);
+  }
+  .switch .indicator {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    background: rgba(109,255,168,0.12);
+    border: 1px solid var(--green-dim);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+  }
+  html[data-theme="light"] .switch .indicator {
+    background: rgba(31,122,74,0.1);
+  }
+
+  /* ---------- Tabs ---------- */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--line);
+    border-bottom: none;
+    background: var(--bg-1);
+    margin-bottom: 0;
+    overflow-x: auto;
+  }
+  .tab {
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--line);
+    color: var(--text-dim);
+    padding: 14px 22px;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    position: relative;
+  }
+  .tab:hover { color: var(--text); background: var(--bg-2); }
+  .tab.active {
+    color: var(--green);
+    background: var(--bg-0);
+    border-bottom: 1px solid var(--bg-0);
+    margin-bottom: -1px;
+  }
+  .tab.active::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--green);
+  }
+  .tab .num {
+    color: var(--text-faint);
+    margin-right: 8px;
+    font-weight: 500;
+  }
+  .tab.active .num { color: var(--green-dim); }
+
+  .panel {
+    border: 1px solid var(--line);
+    background: var(--bg-0);
+    padding: 32px;
+    display: none;
+    min-height: 700px;
+  }
+  .panel.active { display: block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  h2 {
+    font-family: 'Major Mono Display', monospace;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+  }
+  h2 .pill {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--green);
+    border: 1px solid var(--green-dim);
+    padding: 2px 8px;
+    margin-left: 12px;
+    vertical-align: middle;
+    letter-spacing: 0.1em;
+  }
+  h2 .mode-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+    padding: 2px 8px;
+    margin-left: 8px;
+    vertical-align: middle;
+    letter-spacing: 0.1em;
+  }
+  .panel-sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-bottom: 24px;
+    max-width: 760px;
+  }
+  h3 {
+    font-size: 12px;
+    color: var(--green-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin: 24px 0 10px;
+    font-weight: 500;
+  }
+
+  /* ---------- Common controls ---------- */
+  .controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 16px 0;
+  }
+  .btn {
+    background: var(--bg-2);
+    color: var(--text);
+    border: 1px solid var(--line-bright);
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .btn:hover { border-color: var(--green-dim); color: var(--green); }
+  .btn.primary { border-color: var(--green-dim); color: var(--green); }
+  .btn.primary:hover { background: rgba(109,255,168,0.08); }
+  html[data-theme="light"] .btn.primary:hover { background: rgba(31,122,74,0.06); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .toggle-group {
+    display: inline-flex;
+    border: 1px solid var(--line-bright);
+    background: var(--bg-2);
+  }
+  .toggle-group .btn {
+    border: none;
+    border-right: 1px solid var(--line-bright);
+  }
+  .toggle-group .btn:last-child { border-right: none; }
+  .toggle-group .btn.active {
+    background: rgba(109,255,168,0.08);
+    color: var(--green);
+  }
+  html[data-theme="light"] .toggle-group .btn.active {
+    background: rgba(31,122,74,0.07);
+  }
+
+  .label {
+    font-size: 11px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-right: 8px;
+  }
+
+  /* ---------- Grid layouts ---------- */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  /* ============================================================
+     Responsive — three tiers
+     ≤980px  tablet           : grids collapse, header still horizontal
+     ≤640px  small tablet     : header stacks, pipeline vertical
+     ≤420px  phone            : tighten everything, force horizontal scroll where needed
+  ============================================================ */
+  @media (max-width: 980px) {
+    .two-col, .three-col { grid-template-columns: 1fr; }
+    .frame { padding: 24px 24px 60px; }
+    h1 { font-size: 24px; }
+    .pipeline { grid-template-columns: repeat(2, 1fr); }
+    .pipeline .pipe-cell:nth-child(2) { border-right: 1px solid var(--line); }
+    .pipeline .pipe-cell:nth-child(2)::after { display: none; }
+    .pipeline .pipe-cell:nth-child(odd):not(:last-child)::after { content: "→"; }
+    .pipeline .pipe-cell:nth-child(even):not(:last-child)::after { display: none; }
+  }
+
+  @media (max-width: 640px) {
+    .frame { padding: 18px 14px 50px; }
+    /* Header: stack title + controls vertically */
+    header { padding: 18px 16px; }
+    .header-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .header-controls {
+      align-items: flex-start;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 12px 18px;
+    }
+    h1 { font-size: 20px; letter-spacing: 0.02em; }
+    .crumbs { font-size: 10px; margin-bottom: 8px; }
+    .sub { font-size: 12px; }
+    .meta-row { gap: 14px; font-size: 10px; }
+
+    /* Tabs: keep scrollable, tighter padding */
+    .tab { padding: 12px 14px; font-size: 11px; letter-spacing: 0.08em; }
+    .tab .num { margin-right: 5px; }
+
+    /* Panels: less padding, lower min-height */
+    .panel { padding: 20px 16px; min-height: 0; }
+
+    /* Headings */
+    h2 { font-size: 16px; }
+    h2 .pill, h2 .mode-tag {
+      display: inline-block;
+      margin-left: 6px;
+      margin-top: 4px;
+      font-size: 9px;
+      padding: 1px 6px;
+    }
+    h3 { font-size: 11px; margin: 18px 0 8px; }
+    .panel-sub { font-size: 12px; margin-bottom: 18px; }
+
+    /* Pipeline: vertical stack with downward arrows */
+    .pipeline {
+      grid-template-columns: 1fr;
+    }
+    .pipeline .pipe-cell {
+      border-right: 1px solid var(--line) !important;
+      border-bottom: none;
+    }
+    .pipeline .pipe-cell:not(:last-child) {
+      border-bottom: none;
+    }
+    .pipeline .pipe-cell::after,
+    .pipeline .pipe-cell:nth-child(odd):not(:last-child)::after,
+    .pipeline .pipe-cell:nth-child(even):not(:last-child)::after {
+      content: "↓" !important;
+      display: block !important;
+      position: absolute;
+      right: 50% !important;
+      transform: translateX(50%) !important;
+      top: auto !important;
+      bottom: -10px !important;
+      width: 18px;
+      height: 18px;
+      line-height: 18px;
+    }
+    .pipeline .pipe-cell:last-child::after { display: none !important; }
+    .pipeline { gap: 10px 0; }
+
+    /* Stream rows: wrap to 2 visual lines */
+    .stream { height: 280px; }
+    .stream-row {
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        "ts verdict"
+        "typ verdict"
+        "body body";
+      gap: 4px 10px;
+      padding: 8px;
+    }
+    .stream-row .ts { grid-area: ts; font-size: 10px; }
+    .stream-row .typ { grid-area: typ; font-size: 9px; }
+    .stream-row .body { grid-area: body; font-size: 11px; word-break: break-word; }
+    .stream-row .verdict { grid-area: verdict; align-self: start; }
+
+    /* Scrubber: stack control + slider */
+    .scrubber-wrap { padding: 12px 14px; }
+    .scrubber-row {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .scrubber-row input[type=range] {
+      flex: 1 0 100%;
+      order: 99;
+    }
+    .scrubber-readout { font-size: 10px; min-width: 0; margin-left: auto; }
+
+    /* Steps: allow wrap, smaller text */
+    .steps { flex-wrap: wrap; }
+    .step {
+      flex: 1 0 33%;
+      padding: 10px 8px;
+      font-size: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    .step .sn { font-size: 9px; }
+
+    /* Compare cards stack */
+    .compare { grid-template-columns: 1fr; }
+
+    /* Scope matrix: horizontal scroll wrapper */
+    .scope-viz {
+      padding: 14px;
+      overflow-x: auto;
+    }
+    .scope-rows {
+      min-width: 540px;          /* preserve readability, scroll if needed */
+      grid-template-columns: 80px repeat(4, minmax(90px, 1fr));
+      font-size: 10px;
+    }
+    .scope-rows .head { font-size: 9px; padding: 6px; }
+    .scope-rows .vname { padding: 8px 6px; font-size: 11px; }
+    .scope-rows .cell { padding: 8px 6px; }
+
+    /* Code blocks: smaller text, allow horizontal scroll */
+    .code { font-size: 11px; padding: 12px; }
+    .code .label-band { font-size: 9px; }
+
+    /* Stage cards: tighter */
+    .stage { padding: 12px; }
+    .stage .stage-content { font-size: 11px; min-height: 0; }
+    .stage .stage-meta { font-size: 9px; }
+
+    /* Group boxes: 2 columns instead of auto-fill */
+    .groups { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .group-box { padding: 10px; }
+    .group-box .gk { font-size: 12px; }
+    .group-box .gstats { font-size: 10px; }
+
+    /* Narration */
+    .narration { padding: 8px 12px; font-size: 12px; }
+
+    /* Mode banner */
+    .mode-banner { padding: 10px 12px; font-size: 11px; gap: 8px; }
+    .mode-banner .ico { font-size: 9px; }
+
+    /* Controls row */
+    .controls { gap: 6px; }
+    .controls .label { display: block; width: 100%; margin-bottom: 4px; }
+    .btn { padding: 7px 10px; font-size: 10px; letter-spacing: 0.06em; }
+    .toggle-group { flex-wrap: wrap; }
+
+    /* Aggregation pills wrap nicely */
+    .agg-events { gap: 4px; }
+    .agg-pill { font-size: 10px; padding: 5px 8px; }
+    .agg-result { padding: 10px; font-size: 11px; }
+    .agg-result .lbl { font-size: 9px; display: block; margin-bottom: 2px; }
+
+    /* Legend wraps */
+    .legend { gap: 10px; font-size: 9px; }
+
+    /* Footer */
+    footer {
+      flex-direction: column;
+      gap: 6px;
+      font-size: 9px;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .frame { padding: 14px 10px 40px; }
+    h1 { font-size: 17px; }
+    .meta-row { gap: 10px; }
+    .meta-row span { flex: 1 0 40%; }
+    .panel { padding: 16px 12px; }
+
+    /* Group boxes single column on tiny screens */
+    .groups { grid-template-columns: 1fr; }
+
+    /* Three-col aggregation results stack */
+    .three-col { grid-template-columns: 1fr; }
+
+    /* Switch buttons more compact */
+    .switch button { padding: 6px 10px; font-size: 9px; letter-spacing: 0.1em; }
+
+    /* Scrubber: hide play label, keep icon */
+    .scrubber-readout { font-size: 9px; }
+
+    /* Make tabs more thumbable */
+    .tab {
+      padding: 10px 12px;
+      font-size: 10px;
+    }
+    .tab .num { display: none; }
+  }
+
+  /* Touch-friendly: increase tap targets when on touch devices */
+  @media (hover: none) and (pointer: coarse) {
+    .btn, .tab, .switch button, .step, .agg-pill {
+      min-height: 36px;
+    }
+  }
+
+  /* ---------- Code blocks ---------- */
+  .code {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    padding: 16px;
+    font-size: 12.5px;
+    color: var(--text);
+    overflow-x: auto;
+    white-space: pre;
+    position: relative;
+  }
+  .code .kw { color: var(--magenta); }
+  .code .str { color: var(--amber); }
+  .code .num { color: var(--cyan); }
+  .code .com { color: var(--text-faint); font-style: italic; }
+  .code .var { color: var(--green); }
+  .code .ev { color: var(--blue); }
+  .code .fn { color: var(--cyan); }
+  .code .op { color: var(--text-dim); }
+  .code .label-band {
+    display: block;
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .code .rule-only {
+    background: rgba(255,181,71,0.06);
+    display: inline-block;
+    border-left: 2px solid var(--amber-dim);
+    padding-left: 6px;
+    margin-left: -8px;
+  }
+  html[data-theme="light"] .code .rule-only {
+    background: rgba(184,119,15,0.08);
+  }
+
+  /* ---------- Event stream ---------- */
+  .stream {
+    border: 1px solid var(--line);
+    background: var(--bg-1);
+    height: 320px;
+    overflow-y: auto;
+    padding: 12px;
+    font-size: 11.5px;
+  }
+  .stream-row {
+    display: grid;
+    grid-template-columns: 60px 90px 1fr 70px;
+    gap: 10px;
+    padding: 6px 8px;
+    border-bottom: 1px dashed var(--line);
+    align-items: center;
+    transition: all 0.2s;
+  }
+  .stream-row:last-child { border-bottom: none; }
+  .stream-row.matched { background: rgba(109,255,168,0.05); }
+  html[data-theme="light"] .stream-row.matched { background: rgba(31,122,74,0.05); }
+  .stream-row.not-matched { opacity: 0.35; }
+  .stream-row.fading-in { animation: rowIn 0.4s; }
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: none; }
+  }
+  .stream-row .ts { color: var(--text-faint); }
+  .stream-row .typ { color: var(--blue); font-size: 10px; letter-spacing: 0.05em; }
+  .stream-row .body { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+  .stream-row .body .v { color: var(--green); }
+  .stream-row .body .k { color: var(--text-dim); }
+  .stream-row .verdict {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: right;
+  }
+  .stream-row.matched .verdict { color: var(--green); }
+  .stream-row.not-matched .verdict { color: var(--text-faint); }
+
+  /* ---------- Stage cards ---------- */
+  .stage {
+    border: 1px solid var(--line);
+    background: var(--bg-1);
+    padding: 16px;
+    position: relative;
+  }
+  .stage h4 {
+    font-size: 10px;
+    color: var(--green-dim);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .stage .stage-content {
+    font-size: 12px;
+    color: var(--text);
+    min-height: 80px;
+  }
+  .stage .stage-meta {
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 10px;
+  }
+
+  /* ---------- Group / result boxes ---------- */
+  .groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .group-box {
+    border: 1px solid var(--line);
+    background: var(--bg-1);
+    padding: 12px;
+    transition: all 0.3s;
+  }
+  .group-box.fires {
+    border-color: var(--red);
+    background: rgba(255,95,95,0.06);
+  }
+  html[data-theme="light"] .group-box.fires { background: rgba(176,48,48,0.05); }
+  .group-box .gh {
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .group-box .gk {
+    font-size: 13px;
+    color: var(--green);
+    margin-bottom: 6px;
+  }
+  .group-box.fires .gk { color: var(--red); }
+  .group-box .gstats {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+  .group-box .gstats .v { color: var(--text); }
+  .group-box .verdict-final {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .group-box.fires .verdict-final { color: var(--red); }
+  .group-box:not(.fires) .verdict-final { color: var(--text-faint); }
+
+  /* ---------- Step explainer ---------- */
+  .steps {
+    display: flex;
+    gap: 0;
+    margin: 16px 0;
+    border: 1px solid var(--line);
+    background: var(--bg-1);
+  }
+  .step {
+    flex: 1;
+    padding: 12px 14px;
+    border-right: 1px solid var(--line);
+    font-size: 11px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .step:last-child { border-right: none; }
+  .step .sn {
+    display: block;
+    font-size: 10px;
+    color: var(--text-faint);
+    margin-bottom: 4px;
+    letter-spacing: 0.15em;
+  }
+  .step.active {
+    background: rgba(109,255,168,0.06);
+    color: var(--green);
+  }
+  html[data-theme="light"] .step.active { background: rgba(31,122,74,0.06); }
+  .step.active .sn { color: var(--green-dim); }
+  .step.done { color: var(--text); }
+  .step.done .sn { color: var(--green-dim); }
+
+  .narration {
+    border-left: 2px solid var(--green-dim);
+    padding: 10px 16px;
+    margin: 16px 0;
+    background: rgba(109,255,168,0.03);
+    font-size: 13px;
+    color: var(--text);
+    min-height: 50px;
+  }
+  html[data-theme="light"] .narration { background: rgba(31,122,74,0.04); }
+  .narration .lead {
+    color: var(--green);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  /* ---------- Mode banner ---------- */
+  .mode-banner {
+    border: 1px solid var(--amber-dim);
+    background: rgba(255,181,71,0.05);
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 12px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  html[data-theme="light"] .mode-banner { background: rgba(184,119,15,0.07); }
+  .mode-banner .ico {
+    color: var(--amber);
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  /* ---------- Scrubber ---------- */
+  .scrubber-wrap {
+    border: 1px solid var(--line);
+    background: var(--bg-1);
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+  .scrubber-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .scrubber-row input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+  .scrubber-row input[type=range]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: var(--line-bright);
+  }
+  .scrubber-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--green);
+    margin-top: -5px;
+    border-radius: 0;
+    box-shadow: 0 0 0 2px var(--bg-1);
+  }
+  .scrubber-row input[type=range]::-moz-range-track {
+    height: 4px;
+    background: var(--line-bright);
+  }
+  .scrubber-row input[type=range]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--green);
+    border: 0;
+    border-radius: 0;
+  }
+  .scrubber-readout {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    min-width: 80px;
+  }
+  .scrubber-readout b { color: var(--green); font-weight: 500; }
+
+  /* ---------- Pipeline ---------- */
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin: 16px 0;
+  }
+  .pipeline .pipe-cell {
+    border: 1px solid var(--line);
+    border-right: none;
+    background: var(--bg-1);
+    padding: 14px;
+    position: relative;
+    text-align: center;
+  }
+  .pipeline .pipe-cell:last-child { border-right: 1px solid var(--line); }
+  .pipeline .pipe-cell::after {
+    content: "→";
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--green-dim);
+    z-index: 2;
+    background: var(--bg-0);
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    font-size: 12px;
+  }
+  .pipeline .pipe-cell:last-child::after { display: none; }
+  .pipeline .pipe-cell .ph {
+    font-size: 10px;
+    color: var(--green-dim);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .pipeline .pipe-cell .pb {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .pipeline .pipe-cell.lit {
+    background: rgba(109,255,168,0.06);
+  }
+  html[data-theme="light"] .pipeline .pipe-cell.lit { background: rgba(31,122,74,0.06); }
+  .pipeline .pipe-cell.lit .ph { color: var(--green); }
+
+  /* ---------- Compare cards ---------- */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .compare-card {
+    border: 1px solid var(--line);
+    padding: 14px;
+    background: var(--bg-1);
+  }
+  .compare-card h5 {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .compare-card.with h5 { color: var(--green); }
+  .compare-card.without h5 { color: var(--amber); }
+  .compare-card ul { list-style: none; padding: 0; }
+  .compare-card li {
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .compare-card li:last-child { border-bottom: none; }
+  .compare-card li b { color: var(--text); font-weight: 500; }
+
+  /* ---------- Variable scope viz ---------- */
+  .scope-viz {
+    border: 1px solid var(--line);
+    background: var(--bg-1);
+    padding: 18px;
+    position: relative;
+  }
+  .scope-rows {
+    display: grid;
+    grid-template-columns: 90px 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    align-items: stretch;
+    font-size: 11px;
+  }
+  .scope-rows .head {
+    font-size: 10px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .scope-rows .vname {
+    padding: 10px 8px;
+    color: var(--text);
+    border-right: 1px solid var(--line);
+    background: var(--bg-2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .scope-rows .vname.ev { color: var(--blue); }
+  .scope-rows .vname.ph { color: var(--green); }
+  .scope-rows .vname.oc { color: var(--amber); }
+  .scope-rows .cell {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--line);
+    color: var(--text-faint);
+    text-align: center;
+  }
+  .scope-rows .cell.yes {
+    background: rgba(109,255,168,0.08);
+    color: var(--green);
+  }
+  html[data-theme="light"] .scope-rows .cell.yes {
+    background: rgba(31,122,74,0.08);
+  }
+  .scope-rows .cell.no {
+    color: var(--text-faint);
+  }
+  .scope-rows .cell.no::before { content: "·"; }
+  .scope-rows .cell.yes::before { content: "●"; }
+
+  /* ---------- Aggregation viz ---------- */
+  .agg-viz {
+    border: 1px solid var(--line);
+    background: var(--bg-1);
+    padding: 18px;
+  }
+  .agg-events {
+    display: flex;
+    gap: 6px;
+    margin: 12px 0;
+    flex-wrap: wrap;
+  }
+  .agg-pill {
+    border: 1px solid var(--line-bright);
+    padding: 6px 10px;
+    font-size: 11px;
+    background: var(--bg-2);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .agg-pill.selected {
+    border-color: var(--green-dim);
+    color: var(--green);
+    background: rgba(109,255,168,0.06);
+  }
+  html[data-theme="light"] .agg-pill.selected { background: rgba(31,122,74,0.06); }
+  .agg-result {
+    margin-top: 14px;
+    padding: 12px;
+    border: 1px dashed var(--line);
+    background: var(--bg-0);
+    font-size: 12px;
+  }
+  .agg-result .lbl {
+    color: var(--text-faint);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-right: 8px;
+  }
+  .agg-result .val { color: var(--green); }
+  .agg-result .formula {
+    color: var(--text-dim);
+    font-size: 11px;
+    margin-top: 6px;
+  }
+
+  /* ---------- Footer ---------- */
+  footer {
+    margin-top: 32px;
+    padding: 20px 0 0;
+    border-top: 1px solid var(--line);
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ---------- Scrollbar ---------- */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-1); }
+  ::-webkit-scrollbar-thumb { background: var(--line-bright); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--green-dim); }
+
+  /* ---------- Misc ---------- */
+  .inline-tag {
+    display: inline-block;
+    border: 1px solid var(--line-bright);
+    color: var(--text-dim);
+    padding: 1px 6px;
+    font-size: 10px;
+    margin: 0 2px;
+    letter-spacing: 0.05em;
+  }
+  .inline-tag.ev { color: var(--blue); border-color: var(--blue); }
+  .inline-tag.ph { color: var(--green); border-color: var(--green-dim); }
+  .inline-tag.oc { color: var(--amber); border-color: var(--amber-dim); }
+
+  .legend {
+    display: flex;
+    gap: 18px;
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 8px 0 16px;
+    flex-wrap: wrap;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border: 1px solid;
+  }
+
+  /* Output unit label that swaps with mode */
+  .output-unit {
+    color: var(--green);
+    font-weight: 500;
+  }
+  .out-rules { display: none; }
+  html[data-mode="rules"] .out-rules { display: inline; }
+  html[data-mode="rules"] .out-search { display: none; }
+  html[data-mode="search"] .out-rules { display: none; }
+  html[data-mode="search"] .out-search { display: inline; }
+</style>
+</head>
+<body>
+<div class="frame">
+
+<header>
+  <div class="header-grid">
+    <div>
+      <div class="crumbs">
+        <span class="dot">●</span> SECOPS · DETECTION ENGINEERING · INTERACTIVE WALKTHROUGH
+      </div>
+      <h1>YARA<span class="accent">·</span>L SECTION RELATIONSHIPS</h1>
+      <div class="sub">
+        Walk through how <b>events</b>, <b>match</b>, <b>outcome</b>, and <b>condition</b> interact in
+        both <b>Search</b> and <b>Rules</b>. Toggle <code>match:</code> on and off and watch the output change.
+        Observe placeholders flow through scopes. Compare query/rule shapes. Tie aggregation functions to the predicates they enable.
+      </div>
+      <div class="meta-row">
+        <span><b>4</b> RELATIONSHIPS</span>
+        <span><b>3</b> QUERY SHAPES</span>
+        <span><b>11</b> SAMPLE EVENTS</span>
+        <span><b>SLIDING</b> WINDOW MODEL</span>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="ctrl-group">
+        <span class="ctrl-label">Mode</span>
+        <div class="switch" id="modeSwitch">
+          <div class="indicator" id="modeIndicator"></div>
+          <button class="active" data-mode="search">Search</button>
+          <button data-mode="rules">Rules</button>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Theme</span>
+        <div class="switch" id="themeSwitch">
+          <div class="indicator" id="themeIndicator"></div>
+          <button class="active" data-theme="dark">Dark</button>
+          <button data-theme="light">Light</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="tabs" role="tablist">
+  <button class="tab active" data-tab="t1"><span class="num">01</span>Match → Outcome → Condition</button>
+  <button class="tab" data-tab="t2"><span class="num">02</span>Variable Scope</button>
+  <button class="tab" data-tab="t3"><span class="num">03</span>Query Shapes</button>
+  <button class="tab" data-tab="t4"><span class="num">04</span>Aggregations ↔ Condition</button>
+</div>
+
+<!-- ============================================================ TAB 1 -->
+<section class="panel active" id="t1">
+  <h2>Match · Outcome · Condition <span class="pill">RELATIONSHIP 01</span><span class="mode-tag" id="t1ModeTag">SEARCH</span></h2>
+  <div class="panel-sub">
+    A stream of 11 simulated <code>USER_LOGIN</code> events. Toggle <code>match:</code> on/off
+    and step through. Watch how the same <code>events:</code> predicates produce wildly different
+    <span class="out-search">result rows</span><span class="out-rules">detections</span>.
+  </div>
+
+  <div class="mode-banner" id="t1ModeBanner">
+    <span class="ico">SEARCH MODE</span>
+    <span id="t1ModeText">Output is <b>matching events as rows</b> when <code>match:</code> is absent, or <b>one row per group</b> when it's present. <code>condition:</code> is optional — leave it out and you get all matching results.</span>
+  </div>
+
+  <div class="controls">
+    <span class="label">match:</span>
+    <div class="toggle-group" id="matchToggle">
+      <button class="btn active" data-mode="on">PRESENT</button>
+      <button class="btn" data-mode="off">ABSENT</button>
+    </div>
+    <span class="label" style="margin-left: 16px;">window</span>
+    <div class="toggle-group" id="winToggle">
+      <button class="btn" data-win="120">2m</button>
+      <button class="btn active" data-win="300">5m</button>
+      <button class="btn" data-win="900">15m</button>
+    </div>
+  </div>
+
+  <div class="scrubber-wrap">
+    <div class="scrubber-row">
+      <button class="btn" id="t1Play">▶ PLAY</button>
+      <button class="btn" id="t1Reset">⟲ RESET</button>
+      <input type="range" id="t1Scrub" min="0" max="11" value="0" />
+      <div class="scrubber-readout">STEP <b id="t1Step">0</b>/11</div>
+    </div>
+  </div>
+
+  <div class="steps" id="t1Steps">
+    <div class="step active" data-s="0"><span class="sn">00</span>Idle</div>
+    <div class="step" data-s="1"><span class="sn">01</span>Filter</div>
+    <div class="step" data-s="2"><span class="sn">02</span>Bind</div>
+    <div class="step" data-s="3"><span class="sn">03</span>Group</div>
+    <div class="step" data-s="4"><span class="sn">04</span>Aggregate</div>
+    <div class="step" data-s="5"><span class="sn">05</span>Decide</div>
+  </div>
+
+  <div class="narration" id="t1Narr">
+    <span class="lead">READY.</span> Press play. Events stream in, get filtered, bound to placeholders, grouped (if <code>match:</code> is on), aggregated, and tested against <code>condition:</code>.
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h3>The query</h3>
+      <div class="code" id="t1CodeBlock"></div>
+      <h3 style="margin-top: 28px;">Event stream</h3>
+      <div class="legend">
+        <span><span class="swatch" style="border-color: var(--green); background: rgba(109,255,168,0.1);"></span>Matched events</span>
+        <span><span class="swatch" style="border-color: var(--text-faint);"></span>Filtered out</span>
+      </div>
+      <div class="stream" id="t1Stream"></div>
+    </div>
+    <div>
+      <h3>Pipeline state</h3>
+      <div class="pipeline">
+        <div class="pipe-cell" id="pc1">
+          <div class="ph">EVENTS</div>
+          <div class="pb">filter &amp; bind</div>
+        </div>
+        <div class="pipe-cell" id="pc2">
+          <div class="ph">MATCH</div>
+          <div class="pb" id="pcMatch">$user / 5m</div>
+        </div>
+        <div class="pipe-cell" id="pc3">
+          <div class="ph">OUTCOME</div>
+          <div class="pb">count($e)</div>
+        </div>
+        <div class="pipe-cell" id="pc4">
+          <div class="ph">CONDITION</div>
+          <div class="pb">$attempts ≥ 5</div>
+        </div>
+      </div>
+
+      <h3>Groups (per <span id="t1GroupKey">$user</span>)</h3>
+      <div class="groups" id="t1Groups"></div>
+
+      <h3 style="margin-top: 24px;"><span class="out-search">Result rows</span><span class="out-rules">Detections fired</span></h3>
+      <div class="code" id="t1Detections" style="min-height: 80px;">
+        <span class="com">// awaiting condition evaluation...</span>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 32px;">What changed?</h3>
+  <div class="compare">
+    <div class="compare-card with">
+      <h5>WITH match:</h5>
+      <ul>
+        <li><b>Output unit</b> · <span class="out-search">row per group ($user)</span><span class="out-rules">detection per group</span></li>
+        <li><b>$e in condition</b> · "≥1 event in this group"</li>
+        <li><b>#e</b> · count within group</li>
+        <li><b>Aggregations</b> · meaningful</li>
+        <li><b>Window</b> · sliding, 5m</li>
+      </ul>
+    </div>
+    <div class="compare-card without">
+      <h5>WITHOUT match:</h5>
+      <ul>
+        <li><b>Output unit</b> · <span class="out-search">row per event</span><span class="out-rules">detection per event</span></li>
+        <li><b>$e in condition</b> · "this event matched"</li>
+        <li><b>#e</b> · always 1 — useless</li>
+        <li><b>Aggregations</b> · degenerate</li>
+        <li><b>Window</b> · n/a</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ TAB 2 -->
+<section class="panel" id="t2">
+  <h2>Variable Scope <span class="pill">RELATIONSHIP 02</span><span class="mode-tag" id="t2ModeTag">SEARCH</span></h2>
+  <div class="panel-sub">
+    Three classes of variables — event variables, placeholders, and outcomes — each with a different
+    set of sections where they're legal. Hover any cell for the rule.
+  </div>
+
+  <div class="legend">
+    <span><span class="swatch" style="border-color: var(--blue); background: rgba(95,184,255,0.1);"></span>Event variable ($e)</span>
+    <span><span class="swatch" style="border-color: var(--green); background: rgba(109,255,168,0.1);"></span>Placeholder ($user)</span>
+    <span><span class="swatch" style="border-color: var(--amber); background: rgba(255,181,71,0.1);"></span>Outcome ($score)</span>
+    <span><span class="swatch" style="border-color: var(--cyan);"></span>Count (#e)</span>
+  </div>
+
+  <div class="scope-viz">
+    <div class="scope-rows">
+      <div class="head"></div>
+      <div class="head">events:</div>
+      <div class="head">match:</div>
+      <div class="head">outcome:</div>
+      <div class="head">condition:</div>
+
+      <div class="vname ev">$e</div>
+      <div class="cell yes" title="Declared in events: by binding fields to it"></div>
+      <div class="cell no" title="Forbidden — match: takes placeholders, not events"></div>
+      <div class="cell yes" title="Used inside aggregation functions: count($e), array_distinct($e.field)"></div>
+      <div class="cell yes" title="Existence check: '$e' = at least one event matched"></div>
+
+      <div class="vname ev">#e</div>
+      <div class="cell no" title="Counts are computed, not declared"></div>
+      <div class="cell no" title="Not a placeholder"></div>
+      <div class="cell no" title="Use count($e) instead in outcome"></div>
+      <div class="cell yes" title="#e &gt; N is the threshold idiom"></div>
+
+      <div class="vname ph">$user</div>
+      <div class="cell yes" title="Bound by assignment in events:"></div>
+      <div class="cell yes" title="The point of placeholders — group keys"></div>
+      <div class="cell yes" title="Reference in aggregations or messages"></div>
+      <div class="cell yes" title="Reference in boolean predicates"></div>
+
+      <div class="vname ph">$host</div>
+      <div class="cell yes" title="Bound from event field"></div>
+      <div class="cell yes" title="Compose group keys: $user, $host"></div>
+      <div class="cell yes" title="count_distinct($host)"></div>
+      <div class="cell yes" title="Optional condition predicate"></div>
+
+      <div class="vname oc">$attempts</div>
+      <div class="cell no" title="Outcomes are computed, not bound"></div>
+      <div class="cell no" title="Outcomes don't exist yet at match time"></div>
+      <div class="cell yes" title="Defined here: $attempts = count($e)"></div>
+      <div class="cell yes" title="Predicates can reference outcome values"></div>
+
+      <div class="vname oc">$risk_score</div>
+      <div class="cell no" title="Same — must be computed"></div>
+      <div class="cell no" title="Same"></div>
+      <div class="cell yes" title="$risk_score = max(...)"></div>
+      <div class="cell yes" title="$risk_score &gt;= 80"></div>
+    </div>
+  </div>
+
+  <h3>The flow of one placeholder, end-to-end</h3>
+  <div class="panel-sub" style="margin-bottom: 12px;">
+    Click a section to see how <code>$user</code> participates. Notice it's the same name everywhere — that's the unification mechanic.
+  </div>
+
+  <div class="steps" id="t2Steps">
+    <div class="step active" data-s="0"><span class="sn">events</span>BIND</div>
+    <div class="step" data-s="1"><span class="sn">match</span>GROUP</div>
+    <div class="step" data-s="2"><span class="sn">outcome</span>USE</div>
+    <div class="step" data-s="3"><span class="sn">condition</span>GATE</div>
+  </div>
+
+  <div class="narration" id="t2Narr">
+    <span class="lead">events:</span> <code>$e.target.user.userid = <span style="color: var(--green);">$user</span></code> — the placeholder is *created* by binding it to a field. Every event the engine sees now has a <code>$user</code> value attached.
+  </div>
+
+  <div class="code" id="t2Code"></div>
+
+  <h3>Why this matters</h3>
+  <div class="panel-sub">
+    The unification rule is what makes multi-event joins work. When you write the same placeholder name
+    in two event variables' predicates, you're forcing the engine to consider only event combinations
+    where the values agree. Same name = same value. This is the entire mechanic.
+  </div>
+
+  <div class="code"><span class="label-band">// MULTI-EVENT JOIN VIA SHARED PLACEHOLDER</span><span class="kw">events</span>:
+  <span class="ev">$fail</span>.target.user.userid = <span class="var">$user</span>     <span class="com">// $user bound here...</span>
+  <span class="ev">$fail</span>.security_result.action = <span class="str">"BLOCK"</span>
+
+  <span class="ev">$ok</span>.target.user.userid   = <span class="var">$user</span>     <span class="com">// ...must equal here</span>
+  <span class="ev">$ok</span>.security_result.action  = <span class="str">"ALLOW"</span>
+
+<span class="kw">match</span>:
+  <span class="var">$user</span> <span class="kw">over</span> <span class="num">10m</span>                    <span class="com">// group joined results by $user</span></div>
+</section>
+
+<!-- ============================================================ TAB 3 -->
+<section class="panel" id="t3">
+  <h2>Query Shapes <span class="pill">RELATIONSHIP 03</span><span class="mode-tag" id="t3ModeTag">SEARCH</span></h2>
+  <div class="panel-sub">
+    Three canonical shapes. They differ in the structure of <code>events:</code> and the presence
+    of <code>match:</code>, which cascades into everything else. Pick a shape to see its anatomy.
+  </div>
+
+  <div class="controls">
+    <span class="label">shape</span>
+    <div class="toggle-group" id="shapeToggle">
+      <button class="btn active" data-shape="single">SINGLE-EVENT</button>
+      <button class="btn" data-shape="multi">MULTI-EVENT</button>
+      <button class="btn" data-shape="window">SLIDING-WINDOW</button>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h3 id="t3Title">SINGLE-EVENT · signature</h3>
+      <div class="narration" id="t3Narr"></div>
+      <div class="code" id="t3Code"></div>
+    </div>
+    <div>
+      <h3>Anatomy</h3>
+      <div id="t3Anatomy">
+        <div class="stage">
+          <h4>EVENTS</h4>
+          <div class="stage-content" id="t3AEvents"></div>
+          <div class="stage-meta" id="t3AEventsMeta"></div>
+        </div>
+        <div class="stage" style="margin-top: 12px;">
+          <h4>MATCH</h4>
+          <div class="stage-content" id="t3AMatch"></div>
+          <div class="stage-meta" id="t3AMatchMeta"></div>
+        </div>
+        <div class="stage" style="margin-top: 12px;">
+          <h4>OUTCOME</h4>
+          <div class="stage-content" id="t3AOutcome"></div>
+          <div class="stage-meta" id="t3AOutcomeMeta"></div>
+        </div>
+        <div class="stage" style="margin-top: 12px;">
+          <h4>CONDITION</h4>
+          <div class="stage-content" id="t3ACondition"></div>
+          <div class="stage-meta" id="t3AConditionMeta"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 28px;">Side-by-side comparison</h3>
+  <div class="three-col">
+    <div class="compare-card with">
+      <h5>SINGLE-EVENT</h5>
+      <ul>
+        <li><b>Event vars</b> · 1</li>
+        <li><b>match:</b> · absent</li>
+        <li><b>Output per</b> · <span class="out-search">event row</span><span class="out-rules">event detection</span></li>
+        <li><b>Cost</b> · low</li>
+        <li><b>Best for</b> · IOCs, signatures</li>
+      </ul>
+    </div>
+    <div class="compare-card with">
+      <h5>MULTI-EVENT</h5>
+      <ul>
+        <li><b>Event vars</b> · 2+</li>
+        <li><b>match:</b> · present (joins)</li>
+        <li><b>Output per</b> · group of related events</li>
+        <li><b>Cost</b> · medium</li>
+        <li><b>Best for</b> · sequences, correlations</li>
+      </ul>
+    </div>
+    <div class="compare-card with">
+      <h5>SLIDING-WINDOW</h5>
+      <ul>
+        <li><b>Event vars</b> · 1</li>
+        <li><b>match:</b> · present (aggregation)</li>
+        <li><b>Output per</b> · group hitting threshold</li>
+        <li><b>Cost</b> · medium-high</li>
+        <li><b>Best for</b> · brute force, beacons</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ TAB 4 -->
+<section class="panel" id="t4">
+  <h2>Aggregations ↔ Condition <span class="pill">RELATIONSHIP 04</span><span class="mode-tag" id="t4ModeTag">SEARCH</span></h2>
+  <div class="panel-sub">
+    Pick an aggregation function. See it apply to the same group of events. Watch the resulting
+    outcome variable, then see what <code>condition:</code> predicate becomes possible because of it.
+  </div>
+
+  <h3>The group of events being aggregated</h3>
+  <div class="panel-sub" style="margin-bottom: 12px;">
+    Six failed logins for <code>$user = "alice"</code> within the 5-minute window. Click pills to (de)select events and watch the aggregations recompute.
+  </div>
+
+  <div class="agg-viz">
+    <div class="agg-events" id="t4Events"></div>
+    <div class="three-col">
+      <div class="agg-result">
+        <div><span class="lbl">count($e)</span><span class="val" id="ag_count">—</span></div>
+        <div class="formula"># of selected events</div>
+      </div>
+      <div class="agg-result">
+        <div><span class="lbl">count_distinct($host)</span><span class="val" id="ag_distinct">—</span></div>
+        <div class="formula">unique hostnames</div>
+      </div>
+      <div class="agg-result">
+        <div><span class="lbl">array_distinct($host)</span><span class="val" id="ag_array">—</span></div>
+        <div class="formula">unique values, as array</div>
+      </div>
+      <div class="agg-result">
+        <div><span class="lbl">max($bytes)</span><span class="val" id="ag_max">—</span></div>
+        <div class="formula">largest numeric value</div>
+      </div>
+      <div class="agg-result">
+        <div><span class="lbl">sum($bytes)</span><span class="val" id="ag_sum">—</span></div>
+        <div class="formula">numeric sum</div>
+      </div>
+      <div class="agg-result">
+        <div><span class="lbl">min($timestamp)</span><span class="val" id="ag_min">—</span></div>
+        <div class="formula">earliest event time</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Resulting condition options</h3>
+  <div class="panel-sub" style="margin-bottom: 12px;">
+    Each aggregation unlocks a different shape of predicate. Pick which question your query is asking.
+  </div>
+
+  <div class="three-col">
+    <div class="code">
+<span class="label-band">// THRESHOLD</span><span class="kw">outcome</span>:
+  <span class="var">$n</span> = <span class="fn">count</span>($e)
+<span class="kw">condition</span>:
+  $e <span class="op">and</span> <span class="var">$n</span> <span class="op">&gt;=</span> <span class="num">5</span></div>
+    <div class="code">
+<span class="label-band">// FAN-OUT</span><span class="kw">outcome</span>:
+  <span class="var">$h</span> = <span class="fn">count_distinct</span>($host)
+<span class="kw">condition</span>:
+  $e <span class="op">and</span> <span class="var">$h</span> <span class="op">&gt;</span> <span class="num">3</span></div>
+    <div class="code">
+<span class="label-band">// COMPOSITE RISK</span><span class="kw">outcome</span>:
+  <span class="var">$s</span> = <span class="fn">max</span>(
+    <span class="fn">if</span>($priv, <span class="num">80</span>, <span class="num">0</span>) +
+    <span class="fn">if</span>($night, <span class="num">30</span>, <span class="num">0</span>))
+<span class="kw">condition</span>:
+  $e <span class="op">and</span> <span class="var">$s</span> <span class="op">&gt;=</span> <span class="num">80</span></div>
+  </div>
+
+  <h3>Cause &amp; effect</h3>
+  <div class="narration">
+    <span class="lead">REMEMBER.</span> Aggregations only behave as you expect when <code>match:</code> is present.
+    Without it, every group has size 1, so <code>count($e) = 1</code>, <code>max(...)</code> equals the single value,
+    <code>array_distinct</code> is a one-element array. The query/rule still <em>compiles</em>, but the threshold logic in
+    <code>condition:</code> never trips. This is the silent-bug class to watch out for.
+  </div>
+</section>
+
+<footer>
+  <span>YARA-L 2.0 · Walkthrough v2 · Search/Rules · Dark/Light</span>
+  <span>SECTIONS · 4 · INTERACTIVE · ALWAYS</span>
+</footer>
+
+</div>
+
+<script>
+// ============================================================
+// Switch indicator positioning helper
+// ============================================================
+function positionIndicator(switchEl, indicatorEl) {
+  const active = switchEl.querySelector('button.active');
+  if (!active) return;
+  const sRect = switchEl.getBoundingClientRect();
+  const aRect = active.getBoundingClientRect();
+  indicatorEl.style.left = (aRect.left - sRect.left) + 'px';
+  indicatorEl.style.width = aRect.width + 'px';
+}
+
+// ============================================================
+// Mode + Theme toggles
+// ============================================================
+const modeSwitch = document.getElementById('modeSwitch');
+const modeIndicator = document.getElementById('modeIndicator');
+const themeSwitch = document.getElementById('themeSwitch');
+const themeIndicator = document.getElementById('themeIndicator');
+
+let currentMode = 'search';
+let currentTheme = 'dark';
+
+function setMode(m) {
+  currentMode = m;
+  document.documentElement.dataset.mode = m;
+  modeSwitch.querySelectorAll('button').forEach(b =>
+    b.classList.toggle('active', b.dataset.mode === m));
+  positionIndicator(modeSwitch, modeIndicator);
+  // Update mode tags in each panel
+  ['t1ModeTag', 't2ModeTag', 't3ModeTag', 't4ModeTag'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = m.toUpperCase();
+  });
+  // Update mode banner text
+  const banner = document.getElementById('t1ModeText');
+  if (banner) {
+    banner.innerHTML = m === 'search'
+      ? 'Output is <b>matching events as rows</b> when <code>match:</code> is absent, or <b>one row per group</b> when it\'s present. <code>condition:</code> is optional — leave it out and you get all matching results.'
+      : 'Output is <b>one detection per matching event</b> (no match:) or <b>one detection per group</b> (with match:). <code>condition:</code> is required, plus a wrapping <code>rule { }</code> block, plus optional <code>meta:</code> and <code>options:</code> sections.';
+  }
+  const ico = document.querySelector('#t1ModeBanner .ico');
+  if (ico) ico.textContent = m === 'search' ? 'SEARCH MODE' : 'RULES MODE';
+  // Re-render code blocks so they show the right syntax
+  t1Render();
+  renderT2Code();
+  renderShape(currentShape);
+}
+
+function setTheme(t) {
+  currentTheme = t;
+  document.documentElement.dataset.theme = t;
+  themeSwitch.querySelectorAll('button').forEach(b =>
+    b.classList.toggle('active', b.dataset.theme === t));
+  positionIndicator(themeSwitch, themeIndicator);
+}
+
+modeSwitch.querySelectorAll('button').forEach(b =>
+  b.addEventListener('click', () => setMode(b.dataset.mode)));
+themeSwitch.querySelectorAll('button').forEach(b =>
+  b.addEventListener('click', () => setTheme(b.dataset.theme)));
+
+// Initial positioning (defer until layout)
+window.addEventListener('load', () => {
+  positionIndicator(modeSwitch, modeIndicator);
+  positionIndicator(themeSwitch, themeIndicator);
+});
+
+// Reposition on viewport changes (rotate, resize, layout reflow)
+let __resizeRaf;
+window.addEventListener('resize', () => {
+  if (__resizeRaf) cancelAnimationFrame(__resizeRaf);
+  __resizeRaf = requestAnimationFrame(() => {
+    positionIndicator(modeSwitch, modeIndicator);
+    positionIndicator(themeSwitch, themeIndicator);
+  });
+});
+
+// ============================================================
+// Tabs
+// ============================================================
+const tabs = document.querySelectorAll('.tab');
+const panels = document.querySelectorAll('.panel');
+tabs.forEach(t => t.addEventListener('click', () => {
+  tabs.forEach(x => x.classList.remove('active'));
+  panels.forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.tab).classList.add('active');
+}));
+
+// ============================================================
+// TAB 1 — Match → Outcome → Condition
+// ============================================================
+const t1Events = [
+  { t: 0,   type: 'USER_LOGIN', action: 'BLOCK', user: 'alice', host: 'web-01' },
+  { t: 12,  type: 'USER_LOGIN', action: 'BLOCK', user: 'alice', host: 'web-01' },
+  { t: 25,  type: 'USER_LOGIN', action: 'ALLOW', user: 'bob',   host: 'web-02' },
+  { t: 41,  type: 'USER_LOGIN', action: 'BLOCK', user: 'alice', host: 'web-01' },
+  { t: 78,  type: 'USER_LOGIN', action: 'BLOCK', user: 'alice', host: 'web-02' },
+  { t: 102, type: 'USER_LOGIN', action: 'BLOCK', user: 'bob',   host: 'web-01' },
+  { t: 145, type: 'USER_LOGIN', action: 'BLOCK', user: 'alice', host: 'web-01' },
+  { t: 188, type: 'USER_LOGIN', action: 'BLOCK', user: 'alice', host: 'web-03' },
+  { t: 220, type: 'USER_LOGIN', action: 'ALLOW', user: 'carol', host: 'web-01' },
+  { t: 261, type: 'USER_LOGIN', action: 'BLOCK', user: 'bob',   host: 'web-02' },
+  { t: 290, type: 'USER_LOGIN', action: 'BLOCK', user: 'bob',   host: 'web-01' },
+];
+
+let t1State = { matchOn: 'on', win: 300, step: 0, playing: false, playId: null };
+
+function fmtTs(t) {
+  const m = Math.floor(t / 60);
+  const s = t % 60;
+  return `T+${m}:${String(s).padStart(2,'0')}`;
+}
+
+function buildT1Code() {
+  const winLabel = t1State.win === 120 ? '2m' : t1State.win === 900 ? '15m' : '5m';
+  const matchOn = t1State.matchOn === 'on';
+  const isRule = currentMode === 'rules';
+
+  let body = '';
+  if (isRule) {
+    body += '<span class="rule-only"><span class="kw">rule</span> failed_login_burst {\n';
+    body += '  <span class="kw">meta</span>:\n';
+    body += '    severity = <span class="str">"MEDIUM"</span>\n\n</span>';
+  }
+  const indent = isRule ? '  ' : '';
+  body += `${indent}<span class="kw">events</span>:\n`;
+  body += `${indent}  $e.metadata.event_type = <span class="str">"USER_LOGIN"</span>\n`;
+  body += `${indent}  $e.security_result.action = <span class="str">"BLOCK"</span>\n`;
+  body += `${indent}  $e.target.user.userid = <span class="var">$user</span>\n\n`;
+  if (matchOn) {
+    body += `${indent}<span class="kw">match</span>:\n`;
+    body += `${indent}  <span class="var">$user</span> <span class="kw">over</span> <span class="num">${winLabel}</span>\n\n`;
+  }
+  body += `${indent}<span class="kw">outcome</span>:\n`;
+  body += `${indent}  <span class="var">$attempts</span> = <span class="fn">count</span>(<span class="ev">$e</span>)\n\n`;
+  if (isRule) {
+    body += `${indent}<span class="kw">condition</span>:\n`;
+    body += `${indent}  <span class="ev">$e</span> <span class="op">and</span> <span class="var">$attempts</span> <span class="op">&gt;=</span> <span class="num">5</span>\n`;
+    body += '<span class="rule-only">}</span>';
+  } else {
+    body += `${indent}<span class="kw">condition</span>: <span class="com">// optional in search</span>\n`;
+    body += `${indent}  <span class="var">$attempts</span> <span class="op">&gt;=</span> <span class="num">5</span>`;
+  }
+  return body;
+}
+
+function t1Render() {
+  document.getElementById('t1CodeBlock').innerHTML = buildT1Code();
+
+  const stream = document.getElementById('t1Stream');
+  stream.innerHTML = '';
+  const upTo = t1State.step;
+
+  t1Events.forEach((e, i) => {
+    const matched = (i < upTo) && e.type === 'USER_LOGIN' && e.action === 'BLOCK';
+    const visible = i < upTo;
+    if (!visible) return;
+
+    const row = document.createElement('div');
+    row.className = 'stream-row ' + (matched ? 'matched' : 'not-matched');
+    if (i === upTo - 1) row.classList.add('fading-in');
+    row.innerHTML = `
+      <span class="ts">${fmtTs(e.t)}</span>
+      <span class="typ">${e.type}</span>
+      <span class="body">
+        <span class="k">action=</span><span class="v">${e.action}</span>
+        <span class="k">user=</span><span class="v">${e.user}</span>
+        <span class="k">host=</span><span class="v">${e.host}</span>
+      </span>
+      <span class="verdict">${matched ? '✓ MATCH' : '✗ SKIP'}</span>
+    `;
+    stream.appendChild(row);
+  });
+  stream.scrollTop = stream.scrollHeight;
+
+  // pipeline labels
+  document.getElementById('pcMatch').textContent = t1State.matchOn === 'on'
+    ? `$user / ${t1State.win === 120 ? '2m' : t1State.win === 900 ? '15m' : '5m'}`
+    : '— absent —';
+
+  // groups + output
+  const groupsEl = document.getElementById('t1Groups');
+  const detEl = document.getElementById('t1Detections');
+  groupsEl.innerHTML = '';
+  let outputs = [];
+
+  if (t1State.matchOn === 'on') {
+    document.getElementById('t1GroupKey').textContent = '$user';
+    const matched = t1Events.slice(0, upTo).filter(e => e.action === 'BLOCK');
+    const byUser = {};
+    matched.forEach(e => {
+      byUser[e.user] = byUser[e.user] || [];
+      byUser[e.user].push(e);
+    });
+
+    Object.keys(byUser).sort().forEach(user => {
+      const evs = byUser[user];
+      let bestCount = 0;
+      for (let i = 0; i < evs.length; i++) {
+        let j = i;
+        while (j < evs.length && evs[j].t - evs[i].t <= t1State.win) j++;
+        const cnt = j - i;
+        if (cnt > bestCount) bestCount = cnt;
+      }
+      const fires = bestCount >= 5;
+      const hosts = [...new Set(evs.map(e => e.host))];
+      const box = document.createElement('div');
+      box.className = 'group-box' + (fires ? ' fires' : '');
+      box.innerHTML = `
+        <div class="gh">GROUP</div>
+        <div class="gk">$user = "${user}"</div>
+        <div class="gstats">
+          <div>events  · <span class="v">${evs.length}</span></div>
+          <div>in window · <span class="v">${bestCount}</span></div>
+          <div>distinct hosts · <span class="v">${hosts.length}</span></div>
+          <div>$attempts = <span class="v">${bestCount}</span></div>
+        </div>
+        <div class="verdict-final">${fires ? (currentMode === 'rules' ? '🔥 FIRES · $attempts ≥ 5' : '✓ MATCHES · $attempts ≥ 5') : 'no match · $attempts < 5'}</div>
+      `;
+      groupsEl.appendChild(box);
+      if (fires && upTo > 0) {
+        outputs.push(currentMode === 'rules'
+          ? `DETECT  user=${user}  attempts=${bestCount}`
+          : `ROW  user=${user}  attempts=${bestCount}`);
+      }
+    });
+  } else {
+    document.getElementById('t1GroupKey').textContent = '(none — single event)';
+    const matched = t1Events.slice(0, upTo).filter(e => e.action === 'BLOCK');
+    if (matched.length === 0) {
+      groupsEl.innerHTML = '<div class="group-box"><div class="gh">NO GROUPS</div><div class="gstats">Without <code>match:</code>, every matching event is its own row/detection. <code>count($e)</code> = 1 always.</div></div>';
+    } else {
+      matched.slice(0, 6).forEach(e => {
+        const box = document.createElement('div');
+        box.className = 'group-box fires';
+        box.innerHTML = `
+          <div class="gh">EVENT</div>
+          <div class="gk">${fmtTs(e.t)} · ${e.user}</div>
+          <div class="gstats">
+            <div>action · <span class="v">${e.action}</span></div>
+            <div>host · <span class="v">${e.host}</span></div>
+            <div>$attempts = <span class="v">1</span> ❗</div>
+          </div>
+          <div class="verdict-final">⚠ ${currentMode === 'rules' ? 'FIRES (per event)' : 'ROW (per event)'} · but <code>$attempts ≥ 5</code> never true</div>
+        `;
+        groupsEl.appendChild(box);
+      });
+      if (matched.length > 6) {
+        const more = document.createElement('div');
+        more.className = 'group-box';
+        more.innerHTML = `<div class="gh">…AND</div><div class="gk">${matched.length - 6} more</div>`;
+        groupsEl.appendChild(more);
+      }
+    }
+    outputs.push(`// match: absent → \`$attempts\` is always 1`);
+    outputs.push(`// condition  \`$attempts ≥ 5\`  → never true`);
+    outputs.push(currentMode === 'rules'
+      ? `// rule effectively never fires (silent bug class)`
+      : `// query returns 0 rows when condition is applied (silent bug class)`);
+  }
+
+  detEl.innerHTML = outputs.length
+    ? outputs.map(d => d.startsWith('//')
+        ? `<span class="com">${d}</span>`
+        : `<span style="color: var(--red);">${d}</span>`).join('\n')
+    : '<span class="com">// no output yet — keep stepping</span>';
+
+  document.getElementById('t1Step').textContent = upTo;
+  document.getElementById('t1Scrub').value = upTo;
+
+  // narration + step pills
+  let narr = '';
+  let activeStep = 0;
+  if (upTo === 0) {
+    narr = '<span class="lead">READY.</span> Press play. Events will arrive one by one.';
+  } else if (upTo <= 3) {
+    activeStep = 1;
+    narr = `<span class="lead">FILTERING.</span> Step ${upTo}. The events: section keeps only events with <code>event_type=USER_LOGIN</code> AND <code>action=BLOCK</code>. Others are discarded silently.`;
+  } else if (upTo <= 6) {
+    activeStep = 2;
+    narr = `<span class="lead">BINDING.</span> For each surviving event, <code>$user</code> is set to the value of <code>target.user.userid</code>. The placeholder is just a label for that scalar value.`;
+  } else if (upTo <= 8) {
+    activeStep = 3;
+    narr = t1State.matchOn === 'on'
+      ? `<span class="lead">GROUPING.</span> The match: section says "group by <code>$user</code> over ${t1State.win/60}m". Events with the same user value, within the sliding window, end up in the same group.`
+      : `<span class="lead">NO GROUPING.</span> match: is absent. Each event is "its own group" of size 1.`;
+  } else if (upTo <= 10) {
+    activeStep = 4;
+    narr = `<span class="lead">AGGREGATING.</span> For each group, <code>$attempts = count($e)</code> is computed. Watch how the value differs depending on whether match: groups them together or treats each as separate.`;
+  } else {
+    activeStep = 5;
+    if (t1State.matchOn === 'on') {
+      narr = currentMode === 'rules'
+        ? `<span class="lead">DECIDING.</span> condition: <code>$e and $attempts ≥ 5</code>. Groups passing the threshold fire detections. With match:, this rule cleanly catches alice's brute-force attempt.`
+        : `<span class="lead">FILTERING RESULTS.</span> condition: <code>$attempts ≥ 5</code>. Only groups passing this threshold appear as result rows. With match:, the search cleanly returns alice as a single row.`;
+    } else {
+      narr = `<span class="lead">DECIDING (BROKEN).</span> Without match:, $attempts is always 1, and <code>$attempts ≥ 5</code> is never true. ${currentMode === 'rules' ? 'The rule never fires' : 'The search returns nothing'} — the classic "I forgot match:" silent bug.`;
+    }
+  }
+  document.getElementById('t1Narr').innerHTML = narr;
+  document.querySelectorAll('#t1Steps .step').forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i < activeStep) s.classList.add('done');
+    if (i === activeStep) s.classList.add('active');
+  });
+
+  ['pc1','pc2','pc3','pc4'].forEach((id, i) => {
+    document.getElementById(id).classList.toggle('lit', activeStep > i);
+  });
+  document.getElementById('pc2').style.opacity = t1State.matchOn === 'off' ? '0.4' : '1';
+}
+
+document.querySelectorAll('#matchToggle .btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#matchToggle .btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  t1State.matchOn = b.dataset.mode;
+  t1Render();
+}));
+document.querySelectorAll('#winToggle .btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#winToggle .btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  t1State.win = +b.dataset.win;
+  t1Render();
+}));
+document.getElementById('t1Scrub').addEventListener('input', e => {
+  t1State.step = +e.target.value;
+  t1Render();
+});
+document.getElementById('t1Reset').addEventListener('click', () => {
+  if (t1State.playId) { clearInterval(t1State.playId); t1State.playing = false; }
+  t1State.step = 0;
+  document.getElementById('t1Play').textContent = '▶ PLAY';
+  t1Render();
+});
+document.getElementById('t1Play').addEventListener('click', () => {
+  if (t1State.playing) {
+    clearInterval(t1State.playId);
+    t1State.playing = false;
+    document.getElementById('t1Play').textContent = '▶ PLAY';
+    return;
+  }
+  t1State.playing = true;
+  document.getElementById('t1Play').textContent = '❚❚ PAUSE';
+  if (t1State.step >= 11) t1State.step = 0;
+  t1State.playId = setInterval(() => {
+    t1State.step++;
+    if (t1State.step >= 11) {
+      t1State.step = 11;
+      clearInterval(t1State.playId);
+      t1State.playing = false;
+      document.getElementById('t1Play').textContent = '▶ REPLAY';
+    }
+    t1Render();
+  }, 700);
+});
+
+// ============================================================
+// TAB 2 — Variable Scope (placeholder journey)
+// ============================================================
+const t2Steps = document.querySelectorAll('#t2Steps .step');
+let t2ActiveStep = 0;
+
+const t2Narrs = [
+  '<span class="lead">events:</span> <code>$e.target.user.userid = <span style="color: var(--green);">$user</span></code> — the placeholder is *created* by binding it to a field. Every event the engine sees now has a <code>$user</code> value attached.',
+  '<span class="lead">match:</span> <code>$user over 5m</code> — the placeholder becomes a group key. Events with the same $user value, within 5 minutes, form a single group. <code>$user</code> can only appear in match: because it was bound in events:.',
+  '<span class="lead">outcome:</span> The placeholder participates in computed values: <code>strings.concat("User ", $user)</code> uses it directly; aggregations like <code>count_distinct($host)</code> work over the group keyed by $user.',
+  '<span class="lead">condition:</span> Implicitly, every output row/detection that emerges is *for one $user value*. You can also reference the placeholder in predicates: <code>$user != "service-account"</code>.'
+];
+
+function renderT2Code() {
+  const isRule = currentMode === 'rules';
+  let body = '';
+  if (isRule) {
+    body += '<span class="rule-only"><span class="kw">rule</span> placeholder_journey {\n</span>';
+  }
+  const indent = isRule ? '  ' : '';
+  body += `${indent}<span class="kw">events</span>:\n`;
+  body += `${indent}  $e.metadata.event_type = <span class="str">"USER_LOGIN"</span>\n`;
+  body += `${indent}  $e.security_result.action = <span class="str">"BLOCK"</span>\n`;
+  const hl0 = t2ActiveStep === 0 ? ' style="background: rgba(109,255,168,0.08);"' : '';
+  body += `<span${hl0}>${indent}  $e.target.user.userid = <span class="var">$user</span></span>     <span class="com">// ← bind</span>\n\n`;
+  const hl1 = t2ActiveStep === 1 ? ' style="background: rgba(109,255,168,0.08);"' : '';
+  body += `<span${hl1}>${indent}<span class="kw">match</span>:\n${indent}  <span class="var">$user</span> <span class="kw">over</span> <span class="num">5m</span></span>                   <span class="com">// ← group</span>\n\n`;
+  const hl2 = t2ActiveStep === 2 ? ' style="background: rgba(109,255,168,0.08);"' : '';
+  body += `<span${hl2}>${indent}<span class="kw">outcome</span>:\n${indent}  $attempts = <span class="fn">count</span>($e)\n${indent}  $message = <span class="fn">strings.concat</span>(<span class="str">"User "</span>, <span class="var">$user</span>)</span> <span class="com">// ← use</span>\n\n`;
+  const hl3 = t2ActiveStep === 3 ? ' style="background: rgba(109,255,168,0.08);"' : '';
+  if (isRule) {
+    body += `<span${hl3}>${indent}<span class="kw">condition</span>:\n${indent}  $e <span class="op">and</span> $attempts <span class="op">&gt;=</span> <span class="num">5</span></span>\n`;
+    body += '<span class="rule-only">}</span>';
+  } else {
+    body += `<span${hl3}>${indent}<span class="kw">condition</span>: <span class="com">// optional in search</span>\n${indent}  $attempts <span class="op">&gt;=</span> <span class="num">5</span></span>`;
+  }
+  document.getElementById('t2Code').innerHTML = body;
+}
+
+t2Steps.forEach((step, i) => {
+  step.addEventListener('click', () => {
+    t2ActiveStep = i;
+    t2Steps.forEach(s => s.classList.remove('active', 'done'));
+    for (let j = 0; j < i; j++) t2Steps[j].classList.add('done');
+    step.classList.add('active');
+    document.getElementById('t2Narr').innerHTML = t2Narrs[i];
+    renderT2Code();
+  });
+});
+
+// ============================================================
+// TAB 3 — Query Shapes
+// ============================================================
+let currentShape = 'single';
+
+const shapes = {
+  single: {
+    title: 'SINGLE-EVENT · signature',
+    narr: {
+      search: '<span class="lead">SHAPE A.</span> One event variable. No <code>match:</code>. The query returns every event satisfying the predicates. Cheapest to evaluate. Use for indicator-style hunts — "command line contains X", "DNS query for Y", "file hash equals Z".',
+      rules: '<span class="lead">SHAPE A.</span> One event variable. No <code>match:</code>. The rule fires once per event satisfying the predicates. Cheapest to evaluate. Use for indicator-style detections.'
+    },
+    code: {
+      search: `<span class="kw">events</span>:
+  <span class="ev">$e</span>.metadata.event_type = <span class="str">"PROCESS_LAUNCH"</span>
+  <span class="ev">$e</span>.principal.process.command_line = <span class="str">/mimikatz/</span> <span class="kw">nocase</span>
+
+<span class="com">// no match: — output is per event</span>
+<span class="com">// no outcome: — nothing to aggregate</span>
+<span class="com">// no condition: — return all matches</span>`,
+      rules: `<span class="rule-only"><span class="kw">rule</span> mimikatz_signature {
+  <span class="kw">meta</span>:
+    severity = <span class="str">"HIGH"</span>
+    mitre    = <span class="str">"T1003.001"</span>
+
+</span>  <span class="kw">events</span>:
+    <span class="ev">$e</span>.metadata.event_type = <span class="str">"PROCESS_LAUNCH"</span>
+    <span class="ev">$e</span>.principal.process.command_line = <span class="str">/mimikatz/</span> <span class="kw">nocase</span>
+
+  <span class="com">// no match: — fires per event</span>
+
+  <span class="kw">condition</span>:
+    <span class="ev">$e</span>
+<span class="rule-only">}</span>`
+    },
+    events: 'One event variable <code>$e</code>. Predicates filter to <code>PROCESS_LAUNCH</code> events whose command line contains "mimikatz".',
+    eventsMeta: '1 event var · 0 placeholders',
+    match: '<i style="color:var(--text-faint)">— absent —</i><br><br>Output is per event, not per group.',
+    matchMeta: 'no grouping · per-event semantics',
+    outcome: '<i style="color:var(--text-faint)">— absent —</i><br><br>No need to aggregate; one row/detection = one event.',
+    outcomeMeta: 'no aggregation',
+    condition: {
+      search: '<i style="color:var(--text-faint)">— omitted —</i><br><br>In Search, you can skip <code>condition:</code> entirely and get all matching events back as rows.',
+      rules: '<code>$e</code> alone. Means "an event satisfying all predicates exists". Required.'
+    },
+    conditionMeta: {
+      search: 'optional · omitted here',
+      rules: 'required · existence check'
+    }
+  },
+  multi: {
+    title: 'MULTI-EVENT · sequence with shared keys',
+    narr: {
+      search: '<span class="lead">SHAPE B.</span> Two event variables joined by shared placeholders. <code>match:</code> defines the join window. Use for sequence hunts — "failed then success", "download then exec", "auth then policy change".',
+      rules: '<span class="lead">SHAPE B.</span> Two event variables joined by shared placeholders. Same use cases — but emits a detection per matching sequence.'
+    },
+    code: {
+      search: `<span class="kw">events</span>:
+  <span class="ev">$f</span>.metadata.event_type = <span class="str">"USER_LOGIN"</span>
+  <span class="ev">$f</span>.security_result.action = <span class="str">"BLOCK"</span>
+  <span class="ev">$f</span>.target.user.userid = <span class="var">$user</span>
+  <span class="ev">$f</span>.target.hostname = <span class="var">$host</span>
+
+  <span class="ev">$s</span>.metadata.event_type = <span class="str">"USER_LOGIN"</span>
+  <span class="ev">$s</span>.security_result.action = <span class="str">"ALLOW"</span>
+  <span class="ev">$s</span>.target.user.userid = <span class="var">$user</span>     <span class="com">// shared</span>
+  <span class="ev">$s</span>.target.hostname = <span class="var">$host</span>      <span class="com">// shared</span>
+
+  <span class="ev">$f</span>.metadata.event_timestamp.seconds <span class="op">&lt;</span>
+    <span class="ev">$s</span>.metadata.event_timestamp.seconds
+
+<span class="kw">match</span>:
+  <span class="var">$user</span>, <span class="var">$host</span> <span class="kw">over</span> <span class="num">10m</span>
+
+<span class="kw">outcome</span>:
+  <span class="var">$fail_count</span> = <span class="fn">count</span>(<span class="ev">$f</span>)
+
+<span class="kw">condition</span>:
+  <span class="var">$fail_count</span> <span class="op">&gt;=</span> <span class="num">3</span>`,
+      rules: `<span class="rule-only"><span class="kw">rule</span> failed_then_success {
+  <span class="kw">meta</span>:
+    severity = <span class="str">"HIGH"</span>
+
+</span>  <span class="kw">events</span>:
+    <span class="ev">$f</span>.metadata.event_type = <span class="str">"USER_LOGIN"</span>
+    <span class="ev">$f</span>.security_result.action = <span class="str">"BLOCK"</span>
+    <span class="ev">$f</span>.target.user.userid = <span class="var">$user</span>
+    <span class="ev">$f</span>.target.hostname = <span class="var">$host</span>
+
+    <span class="ev">$s</span>.metadata.event_type = <span class="str">"USER_LOGIN"</span>
+    <span class="ev">$s</span>.security_result.action = <span class="str">"ALLOW"</span>
+    <span class="ev">$s</span>.target.user.userid = <span class="var">$user</span>
+    <span class="ev">$s</span>.target.hostname = <span class="var">$host</span>
+
+    <span class="ev">$f</span>.metadata.event_timestamp.seconds <span class="op">&lt;</span>
+      <span class="ev">$s</span>.metadata.event_timestamp.seconds
+
+  <span class="kw">match</span>:
+    <span class="var">$user</span>, <span class="var">$host</span> <span class="kw">over</span> <span class="num">10m</span>
+
+  <span class="kw">outcome</span>:
+    <span class="var">$fail_count</span> = <span class="fn">count</span>(<span class="ev">$f</span>)
+
+  <span class="kw">condition</span>:
+    <span class="ev">$f</span> <span class="op">and</span> <span class="ev">$s</span> <span class="op">and</span> <span class="var">$fail_count</span> <span class="op">&gt;=</span> <span class="num">3</span>
+<span class="rule-only">}</span>`
+    },
+    events: 'Two event variables: <code>$f</code> (failed) and <code>$s</code> (success). Both must exist with matching <code>$user, $host</code>. Timestamp comparison enforces order.',
+    eventsMeta: '2 event vars · 2 placeholders · time-ordering',
+    match: 'Group by composite key <code>$user, $host</code>. 10-minute sliding window — both events must fall inside.',
+    matchMeta: 'composite group · 10m window',
+    outcome: 'Count failed attempts: <code>$fail_count = count($f)</code>. Per group of (user, host).',
+    outcomeMeta: 'per-group aggregation',
+    condition: {
+      search: '<code>$fail_count >= 3</code>. Filters to groups with ≥3 failures before the success.',
+      rules: '<code>$f and $s and $fail_count >= 3</code>. Both events must exist AND failure count must be ≥ 3.'
+    },
+    conditionMeta: {
+      search: 'optional · threshold filter',
+      rules: 'required · existence + threshold'
+    }
+  },
+  window: {
+    title: 'SLIDING-WINDOW · threshold detection',
+    narr: {
+      search: '<span class="lead">SHAPE C.</span> One event variable, but with <code>match:</code>. The aggregation runs per group. Use for hunts like brute force, beaconing, fan-out — "more than N of X within M minutes".',
+      rules: '<span class="lead">SHAPE C.</span> Same shape, fires a detection per group hitting the threshold. The classic "alert when N events within M minutes" pattern.'
+    },
+    code: {
+      search: `<span class="kw">events</span>:
+  <span class="ev">$e</span>.metadata.event_type = <span class="str">"USER_LOGIN"</span>
+  <span class="ev">$e</span>.security_result.action = <span class="str">"BLOCK"</span>
+  <span class="ev">$e</span>.target.user.userid = <span class="var">$user</span>
+  <span class="ev">$e</span>.target.hostname = <span class="var">$host</span>
+
+<span class="kw">match</span>:
+  <span class="var">$user</span> <span class="kw">over</span> <span class="num">5m</span>
+
+<span class="kw">outcome</span>:
+  <span class="var">$attempts</span> = <span class="fn">count</span>(<span class="ev">$e</span>)
+  <span class="var">$hosts_hit</span> = <span class="fn">count_distinct</span>(<span class="var">$host</span>)
+
+<span class="kw">condition</span>:
+  <span class="var">$attempts</span> <span class="op">&gt;=</span> <span class="num">5</span> <span class="op">and</span> <span class="var">$hosts_hit</span> <span class="op">&gt;</span> <span class="num">1</span>`,
+      rules: `<span class="rule-only"><span class="kw">rule</span> failed_login_burst {
+  <span class="kw">meta</span>:
+    severity = <span class="str">"MEDIUM"</span>
+
+</span>  <span class="kw">events</span>:
+    <span class="ev">$e</span>.metadata.event_type = <span class="str">"USER_LOGIN"</span>
+    <span class="ev">$e</span>.security_result.action = <span class="str">"BLOCK"</span>
+    <span class="ev">$e</span>.target.user.userid = <span class="var">$user</span>
+    <span class="ev">$e</span>.target.hostname = <span class="var">$host</span>
+
+  <span class="kw">match</span>:
+    <span class="var">$user</span> <span class="kw">over</span> <span class="num">5m</span>
+
+  <span class="kw">outcome</span>:
+    <span class="var">$attempts</span> = <span class="fn">count</span>(<span class="ev">$e</span>)
+    <span class="var">$hosts_hit</span> = <span class="fn">count_distinct</span>(<span class="var">$host</span>)
+    <span class="var">$risk_score</span> = <span class="fn">max</span>(<span class="fn">if</span>(<span class="var">$attempts</span> <span class="op">&gt;</span> <span class="num">10</span>, <span class="num">90</span>, <span class="num">50</span>))
+
+  <span class="kw">condition</span>:
+    <span class="ev">$e</span> <span class="op">and</span> <span class="var">$attempts</span> <span class="op">&gt;=</span> <span class="num">5</span> <span class="op">and</span> <span class="var">$hosts_hit</span> <span class="op">&gt;</span> <span class="num">1</span>
+<span class="rule-only">}</span>`
+    },
+    events: 'One event variable. Predicates narrow to failed logins. Two placeholders bound — <code>$user</code> for grouping, <code>$host</code> for fan-out detection.',
+    eventsMeta: '1 event var · 2 placeholders',
+    match: 'Group by <code>$user</code> only — events for the same user across hosts collapse into one group. 5-minute sliding window.',
+    matchMeta: 'single key · 5m window',
+    outcome: {
+      search: 'Two computations: count of attempts, count of distinct hosts (fan-out).',
+      rules: 'Three: count, count_distinct, plus a derived <code>$risk_score</code> using <code>if()</code>. Risk feeds Chronicle\'s entity risk dashboard.'
+    },
+    outcomeMeta: {
+      search: 'count + count_distinct',
+      rules: 'count + count_distinct + risk scoring'
+    },
+    condition: {
+      search: '<code>$attempts ≥ 5 and $hosts_hit > 1</code>. Threshold-of-events plus distinct-hosts requirement narrows to multi-host brute-force.',
+      rules: '<code>$e and $attempts ≥ 5 and $hosts_hit > 1</code>. Same logic — but rule requires the <code>$e</code> existence guard.'
+    },
+    conditionMeta: 'multi-predicate threshold'
+  }
+};
+
+function renderShape(key) {
+  const s = shapes[key];
+  const m = currentMode;
+  const pickMode = v => (typeof v === 'object' && v.search !== undefined) ? v[m] : v;
+
+  document.getElementById('t3Title').textContent = s.title;
+  document.getElementById('t3Narr').innerHTML = pickMode(s.narr);
+  document.getElementById('t3Code').innerHTML = pickMode(s.code);
+  document.getElementById('t3AEvents').innerHTML = pickMode(s.events);
+  document.getElementById('t3AEventsMeta').textContent = pickMode(s.eventsMeta);
+  document.getElementById('t3AMatch').innerHTML = pickMode(s.match);
+  document.getElementById('t3AMatchMeta').textContent = pickMode(s.matchMeta);
+  document.getElementById('t3AOutcome').innerHTML = pickMode(s.outcome);
+  document.getElementById('t3AOutcomeMeta').textContent = pickMode(s.outcomeMeta);
+  document.getElementById('t3ACondition').innerHTML = pickMode(s.condition);
+  document.getElementById('t3AConditionMeta').textContent = pickMode(s.conditionMeta);
+}
+
+document.querySelectorAll('#shapeToggle .btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#shapeToggle .btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  currentShape = b.dataset.shape;
+  renderShape(currentShape);
+}));
+
+// ============================================================
+// TAB 4 — Aggregations ↔ Condition
+// ============================================================
+const t4Pool = [
+  { id: 1, label: 'T+0:12 · web-01 · 1024B', host: 'web-01', bytes: 1024, ts: 12 },
+  { id: 2, label: 'T+0:41 · web-01 · 2048B', host: 'web-01', bytes: 2048, ts: 41 },
+  { id: 3, label: 'T+1:18 · web-02 · 512B',  host: 'web-02', bytes: 512,  ts: 78 },
+  { id: 4, label: 'T+2:25 · web-01 · 1500B', host: 'web-01', bytes: 1500, ts: 145 },
+  { id: 5, label: 'T+3:08 · web-03 · 3072B', host: 'web-03', bytes: 3072, ts: 188 },
+  { id: 6, label: 'T+4:21 · web-01 · 768B',  host: 'web-01', bytes: 768,  ts: 261 },
+];
+let t4Selected = new Set([1,2,3,4,5,6]);
+
+function t4Render() {
+  const eventsEl = document.getElementById('t4Events');
+  eventsEl.innerHTML = '';
+  t4Pool.forEach(e => {
+    const pill = document.createElement('div');
+    pill.className = 'agg-pill' + (t4Selected.has(e.id) ? ' selected' : '');
+    pill.textContent = e.label;
+    pill.addEventListener('click', () => {
+      if (t4Selected.has(e.id)) t4Selected.delete(e.id);
+      else t4Selected.add(e.id);
+      t4Render();
+    });
+    eventsEl.appendChild(pill);
+  });
+
+  const sel = t4Pool.filter(e => t4Selected.has(e.id));
+  document.getElementById('ag_count').textContent = sel.length || '—';
+  const distinctHosts = [...new Set(sel.map(e => e.host))];
+  document.getElementById('ag_distinct').textContent = distinctHosts.length || '—';
+  document.getElementById('ag_array').textContent = distinctHosts.length ? '[' + distinctHosts.map(h => `"${h}"`).join(', ') + ']' : '—';
+  document.getElementById('ag_max').textContent = sel.length ? Math.max(...sel.map(e=>e.bytes)) + 'B' : '—';
+  document.getElementById('ag_sum').textContent = sel.length ? sel.reduce((a,e)=>a+e.bytes,0) + 'B' : '—';
+  document.getElementById('ag_min').textContent = sel.length ? fmtTs(Math.min(...sel.map(e=>e.ts))) : '—';
+}
+
+// ============================================================
+// Initial render
+// ============================================================
+t1Render();
+renderT2Code();
+renderShape('single');
+t4Render();
+</script>
+</body>
+</html>

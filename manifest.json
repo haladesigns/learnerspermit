@@ -861,12 +861,6 @@
       },
       {
         "type": "file",
-        "name": "yara-l-section-relationships.html",
-        "label": "Yara L Section Relationships",
-        "path": "Yara/yara-l-section-relationships.html"
-      },
-      {
-        "type": "file",
         "name": "yara_l_sections_reference.html",
         "label": "Yara L Sections Reference",
         "path": "Yara/yara_l_sections_reference.html"

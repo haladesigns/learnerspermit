@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F5 APM + Okta SAML 2.0 — Configuration Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── DARK THEME (default) ── */
+:root, [data-theme="dark"] {
+  --bg:        #0d0f0e;
+  --bg2:       #141716;
+  --bg3:       #1c1f1e;
+  --border:    #2a2e2c;
+  --border2:   #363b38;
+  --text:      #c8cec9;
+  --text2:     #7a8480;
+  --text3:     #4a5250;
+  --green:     #3dba7e;
+  --green2:    #2a8a5a;
+  --green-dim: #1a3d2a;
+  --amber:     #e8a830;
+  --amber-dim: #3d2e0a;
+  --purple:    #9b7fe8;
+  --purple-dim:#2a1f4a;
+  --teal:      #3ab8c8;
+  --teal-dim:  #0f3038;
+  --gray-dim:  #1e2220;
+  --hero-title:#edf0ee;
+  --card-title:#e0e6e2;
+  --el-name:   #dde4df;
+  --section-title: #e8ece9;
+  --card-purple-bg: #16131e;
+  --card-amber-bg:  #19160c;
+  --step-title-exp: #e0e6e2;
+  --gotcha-text:    #c8a060;
+  --strong-color:   #dde4df;
+  --hero-glow: rgba(61,186,126,0.06);
+  --toggle-icon: "☀";
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+
+/* ── LIGHT THEME ── */
+[data-theme="light"] {
+  --bg:        #f5f6f4;
+  --bg2:       #ffffff;
+  --bg3:       #eef0ed;
+  --border:    #d8dbd6;
+  --border2:   #c2c6bf;
+  --text:      #2a2e2b;
+  --text2:     #5a6059;
+  --text3:     #949996;
+  --green:     #1a7a52;
+  --green2:    #1a7a52;
+  --green-dim: #d4ede3;
+  --amber:     #8a5800;
+  --amber-dim: #fdf0d0;
+  --purple:    #5b3eb8;
+  --purple-dim:#ede9fb;
+  --teal:      #1a7a8a;
+  --teal-dim:  #d4eef2;
+  --gray-dim:  #e8eae7;
+  --hero-title:#141716;
+  --card-title:#1c2019;
+  --el-name:   #1c2019;
+  --section-title: #1c2019;
+  --card-purple-bg: #f4f1fd;
+  --card-amber-bg:  #fdf8ee;
+  --step-title-exp: #141716;
+  --gotcha-text:    #7a4e00;
+  --strong-color:   #1c2019;
+  --hero-glow: rgba(26,122,82,0.07);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  transition: background .2s, color .2s;
+}
+
+/* ── LAYOUT ── */
+.shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+/* ── MOBILE TOPBAR (hidden on desktop) ── */
+.topbar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  height: 52px;
+  align-items: center;
+  justify-content: space-between;
+}
+.topbar-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.topbar-controls { display: flex; gap: 8px; align-items: center; }
+
+/* ── HAMBURGER ── */
+.hamburger {
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  width: 34px; height: 34px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  transition: background .15s;
+}
+.hamburger:hover { background: var(--bg3); }
+.hamburger span {
+  display: block;
+  width: 16px; height: 1.5px;
+  background: var(--text2);
+  border-radius: 1px;
+  transition: all .2s;
+}
+.hamburger.open span:nth-child(1) { transform: translateY(5.5px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-5.5px) rotate(-45deg); }
+
+/* ── DRAWER OVERLAY ── */
+.drawer-overlay {
+  display: none;
+  position: fixed;
+  inset: 52px 0 0 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 90;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.drawer-overlay.open { display: block; opacity: 1; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 28px 0;
+  display: flex;
+  flex-direction: column;
+  transition: background .2s, border-color .2s;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.sidebar-header {
+  padding: 0 24px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.sidebar-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.sidebar-header .logo {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.sidebar-header h1 {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* ── THEME TOGGLE BUTTON ── */
+.theme-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  width: 30px; height: 30px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, border-color .15s;
+  flex-shrink: 0;
+  color: var(--text2);
+  line-height: 1;
+}
+.theme-btn:hover { background: var(--border); }
+
+.nav-section {
+  padding: 8px 12px 4px 24px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-top: 8px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 24px;
+  cursor: pointer;
+  transition: background .15s;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--bg3); }
+.nav-item.active { background: var(--bg3); border-left-color: var(--green); }
+.nav-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--border2);
+  transition: background .15s;
+}
+.nav-item.active .nav-dot,
+.nav-item:hover .nav-dot { background: var(--green); }
+.nav-label { font-size: 12px; color: var(--text2); transition: color .15s; }
+.nav-item.active .nav-label,
+.nav-item:hover .nav-label { color: var(--text); }
+.nav-tag {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text3);
+}
+
+.progress-bar {
+  margin: 0 24px;
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.progress-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
+  transition: width .3s ease;
+  width: 0%;
+}
+
+/* ── MAIN ── */
+.main {
+  overflow-y: auto;
+  height: 100vh;
+  scroll-behavior: smooth;
+}
+.main::-webkit-scrollbar { width: 6px; }
+.main::-webkit-scrollbar-track { background: transparent; }
+.main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── SECTIONS ── */
+.section {
+  padding: 64px 56px;
+  border-bottom: 1px solid var(--border);
+  max-width: 860px;
+}
+.section:last-child { border-bottom: none; }
+
+.section-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: 26px;
+  font-weight: 300;
+  color: var(--section-title);
+  line-height: 1.25;
+  margin-bottom: 20px;
+  letter-spacing: -0.02em;
+}
+.section-title strong { font-weight: 500; }
+.section-lead {
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.7;
+  margin-bottom: 32px;
+  max-width: 640px;
+}
+
+/* ── HERO ── */
+#hero {
+  padding: 80px 56px 64px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+#hero::before {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, var(--hero-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--green);
+  background: var(--green-dim);
+  padding: 4px 10px;
+  border-radius: 3px;
+  margin-bottom: 24px;
+  border: 1px solid var(--green2);
+}
+.hero-title {
+  font-size: 38px;
+  font-weight: 300;
+  color: var(--hero-title);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+}
+.hero-title em { font-style: normal; color: var(--green); }
+.hero-sub {
+  font-size: 15px;
+  color: var(--text2);
+  max-width: 560px;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+.hero-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  background: var(--bg2);
+}
+
+/* ── CONCEPT CARDS ── */
+.concept-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.concept-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 22px;
+  transition: border-color .2s;
+}
+.concept-card:hover { border-color: var(--border2); }
+.concept-card-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.concept-card-title { font-size: 15px; font-weight: 500; color: var(--card-title); margin-bottom: 8px; }
+.concept-card-body { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.card-purple .concept-card-label { color: var(--purple); }
+.card-purple { border-color: var(--purple-dim); background: var(--card-purple-bg); }
+.card-amber .concept-card-label { color: var(--amber); }
+.card-amber { border-color: var(--amber-dim); background: var(--card-amber-bg); }
+
+/* ── ANALOGY BOX ── */
+.analogy-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--teal);
+  border-radius: 0 8px 8px 0;
+  padding: 20px 24px;
+  margin: 24px 0;
+}
+.analogy-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 12px;
+}
+.analogy-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.analogy-item { text-align: center; }
+.analogy-icon { font-size: 22px; margin-bottom: 6px; line-height: 1; }
+.analogy-name { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+.analogy-desc { font-size: 11px; color: var(--text2); }
+
+/* ── FLOW ── */
+.flow-container {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  margin: 24px 0;
+}
+.flow-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.flow-tab {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border2);
+  cursor: pointer;
+  color: var(--text2);
+  background: transparent;
+  transition: all .15s;
+}
+.flow-tab.active { background: var(--green-dim); border-color: var(--green2); color: var(--green); }
+.flow-steps { position: relative; }
+.flow-step {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background .15s;
+  border-radius: 4px;
+  padding: 12px 10px;
+}
+.flow-step:hover { background: var(--bg3); }
+.flow-step:last-child { border-bottom: none; }
+.flow-step.expanded { background: var(--bg3); }
+.step-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  min-width: 24px;
+  padding-top: 1px;
+}
+.flow-step.expanded .step-num { color: var(--green); }
+.step-content { flex: 1; min-width: 0; }
+.step-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 0; transition: color .15s; }
+.flow-step.expanded .step-title { color: var(--step-title-exp); }
+.step-actors { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 3px; }
+.step-detail {
+  display: none;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.flow-step.expanded .step-detail { display: block; }
+.step-detail p { font-size: 13px; color: var(--text2); line-height: 1.65; margin-bottom: 10px; }
+.step-tech {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--teal);
+  background: var(--teal-dim);
+  padding: 6px 10px;
+  border-radius: 4px;
+  margin-top: 8px;
+  word-break: break-all;
+}
+
+/* ── STAGE BUILDER ── */
+.stage-list { display: flex; flex-direction: column; gap: 0; }
+.stage {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.stage:hover { border-color: var(--border2); }
+.stage-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  cursor: pointer;
+  background: var(--bg2);
+  transition: background .15s;
+  flex-wrap: wrap;
+}
+.stage-header:hover { background: var(--bg3); }
+.stage.open .stage-header { background: var(--bg3); border-bottom: 1px solid var(--border); }
+.stage-num { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--text3); min-width: 28px; }
+.stage.open .stage-num { color: var(--green); }
+.stage-name { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; min-width: 100px; }
+.stage-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.badge-purple { background: var(--purple-dim); color: var(--purple); }
+.badge-green  { background: var(--green-dim);  color: var(--green);  }
+.badge-amber  { background: var(--amber-dim);  color: var(--amber);  }
+.badge-teal   { background: var(--teal-dim);   color: var(--teal);   }
+.badge-gray   { background: var(--gray-dim);   color: var(--text2);  }
+.stage-chevron { color: var(--text3); font-size: 12px; transition: transform .2s; }
+.stage.open .stage-chevron { transform: rotate(90deg); color: var(--green); }
+.stage-body { display: none; padding: 20px 24px; background: var(--bg); }
+.stage.open .stage-body { display: block; }
+
+.element-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.element-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+.element-card-name { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--el-name); margin-bottom: 4px; }
+.element-card-path { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-bottom: 8px; line-height: 1.5; }
+.element-card-desc { font-size: 12px; color: var(--text2); line-height: 1.55; }
+.stage-note { font-size: 13px; color: var(--text2); line-height: 1.65; margin-bottom: 16px; }
+
+.gotcha-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.gotcha {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--amber-dim);
+  border: 1px solid rgba(232,168,48,0.15);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.gotcha-icon { font-family: var(--mono); font-size: 11px; color: var(--amber); flex-shrink: 0; padding-top: 1px; }
+.gotcha-text { font-size: 12px; color: var(--gotcha-text); line-height: 1.55; }
+
+/* ── CERT TABLE ── */
+.cert-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+.cert-table th {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  padding: 8px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.cert-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+.cert-table tr:last-child td { border-bottom: none; }
+.cert-table tr:hover td { background: var(--bg2); }
+.cert-name { font-family: var(--mono); font-size: 12px; color: var(--text); }
+
+/* ── COMPARE ── */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+.compare-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+.compare-card-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.cc-green .compare-card-title { color: var(--green); border-color: var(--green-dim); }
+.cc-amber .compare-card-title { color: var(--amber); border-color: var(--amber-dim); }
+.compare-point {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+  align-items: flex-start;
+}
+.compare-point::before { content: '—'; color: var(--text3); flex-shrink: 0; margin-top: 1px; }
+
+/* ── BIG GOTCHA ── */
+.gotcha-section { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.big-gotcha {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+}
+.big-gotcha-title { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--amber); margin-bottom: 6px; }
+.big-gotcha-body { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.big-gotcha-tip { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-top: 8px; }
+
+/* ── UTIL ── */
+@keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+.section { animation: fadeIn .4s ease both; }
+code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--bg3);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--teal);
+}
+hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+strong { font-weight: 500; color: var(--strong-color); }
+
+/* ── SESSION VAR BOX (light-aware) ── */
+.svar-box {
+  margin-top: 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+.svar-box-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  margin-bottom: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.svar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.svar-key { font-family: var(--mono); font-size: 11px; color: var(--teal); }
+.svar-val { font-size: 12px; color: var(--text2); }
+
+/* ══════════════════════════════════
+   RESPONSIVE — TABLET  ≤ 860px
+══════════════════════════════════ */
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 220px 1fr; }
+  .section { padding: 48px 32px; }
+  #hero { padding: 56px 32px 48px; }
+  .hero-title { font-size: 30px; }
+  .analogy-grid { grid-template-columns: repeat(2, 1fr); row-gap: 20px; }
+  .cert-table { font-size: 12px; }
+  .cert-table th, .cert-table td { padding: 8px 10px; }
+  .stage-badge { display: none; }
+}
+
+/* ══════════════════════════════════
+   RESPONSIVE — MOBILE  ≤ 640px
+══════════════════════════════════ */
+@media (max-width: 640px) {
+  /* Hide desktop sidebar, show topbar */
+  .shell { grid-template-columns: 1fr; }
+  .sidebar {
+    display: none;
+    position: fixed;
+    top: 52px; left: 0; right: 0; bottom: 0;
+    height: auto;
+    z-index: 95;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar.drawer-open { display: flex; }
+  .topbar { display: flex; }
+  .main { height: calc(100vh - 52px); }
+  .progress-bar { display: none; }
+
+  /* Sections */
+  .section { padding: 36px 20px; max-width: 100%; }
+  #hero { padding: 36px 20px 32px; }
+  .hero-title { font-size: 26px; }
+  .hero-sub { font-size: 14px; }
+  .section-title { font-size: 20px; }
+  .section-lead { font-size: 14px; }
+
+  /* All 2-col grids → single col */
+  .concept-grid,
+  .element-grid,
+  .compare-grid,
+  .svar-grid { grid-template-columns: 1fr; }
+
+  /* Analogy 4-col → 2-col */
+  .analogy-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Cert table: hide last column, shrink */
+  .cert-table thead .cert-col-keypair,
+  .cert-table tbody .cert-col-keypair { display: none; }
+  .cert-table { font-size: 11px; }
+  .cert-table th, .cert-table td { padding: 7px 8px; }
+
+  /* Stage badges hidden on mobile */
+  .stage-badge { display: none; }
+
+  /* Stage header — tighter */
+  .stage-header { padding: 14px 16px; gap: 10px; }
+  .stage-body { padding: 16px; }
+
+  /* Flow */
+  .flow-container { padding: 16px; }
+  .step-tech { font-size: 10px; word-break: break-all; }
+}
+
+/* ══════════════════════════════════
+   RESPONSIVE — SMALL MOBILE ≤ 400px
+══════════════════════════════════ */
+@media (max-width: 400px) {
+  .hero-title { font-size: 22px; }
+  .section-title { font-size: 18px; }
+  .analogy-grid { grid-template-columns: 1fr 1fr; }
+  .flow-tab { font-size: 10px; padding: 5px 10px; }
+  .pill { font-size: 10px; padding: 3px 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- MOBILE TOPBAR -->
+<div class="topbar" id="topbar">
+  <span class="topbar-title">F5 + Okta SAML</span>
+  <div class="topbar-controls">
+    <button class="theme-btn" id="theme-btn-mobile" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">☀</button>
+    <button class="hamburger" id="hamburger" onclick="toggleDrawer()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</div>
+
+<!-- DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-header-top">
+        <div class="logo">F5 APM + Okta</div>
+        <button class="theme-btn" id="theme-btn-desk" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">☀</button>
+      </div>
+      <h1>SAML 2.0 Federation<br>Configuration Guide</h1>
+    </div>
+
+    <div class="nav-section">Concepts</div>
+    <a class="nav-item" href="#hero" data-section="hero" onclick="closeDrawer()">
+      <div class="nav-dot"></div><span class="nav-label">Overview</span>
+    </a>
+    <a class="nav-item" href="#concepts" data-section="concepts" onclick="closeDrawer()">
+      <div class="nav-dot"></div><span class="nav-label">IdP &amp; SP explained</span>
+    </a>
+    <a class="nav-item" href="#flows" data-section="flows" onclick="closeDrawer()">
+      <div class="nav-dot"></div><span class="nav-label">Authentication flows</span>
+    </a>
+    <a class="nav-item" href="#initiation" data-section="initiation" onclick="closeDrawer()">
+      <div class="nav-dot"></div><span class="nav-label">SP vs IdP initiated</span>
+    </a>
+
+    <div class="nav-section">Configuration</div>
+    <a class="nav-item" href="#certs" data-section="certs" onclick="closeDrawer()">
+      <div class="nav-dot"></div><span class="nav-label">Certificates</span><span class="nav-tag">Stage 1</span>
+    </a>
+    <a class="nav-item" href="#federation" data-section="federation" onclick="closeDrawer()">
+      <div class="nav-dot"></div><span class="nav-label">Federation objects</span><span class="nav-tag">2–4</span>
+    </a>
+    <a class="nav-item" href="#policy" data-section="policy" onclick="closeDrawer()">
+      <div class="nav-dot"></div><span class="nav-label">Access policy (VPE)</span><span class="nav-tag">Stage 5</span>
+    </a>
+    <a class="nav-item" href="#vs" data-section="vs" onclick="closeDrawer()">
+      <div class="nav-dot"></div><span class="nav-label">Virtual server</span><span class="nav-tag">Stage 6</span>
+    </a>
+
+    <div class="nav-section">Reference</div>
+    <a class="nav-item" href="#gotchas" data-section="gotchas" onclick="closeDrawer()">
+      <div class="nav-dot"></div><span class="nav-label">Common gotchas</span>
+    </a>
+
+    <div class="progress-bar">
+      <div class="progress-label"><span>Progress</span><span id="progress-pct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+
+    <!-- HERO -->
+    <section class="section" id="hero" style="padding-bottom:48px">
+      <div class="hero-tag">SAML 2.0 Federation</div>
+      <h1 class="hero-title">F5 APM + <em>Okta</em><br>from scratch</h1>
+      <p class="hero-sub">Everything needed to configure F5 BIG-IP APM as a SAML Service Provider, federating to Okta as the Identity Provider. Covers concepts, all six configuration stages, and the most common failure points.</p>
+      <div class="hero-pills">
+        <div class="pill">BIG-IP APM</div>
+        <div class="pill">Okta IdP</div>
+        <div class="pill">SAML 2.0</div>
+        <div class="pill">SP-initiated SSO</div>
+        <div class="pill">IdP-initiated SSO</div>
+        <div class="pill">HTTP POST binding</div>
+      </div>
+    </section>
+
+    <!-- CONCEPTS -->
+    <section class="section" id="concepts">
+      <div class="section-eyebrow">Concepts</div>
+      <h2 class="section-title">What does it mean to be an <strong>IdP or SP</strong>?</h2>
+      <p class="section-lead">The roles are defined by ownership — not by flow direction. One party owns the identity store. The other owns the protected resource. They never share secrets directly: trust is established out-of-band via metadata exchange, then verified cryptographically at runtime.</p>
+
+      <div class="concept-grid">
+        <div class="concept-card card-amber">
+          <div class="concept-card-label">Identity Provider (IdP)</div>
+          <div class="concept-card-title">Okta — "I know who you are"</div>
+          <div class="concept-card-body">Owns the user directory. Provides authentication (password, MFA). Signs SAML assertions with its private key. Knows which Service Providers it is allowed to assert identity to.</div>
+        </div>
+        <div class="concept-card card-purple">
+          <div class="concept-card-label">Service Provider (SP)</div>
+          <div class="concept-card-title">F5 APM — "I have what you want"</div>
+          <div class="concept-card-body">Owns the protected resource (app, VPN, webtop). Has no user database. Outsources authentication entirely to the IdP. Accepts the IdP's signed assertion as proof of identity.</div>
+        </div>
+      </div>
+
+      <div class="analogy-box">
+        <div class="analogy-title">The passport analogy</div>
+        <div class="analogy-grid">
+          <div class="analogy-item">
+            <div class="analogy-icon">🏛️</div>
+            <div class="analogy-name">Okta</div>
+            <div class="analogy-desc">Passport office — issued your credential, signs it</div>
+          </div>
+          <div class="analogy-item">
+            <div class="analogy-icon">🚪</div>
+            <div class="analogy-name">F5 APM</div>
+            <div class="analogy-desc">Bouncer — doesn't know you, trusts the passport office</div>
+          </div>
+          <div class="analogy-item">
+            <div class="analogy-icon">📄</div>
+            <div class="analogy-name">SAML assertion</div>
+            <div class="analogy-desc">Your passport — signed proof of identity</div>
+          </div>
+          <div class="analogy-item">
+            <div class="analogy-icon">👤</div>
+            <div class="analogy-name">User</div>
+            <div class="analogy-desc">Just trying to get in — browser carries everything</div>
+          </div>
+        </div>
+      </div>
+
+      <p style="font-size:13px;color:var(--text2);line-height:1.65;margin-top:16px">The bouncer (F5) doesn't re-verify identity from scratch. He checks the passport is genuine (valid signature), checks it's not expired, and lets you in. The user's browser acts as the carrier — it never sees the raw assertion content in a meaningful way, it just forwards the signed blob from Okta to F5.</p>
+    </section>
+
+    <!-- FLOWS -->
+    <section class="section" id="flows">
+      <div class="section-eyebrow">Authentication flow</div>
+      <h2 class="section-title">Step-by-step: <strong>what actually happens</strong></h2>
+      <p class="section-lead">Select a flow below, then click each step to expand the technical detail. The assertion always travels IdP → SP via the user's browser (POST binding). What changes between flows is who initiates.</p>
+      <div class="flow-container">
+        <div class="flow-tabs">
+          <button class="flow-tab active" onclick="setFlow('sp', this)">SP-initiated SSO</button>
+          <button class="flow-tab" onclick="setFlow('idp', this)">IdP-initiated SSO</button>
+        </div>
+        <div class="flow-steps" id="flow-steps"></div>
+      </div>
+    </section>
+
+    <!-- INITIATION COMPARE -->
+    <section class="section" id="initiation">
+      <div class="section-eyebrow">Flow comparison</div>
+      <h2 class="section-title">SP-initiated vs <strong>IdP-initiated</strong></h2>
+      <p class="section-lead">The roles never swap. Okta is always the IdP, F5 is always the SP. What changes is which party fires first — and that has a concrete security implication on the F5 side.</p>
+
+      <div class="compare-grid">
+        <div class="compare-card cc-green">
+          <div class="compare-card-title">SP-initiated (recommended)</div>
+          <div class="compare-point">User hits F5-protected URL with no session</div>
+          <div class="compare-point">F5 builds a signed AuthnRequest and 302-redirects to Okta</div>
+          <div class="compare-point">Okta authenticates user, builds assertion with <code>InResponseTo</code> referencing the AuthnRequest ID</div>
+          <div class="compare-point">F5 can correlate the assertion to a specific request — stronger security</div>
+          <div class="compare-point">F5 remembers the original URL and redirects back to it after auth</div>
+        </div>
+        <div class="compare-card cc-amber">
+          <div class="compare-card-title">IdP-initiated (use with care)</div>
+          <div class="compare-point">User clicks app tile in Okta portal</div>
+          <div class="compare-point">Okta builds assertion unprompted — no AuthnRequest was made</div>
+          <div class="compare-point">Assertion has no <code>InResponseTo</code> attribute — F5 cannot correlate it to a prior request</div>
+          <div class="compare-point">F5 must have <strong>allow unsolicited responses</strong> enabled on the SP Service object</div>
+          <div class="compare-point">No original URL to return to — F5 redirects to a configured default landing URI</div>
+        </div>
+      </div>
+
+      <div class="big-gotcha" style="margin-top:8px">
+        <div class="big-gotcha-title">Security trade-off</div>
+        <div class="big-gotcha-body">IdP-initiated flows are weaker because F5 accepts an assertion it never asked for. An attacker who can replay a captured assertion has a wider window to exploit. If IdP-initiated is required, ensure assertion validity windows are tight (Okta default is 5 minutes) and that HTTPS is enforced end-to-end.</div>
+      </div>
+    </section>
+
+    <!-- CERTS -->
+    <section class="section" id="certs">
+      <div class="section-eyebrow">Stage 1</div>
+      <h2 class="section-title">Certificates — <strong>three distinct roles</strong></h2>
+      <p class="section-lead">Three separate certificates are involved. They serve completely different purposes. Conflating them is one of the most common setup mistakes.</p>
+
+      <table class="cert-table">
+        <thead>
+          <tr>
+            <th>Certificate</th>
+            <th>Where it lives on F5</th>
+            <th>Purpose</th>
+            <th class="cert-col-keypair">Key pair?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="cert-name">SP signing cert + key</div></td>
+            <td>System → Certificate Management → Traffic Cert Management</td>
+            <td>APM signs outbound AuthnRequests. Public cert exported in SP metadata and given to Okta so Okta can verify the request came from this SP.</td>
+            <td class="cert-col-keypair" style="color:var(--green)">Yes — cert + key</td>
+          </tr>
+          <tr>
+            <td><div class="cert-name">Okta IdP signing cert</div></td>
+            <td>Imported via IdP metadata XML into External IdP Connector</td>
+            <td>APM uses this to verify the cryptographic signature on every incoming SAML assertion. Proves the assertion genuinely came from Okta and wasn't tampered with.</td>
+            <td class="cert-col-keypair" style="color:var(--amber)">No — public cert only</td>
+          </tr>
+          <tr>
+            <td><div class="cert-name">VS SSL cert + key</div></td>
+            <td>Traffic Cert Management → used in Client SSL Profile</td>
+            <td>Terminates HTTPS for the client-facing virtual server. Completely separate from SAML signing. Must be CA-trusted.</td>
+            <td class="cert-col-keypair" style="color:var(--green)">Yes — cert + key</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="big-gotcha">
+        <div class="big-gotcha-title">Self-signed is fine for the SP cert</div>
+        <div class="big-gotcha-body">Okta does not validate the certificate authority of the SP signing cert — it only uses the public key to verify signatures. A self-signed cert is fully acceptable here. The VS SSL cert, however, must be CA-trusted because browsers validate it.</div>
+      </div>
+    </section>
+
+    <!-- FEDERATION OBJECTS -->
+    <section class="section" id="federation">
+      <div class="section-eyebrow">Stages 2 – 4</div>
+      <h2 class="section-title">Federation objects — <strong>the trust chain</strong></h2>
+      <p class="section-lead">Three objects built in sequence. The order matters — the binding in Stage 4 references both objects from Stages 2 and 3, so both must exist first.</p>
+
+      <div class="stage-list">
+        <div class="stage open" id="stg-idpconn">
+          <div class="stage-header" onclick="toggleStage('stg-idpconn')">
+            <span class="stage-num">02</span>
+            <span class="stage-name">External IdP connector</span>
+            <span class="stage-badge badge-green">Access → Federation → SAML: SP → External IdP Connectors</span>
+            <span class="stage-chevron">▶</span>
+          </div>
+          <div class="stage-body">
+            <p class="stage-note">Tells APM who Okta is. Import Okta's metadata XML to populate all fields automatically — recommended over manual entry.</p>
+            <div class="element-grid">
+              <div class="element-card">
+                <div class="element-card-name">IdP entity ID</div>
+                <div class="element-card-path">Populated from metadata XML</div>
+                <div class="element-card-desc">Okta's unique identifier, e.g. <code>http://www.okta.com/&lt;app-id&gt;</code>. Used to verify the Issuer field in incoming assertions.</div>
+              </div>
+              <div class="element-card">
+                <div class="element-card-name">SSO URL</div>
+                <div class="element-card-path">Populated from metadata XML</div>
+                <div class="element-card-desc">The Okta endpoint APM redirects users to during SP-initiated flow, with the SAMLRequest query parameter attached.</div>
+              </div>
+              <div class="element-card">
+                <div class="element-card-name">SSO binding</div>
+                <div class="element-card-path">Typically: HTTP Redirect</div>
+                <div class="element-card-desc">HTTP Redirect binding is standard for the AuthnRequest (GET). HTTP POST binding is used for the assertion response in the opposite direction.</div>
+              </div>
+              <div class="element-card">
+                <div class="element-card-name">IdP signing certificate</div>
+                <div class="element-card-path">Imported from Okta metadata XML</div>
+                <div class="element-card-desc">Okta's public cert. APM uses this to verify the signature on every assertion. No private key on the F5 side.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage" id="stg-localsp">
+          <div class="stage-header" onclick="toggleStage('stg-localsp')">
+            <span class="stage-num">03</span>
+            <span class="stage-name">Local SP service</span>
+            <span class="stage-badge badge-teal">Access → Federation → SAML: SP → Local SP Services</span>
+            <span class="stage-chevron">▶</span>
+          </div>
+          <div class="stage-body">
+            <p class="stage-note">Defines F5 APM's identity as a service provider. After saving, export the SP metadata XML and upload it to Okta — this completes the out-of-band trust exchange.</p>
+            <div class="element-grid">
+              <div class="element-card">
+                <div class="element-card-name">SP entity ID</div>
+                <div class="element-card-path">Must match Okta exactly — case sensitive</div>
+                <div class="element-card-desc">Typically the VS hostname, e.g. <code>https://myapp.example.com</code>. Trailing slashes matter. Character-for-character match required.</div>
+              </div>
+              <div class="element-card">
+                <div class="element-card-name">ACS URL</div>
+                <div class="element-card-path">Must match Okta exactly</div>
+                <div class="element-card-desc">Where Okta POSTs the assertion. Format: <code>https://myapp.example.com/saml/sp/profile/post/acs</code></div>
+              </div>
+              <div class="element-card">
+                <div class="element-card-name">SP cert + key</div>
+                <div class="element-card-path">References cert from Stage 1</div>
+                <div class="element-card-desc">The keypair from Stage 1. Used to sign outbound AuthnRequests when "Sign AuthnRequest" is enabled.</div>
+              </div>
+              <div class="element-card">
+                <div class="element-card-name">Security settings</div>
+                <div class="element-card-path">Signing + assertion requirements</div>
+                <div class="element-card-desc">Sign AuthnRequest: yes. Require signed assertions: yes. Allow unsolicited responses: only for IdP-initiated flows.</div>
+              </div>
+            </div>
+            <div class="gotcha-list">
+              <div class="gotcha">
+                <span class="gotcha-icon">!</span>
+                <span class="gotcha-text">After saving, export the SP metadata XML and upload to Okta before testing. Without this, Okta will reject the AuthnRequest as coming from an unknown SP.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage" id="stg-binding">
+          <div class="stage-header" onclick="toggleStage('stg-binding')">
+            <span class="stage-num">04</span>
+            <span class="stage-name">SP ↔ IdP binding</span>
+            <span class="stage-badge badge-purple">Local SP Services → [edit] → IdP Connectors tab</span>
+            <span class="stage-chevron">▶</span>
+          </div>
+          <div class="stage-body">
+            <p class="stage-note">The binding joins the two objects together and completes the trust pairing. Without it, both objects can be perfectly configured and SAML will still fail silently.</p>
+            <div class="element-grid">
+              <div class="element-card" style="grid-column:1/-1">
+                <div class="element-card-name">IdP connector reference</div>
+                <div class="element-card-path">Local SP Service → IdP Connectors tab → Add</div>
+                <div class="element-card-desc">Select the External IdP Connector from Stage 2. This tells APM: "when a user needs to authenticate via this SP, redirect them to that IdP." The binding is directional and does not apply automatically in reverse.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACCESS POLICY -->
+    <section class="section" id="policy">
+      <div class="section-eyebrow">Stage 5</div>
+      <h2 class="section-title">Access policy — <strong>the VPE flow</strong></h2>
+      <p class="section-lead">The Visual Policy Editor (VPE) is where authentication logic lives. The SAML Auth agent is the engine; Variable Assign is the post-processing step that makes assertion attributes usable downstream.</p>
+
+      <div class="stage-list">
+        <div class="stage open" id="stg-ap">
+          <div class="stage-header" onclick="toggleStage('stg-ap')">
+            <span class="stage-num">—</span>
+            <span class="stage-name">Access profile + VPE agents</span>
+            <span class="stage-badge badge-amber">Access → Profiles/Policies → Access Profiles</span>
+            <span class="stage-chevron">▶</span>
+          </div>
+          <div class="stage-body">
+            <p class="stage-note">The policy flow executes on every new connection before a session exists. Place the SAML Auth agent first, then Variable Assign, then Allow/Deny endings.</p>
+            <div class="element-grid">
+              <div class="element-card">
+                <div class="element-card-name">SAML auth agent</div>
+                <div class="element-card-path">+ Add Item → Authentication → SAML</div>
+                <div class="element-card-desc">References the Local SP Service from Stage 3. On no-session: triggers the AuthnRequest redirect to Okta. On assertion POST: resumes the policy with <code>session.saml.last.*</code> populated.</div>
+              </div>
+              <div class="element-card">
+                <div class="element-card-name">Variable assign agent</div>
+                <div class="element-card-path">+ Add Item → General Purpose → Variable Assign</div>
+                <div class="element-card-desc">Maps assertion attributes to standard APM session variables used for group-based access control and downstream policy decisions.</div>
+              </div>
+            </div>
+            <div class="svar-box">
+              <div class="svar-box-label">Key session variables after SAML auth</div>
+              <div class="svar-grid">
+                <div class="svar-key">session.saml.last.nameIDValue</div>
+                <div class="svar-val">→ username / subject identifier</div>
+                <div class="svar-key">session.saml.last.attr.email</div>
+                <div class="svar-val">→ email attribute (if sent by Okta)</div>
+                <div class="svar-key">session.saml.last.attr.groups</div>
+                <div class="svar-val">→ group membership for ACLs</div>
+                <div class="svar-key">session.saml.last.authinstant</div>
+                <div class="svar-val">→ timestamp of authentication</div>
+              </div>
+            </div>
+            <div class="gotcha-list" style="margin-top:14px">
+              <div class="gotcha">
+                <span class="gotcha-icon">!</span>
+                <span class="gotcha-text">Okta sends attribute names as full URI strings by default (e.g. <code>http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress</code>). Check the exact attribute name in the SAML tracer before referencing it in Variable Assign — the friendly Okta alias does not carry through to the assertion XML.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIRTUAL SERVER -->
+    <section class="section" id="vs">
+      <div class="section-eyebrow">Stage 6</div>
+      <h2 class="section-title">Virtual server — <strong>wiring it together</strong></h2>
+      <p class="section-lead">The virtual server is the entry point for all user traffic. Every configuration object built in Stages 1–5 ultimately connects here, directly or via the Access Profile attachment.</p>
+
+      <div class="element-grid">
+        <div class="element-card">
+          <div class="element-card-name">VS type + address</div>
+          <div class="element-card-path">Local Traffic → Virtual Servers → General Properties</div>
+          <div class="element-card-desc">Standard type. IP:port matches the hostname in your ACS URL and SP Entity ID. Port 443 required for HTTPS.</div>
+        </div>
+        <div class="element-card">
+          <div class="element-card-name">HTTP profile</div>
+          <div class="element-card-path">Local Traffic → Profiles → Services → HTTP</div>
+          <div class="element-card-desc">Required for APM to process HTTP-layer elements: session cookies, redirect responses, and the POST body containing the SAMLResponse.</div>
+        </div>
+        <div class="element-card">
+          <div class="element-card-name">SSL profile (client)</div>
+          <div class="element-card-path">Local Traffic → Profiles → SSL → Client</div>
+          <div class="element-card-desc">Terminates HTTPS from the client. References the VS SSL cert+key from Stage 1. Mandatory — assertions must be encrypted in transit.</div>
+        </div>
+        <div class="element-card">
+          <div class="element-card-name">Access profile (attached)</div>
+          <div class="element-card-path">VS → Access Policy section → Access Profile field</div>
+          <div class="element-card-desc">The attachment point for the Access Profile from Stage 5. This is what connects live traffic to the SAML policy. Without this, no authentication occurs.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GOTCHAS -->
+    <section class="section" id="gotchas">
+      <div class="section-eyebrow">Reference</div>
+      <h2 class="section-title">Common <strong>failure points</strong></h2>
+      <p class="section-lead">The most frequent causes of SAML failures that work in config but break at runtime. Most produce unhelpful generic errors — knowing these in advance saves hours of tracing.</p>
+
+      <div class="gotcha-section">
+        <div class="big-gotcha">
+          <div class="big-gotcha-title">Entity ID / ACS URL mismatch</div>
+          <div class="big-gotcha-body">The SP Entity ID and ACS URL on F5 must be character-for-character identical to what is registered in Okta. Trailing slashes, HTTP vs HTTPS, subdomain casing — all count. Okta will reject the assertion or return a generic error if there is any discrepancy.</div>
+          <div class="big-gotcha-tip">Fix: compare the SP metadata XML exported from F5 against the Okta app settings side-by-side.</div>
+        </div>
+        <div class="big-gotcha">
+          <div class="big-gotcha-title">Missing SP ↔ IdP binding</div>
+          <div class="big-gotcha-body">Both the External IdP Connector and Local SP Service can be perfectly configured, and SAML auth will still silently fail if the binding step (Stage 4) was skipped. APM has no IdP to redirect users to.</div>
+          <div class="big-gotcha-tip">Fix: Local SP Services → edit → IdP Connectors tab → confirm the connector is listed.</div>
+        </div>
+        <div class="big-gotcha">
+          <div class="big-gotcha-title">Clock skew between F5 and Okta</div>
+          <div class="big-gotcha-body">SAML assertions include a NotBefore and NotOnOrAfter timestamp with a validity window (typically 5 minutes). If BIG-IP's system clock is more than a few minutes out of sync with Okta's, assertions will be rejected as expired or not-yet-valid.</div>
+          <div class="big-gotcha-tip">Fix: NTP is not optional. Verify with <code>date</code> on the BIG-IP bash prompt and compare against an external time source.</div>
+        </div>
+        <div class="big-gotcha">
+          <div class="big-gotcha-title">Attribute name format mismatch</div>
+          <div class="big-gotcha-body">Okta sends attribute names in full URI format by default. Variable Assign agents in the VPE must reference the exact wire-format attribute name — the friendly Okta alias does not carry through to the assertion XML.</div>
+          <div class="big-gotcha-tip">Fix: use the browser SAML tracer extension to inspect the raw assertion and copy the exact attribute name strings.</div>
+        </div>
+        <div class="big-gotcha">
+          <div class="big-gotcha-title">Unsolicited response not enabled for IdP-initiated</div>
+          <div class="big-gotcha-body">If IdP-initiated flow is required, the Local SP Service must have "Allow Unsolicited Responses" enabled. Without it, APM rejects assertions that arrive without a corresponding InResponseTo value — which is all IdP-initiated assertions.</div>
+          <div class="big-gotcha-tip">Fix: Local SP Services → [edit] → Security Settings → Allow Unsolicited Responses: enabled.</div>
+        </div>
+        <div class="big-gotcha">
+          <div class="big-gotcha-title">SP metadata not uploaded to Okta</div>
+          <div class="big-gotcha-body">After creating the Local SP Service, the SP metadata XML must be exported and uploaded to the Okta app configuration. Okta uses it to validate the AuthnRequest signature and to know which ACS URL to POST the assertion to.</div>
+          <div class="big-gotcha-tip">Fix: Local SP Services → [select] → Export Metadata → upload to Okta app → Sign On → SAML settings.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* ── THEME ── */
+function getTheme() { return document.documentElement.getAttribute('data-theme') || 'dark'; }
+
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('saml-theme', t);
+  const icon = t === 'dark' ? '☀' : '🌙';
+  ['theme-btn-desk','theme-btn-mobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = icon;
+  });
+}
+
+function toggleTheme() { applyTheme(getTheme() === 'dark' ? 'light' : 'dark'); }
+
+(function() {
+  const saved = localStorage.getItem('saml-theme');
+  const prefer = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  applyTheme(saved || prefer);
+})();
+
+/* ── MOBILE DRAWER ── */
+function toggleDrawer() {
+  const sb = document.getElementById('sidebar');
+  const hb = document.getElementById('hamburger');
+  const ov = document.getElementById('drawer-overlay');
+  const open = sb.classList.toggle('drawer-open');
+  hb.classList.toggle('open', open);
+  ov.classList.toggle('open', open);
+  document.body.style.overflow = open ? 'hidden' : '';
+}
+function closeDrawer() {
+  const sb = document.getElementById('sidebar');
+  const hb = document.getElementById('hamburger');
+  const ov = document.getElementById('drawer-overlay');
+  sb.classList.remove('drawer-open');
+  hb.classList.remove('open');
+  ov.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* ── FLOW DATA ── */
+const SP_FLOW = [
+  { title: 'User requests protected resource', actors: 'User → F5 APM', body: 'The user navigates to a URL behind F5 APM. APM checks for an existing session — there is none. The resource is protected, so APM must authenticate the user before granting access.', tech: 'HTTP GET → APM virtual server' },
+  { title: 'APM builds and sends AuthnRequest', actors: 'F5 APM → User (redirect)', body: "APM constructs a SAML AuthnRequest XML document, Base64-encodes and URL-encodes it, then sends a 302 redirect pointing at Okta's SSO endpoint. The AuthnRequest is embedded as a query parameter. If signing is enabled, APM signs it with the SP private key from Stage 1.", tech: 'HTTP 302 → https://okta.com/sso?SAMLRequest=&lt;encoded&gt; — HTTP Redirect binding' },
+  { title: 'Browser follows redirect to Okta', actors: 'User (browser) → Okta', body: "The browser follows the redirect to Okta, carrying the SAMLRequest. Okta decodes it, checks the SP Entity ID against its registered apps, and verifies the AuthnRequest signature using the SP's public cert.", tech: 'Okta validates: EntityID match, AuthnRequest signature, ACS URL in request' },
+  { title: 'Okta authenticates the user', actors: 'Okta → User', body: "If no Okta session exists, Okta presents its login page (password, MFA, etc.). Once authenticated, Okta builds a signed SAML Assertion containing the user's identity and attributes. The assertion has a short validity window (typically 5 minutes) and includes InResponseTo referencing the AuthnRequest ID.", tech: 'Assertion contains: NameID, attributes, NotBefore/NotOnOrAfter, Issuer, InResponseTo, Signature' },
+  { title: 'Okta sends SAMLResponse to browser', actors: 'Okta → User (auto-POST form)', body: "Okta returns an HTML page containing a hidden form with the Base64-encoded SAMLResponse. JavaScript auto-submits the form. The user sees nothing — the browser silently forwards the assertion to F5's ACS endpoint.", tech: 'HTTP POST binding — SAMLResponse posted to ACS URL' },
+  { title: 'Browser POSTs SAMLResponse to F5 ACS', actors: 'User (browser) → F5 APM ACS endpoint', body: "The browser POSTs the SAMLResponse to F5 APM's Assertion Consumer Service URL. APM decodes the response, validates the XML signature against Okta's IdP cert, checks the assertion is not expired, and verifies the audience (SP Entity ID).", tech: 'APM checks: signature valid, NotOnOrAfter, AudienceRestriction, Destination URL, InResponseTo' },
+  { title: 'APM creates session and grants access', actors: 'F5 APM → User', body: 'If all checks pass, APM runs the rest of the access policy — group checks, Variable Assign mapping, Allow/Deny decisions. If allowed, APM creates a session, sets a session cookie, and redirects the user to the original resource they requested.', tech: 'session.saml.last.* → session variables → policy allow ending → redirect to original URL' },
+];
+const IDP_FLOW = [
+  { title: 'User initiates from Okta portal', actors: 'User → Okta', body: "The user is already authenticated in Okta and clicks the app tile for the F5-protected resource. There is no prior request from F5 — Okta initiates entirely on its own. No AuthnRequest is generated.", tech: 'No SAMLRequest — IdP-initiated flow has no prior SP request' },
+  { title: 'Okta builds assertion unprompted', actors: 'Okta → User (auto-POST form)', body: "Okta builds a SAML Assertion for the user and returns an HTML auto-submit form pointing directly at F5's ACS URL. Because there was no AuthnRequest, the assertion has no InResponseTo attribute.", tech: 'Assertion lacks InResponseTo — F5 must allow unsolicited responses' },
+  { title: 'Browser POSTs assertion to F5 ACS', actors: 'User (browser) → F5 APM ACS endpoint', body: "The browser auto-posts the SAMLResponse to F5's ACS endpoint. APM validates the signature and attributes exactly as in SP-initiated flow. The key difference: APM must tolerate the missing InResponseTo field.", tech: 'Local SP Service: Allow Unsolicited Responses must be enabled' },
+  { title: 'APM creates session and redirects to landing page', actors: 'F5 APM → User', body: 'APM creates a session and redirects the user. Unlike SP-initiated flow, there is no original URL to return to. APM redirects to a pre-configured default landing URL or webtop.', tech: 'Default relay state / landing URI configured on the Local SP Service' },
+];
+
+let activeFlow = 'sp';
+function setFlow(mode, btn) {
+  activeFlow = mode;
+  document.querySelectorAll('.flow-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFlow();
+}
+function renderFlow() {
+  const steps = activeFlow === 'sp' ? SP_FLOW : IDP_FLOW;
+  document.getElementById('flow-steps').innerHTML = steps.map((s, i) => `
+    <div class="flow-step" id="step-${i}" onclick="toggleStep(${i})">
+      <span class="step-num">0${i+1}</span>
+      <div class="step-content">
+        <div class="step-title">${s.title}</div>
+        <div class="step-actors">${s.actors}</div>
+        <div class="step-detail"><p>${s.body}</p><div class="step-tech">${s.tech}</div></div>
+      </div>
+    </div>`).join('');
+}
+function toggleStep(i) { document.getElementById('step-' + i).classList.toggle('expanded'); }
+function toggleStage(id) { document.getElementById(id).classList.toggle('open'); }
+
+renderFlow();
+
+/* ── SCROLLSPY ── */
+const mainEl = document.getElementById('main');
+const sections = document.querySelectorAll('section[id]');
+const navItems = document.querySelectorAll('.nav-item[data-section]');
+
+function onScroll() {
+  const scrollTop = mainEl.scrollTop;
+  const scrollHeight = mainEl.scrollHeight - mainEl.clientHeight;
+  const pct = scrollHeight > 0 ? Math.round((scrollTop / scrollHeight) * 100) : 0;
+  const fill = document.getElementById('progress-fill');
+  const pctEl = document.getElementById('progress-pct');
+  if (fill) fill.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+
+  let current = '';
+  sections.forEach(s => { if (scrollTop >= s.offsetTop - 80) current = s.id; });
+  navItems.forEach(item => item.classList.toggle('active', item.dataset.section === current));
+}
+
+mainEl.addEventListener('scroll', onScroll);
+
+/* On mobile the whole page scrolls, not .main */
+window.addEventListener('scroll', () => {
+  if (window.innerWidth <= 640) {
+    const scrollTop = window.scrollY;
+    const scrollHeight = document.body.scrollHeight - window.innerHeight;
+    const pct = scrollHeight > 0 ? Math.round((scrollTop / scrollHeight) * 100) : 0;
+    const fill = document.getElementById('progress-fill');
+    const pctEl = document.getElementById('progress-pct');
+    if (fill) fill.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = pct + '%';
+    let current = '';
+    sections.forEach(s => { if (scrollTop >= s.offsetTop - 80) current = s.id; });
+    navItems.forEach(item => item.classList.toggle('active', item.dataset.section === current));
+  }
+});
+
+navItems.forEach(item => {
+  item.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.getElementById(item.dataset.section);
+    if (!target) return;
+    if (window.innerWidth <= 640) {
+      target.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      mainEl.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
+    }
+  });
+});
+</script>
+</body>
+</html>

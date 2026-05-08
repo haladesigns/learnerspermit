@@ -825,6 +825,19 @@
   },
   {
     "type": "folder",
+    "name": "saml",
+    "label": "Saml",
+    "children": [
+      {
+        "type": "file",
+        "name": "saml.txt",
+        "label": "Saml",
+        "path": "saml/saml.txt"
+      }
+    ]
+  },
+  {
+    "type": "folder",
     "name": "systems",
     "label": "Systems",
     "children": [

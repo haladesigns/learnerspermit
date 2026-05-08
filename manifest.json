@@ -830,6 +830,12 @@
     "children": [
       {
         "type": "file",
+        "name": "f5-okta-saml-guide.html",
+        "label": "F5 Okta Saml Guide",
+        "path": "saml/f5-okta-saml-guide.html"
+      },
+      {
+        "type": "file",
         "name": "saml.txt",
         "label": "Saml",
         "path": "saml/saml.txt"

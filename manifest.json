@@ -818,6 +818,12 @@
     "children": [
       {
         "type": "file",
+        "name": "Beyond the HUD.pdf",
+        "label": "Beyond The Hud",
+        "path": "s&box/Beyond the HUD.pdf"
+      },
+      {
+        "type": "file",
         "name": "css-positioning-deep-dive.pdf",
         "label": "Css Positioning Deep Dive",
         "path": "s&box/css-positioning-deep-dive.pdf"
@@ -827,6 +833,12 @@
         "name": "css-positioning-playground.html",
         "label": "Css Positioning Playground",
         "path": "s&box/css-positioning-playground.html"
+      },
+      {
+        "type": "file",
+        "name": "understanding-flexbox.pdf",
+        "label": "Understanding Flexbox",
+        "path": "s&box/understanding-flexbox.pdf"
       }
     ]
   },

@@ -839,12 +839,6 @@
         "name": "css-positioning-playground.html",
         "label": "Css Positioning Playground",
         "path": "s&box/css-positioning-playground.html"
-      },
-      {
-        "type": "file",
-        "name": "t",
-        "label": "T",
-        "path": "s&box/t"
       }
     ]
   },

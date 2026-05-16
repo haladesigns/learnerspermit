@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>CSS Positioning Playground — for s&amp;box UI</title>
+<style>
+  /* ---------- type & color ---------- */
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap');
+
+  :root {
+    --bg:        #0b0e14;
+    --panel:     #12161f;
+    --ink:       #d8e1ff;
+    --ink-dim:   #6f7a96;
+    --rule:      #232a3b;
+    --accent:    #ffd166;   /* "gizmo yellow" */
+    --hot:       #ff5470;   /* "trace hit" red-pink */
+    --cool:      #4cc9f0;   /* "trace miss" cyan */
+    --green:     #7bd389;
+    --viewport-bg: #1a1f2e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.5; }
+  body { padding: 24px; min-height: 100vh; }
+
+  /* ---------- header ---------- */
+  header {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  h1 .small {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    font-weight: 400;
+    letter-spacing: 0;
+    display: block;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+  .legend { color: var(--ink-dim); font-size: 11px; max-width: 420px; text-align: right; }
+  .legend strong { color: var(--accent); }
+
+  /* ---------- demo card ---------- */
+  .demo {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    min-height: 380px;
+  }
+  .demo > .stage {
+    position: relative;
+    border-right: 1px solid var(--rule);
+    background:
+      linear-gradient(var(--rule) 1px, transparent 1px) 0 0 / 24px 24px,
+      linear-gradient(90deg, var(--rule) 1px, transparent 1px) 0 0 / 24px 24px,
+      var(--viewport-bg);
+    overflow: hidden;
+    min-height: 380px;
+  }
+  .demo > .controls {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+  }
+
+  .demo-title {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .demo-subtitle {
+    color: var(--ink-dim);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .demo-blurb { color: var(--ink); font-size: 12px; line-height: 1.55; padding-bottom: 8px; border-bottom: 1px dashed var(--rule); }
+
+  /* ---------- controls ---------- */
+  .ctrl { display: flex; flex-direction: column; gap: 6px; }
+  .ctrl label {
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    display: flex;
+    justify-content: space-between;
+  }
+  .ctrl label .val { color: var(--accent); font-weight: 700; }
+  .ctrl input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .ctrl select, .ctrl button {
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .ctrl select:focus { outline: 1px solid var(--accent); }
+  .seg { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--rule); }
+  .seg button {
+    flex: 1;
+    background: var(--bg);
+    border: none;
+    border-right: 1px solid var(--rule);
+    color: var(--ink-dim);
+    padding: 6px 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button.on { background: var(--accent); color: var(--bg); font-weight: 700; }
+  .seg button:hover:not(.on) { color: var(--ink); }
+
+  /* ---------- stage elements (generic shells the demos override) ---------- */
+  .stage .parent, .stage .sibling, .stage .target {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0b0e14;
+    user-select: none;
+  }
+
+  /* ---------- DEMO 1: position modes ---------- */
+  #d1-flow {
+    position: absolute;
+    top: 24px; left: 24px; right: 24px; bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed var(--ink-dim);
+  }
+  #d1-flow > .sibling {
+    background: var(--ink-dim);
+    color: var(--bg);
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+  #d1-flow > .target {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 700;
+    padding: 8px 12px;
+  }
+
+  /* ---------- DEMO 2: containing block ---------- */
+  #d2-stage {
+    position: absolute;
+    top: 24px; left: 24px; right: 24px; bottom: 24px;
+  }
+  #d2-grandparent {
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--ink-dim);
+    padding: 24px;
+    color: var(--ink-dim);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  #d2-parent {
+    width: 70%;
+    height: 70%;
+    border: 1px solid var(--cool);
+    padding: 24px;
+    color: var(--cool);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  #d2-child {
+    background: var(--hot);
+    color: var(--bg);
+    width: 80px;
+    height: 80px;
+    font-weight: 700;
+    position: absolute;
+    top: 12px; left: 12px;
+  }
+
+  /* ---------- DEMO 3: flexbox ---------- */
+  #d3-flex {
+    position: absolute;
+    top: 24px; left: 24px; right: 24px; bottom: 24px;
+    border: 1px dashed var(--ink-dim);
+    padding: 12px;
+    display: flex;
+    gap: 8px;
+  }
+  #d3-flex > .item {
+    background: var(--green);
+    color: var(--bg);
+    font-weight: 700;
+    padding: 16px;
+    min-width: 60px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #d3-flex > .item.big { background: var(--accent); }
+
+  /* ---------- DEMO 4: HUD example ---------- */
+  #d4-screen {
+    position: absolute;
+    top: 12px; left: 12px; right: 12px; bottom: 12px;
+    background:
+      radial-gradient(ellipse at center, rgba(76, 201, 240, 0.08), transparent 70%),
+      var(--viewport-bg);
+    overflow: hidden;
+  }
+  /* crosshair */
+  #d4-screen .crosshair {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px; height: 16px;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+  }
+  #d4-screen .crosshair::before, #d4-screen .crosshair::after {
+    content: ''; position: absolute; background: var(--accent);
+  }
+  #d4-screen .crosshair::before { top: 50%; left: -8px; width: 6px; height: 1px; }
+  #d4-screen .crosshair::after { top: 50%; right: -8px; width: 6px; height: 1px; }
+  /* health */
+  #d4-screen .health {
+    position: absolute;
+    bottom: 16px; left: 16px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--hot);
+    padding: 8px 14px;
+    color: var(--hot);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  #d4-screen .health .num { color: var(--ink); font-size: 18px; font-weight: 700; }
+  /* ammo */
+  #d4-screen .ammo {
+    position: absolute;
+    bottom: 16px; right: 16px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--accent);
+    padding: 8px 14px;
+    color: var(--accent);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: right;
+  }
+  #d4-screen .ammo .num { color: var(--ink); font-size: 18px; font-weight: 700; }
+  /* interaction prompt */
+  #d4-screen .prompt {
+    position: absolute;
+    top: 60%; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    border: 1px solid var(--cool);
+    padding: 6px 12px;
+    color: var(--ink);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  #d4-screen .prompt .key {
+    background: var(--cool); color: var(--bg);
+    padding: 1px 6px; margin-right: 6px; font-weight: 700;
+  }
+  /* "world" indicator */
+  #d4-screen .world {
+    position: absolute;
+    top: 32px; left: 50%;
+    transform: translateX(-50%);
+    color: var(--ink-dim);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+  }
+
+  /* ---------- annotation overlay (the marker) ---------- */
+  .marker {
+    position: absolute;
+    pointer-events: none;
+    font-size: 10px;
+    color: var(--accent);
+    background: var(--bg);
+    padding: 2px 6px;
+    border: 1px solid var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    z-index: 10;
+  }
+
+  /* ---------- code chips ---------- */
+  code, .code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--accent);
+    padding: 1px 6px;
+    border: 1px solid var(--rule);
+    font-size: 11px;
+  }
+
+  /* ---------- footnote / s&box notes ---------- */
+  .sandbox-note {
+    background: var(--bg);
+    border-left: 3px solid var(--hot);
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--ink-dim);
+  }
+  .sandbox-note strong { color: var(--hot); display: block; margin-bottom: 4px; font-size: 10px; letter-spacing: 0.1em; }
+  .sandbox-note code { font-size: 10px; }
+
+  footer {
+    color: var(--ink-dim);
+    font-size: 11px;
+    border-top: 1px solid var(--rule);
+    padding-top: 16px;
+    margin-top: 32px;
+    text-align: center;
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 800px) {
+    .demo { grid-template-columns: 1fr; }
+    .demo > .stage { border-right: none; border-bottom: 1px solid var(--rule); }
+    h1 { font-size: 22px; }
+    .legend { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>
+    CSS Positioning Playground
+    <span class="small">for s&amp;box UI development &middot; hala</span>
+  </h1>
+  <div class="legend">
+    Four interactive demos. Drag sliders, flip switches, watch the geometry react.
+    The <strong>yellow markers</strong> name the property in effect. Notes at the bottom of each card flag where s&amp;box behaves like the web — or doesn't.
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<!-- DEMO 1: The 4 position modes -->
+<!-- ============================================================ -->
+<section class="demo">
+  <div class="stage">
+    <div id="d1-flow">
+      <div class="sibling">sibling above</div>
+      <div class="sibling">sibling above</div>
+      <div class="target" id="d1-target">target box</div>
+      <div class="sibling">sibling below</div>
+      <div class="sibling">sibling below</div>
+    </div>
+    <div class="marker" id="d1-marker">position: static</div>
+  </div>
+  <div class="controls">
+    <div class="demo-subtitle">Demo 1</div>
+    <div class="demo-title">The four position modes</div>
+    <div class="demo-blurb">
+      Flip the target's <code>position</code>. Watch what happens to (a) the target itself, and (b) the siblings around it. The dashed box is the parent.
+    </div>
+
+    <div class="ctrl">
+      <label>position mode</label>
+      <div class="seg" id="d1-seg">
+        <button class="on" data-pos="static">static</button>
+        <button data-pos="relative">relative</button>
+        <button data-pos="absolute">absolute</button>
+        <button data-pos="fixed">fixed</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <label>top <span class="val" id="d1-top-val">0</span></label>
+      <input type="range" id="d1-top" min="-60" max="200" value="0" />
+    </div>
+    <div class="ctrl">
+      <label>left <span class="val" id="d1-left-val">0</span></label>
+      <input type="range" id="d1-left" min="-60" max="300" value="0" />
+    </div>
+
+    <div class="sandbox-note">
+      <strong>s&amp;box note</strong>
+      All four modes work in s&amp;box's SCSS. In <code>static</code>, top/left are ignored — the element sits in flex flow. <code>position: sticky</code> isn't documented in the s&amp;box style-properties list — assume it's unsupported until you've tried it (??).
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- DEMO 2: Containing block -->
+<!-- ============================================================ -->
+<section class="demo">
+  <div class="stage">
+    <div id="d2-stage">
+      <div id="d2-grandparent">
+        grandparent &nbsp; <span style="color:var(--ink-dim)" id="d2-gp-tag">(static)</span>
+        <div id="d2-parent" style="margin-top:8px;">
+          parent &nbsp; <span style="color:var(--cool)" id="d2-p-tag">(static)</span>
+          <div id="d2-child">target</div>
+        </div>
+      </div>
+    </div>
+    <div class="marker" id="d2-marker">child anchored to: viewport (no positioned ancestor)</div>
+  </div>
+  <div class="controls">
+    <div class="demo-subtitle">Demo 2</div>
+    <div class="demo-title">Which ancestor does <code>absolute</code> use?</div>
+    <div class="demo-blurb">
+      The target is always <code>position: absolute; top: 12px; left: 12px;</code>. What <em>changes</em> is which ancestor's <code>position</code> is non-static — and that's the box those numbers measure against.
+    </div>
+
+    <div class="ctrl">
+      <label>grandparent position</label>
+      <div class="seg" id="d2-gp-seg">
+        <button class="on" data-pos="static">static</button>
+        <button data-pos="relative">relative</button>
+      </div>
+    </div>
+    <div class="ctrl">
+      <label>parent position</label>
+      <div class="seg" id="d2-p-seg">
+        <button class="on" data-pos="static">static</button>
+        <button data-pos="relative">relative</button>
+      </div>
+    </div>
+
+    <div class="sandbox-note">
+      <strong>the rule</strong>
+      An <code>absolute</code> element measures its <code>top/left/right/bottom</code> against its <em>nearest positioned ancestor</em>. "Positioned" means anything except <code>static</code>. If there is no positioned ancestor, it falls back to the root (in s&amp;box, the screen panel).
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- DEMO 3: Flexbox -->
+<!-- ============================================================ -->
+<section class="demo">
+  <div class="stage">
+    <div id="d3-flex">
+      <div class="item">A</div>
+      <div class="item big">B</div>
+      <div class="item">C</div>
+      <div class="item">D</div>
+    </div>
+    <div class="marker" id="d3-marker">flex-direction: row &middot; justify: flex-start</div>
+  </div>
+  <div class="controls">
+    <div class="demo-subtitle">Demo 3</div>
+    <div class="demo-title">Flexbox — the s&amp;box workhorse</div>
+    <div class="demo-blurb">
+      <code>display: flex</code> turns a container's children into <em>flex items</em>. They line up along a <strong>main axis</strong> (the direction) and a <strong>cross axis</strong> (the other one). Two properties do 90% of the work.
+    </div>
+
+    <div class="ctrl">
+      <label>flex-direction</label>
+      <div class="seg" id="d3-dir">
+        <button class="on" data-v="row">row</button>
+        <button data-v="row-reverse">row-rev</button>
+        <button data-v="column">column</button>
+        <button data-v="column-reverse">col-rev</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <label>justify-content <span class="val" style="font-size:10px">(main axis)</span></label>
+      <div class="seg" id="d3-just">
+        <button class="on" data-v="flex-start">start</button>
+        <button data-v="center">center</button>
+        <button data-v="flex-end">end</button>
+        <button data-v="space-between">between</button>
+        <button data-v="space-around">around</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <label>align-items <span class="val" style="font-size:10px">(cross axis)</span></label>
+      <div class="seg" id="d3-align">
+        <button class="on" data-v="stretch">stretch</button>
+        <button data-v="flex-start">start</button>
+        <button data-v="center">center</button>
+        <button data-v="flex-end">end</button>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <label>gap <span class="val" id="d3-gap-val">8px</span></label>
+      <input type="range" id="d3-gap" min="0" max="48" value="8" />
+    </div>
+
+    <div class="sandbox-note">
+      <strong>s&amp;box note</strong>
+      Flexbox is how almost every s&amp;box HUD is built. <code>display: flex</code>, <code>flex-direction</code>, <code>justify-content</code>, <code>align-items</code>, and <code>gap</code> all work as expected. <code>flex-wrap</code> and <code>flex: 1</code> (grow shorthand) too. CSS Grid is not supported — flex is your only layout primitive (??: as of my last check).
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- DEMO 4: HUD example -->
+<!-- ============================================================ -->
+<section class="demo">
+  <div class="stage">
+    <div id="d4-screen">
+      <div class="world">world (3D scene)</div>
+      <div class="crosshair"></div>
+      <div class="prompt"><span class="key">E</span>Press to open</div>
+      <div class="health">HP <span class="num">87</span></div>
+      <div class="ammo">AMMO <span class="num">24 / 60</span></div>
+    </div>
+    <div class="marker">position: absolute &middot; pinned to viewport edges</div>
+  </div>
+  <div class="controls">
+    <div class="demo-subtitle">Demo 4</div>
+    <div class="demo-title">Putting it together: a HUD</div>
+    <div class="demo-blurb">
+      This is a stripped-down version of what a real s&amp;box <code>ScreenPanel</code> looks like.
+      Each element is <code>position: absolute</code> with two of <code>top/right/bottom/left</code> set — that's the standard "pin to a corner" idiom.
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:6px; font-size:11px; color:var(--ink-dim);">
+      <div><strong style="color:var(--accent)">crosshair</strong> &mdash; <code>top:50%; left:50%; transform:translate(-50%,-50%)</code></div>
+      <div><strong style="color:var(--hot)">health</strong> &mdash; <code>bottom:16px; left:16px</code></div>
+      <div><strong style="color:var(--accent)">ammo</strong> &mdash; <code>bottom:16px; right:16px</code></div>
+      <div><strong style="color:var(--cool)">prompt</strong> &mdash; <code>top:60%; left:50%; transform:translateX(-50%)</code></div>
+    </div>
+
+    <div class="sandbox-note">
+      <strong>the centering trick</strong>
+      To center an element of unknown size: set its position 50% along the axis, then pull it back by half its own size with <code>transform: translate(-50%, -50%)</code>. This is the standard idiom and it works in s&amp;box.
+    </div>
+
+    <div class="sandbox-note" style="border-left-color: var(--cool);">
+      <strong style="color: var(--cool)">pointer-events</strong>
+      For HUDs you usually want <code>pointer-events: none</code> on the root (so clicks pass through to the game) and <code>pointer-events: all</code> on specific clickable children. That's an s&amp;box-specific gotcha, not a positioning concept — but it bites everyone once.
+    </div>
+  </div>
+</section>
+
+<footer>
+  Drag, click, observe. The whole point: positioning is geometry, not vibes.
+</footer>
+
+<script>
+  // -------------------- helpers --------------------
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => [...document.querySelectorAll(sel)];
+
+  // segmented-control behavior
+  function wireSegment(rootSel, onPick) {
+    const root = $(rootSel);
+    root.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      [...root.children].forEach(c => c.classList.remove('on'));
+      btn.classList.add('on');
+      onPick(btn.dataset.pos || btn.dataset.v);
+    });
+  }
+
+  // -------------------- DEMO 1 --------------------
+  const d1 = {
+    target: $('#d1-target'),
+    marker: $('#d1-marker'),
+    topIn:  $('#d1-top'),
+    leftIn: $('#d1-left'),
+    topVal: $('#d1-top-val'),
+    leftVal:$('#d1-left-val'),
+    pos: 'static'
+  };
+
+  function applyD1() {
+    const top  = +d1.topIn.value;
+    const left = +d1.leftIn.value;
+    d1.topVal.textContent  = top + 'px';
+    d1.leftVal.textContent = left + 'px';
+
+    // clear inline overrides
+    d1.target.style.position = '';
+    d1.target.style.top = d1.target.style.left = '';
+    d1.target.style.right = d1.target.style.bottom = '';
+    d1.target.style.transform = '';
+
+    if (d1.pos === 'static') {
+      // top/left have no effect — emphasize with a desaturated UI
+      d1.target.style.position = 'static';
+      d1.target.style.opacity = '1';
+      d1.marker.textContent = 'position: static — top/left ignored';
+    } else if (d1.pos === 'relative') {
+      d1.target.style.position = 'relative';
+      d1.target.style.top = top + 'px';
+      d1.target.style.left = left + 'px';
+      d1.marker.textContent = `position: relative — shifted ${left}px, ${top}px from its flow spot. Siblings unaffected.`;
+    } else if (d1.pos === 'absolute') {
+      d1.target.style.position = 'absolute';
+      d1.target.style.top = top + 'px';
+      d1.target.style.left = left + 'px';
+      d1.marker.textContent = `position: absolute — anchored to parent (#d1-flow is "relative"-ish via being a flex container that contains absolutes)`;
+    } else if (d1.pos === 'fixed') {
+      d1.target.style.position = 'fixed';
+      // for the demo we constrain to the stage by using transforms
+      d1.target.style.top = (top + 100) + 'px';
+      d1.target.style.left = (left + 100) + 'px';
+      d1.marker.textContent = 'position: fixed — pinned to the viewport itself. Even scrolling won\'t move it.';
+    }
+  }
+  wireSegment('#d1-seg', v => { d1.pos = v; applyD1(); });
+  d1.topIn.oninput = d1.leftIn.oninput = applyD1;
+  applyD1();
+
+  // -------------------- DEMO 2 --------------------
+  const d2 = {
+    gp: $('#d2-grandparent'),
+    p:  $('#d2-parent'),
+    gpTag: $('#d2-gp-tag'),
+    pTag:  $('#d2-p-tag'),
+    marker: $('#d2-marker'),
+    gpPos: 'static',
+    pPos:  'static'
+  };
+  function applyD2() {
+    d2.gp.style.position = d2.gpPos;
+    d2.p.style.position  = d2.pPos;
+    d2.gpTag.textContent = `(${d2.gpPos})`;
+    d2.pTag.textContent  = `(${d2.pPos})`;
+    let anchor;
+    if (d2.pPos !== 'static') anchor = 'parent (cyan box)';
+    else if (d2.gpPos !== 'static') anchor = 'grandparent (gray box)';
+    else anchor = 'viewport (no positioned ancestor)';
+    d2.marker.textContent = `child anchored to: ${anchor}`;
+  }
+  wireSegment('#d2-gp-seg', v => { d2.gpPos = v; applyD2(); });
+  wireSegment('#d2-p-seg',  v => { d2.pPos  = v; applyD2(); });
+  applyD2();
+
+  // -------------------- DEMO 3 --------------------
+  const d3 = {
+    flex: $('#d3-flex'),
+    gapIn: $('#d3-gap'),
+    gapVal: $('#d3-gap-val'),
+    marker: $('#d3-marker'),
+    dir: 'row', just: 'flex-start', align: 'stretch'
+  };
+  function applyD3() {
+    d3.flex.style.flexDirection = d3.dir;
+    d3.flex.style.justifyContent = d3.just;
+    d3.flex.style.alignItems = d3.align;
+    d3.flex.style.gap = d3.gapIn.value + 'px';
+    d3.gapVal.textContent = d3.gapIn.value + 'px';
+    d3.marker.textContent =
+      `flex-direction: ${d3.dir} · justify: ${d3.just} · align: ${d3.align}`;
+  }
+  wireSegment('#d3-dir',   v => { d3.dir = v; applyD3(); });
+  wireSegment('#d3-just',  v => { d3.just = v; applyD3(); });
+  wireSegment('#d3-align', v => { d3.align = v; applyD3(); });
+  d3.gapIn.oninput = applyD3;
+  applyD3();
+</script>
+
+</body>
+</html>

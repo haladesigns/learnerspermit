@@ -830,6 +830,18 @@
     "children": [
       {
         "type": "file",
+        "name": "css-positioning-deep-dive.pdf",
+        "label": "Css Positioning Deep Dive",
+        "path": "s&box/css-positioning-deep-dive.pdf"
+      },
+      {
+        "type": "file",
+        "name": "css-positioning-playground.html",
+        "label": "Css Positioning Playground",
+        "path": "s&box/css-positioning-playground.html"
+      },
+      {
+        "type": "file",
         "name": "t",
         "label": "T",
         "path": "s&box/t"

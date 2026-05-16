@@ -818,6 +818,18 @@
     "children": [
       {
         "type": "file",
+        "name": "A Complete CSS Flexbox Layout Guide.md",
+        "label": "A Complete Css Flexbox Layout Guide",
+        "path": "s&box/A Complete CSS Flexbox Layout Guide.md"
+      },
+      {
+        "type": "file",
+        "name": "A Complete CSS Flexbox Layout Guide.pdf",
+        "label": "A Complete Css Flexbox Layout Guide",
+        "path": "s&box/A Complete CSS Flexbox Layout Guide.pdf"
+      },
+      {
+        "type": "file",
         "name": "Beyond the HUD.pdf",
         "label": "Beyond The Hud",
         "path": "s&box/Beyond the HUD.pdf"

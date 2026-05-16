@@ -789,12 +789,6 @@
         "name": "ai-music-curation-workflow.html",
         "label": "Ai Music Curation Workflow",
         "path": "music-production/ai-music-curation-workflow.html"
-      },
-      {
-        "type": "file",
-        "name": "y",
-        "label": "Y",
-        "path": "music-production/y"
       }
     ]
   },

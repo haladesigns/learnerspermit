@@ -818,6 +818,12 @@
     "children": [
       {
         "type": "file",
+        "name": "A Complete CSS Flexbox Layout Guide.docx",
+        "label": "A Complete Css Flexbox Layout Guide",
+        "path": "s&box/A Complete CSS Flexbox Layout Guide.docx"
+      },
+      {
+        "type": "file",
         "name": "A Complete CSS Flexbox Layout Guide.md",
         "label": "A Complete Css Flexbox Layout Guide",
         "path": "s&box/A Complete CSS Flexbox Layout Guide.md"

@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>CSS Tutor — Flexbox &amp; Transitions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#121218; --bg2:#15151c; --panel:#1a1a22; --code-bg:#0e0e14;
+    --cell:#20202b; --cell-hi:#272735; --line:#2b2b3a; --line-hi:#3a3a4e;
+    --txt:#e7e7f0; --muted:#8b8ba0; --dim:#5b5b70; --label:#565669;
+    --accent:#5fd1c4; --accent-dim:#2d4e4a;
+    --ok:#73e08a; --no:#ff7d74; --warm:#e8c477;
+    --lead:#e8c477; --lead-dim:#4a4232;
+    --radius:9px;
+    --mono:'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  }
+  html[data-theme="light"]{
+    --bg:#eef0f4; --bg2:#ffffff; --panel:#ffffff; --code-bg:#f3f4f8;
+    --cell:#f1f2f6; --cell-hi:#e6e8ef; --line:#d9dbe4; --line-hi:#c2c5d2;
+    --txt:#1b1d27; --muted:#5b5e72; --dim:#9698a8; --label:#8a8d9e;
+    --accent:#0d8a7c; --accent-dim:#a6dcd4;
+    --ok:#1f9d4d; --no:#d23b32; --warm:#9a6b15;
+    --lead:#9a6b15; --lead-dim:#e9d9b3;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--mono);
+    background:
+      radial-gradient(1100px 500px at 78% -8%, color-mix(in srgb,var(--accent) 8%,transparent), transparent 60%),
+      radial-gradient(900px 600px at 8% 110%, color-mix(in srgb,var(--warm) 6%,transparent), transparent 55%),
+      var(--bg);
+    color:var(--txt); line-height:1.5; -webkit-font-smoothing:antialiased;
+    padding:clamp(14px,3vw,34px); transition:background .25s,color .25s;
+  }
+  .wrap{max-width:1100px;margin:0 auto}
+
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding-bottom:16px;margin-bottom:20px;border-bottom:1px solid var(--line)}
+  .brand{font-size:20px;font-weight:700;letter-spacing:.5px;white-space:nowrap}
+  .brand .a{color:var(--accent)} .brand .b{color:var(--muted)}
+  .badge{font-size:11px;color:var(--accent);border:1px solid var(--accent-dim);border-radius:6px;padding:3px 8px;background:color-mix(in srgb,var(--accent) 7%,transparent);letter-spacing:.5px}
+  .spacer{flex:1}
+  .stat{font-size:12px;color:var(--dim);white-space:nowrap}
+  .stat b{color:var(--txt)}
+  .theme-btn{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--cell);border:1px solid var(--line);border-radius:8px;padding:7px 11px;cursor:pointer;letter-spacing:.3px;transition:background .15s,color .15s}
+  .theme-btn:hover{background:var(--cell-hi);color:var(--txt)}
+
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg2)}
+  .seg button{font-family:var(--mono);font-size:12.5px;color:var(--muted);background:transparent;border:0;padding:7px 13px;cursor:pointer;letter-spacing:.4px;transition:background .15s,color .15s}
+  .seg button:hover{color:var(--txt)}
+  .seg button.on{background:var(--cell-hi);color:var(--accent)}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px}
+
+  .grid{display:grid;grid-template-columns:312px 1fr;gap:18px;align-items:start}
+  @media (max-width:780px){.grid{grid-template-columns:1fr}}
+
+  /* palette as dropdown form */
+  .palette{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 14px 14px}
+  .section{padding:12px 0;border-bottom:1px solid var(--line)}
+  .section:last-child{border-bottom:0;padding-bottom:2px}
+  .section-head{font-size:10.5px;letter-spacing:1.5px;color:var(--label);text-transform:uppercase;margin-bottom:11px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+  .row:last-child{margin-bottom:0}
+  .rk{font-size:11.5px;color:var(--muted);white-space:nowrap}
+  .field{position:relative;flex:0 0 152px}
+  .field::after{content:"▾";position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--dim);font-size:10px}
+  .field select{
+    appearance:none;-webkit-appearance:none;width:100%;font-family:var(--mono);font-size:12px;
+    background:var(--cell);color:var(--accent);border:1px solid var(--line);border-radius:7px;
+    padding:7px 26px 7px 10px;cursor:pointer;transition:border-color .15s,background .15s;
+  }
+  .field select:hover{border-color:var(--line-hi);background:var(--cell-hi)}
+  .field select.def{color:var(--dim)}
+  .field select:focus{outline:none;border-color:var(--accent-dim)}
+
+  .stage{display:flex;flex-direction:column;gap:14px}
+  .prompt{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:12px 14px;font-size:13.5px;color:var(--txt);min-height:44px}
+  .prompt .tag{color:var(--accent);font-size:11px;letter-spacing:.6px;display:block;margin-bottom:3px}
+
+  .readout{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12px;overflow-x:auto}
+  .readout .sel{color:var(--warm)} .readout .prop{color:var(--muted)} .readout .val{color:var(--accent)}
+  .readout .val.def{color:var(--dim)} .readout .punc{color:var(--dim)} .readout .cmt{color:var(--label)}
+  .readout-line{white-space:pre} .readout .ind{padding-left:18px}
+
+  .preview-wrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .pv-label{font-size:10.5px;letter-spacing:1.2px;color:var(--label);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .pv-label .res{font-size:11px;letter-spacing:.4px}
+  .pv-label .res.ok{color:var(--ok)} .pv-label .res.no{color:var(--no)}
+
+  .flexbox{position:relative;height:240px;border:1px dashed var(--line-hi);border-radius:8px;background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--txt) 2%,transparent) 0 10px,transparent 10px 20px);padding:10px;display:flex;overflow:hidden}
+  .axis{position:absolute;top:8px;left:8px;z-index:5;display:flex;gap:12px;align-items:center;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:color-mix(in srgb,var(--code-bg) 88%,transparent);pointer-events:none;font-size:10px;letter-spacing:.5px}
+  .axis .ax{display:flex;align-items:center;gap:4px}
+  .axis .ax .arr{font-size:14px;line-height:1;transform:translateY(-1px)}
+  .axis .main{color:var(--accent)}
+  .axis .cross{color:var(--warm)}
+  .item{background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid var(--accent-dim);color:var(--accent);border-radius:6px;min-width:44px;padding:10px 8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500}
+  .item.lead{background:color-mix(in srgb,var(--lead) 16%,transparent);border-color:var(--lead-dim);color:var(--lead)}
+  .target-box .flexbox{border-color:var(--accent-dim);background:color-mix(in srgb,var(--accent) 3%,transparent)}
+
+  .transbox{height:200px;border:1px dashed var(--line-hi);border-radius:8px;position:relative;overflow:hidden;background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--txt) 2%,transparent) 0 10px,transparent 10px 20px)}
+  .mover{position:absolute;left:18px;top:50%;transform:translateY(-50%);width:54px;height:54px;border-radius:8px;background:color-mix(in srgb,var(--accent) 18%,transparent);border:1px solid var(--accent)}
+  .target-box .mover{background:color-mix(in srgb,var(--warm) 16%,transparent);border-color:var(--warm)}
+
+  .actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+  .btn{font-family:var(--mono);font-size:12.5px;letter-spacing:.4px;cursor:pointer;border-radius:8px;padding:9px 15px;border:1px solid var(--line-hi);background:var(--cell);color:var(--txt);transition:background .15s,border-color .15s,color .15s}
+  .btn:hover{background:var(--cell-hi)}
+  .btn.primary{border-color:var(--accent-dim);color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,transparent)}
+  .btn.warm{border-color:var(--lead-dim);color:var(--warm);background:color-mix(in srgb,var(--warm) 6%,transparent)}
+  .btn.ghost{color:var(--muted);background:transparent}
+  .hint{font-size:12.5px;color:var(--muted);min-height:18px}
+  .hint.show{color:var(--warm)}
+
+  /* explain mode */
+  .grid.solo{grid-template-columns:1fr}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .choices:empty{display:none}
+  .choice{font-family:var(--mono);font-size:12.5px;text-align:left;cursor:pointer;border-radius:9px;padding:11px 13px;border:1px solid var(--line-hi);background:var(--cell);color:var(--txt);transition:background .15s,border-color .15s,color .15s}
+  .choice:hover{background:var(--cell-hi);border-color:var(--accent-dim)}
+  .choice.correct{border-color:var(--ok);color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+  .choice.wrong{border-color:var(--no);color:var(--no);background:color-mix(in srgb,var(--no) 12%,transparent)}
+  .choice:disabled{cursor:default;opacity:.85}
+  .reveal{display:none}
+  .reveal.show{display:block}
+  .reveal .why{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:10px}
+  .reveal .why b{color:var(--warm);font-weight:500}
+  @media (max-width:560px){ .choices{grid-template-columns:1fr} }
+  footer{margin-top:24px;text-align:center;font-size:11px;color:var(--label);letter-spacing:.4px}
+
+  /* ---- help modal ---- */
+  .overlay{
+    position:fixed;inset:0;z-index:50;display:none;
+    align-items:center;justify-content:center;padding:18px;
+    background:color-mix(in srgb,#000 55%,transparent);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  }
+  .overlay.open{display:flex;animation:fade .16s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .dialog{
+    width:min(560px,94vw);max-height:86vh;display:flex;flex-direction:column;
+    background:var(--panel);border:1px solid var(--line-hi);border-radius:14px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);overflow:hidden;animation:pop .18s ease;
+  }
+  @keyframes pop{from{transform:translateY(10px) scale(.99);opacity:0}to{transform:none;opacity:1}}
+  .dialog-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--line)}
+  .dialog-title{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent)}
+  .x{font-family:var(--mono);font-size:15px;line-height:1;color:var(--muted);background:var(--cell);border:1px solid var(--line);border-radius:8px;width:34px;height:34px;cursor:pointer;transition:background .15s,color .15s}
+  .x:hover{background:var(--cell-hi);color:var(--txt)}
+  .dialog-tabs{margin:14px 18px 0}
+  .dialog-body{padding:14px 18px 20px;overflow-y:auto}
+  .ref-note{font-size:12px;color:var(--muted);background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin-bottom:14px;line-height:1.55}
+  .ref-note code{color:var(--accent)}
+  .ref-group{font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--label);margin:16px 0 9px}
+  .ref-group:first-of-type{margin-top:4px}
+  .ref-item{margin-bottom:11px}
+  .ref-term{font-size:12.5px;color:var(--accent);font-weight:500}
+  .ref-desc{font-size:12.5px;color:var(--txt);line-height:1.55}
+  .ref-desc b{color:var(--warm);font-weight:500}
+
+  /* ---- mobile ---- */
+  @media (max-width:780px){
+    .grid{grid-template-columns:1fr}
+  }
+  @media (max-width:560px){
+    body{padding:13px}
+    header{gap:9px 12px}
+    .brand{font-size:18px;width:100%}
+    .badge{order:3}
+    .stat{font-size:11px}
+    .controls{gap:8px}
+    .seg button{padding:9px 14px;font-size:13px}      /* bigger tap targets */
+    .row{flex-wrap:wrap;gap:5px 10px}
+    .rk{flex:1 1 100%}
+    .field{flex:1 1 100%}
+    .field select{font-size:16px;padding:10px 28px 10px 11px}  /* 16px stops iOS focus-zoom */
+    .btn{padding:11px 16px}
+    .x{width:38px;height:38px}
+    .flexbox{height:200px}
+    .transbox{height:170px}
+    .dialog{width:100%;max-height:90vh;border-radius:14px 14px 0 0;align-self:flex-end}
+    .overlay{padding:0;align-items:flex-end}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="a">css</span><span class="b">/tutor</span></div>
+    <span class="badge" id="badge">/flex/</span>
+    <div class="spacer"></div>
+    <div class="stat">score: <b id="score">0</b> / <b id="attempts">0</b></div>
+    <div class="stat">log: <b id="log">0</b></div>
+    <button class="theme-btn" id="helpBtn" aria-haspopup="dialog">? help</button>
+    <button class="theme-btn" id="themeBtn">☀ light</button>
+  </header>
+
+  <div class="controls">
+    <div class="seg" id="topicSeg">
+      <button data-topic="flex" class="on">flexbox</button>
+      <button data-topic="trans">transitions</button>
+    </div>
+    <div class="seg" id="modeSeg">
+      <button data-mode="build" class="on">build</button>
+      <button data-mode="explain">explain</button>
+      <button data-mode="sandbox">sandbox</button>
+    </div>
+    <button class="theme-btn" id="axisBtn">axis: on</button>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="palette" id="palette"></div>
+    <div class="stage">
+      <div class="prompt" id="prompt"></div>
+      <div class="readout" id="readout"></div>
+      <div class="preview-wrap target-box" id="targetWrap" style="display:none">
+        <div class="pv-label">target</div>
+        <div id="targetPreview"></div>
+      </div>
+      <div class="preview-wrap">
+        <div class="pv-label"><span id="yoursLabel">live preview</span><span class="res" id="result"></span></div>
+        <div id="livePreview"></div>
+      </div>
+      <div class="choices" id="choices"></div>
+      <div class="reveal" id="reveal"></div>
+      <div class="actions" id="actions"></div>
+      <div class="hint" id="hint"></div>
+    </div>
+  </div>
+  <footer>build it · watch it · then answer — a sibling to re/tutor</footer>
+</div>
+
+<!-- help modal -->
+<div class="overlay" id="overlay" aria-hidden="true">
+  <div class="dialog" role="dialog" aria-modal="true" aria-label="CSS reference">
+    <div class="dialog-head">
+      <div class="dialog-title">quick reference</div>
+      <button class="x" id="closeHelp" aria-label="Close">✕</button>
+    </div>
+    <div class="seg dialog-tabs" id="helpTabs">
+      <button data-htab="flex" class="on">flexbox</button>
+      <button data-htab="trans">transitions</button>
+    </div>
+    <div class="dialog-body" id="helpBody"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ---------------- value lists ---------------- */
+const FLEX_PROPS = {
+  "flex-direction":["row","row-reverse","column","column-reverse"],
+  "flex-wrap":["nowrap","wrap","wrap-reverse"],
+  "justify-content":["flex-start","flex-end","center","space-between","space-around","space-evenly"],
+  "align-items":["stretch","flex-start","flex-end","center","baseline"],
+  "align-content":["stretch","flex-start","flex-end","center","space-between","space-around"],
+  "gap":["0px","4px","8px","12px","16px","24px","40px","60px"],
+  "order":["-2","-1","0","1","2","3"],
+  "flex-grow":["0","1","2","3"],
+  "flex-shrink":["0","1","2","3"],
+  "flex-basis":["auto","0","30px","60px","90px","120px","200px"],
+  "align-self":["auto","flex-start","center","flex-end","stretch","baseline"]
+};
+const FLEX_DEFAULTS = {
+  "flex-direction":"row","flex-wrap":"nowrap","justify-content":"flex-start",
+  "align-items":"stretch","align-content":"stretch","gap":"0px",
+  "order":"0","flex-grow":"0","flex-shrink":"1","flex-basis":"auto","align-self":"auto"
+};
+const FLEX_SECTIONS = [
+  { title:"container", keys:["flex-direction","flex-wrap","justify-content","align-items","align-content","gap"] },
+  { title:"item #1 (highlighted)", keys:["flex-grow","flex-shrink","flex-basis","order","align-self"] }
+];
+
+const TRANS_PROPS = {
+  "effect":["slide","scale","rotate","fade","color"],
+  "duration":["0.1s","0.2s","0.3s","0.5s","0.75s","1s","1.5s","2s","3s","5s"],
+  "timing":["ease","linear","ease-in","ease-out","ease-in-out","steps(4)","step-start","step-end","cubic-bezier(.68,-0.55,.27,1.55)"],
+  "delay":["0s","0.1s","0.25s","0.5s","0.75s","1s","2s"]
+};
+const TRANS_DEFAULTS = { effect:"slide", duration:"0.5s", timing:"ease", delay:"0s" };
+const TRANS_SECTIONS = [ { title:"transition", keys:["effect","duration","timing","delay"] } ];
+
+const LABELS = { effect:"effect (what changes)", duration:"duration", timing:"timing-function", delay:"delay" };
+const labelFor = k => LABELS[k] || k;
+
+const EFFECT_MAP = {
+  slide:{ css:"transform", to:"translateY(-50%) translateX(180px)" },
+  scale:{ css:"transform", to:"translateY(-50%) scale(1.7)" },
+  rotate:{ css:"transform", to:"translateY(-50%) rotate(180deg)" },
+  fade:{ css:"opacity", to:"0.12" },
+  color:{ css:"background-color", to:"color-mix(in srgb,var(--warm) 55%,transparent)" }
+};
+
+/* ---------------- challenges ---------------- */
+const CHALLENGES = {
+  flex:[
+    { ask:"Center the items along the main axis (left↔right).",
+      hint:"The main axis runs in flex-direction. One property spaces items along it.",
+      target:{ "justify-content":"center" } },
+    { ask:"Put the items dead-center — horizontally AND vertically.",
+      hint:"One property for the main axis, one for the cross axis.",
+      target:{ "justify-content":"center","align-items":"center" } },
+    { ask:"Spread items out: first & last hug the edges, equal gaps between.",
+      hint:"The 'space-*' family. This one puts NO space at the outer edges.",
+      target:{ "justify-content":"space-between" } },
+    { ask:"Stack the items vertically AND center them horizontally.",
+      hint:"In a column, the cross axis becomes horizontal — so align-items now controls left↔right.",
+      target:{ "flex-direction":"column","align-items":"center" } },
+    { ask:"Send everything to the bottom-right corner (keep it a row).",
+      hint:"End of the main axis + end of the cross axis.",
+      target:{ "justify-content":"flex-end","align-items":"flex-end" } },
+    { ask:"Equal space around AND between every item — including the outer edges.",
+      hint:"Compare space-around vs space-evenly: one makes the outer gaps equal to the inner ones.",
+      target:{ "justify-content":"space-evenly" } },
+    { ask:"Let item #1 grow to swallow all the leftover space in the row.",
+      hint:"flex-grow:1 lets an item expand to absorb free space; siblings stay at content size.",
+      target:{ "flex-grow":"1" } },
+    { ask:"Override the container: center ONLY item #1 on the cross axis (leave the rest stretched).",
+      hint:"align-self overrides align-items for a single item.",
+      target:{ "align-self":"center" } },
+    { ask:"Move item #1 visually to the end without editing the HTML.",
+      hint:"order reshuffles items visually; a higher number sorts later.",
+      target:{ "order":"1" } },
+    { ask:"Wrap the items onto multiple lines and push those lines to the bottom.",
+      hint:"align-content only does anything when items WRAP into more than one line.",
+      target:{ "flex-wrap":"wrap","align-content":"flex-end" } }
+  ],
+  trans:[
+    { ask:"Slide the box right over 1 second, smooth at both ends.",
+      hint:"'Smooth both ends' = ease-in-out. Shorthand order: property duration timing delay.",
+      target:{ effect:"slide",duration:"1s",timing:"ease-in-out",delay:"0s" } },
+    { ask:"Fade it out quickly at a constant speed — 0.2s, no easing curve.",
+      hint:"Constant speed = linear. 'Fade' animates opacity.",
+      target:{ effect:"fade",duration:"0.2s",timing:"linear",delay:"0s" } },
+    { ask:"Grow the box over half a second, but wait half a second before it starts.",
+      hint:"Delay is the 4th value in the shorthand. Default curve is 'ease'.",
+      target:{ effect:"scale",duration:"0.5s",timing:"ease",delay:"0.5s" } },
+    { ask:"Spin it a half-turn slowly — 2 seconds — decelerating at the end.",
+      hint:"ease-out starts fast then slows. 'Spin' animates a rotate transform.",
+      target:{ effect:"rotate",duration:"2s",timing:"ease-out",delay:"0s" } },
+    { ask:"Make the slide advance in 4 discrete jumps instead of a smooth glide.",
+      hint:"steps(n) breaks the transition into n equal jumps rather than a curve.",
+      target:{ effect:"slide",duration:"1s",timing:"steps(4)",delay:"0s" } },
+    { ask:"Give the grow a springy overshoot — it should pop past full size, then settle.",
+      hint:"A cubic-bezier whose y goes above 1 overshoots the end value before settling back.",
+      target:{ effect:"scale",duration:"0.5s",timing:"cubic-bezier(.68,-0.55,.27,1.55)",delay:"0s" } }
+  ]
+};
+
+/* ---------------- explain (recognition) challenges ----------------
+   config = the hidden setup that produced what you see;
+   q = the question; options = MC buttons; answer = correct option;
+   why = the teaching line revealed after answering.            */
+const EXPLAIN = {
+  flex:[
+    { config:{ "justify-content":"space-between" },
+      q:"The items are pushed to both ends with equal space between them and none at the edges. Which justify-content value is this?",
+      options:["space-around","space-between","space-evenly","center"], answer:"space-between",
+      why:"<b>space-between</b> puts the first & last items hard against the edges, then divides the leftover space equally between the items. <b>space-around</b> and <b>space-evenly</b> also add space at the outer edges." },
+    { config:{ "flex-direction":"column","align-items":"center" },
+      q:"Items are stacked vertically and centered left-to-right. In this column layout, which property is doing the horizontal centering?",
+      options:["justify-content: center","align-items: center","align-content: center","align-self: center"], answer:"align-items: center",
+      why:"In a <b>column</b>, the cross axis is horizontal — so <b>align-items</b> controls left↔right here. justify-content would move them up/down instead." },
+    { config:{ "align-items":"flex-end" },
+      q:"All the items sit along the bottom edge of the row. Which property + value produces that?",
+      options:["justify-content: flex-end","align-items: flex-end","align-content: flex-end","align-self: flex-end"], answer:"align-items: flex-end",
+      why:"<b>align-items</b> aligns items on the cross axis; in a row that axis is vertical, so flex-end drops them to the bottom." },
+    { config:{ "flex-grow":"1" },
+      q:"Item #1 (gold) has stretched to eat all the leftover space while the others stayed their natural size. Which item property does this?",
+      options:["flex-basis: auto","flex-grow: 1","order: 1","align-self: stretch"], answer:"flex-grow: 1",
+      why:"<b>flex-grow: 1</b> tells one item to absorb the free space on the main axis. flex-basis sets a starting size; align-self is cross-axis; order just reshuffles." },
+    { config:{ "flex-wrap":"wrap","align-content":"flex-end" },
+      q:"The items wrapped onto multiple lines, and those lines are pushed to the bottom. Which property positions the wrapped lines?",
+      options:["align-items: flex-end","align-content: flex-end","justify-content: flex-end","flex-wrap: wrap"], answer:"align-content: flex-end",
+      why:"<b>align-content</b> distributes the wrapped lines as a group on the cross axis. align-items would only move items within each line. (It needs wrap to do anything at all.)" }
+  ],
+  trans:[
+    { config:{ effect:"slide",duration:"2s",timing:"linear",delay:"0s" },
+      q:"Play it and watch the speed. The box moves at a perfectly constant rate, no speeding up or slowing down. Which timing-function?",
+      options:["ease","linear","ease-in-out","ease-out"], answer:"linear",
+      why:"<b>linear</b> is the only curve with constant velocity. ease/ease-in-out visibly accelerate and decelerate." },
+    { config:{ effect:"slide",duration:"1.5s",timing:"steps(4)",delay:"0s" },
+      q:"The box jumps to its destination in distinct stages rather than gliding. Which timing-function?",
+      options:["ease-in","steps(4)","cubic-bezier","linear"], answer:"steps(4)",
+      why:"<b>steps(n)</b> snaps through n discrete frames instead of a smooth curve — handy for sprite-sheet animation." },
+    { config:{ effect:"scale",duration:"0.75s",timing:"cubic-bezier(.68,-0.55,.27,1.55)",delay:"0s" },
+      q:"The box pops PAST its final size, then settles back. What produces that overshoot?",
+      options:["ease-out","steps(4)","a cubic-bezier with y>1","ease-in"], answer:"a cubic-bezier with y>1",
+      why:"Keyword curves stay within 0→1, so they can't overshoot. A custom <b>cubic-bezier</b> whose control points push y above 1 sails past the target before settling." },
+    { config:{ effect:"slide",duration:"0.5s",timing:"ease",delay:"1s" },
+      q:"Hit play: nothing happens for a beat, THEN the box moves. Which part of the shorthand creates that initial pause?",
+      options:["duration","delay","timing-function","property"], answer:"delay",
+      why:"<b>delay</b> (the 4th value) holds the transition before it starts. duration is how long the motion itself lasts." }
+  ]
+};
+
+
+const HELP = {
+  flex:{
+    note:`Flexbox thinks in two axes: the <b>main axis</b> (the way <code>flex-direction</code> points) and the <b>cross axis</b> (perpendicular to it). Most properties align along one of those — not literal left/right — which is why they flip when you switch to a column.`,
+    groups:[
+      ["container", [
+        ["display: flex","Turns the element into a flex container; its direct children become flex items."],
+        ["flex-direction","Sets the main axis — <b>row</b> (→), row-reverse (←), <b>column</b> (↓), column-reverse (↑)."],
+        ["flex-wrap","Whether items spill onto new lines (<b>wrap</b>) or stay on one line and shrink (nowrap)."],
+        ["justify-content","Distributes items along the <b>main</b> axis: center, space-between, space-evenly…"],
+        ["align-items","Aligns items along the <b>cross</b> axis. Default <b>stretch</b> makes them fill the cross size."],
+        ["align-content","Distributes the wrapped <b>lines</b> on the cross axis — only does anything once items wrap into 2+ lines."],
+        ["gap","Space between items. Cleaner than margins, with no leftover gap at the edges."]
+      ]],
+      ["item #1 (highlighted)", [
+        ["flex-grow","How greedily this item expands into spare space. 0 = stay put; 1 = take a share of the slack."],
+        ["flex-shrink","How readily it shrinks when space is tight. 1 = may shrink; <b>0</b> = hold its size."],
+        ["flex-basis","The item's starting size before grow/shrink kick in. <b>auto</b> = use its content/width."],
+        ["order","Visual reordering without touching the HTML. Default 0; higher sorts later, negative sorts earlier."],
+        ["align-self","Overrides align-items for this one item on the cross axis."]
+      ]]
+    ]
+  },
+  trans:{
+    note:`The shorthand reads in a fixed order: <code>transition: property duration timing-function delay;</code> A transition only fires when the property's value actually <b>changes</b> (here, the ▶ play button toggles it).`,
+    groups:[
+      ["the four parts", [
+        ["effect (what changes)","The property that animates: slide / scale / rotate use <code>transform</code>, fade uses <code>opacity</code>, color uses <code>background-color</code>."],
+        ["duration","How long the change takes, e.g. <b>0.3s</b>. The 2nd value in the shorthand."],
+        ["timing-function","The speed curve over that duration (see below)."],
+        ["delay","How long to wait before starting. The 4th value in the shorthand."]
+      ]],
+      ["timing-function values", [
+        ["ease","Default. Starts slow, speeds up, eases out — a gentle all-rounder."],
+        ["linear","Constant speed start to finish. Good for fades and color, robotic for movement."],
+        ["ease-in / ease-out","ease-in starts slow then accelerates; ease-out is the reverse (fast then settles)."],
+        ["steps(n)","Jumps through n discrete frames instead of gliding — used for sprite-sheet style motion."],
+        ["cubic-bezier(…)","A custom curve. If a y-value goes above 1 it <b>overshoots</b> the target, then springs back."]
+      ]]
+    ]
+  }
+};
+
+
+const state = {
+  topic:"flex", mode:"build",
+  flex:{...FLEX_DEFAULTS}, trans:{...TRANS_DEFAULTS},
+  idx:{flex:0,trans:0}, eidx:{flex:0,trans:0},
+  correct:0, attempts:0, log:0, playing:false, theme:"dark", answered:false, showAxis:true
+};
+const $ = id => document.getElementById(id);
+const curState = () => state.topic==="flex" ? state.flex : state.trans;
+const curDefs  = () => state.topic==="flex" ? FLEX_DEFAULTS : TRANS_DEFAULTS;
+const curProps = () => state.topic==="flex" ? FLEX_PROPS : TRANS_PROPS;
+
+/* ---------------- palette (dropdowns) ---------------- */
+function renderPalette(){
+  const pal=$("palette"); pal.innerHTML="";
+  const sections = state.topic==="flex" ? FLEX_SECTIONS : TRANS_SECTIONS;
+  const props=curProps(), cur=curState(), defs=curDefs();
+  sections.forEach(sec=>{
+    const s=document.createElement("div"); s.className="section";
+    const h=document.createElement("div"); h.className="section-head"; h.textContent=sec.title; s.appendChild(h);
+    sec.keys.forEach(key=>{
+      const row=document.createElement("div"); row.className="row";
+      const lab=document.createElement("label"); lab.className="rk"; lab.textContent=labelFor(key);
+      const field=document.createElement("div"); field.className="field";
+      const sel=document.createElement("select");
+      props[key].forEach(v=>{
+        const o=document.createElement("option"); o.value=v; o.textContent=v;
+        if(v===cur[key]) o.selected=true; sel.appendChild(o);
+      });
+      sel.classList.toggle("def", cur[key]===defs[key]);
+      sel.addEventListener("change",()=>{
+        cur[key]=sel.value;
+        sel.classList.toggle("def", cur[key]===defs[key]);
+        renderReadout(); applyLive(); setResult("");
+      });
+      field.appendChild(sel); row.appendChild(lab); row.appendChild(field); s.appendChild(row);
+    });
+    pal.appendChild(s);
+  });
+}
+
+/* ---------------- readout (real CSS) ---------------- */
+function buildReadoutHTML(topic, obj){
+  if(topic==="flex"){
+    const c={...FLEX_DEFAULTS, ...obj};
+    const ln=(prop,ind)=>{ const def=c[prop]===FLEX_DEFAULTS[prop];
+      return `<div class="readout-line ${ind?'ind':''}"><span class="prop">${prop}</span><span class="punc">: </span><span class="val ${def?'def':''}">${c[prop]}</span><span class="punc">;</span></div>`; };
+    return `<div class="readout-line"><span class="sel">.container</span><span class="punc"> {</span></div>`+
+      `<div class="readout-line ind"><span class="prop">display</span><span class="punc">: </span><span class="val">flex</span><span class="punc">;</span></div>`+
+      ["flex-direction","flex-wrap","justify-content","align-items","align-content","gap"].map(p=>ln(p,true)).join("")+
+      `<div class="readout-line"><span class="punc">}</span></div>`+
+      `<div class="readout-line"><span class="sel">.container > :first-child</span><span class="punc"> {</span> <span class="cmt">/* item #1 */</span></div>`+
+      ["flex-grow","flex-shrink","flex-basis","order","align-self"].map(p=>ln(p,true)).join("")+
+      `<div class="readout-line"><span class="punc">}</span></div>`;
+  } else {
+    const t={...TRANS_DEFAULTS, ...obj}, m=EFFECT_MAP[t.effect];
+    const part=(val,key)=>`<span class="val ${val===TRANS_DEFAULTS[key]?'def':''}">${val}</span>`;
+    return `<div class="readout-line"><span class="prop">transition</span><span class="punc">: </span><span class="val">${m.css}</span> ${part(t.duration,"duration")} ${part(t.timing,"timing")} ${part(t.delay,"delay")}<span class="punc">;</span></div>`+
+      `<div class="readout-line"><span class="cmt">/* on trigger → */</span></div>`+
+      `<div class="readout-line"><span class="prop">${m.css}</span><span class="punc">: </span><span class="sel">${stripT(m.to)}</span><span class="punc">;</span></div>`;
+  }
+}
+function renderReadout(){ $("readout").innerHTML = buildReadoutHTML(state.topic, curState()); }
+const stripT = v => v.replace("translateY(-50%) ","").replace("color-mix(in srgb,var(--warm) 55%,transparent)","#e8c477");
+
+/* ---------------- previews ---------------- */
+// main/cross axis directions per flex-direction, as arrow glyphs
+const AXIS_ARROWS = {
+  "row":          { main:"→", cross:"↓" },
+  "row-reverse":  { main:"←", cross:"↓" },
+  "column":       { main:"↓", cross:"→" },
+  "column-reverse":{ main:"↑", cross:"→" }
+};
+function axisHTML(direction){
+  const a = AXIS_ARROWS[direction] || AXIS_ARROWS.row;
+  return `<span class="ax main">main <span class="arr">${a.main}</span></span>`+
+         `<span class="ax cross">cross <span class="arr">${a.cross}</span></span>`;
+}
+function buildFlexPreview(container, styleObj){
+  const box=document.createElement("div"); box.className="flexbox";
+  const axis=document.createElement("div"); axis.className="axis"; box.appendChild(axis);  // compass overlay
+  for(let i=1;i<=6;i++){ const it=document.createElement("div"); it.className="item"+(i===1?" lead":""); it.textContent=i; box.appendChild(it); }
+  applyFlexStyles(box, styleObj); container.innerHTML=""; container.appendChild(box); return box;
+}
+function applyFlexStyles(box, s){
+  box.style.flexDirection=s["flex-direction"]; box.style.flexWrap=s["flex-wrap"];
+  box.style.justifyContent=s["justify-content"]; box.style.alignItems=s["align-items"];
+  box.style.alignContent=s["align-content"]; box.style.gap=s["gap"];
+  const it=box.querySelector(".item");
+  if(it){ it.style.order=s["order"]; it.style.flexGrow=s["flex-grow"]; it.style.flexShrink=s["flex-shrink"]; it.style.flexBasis=s["flex-basis"]; it.style.alignSelf=s["align-self"]; }
+  const axis=box.querySelector(".axis");
+  if(axis){ axis.innerHTML=axisHTML(s["flex-direction"]); axis.style.display = state.showAxis ? "" : "none"; }   // reorient + show/hide compass
+}
+function buildTransPreview(container){
+  const box=document.createElement("div"); box.className="transbox";
+  const mover=document.createElement("div"); mover.className="mover";
+  box.appendChild(mover); container.innerHTML=""; container.appendChild(box); return mover;
+}
+function applyTransStyles(mover, s){
+  const m=EFFECT_MAP[s.effect];
+  mover.style.transition=`${m.css} ${s.duration} ${s.timing} ${s.delay}`;
+  mover.style.transform="translateY(-50%) translateX(0) scale(1) rotate(0deg)";
+  mover.style.opacity="1"; mover.style.backgroundColor="";
+}
+function setEffectState(mover, m, go){
+  if(!go){ mover.style.transform="translateY(-50%) translateX(0) scale(1) rotate(0deg)"; mover.style.opacity="1"; mover.style.backgroundColor=""; return; }
+  if(m.css==="transform") mover.style.transform=m.to;
+  else if(m.css==="opacity") mover.style.opacity=m.to;
+  else if(m.css==="background-color") mover.style.backgroundColor=m.to;
+}
+let liveMover=null, targetMover=null;
+
+/* ---------------- render pipeline ---------------- */
+const currentChallenge = () => CHALLENGES[state.topic][state.idx[state.topic]];
+const currentExplain   = () => EXPLAIN[state.topic][state.eidx[state.topic]];
+let explainMover=null;  // mover for transition explain previews
+
+function mount(){
+  $("badge").textContent = state.topic==="flex" ? "/flex/" : "/transition/";
+  $("axisBtn").style.display = state.topic==="flex" ? "" : "none";   // axis only exists for flex
+  refreshScore();
+  const mode=state.mode;
+  // reset transient regions
+  $("choices").innerHTML=""; $("reveal").className="reveal"; $("reveal").innerHTML="";
+  setResult(""); $("hint").className="hint"; $("hint").textContent=""; state.playing=false; state.answered=false;
+
+  // region visibility per mode
+  $("grid").classList.toggle("solo", mode==="explain");
+  $("palette").style.display = mode==="explain" ? "none" : "";
+  $("readout").style.display = mode==="explain" ? "none" : "";   // hidden until revealed
+  $("targetWrap").style.display = mode==="build" ? "" : "none";
+
+  if(mode==="explain") return mountExplain();
+
+  // ---- build / sandbox ----
+  $("yoursLabel").textContent = mode==="build" ? "your result" : "live preview";
+  if(mode==="build"){
+    const ch=currentChallenge();
+    $("prompt").innerHTML=`<span class="tag">build ${state.idx[state.topic]+1}/${CHALLENGES[state.topic].length}</span>${ch.ask}`;
+  } else {
+    $("prompt").innerHTML=`<span class="tag">sandbox</span>Free play — change any dropdown, watch the preview. No scoring here.`;
+  }
+  renderPalette(); renderReadout();
+  if(state.topic==="flex"){
+    buildFlexPreview($("livePreview"), state.flex);
+    if(mode==="build") buildFlexPreview($("targetPreview"), {...FLEX_DEFAULTS, ...currentChallenge().target});
+  } else {
+    liveMover=buildTransPreview($("livePreview")); applyTransStyles(liveMover, state.trans);
+    if(mode==="build"){ targetMover=buildTransPreview($("targetPreview")); applyTransStyles(targetMover, {...TRANS_DEFAULTS, ...currentChallenge().target}); }
+  }
+  renderActions();
+}
+
+function mountExplain(){
+  const ex=currentExplain();
+  $("yoursLabel").textContent = state.topic==="flex" ? "what do you see?" : "what do you see? (press play)";
+  $("prompt").innerHTML=`<span class="tag">explain ${state.eidx[state.topic]+1}/${EXPLAIN[state.topic].length}</span>${ex.q}`;
+  // build the preview from the hidden config
+  if(state.topic==="flex"){
+    buildFlexPreview($("livePreview"), {...FLEX_DEFAULTS, ...ex.config});
+    explainMover=null;
+  } else {
+    explainMover=buildTransPreview($("livePreview")); applyTransStyles(explainMover, {...TRANS_DEFAULTS, ...ex.config});
+  }
+  renderChoices(ex);
+  renderActions();
+}
+
+function renderChoices(ex){
+  const c=$("choices"); c.innerHTML="";
+  ex.options.forEach(opt=>{
+    const b=document.createElement("button"); b.className="choice"; b.textContent=opt;
+    b.onclick=()=>answerExplain(ex, opt, b, c);
+    c.appendChild(b);
+  });
+}
+
+function answerExplain(ex, opt, btn, container){
+  if(state.answered) return;
+  state.answered=true; state.attempts++; state.log++;
+  const buttons=[...container.children];
+  buttons.forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===ex.answer) b.classList.add("correct");
+  });
+  if(opt===ex.answer){ state.correct++; setResult("✓ correct","ok"); }
+  else { btn.classList.add("wrong"); setResult("✗ not quite","no"); }
+  // reveal the real CSS + the why
+  const rv=$("reveal");
+  rv.className="reveal show";
+  rv.innerHTML=`<div class="readout">${buildReadoutHTML(state.topic, ex.config)}</div><div class="why">${ex.why}</div>`;
+  refreshScore(); renderActions();
+}
+
+function applyLive(){
+  if(state.topic==="flex"){ const box=$("livePreview").querySelector(".flexbox"); if(box) applyFlexStyles(box, state.flex); }
+  else if(liveMover){ state.playing=false; applyTransStyles(liveMover, state.trans); }
+}
+
+/* ---------------- actions ---------------- */
+function renderActions(){
+  const a=$("actions"); a.innerHTML="";
+  const mk=(label,cls,fn)=>{const b=document.createElement("button");b.className="btn "+cls;b.textContent=label;b.onclick=fn;return b;};
+  if(state.topic==="trans") a.appendChild(mk("▶ play","warm",playTransition));
+  if(state.mode==="build"){
+    a.appendChild(mk("submit","primary",submit));
+    a.appendChild(mk("show hint","ghost",showHint));
+    a.appendChild(mk("next →","ghost",nextChallenge));
+  } else if(state.mode==="explain"){
+    a.appendChild(mk("next →","ghost",nextExplain));
+  } else {
+    a.appendChild(mk("reset","ghost",resetSandbox));
+  }
+}
+function playTransition(){
+  state.playing=!state.playing;
+  if(state.mode==="explain"){
+    if(explainMover) setEffectState(explainMover, EFFECT_MAP[(({...TRANS_DEFAULTS, ...currentExplain().config}).effect)], state.playing);
+    return;
+  }
+  if(liveMover) setEffectState(liveMover, EFFECT_MAP[state.trans.effect], state.playing);
+  if(state.mode==="build" && targetMover){ const tgt={...TRANS_DEFAULTS, ...currentChallenge().target}; setEffectState(targetMover, EFFECT_MAP[tgt.effect], state.playing); }
+}
+function submit(){
+  const ch=currentChallenge(), cur=curState();
+  const misses=Object.keys(ch.target).filter(k=>cur[k]!==ch.target[k]);
+  state.attempts++; state.log++;
+  if(misses.length===0){
+    state.correct++; setResult("✓ correct","ok");
+    $("hint").className="hint show"; $("hint").textContent="Nailed it. Hit  next →  for another.";
+  } else {
+    setResult("✗ not yet","no");
+    const names=misses.map(m=>m==="effect"?"effect":(m==="timing"?"timing-function":m));
+    $("hint").className="hint"; $("hint").textContent="Off on: "+names.join(", ")+". Keep adjusting.";
+  }
+  refreshScore();
+}
+function showHint(){ $("hint").className="hint show"; $("hint").textContent="💡 "+currentChallenge().hint; }
+function nextChallenge(){
+  const list=CHALLENGES[state.topic]; state.idx[state.topic]=(state.idx[state.topic]+1)%list.length;
+  if(state.topic==="flex") state.flex={...FLEX_DEFAULTS}; else state.trans={...TRANS_DEFAULTS};
+  mount();
+}
+function nextExplain(){
+  const list=EXPLAIN[state.topic]; state.eidx[state.topic]=(state.eidx[state.topic]+1)%list.length;
+  mount();
+}
+function resetSandbox(){
+  if(state.topic==="flex") state.flex={...FLEX_DEFAULTS}; else state.trans={...TRANS_DEFAULTS};
+  renderPalette(); renderReadout(); applyLive(); state.playing=false;
+}
+function setResult(txt,cls){ const r=$("result"); r.textContent=txt||""; r.className="res"+(cls?" "+cls:""); }
+function refreshScore(){ $("score").textContent=state.correct; $("attempts").textContent=state.attempts; $("log").textContent=state.log; }
+
+/* ---------------- switches ---------------- */
+$("topicSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;[...$("topicSeg").children].forEach(x=>x.classList.remove("on"));b.classList.add("on");state.topic=b.dataset.topic;liveMover=null;targetMover=null;mount();});
+$("modeSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;[...$("modeSeg").children].forEach(x=>x.classList.remove("on"));b.classList.add("on");state.mode=b.dataset.mode;mount();});
+$("themeBtn").addEventListener("click",()=>{
+  state.theme = state.theme==="dark" ? "light" : "dark";
+  document.documentElement.dataset.theme=state.theme;
+  $("themeBtn").textContent = state.theme==="dark" ? "☀ light" : "☾ dark";
+});
+$("axisBtn").addEventListener("click",()=>{
+  state.showAxis=!state.showAxis;
+  $("axisBtn").textContent = "axis: "+(state.showAxis?"on":"off");
+  document.querySelectorAll(".flexbox .axis").forEach(a=>{ a.style.display = state.showAxis ? "" : "none"; }); // update any on-screen previews
+});
+
+/* ---------------- help modal ---------------- */
+let helpTab="flex";
+function renderHelp(){
+  const h=HELP[helpTab], body=$("helpBody");
+  let html=`<div class="ref-note">${h.note}</div>`;
+  h.groups.forEach(([title,items])=>{
+    html+=`<div class="ref-group">${title}</div>`;
+    items.forEach(([term,desc])=>{
+      html+=`<div class="ref-item"><div class="ref-term">${term}</div><div class="ref-desc">${desc}</div></div>`;
+    });
+  });
+  body.innerHTML=html; body.scrollTop=0;
+}
+function openHelp(){ renderHelp(); $("overlay").classList.add("open"); $("overlay").setAttribute("aria-hidden","false"); }
+function closeHelp(){ $("overlay").classList.remove("open"); $("overlay").setAttribute("aria-hidden","true"); }
+
+$("helpBtn").addEventListener("click",openHelp);
+$("closeHelp").addEventListener("click",closeHelp);
+$("overlay").addEventListener("click",e=>{ if(e.target===$("overlay")) closeHelp(); });  // click backdrop, not the dialog
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && $("overlay").classList.contains("open")) closeHelp(); });
+$("helpTabs").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  [...$("helpTabs").children].forEach(x=>x.classList.remove("on")); b.classList.add("on");
+  helpTab=b.dataset.htab; renderHelp();
+});
+
+mount();
+</script>
+</body>
+</html>

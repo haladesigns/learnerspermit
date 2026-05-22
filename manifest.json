@@ -854,6 +854,12 @@
       },
       {
         "type": "file",
+        "name": "flex-css-transitions-tutor.html",
+        "label": "Flex Css Transitions Tutor",
+        "path": "s&box/flex-css-transitions-tutor.html"
+      },
+      {
+        "type": "file",
         "name": "understanding-flexbox.pdf",
         "label": "Understanding Flexbox",
         "path": "s&box/understanding-flexbox.pdf"

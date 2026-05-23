@@ -125,6 +125,18 @@
   .axis .ax .arr{font-size:14px;line-height:1;transform:translateY(-1px)}
   .axis .main{color:var(--accent)}
   .axis .cross{color:var(--warm)}
+
+  /* flow overlay: colored container edges + direction arrows (main=cyan, cross=gold) */
+  .flow{position:absolute;inset:0;z-index:4;pointer-events:none;display:none}
+  .flow.show{display:block}
+  .flow .edge{position:absolute;display:flex;align-items:center;justify-content:center;gap:6px;color:var(--ec);font-size:13px;font-weight:700;letter-spacing:2px}
+  .flow .edge.top{top:0;left:0;right:0;height:20px;border-top:2px solid var(--ec)}
+  .flow .edge.bottom{bottom:0;left:0;right:0;height:20px;border-bottom:2px solid var(--ec)}
+  .flow .edge.left{top:0;bottom:0;left:0;width:20px;border-left:2px solid var(--ec);flex-direction:column}
+  .flow .edge.right{top:0;bottom:0;right:0;width:20px;border-right:2px solid var(--ec);flex-direction:column}
+  .flow .edge.main{--ec:var(--accent)}
+  .flow .edge.cross{--ec:var(--warm)}
+  .flow .arrow{font-size:14px;line-height:1}
   .item{background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid var(--accent-dim);color:var(--accent);border-radius:6px;min-width:44px;padding:10px 8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500}
   .item.lead{background:color-mix(in srgb,var(--lead) 16%,transparent);border-color:var(--lead-dim);color:var(--lead)}
   .target-box .flexbox{border-color:var(--accent-dim);background:color-mix(in srgb,var(--accent) 3%,transparent)}
@@ -169,7 +181,7 @@
   .overlay.open{display:flex;animation:fade .16s ease}
   @keyframes fade{from{opacity:0}to{opacity:1}}
   .dialog{
-    width:min(560px,94vw);max-height:86vh;max-height:86dvh;display:flex;flex-direction:column;
+    width:min(960px,94vw);max-height:86vh;max-height:86dvh;display:flex;flex-direction:column;
     background:var(--panel);border:1px solid var(--line-hi);border-radius:14px;
     box-shadow:0 24px 60px rgba(0,0,0,.45);overflow:hidden;animation:pop .18s ease;
   }
@@ -188,6 +200,10 @@
   .ref-term{font-size:12.5px;color:var(--accent);font-weight:500}
   .ref-desc{font-size:12.5px;color:var(--txt);line-height:1.55}
   .ref-desc b{color:var(--warm);font-weight:500}
+  .ref-values{margin:7px 0 0;padding:8px 0 2px 11px;border-left:2px solid var(--line);display:grid;grid-template-columns:auto 1fr;gap:4px 10px}
+  .ref-values dt{font-family:var(--mono);font-size:11.5px;color:var(--accent);white-space:nowrap}
+  .ref-values dd{font-size:11.5px;color:var(--muted);line-height:1.5;margin:0}
+  .ref-values code{color:var(--accent)}
 
   /* ---- mobile ---- */
   @media (max-width:780px){
@@ -262,6 +278,7 @@
       <button data-mode="sandbox">sandbox</button>
     </div>
     <button class="theme-btn" id="axisBtn">axis: on</button>
+    <button class="theme-btn" id="flowBtn">flow: off</button>
   </div>
 
   <div class="grid" id="grid">
@@ -275,7 +292,7 @@
     <div class="stage">
       <div class="prompt" id="prompt"></div>
       <div class="code-card collapsed" id="codeCard">
-        <button class="code-head" id="codeHead" aria-expanded="true" aria-controls="readout">
+        <button class="code-head" id="codeHead" aria-expanded="false" aria-controls="readout">
           <span class="code-title">CSS</span>
           <span class="chev" aria-hidden="true">▾</span>
         </button>
@@ -297,11 +314,11 @@
             </div>
           </div>
           <div class="scene-ctl">
-            <span class="scene-lab">#1</span>
+            <span class="scene-lab">item #1 size</span>
             <div class="field"><select id="leadSize"></select></div>
           </div>
           <div class="scene-ctl">
-            <span class="scene-lab">others</span>
+            <span class="scene-lab">others size</span>
             <div class="field"><select id="restSize"></select></div>
           </div>
           <div class="scene-ctl">
@@ -491,23 +508,74 @@ const EXPLAIN = {
 
 const HELP = {
   flex:{
-    note:`Flexbox thinks in two axes: the <b>main axis</b> (the way <code>flex-direction</code> points) and the <b>cross axis</b> (perpendicular to it). Most properties align along one of those — not literal left/right — which is why they flip when you switch to a column.`,
+    note:`Flexbox answers one question: <b>how do I align elements anywhere inside their parent?</b> It works in two axes — the <b>main axis</b> (the way <code>flex-direction</code> points) and the <b>cross axis</b> (perpendicular to it). Properties align along one axis or the other, not literal left/right — which is why their effect flips when you switch to a column.`,
     groups:[
+      ["the big idea", [
+        ["main vs cross axis","Everything hinges on these. <code>justify-content</code> works the <b>main</b> axis; <code>align-items</code> works the <b>cross</b> axis. Change <code>flex-direction</code> and the two axes swap, so the same property suddenly moves things the other way."],
+        ["one line vs many","With <code>flex-wrap: wrap</code>, each wrapped <b>line</b> gets its own main + cross axis. <code>align-items</code> then aligns items <i>within each line</i>; <code>align-content</code> positions <i>all the lines together</i>. That second property only exists once you have multiple lines."],
+        ["grow/shrink are rates","<code>flex-grow</code>/<code>flex-shrink</code> are <b>rates, not sizes</b>. An item with <code>flex-grow: 5</code> next to others at 1 isn't bigger to start — it just claims a bigger <b>share</b> of spare space, growing 5× faster."]
+      ]],
       ["container", [
-        ["display: flex","Turns the element into a flex container; its direct children become flex items."],
-        ["flex-direction","Sets the main axis — <b>row</b> (→), row-reverse (←), <b>column</b> (↓), column-reverse (↑)."],
-        ["flex-wrap","Whether items spill onto new lines (<b>wrap</b>) or stay on one line and shrink (nowrap)."],
-        ["justify-content","Distributes items along the <b>main</b> axis: center, space-between, space-evenly…"],
-        ["align-items","Aligns items along the <b>cross</b> axis. Default <b>stretch</b> makes them fill the cross size."],
-        ["align-content","Distributes the wrapped <b>lines</b> on the cross axis — only does anything once items wrap into 2+ lines."],
-        ["gap","Space between items. Cleaner than margins, with no leftover gap at the edges."]
+        ["display: flex","Turns the element into a flex container; its direct children become flex items. Block children would otherwise each take a full line."],
+        ["flex-direction","Sets the main axis. The reverse values also flip what <code>flex-start</code>/<code>flex-end</code> mean.",[
+          ["row","Default. Items flow left → right (main axis horizontal)."],
+          ["row-reverse","Items flow right → left."],
+          ["column","Items flow top → bottom (main axis vertical)."],
+          ["column-reverse","Items flow bottom → top."]
+        ]],
+        ["flex-wrap","Whether items can spill onto new lines. Wrapping is what makes a layout responsive.",[
+          ["nowrap","Default. One line; items shrink (or overflow) to fit."],
+          ["wrap","Items flow onto new lines when they run out of room."],
+          ["wrap-reverse","Wraps, but new lines stack in the opposite cross-axis direction."]
+        ]],
+        ["justify-content","Distributes items along the <b>main</b> axis. Default <code>flex-start</code>.",[
+          ["flex-start","Pack items at the start of the main axis."],
+          ["flex-end","Pack items at the end."],
+          ["center","Pack items in the middle."],
+          ["space-between","First & last items touch the edges; equal space between the rest. No space at the outer edges."],
+          ["space-around","Each item gets equal space on both sides — so the outer gaps look <i>half</i> as big as the gaps between items (a left + a right meet in the middle)."],
+          ["space-evenly","Every gap is equal, including the outer edges. The 'fix' for space-around's uneven look."]
+        ]],
+        ["align-items","Aligns items along the <b>cross</b> axis, line by line. Default <b>stretch</b>.",[
+          ["stretch","Default. Items grow to fill the cross size (unless they have a fixed size on that axis)."],
+          ["flex-start","Align items to the start of the cross axis."],
+          ["flex-end","Align items to the end."],
+          ["center","Center items on the cross axis."],
+          ["baseline","Align items by their text baselines."]
+        ]],
+        ["align-content","Positions the wrapped <b>lines</b> as a group on the cross axis. Default <b>stretch</b>. Only does anything on multi-line containers (<code>flex-wrap: wrap</code>) — nothing on a single line. Fully centered = <code>justify-content</code> + <code>align-items</code> + <code>align-content</code> all <code>center</code>.",[
+          ["stretch","Default. Lines grow to share the spare cross-axis space."],
+          ["flex-start","Pack all lines at the start of the cross axis."],
+          ["flex-end","Pack all lines at the end."],
+          ["center","Pack all lines in the middle."],
+          ["space-between","First & last lines at the edges; equal space between lines."],
+          ["space-around","Equal space around each line (half-size outer gaps, like justify's version)."]
+        ]],
+        ["gap","Space between items — no leftover gap at the outer edges, so you rarely need margins. Accepts one value or two (<code>gap: row col</code>)."]
       ]],
       ["item #1 (highlighted)", [
-        ["flex-grow","How greedily this item expands into spare space. 0 = stay put; 1 = take a share of the slack."],
-        ["flex-shrink","How readily it shrinks when space is tight. 1 = may shrink; <b>0</b> = hold its size."],
-        ["flex-basis","The item's starting size before grow/shrink kick in. <b>auto</b> = use its content/width."],
-        ["order","Visual reordering without touching the HTML. Default 0; higher sorts later, negative sorts earlier."],
-        ["align-self","Overrides align-items for this one item on the cross axis."]
+        ["flex-grow","Grow factor — how big a share of <b>spare</b> space this item claims. It's a rate, not a size.",[
+          ["0","Default. Don't grow; keep natural size."],
+          ["1","Take an equal share of leftover space. Setting this on one item makes it soak up all the slack — a common responsive trick."],
+          ["2, 3, 5…","A multiplier: an item at 5 grows 5× faster than siblings at 1, grabbing a bigger share. It's not bigger to start — it just claims more of the <i>extra</i> space."]
+        ]],
+        ["flex-shrink","Shrink factor — how fast it gives up space when things are tight. Also a rate.",[
+          ["1","Default. May shrink when the row runs out of room."],
+          ["0","Never shrink — holds its size (handy to stop an icon or image from distorting). Other items shrink instead, or the row overflows."],
+          ["2, 3, 5…","Shrinks that many times faster than siblings at 1, giving up a bigger share of space first."]
+        ]],
+        ["flex-basis","The item's starting size before grow/shrink act. <b>auto</b> = use its content/width. Pairing grow/shrink with min/max-width lets you cap where growing stops (clean) and where shrinking stops (then it overflows — avoid)."],
+        ["order","Visual reordering without touching the HTML. Default 0; higher sorts later, negative earlier."],
+        ["align-self","Overrides <code>align-items</code> for this one item on the cross axis. Same values as align-items. (For the navbar 'push one item away from the rest' effect, reach for <code>margin: auto</code> instead.)",[
+          ["auto","Default. Follow the container's <code>align-items</code>."],
+          ["flex-start / flex-end","Pin just this item to the start/end of the cross axis."],
+          ["center","Center just this item."],
+          ["stretch","Stretch just this item to fill the cross size."]
+        ]]
+      ]],
+      ["beyond this tool", [
+        ["margin: auto","A real flex trick: an auto margin eats all spare space on that side. <code>margin-right: auto</code> on one item shoves everything after it to the far end — the classic navbar logo-left / links-right layout."],
+        ["justify-self / justify-items","Heads-up: these are <b>Grid</b> properties, not flexbox. They're silently ignored on flex items/containers, so don't reach for them here — use <code>justify-content</code> (group) or <code>margin: auto</code> (single item)."]
       ]]
     ]
   },
@@ -542,7 +610,7 @@ const state = {
   flex:{...FLEX_DEFAULTS}, trans:{...TRANS_DEFAULTS},
   scene:{...SCENE_DEFAULTS},
   idx:{flex:0,trans:0}, eidx:{flex:0,trans:0},
-  correct:0, attempts:0, log:0, playing:false, theme:"dark", answered:false, showAxis:true
+  correct:0, attempts:0, log:0, playing:false, theme:"dark", answered:false, showAxis:true, showFlow:false
 };
 const $ = id => document.getElementById(id);
 const curState = () => state.topic==="flex" ? state.flex : state.trans;
@@ -638,10 +706,30 @@ function axisHTML(direction){
   return `<span class="ax main">main <span class="arr">${a.main}</span></span>`+
          `<span class="ax cross">cross <span class="arr">${a.cross}</span></span>`;
 }
+
+/* flow overlay geometry: which edges are main vs cross, and the arrow each carries.
+   Main-axis edges run parallel to item flow (arrow = flow direction);
+   cross-axis edges run parallel to the wrap/stacking direction.            */
+const FLOW_MAP = {
+  // row: items flow horizontally → top+bottom edges are main (→), left+right are cross (↓)
+  "row":          { mainEdges:["top","bottom"], crossEdges:["left","right"], mainArrow:"→", crossArrow:"↓" },
+  "row-reverse":  { mainEdges:["top","bottom"], crossEdges:["left","right"], mainArrow:"←", crossArrow:"↓" },
+  // column: items flow vertically → left+right edges are main (↓), top+bottom are cross (→)
+  "column":       { mainEdges:["left","right"], crossEdges:["top","bottom"], mainArrow:"↓", crossArrow:"→" },
+  "column-reverse":{ mainEdges:["left","right"], crossEdges:["top","bottom"], mainArrow:"↑", crossArrow:"→" }
+};
+function flowHTML(direction){
+  const f = FLOW_MAP[direction] || FLOW_MAP.row;
+  let html="";
+  f.mainEdges.forEach(e=>{ html+=`<div class="edge main ${e}"><span class="arrow">${f.mainArrow}</span></div>`; });
+  f.crossEdges.forEach(e=>{ html+=`<div class="edge cross ${e}"><span class="arrow">${f.crossArrow}</span></div>`; });
+  return html;
+}
 function buildFlexPreview(container, styleObj, scene){
   const sc = scene || SCENE_DEFAULTS;
   const box=document.createElement("div"); box.className="flexbox";
-  const axis=document.createElement("div"); axis.className="axis"; box.appendChild(axis);  // compass overlay
+  const flow=document.createElement("div"); flow.className="flow"; box.appendChild(flow);    // flow overlay (edges+arrows)
+  const axis=document.createElement("div"); axis.className="axis"; box.appendChild(axis);     // compass overlay
   for(let i=1;i<=sc.count;i++){ const it=document.createElement("div"); it.className="item"+(i===1?" lead":""); it.textContent=i; box.appendChild(it); }
   applyFlexStyles(box, styleObj, sc); container.innerHTML=""; container.appendChild(box); return box;
 }
@@ -661,6 +749,8 @@ function applyFlexStyles(box, s, scene){
   if(it){ it.style.order=s["order"]; it.style.flexGrow=s["flex-grow"]; it.style.flexShrink=s["flex-shrink"]; it.style.flexBasis=s["flex-basis"]; it.style.alignSelf=s["align-self"]; }
   const axis=box.querySelector(".axis");
   if(axis){ axis.innerHTML=axisHTML(s["flex-direction"]); axis.style.display = state.showAxis ? "" : "none"; }   // reorient + show/hide compass
+  const flow=box.querySelector(".flow");
+  if(flow){ flow.innerHTML=flowHTML(s["flex-direction"]); flow.classList.toggle("show", state.showFlow); }       // recolor + redirect edges
 }
 function buildTransPreview(container){
   const box=document.createElement("div"); box.className="transbox";
@@ -689,6 +779,7 @@ let explainMover=null;  // mover for transition explain previews
 function mount(){
   $("badge").textContent = state.topic==="flex" ? "/flex/" : "/transition/";
   $("axisBtn").style.display = state.topic==="flex" ? "" : "none";   // axis only exists for flex
+  $("flowBtn").style.display = state.topic==="flex" ? "" : "none";   // flow overlay only exists for flex
   refreshScore();
   const mode=state.mode;
   // reset transient regions
@@ -845,6 +936,11 @@ $("axisBtn").addEventListener("click",()=>{
   $("axisBtn").textContent = "axis: "+(state.showAxis?"on":"off");
   document.querySelectorAll(".flexbox .axis").forEach(a=>{ a.style.display = state.showAxis ? "" : "none"; }); // update any on-screen previews
 });
+$("flowBtn").addEventListener("click",()=>{
+  state.showFlow=!state.showFlow;
+  $("flowBtn").textContent = "flow: "+(state.showFlow?"on":"off");
+  document.querySelectorAll(".flexbox .flow").forEach(f=>{ f.classList.toggle("show", state.showFlow); }); // update any on-screen previews
+});
 
 /* ---------------- mobile properties drawer ---------------- */
 function openDrawer(){ $("drawer").classList.add("open"); $("drawerBackdrop").classList.add("open"); $("drawerBackdrop").setAttribute("aria-hidden","false"); }
@@ -903,8 +999,14 @@ function renderHelp(){
   let html=`<div class="ref-note">${h.note}</div>`;
   h.groups.forEach(([title,items])=>{
     html+=`<div class="ref-group">${title}</div>`;
-    items.forEach(([term,desc])=>{
-      html+=`<div class="ref-item"><div class="ref-term">${term}</div><div class="ref-desc">${desc}</div></div>`;
+    items.forEach(([term,desc,values])=>{
+      html+=`<div class="ref-item"><div class="ref-term">${term}</div><div class="ref-desc">${desc}</div>`;
+      if(values && values.length){
+        html+=`<dl class="ref-values">`;
+        values.forEach(([v,vd])=>{ html+=`<dt>${v}</dt><dd>${vd}</dd>`; });
+        html+=`</dl>`;
+      }
+      html+=`</div>`;
     });
   });
   body.innerHTML=html; body.scrollTop=0;

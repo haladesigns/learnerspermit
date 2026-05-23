@@ -213,6 +213,12 @@
         "children": [
           {
             "type": "file",
+            "name": "ai-context-engineering-guide.pdf",
+            "label": "Ai Context Engineering Guide",
+            "path": "coding_web-design/ai/ai-context-engineering-guide.pdf"
+          },
+          {
+            "type": "file",
             "name": "nvidia-jetson-agx-orin-llm.html",
             "label": "Nvidia Jetson Agx Orin Llm",
             "path": "coding_web-design/ai/nvidia-jetson-agx-orin-llm.html"

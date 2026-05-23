@@ -324,11 +324,11 @@
             </div>
           </div>
           <div class="scene-ctl">
-            <span class="scene-lab">item #1 size</span>
+            <span class="scene-lab">#1 size</span>
             <div class="field"><select id="leadSize"></select></div>
           </div>
           <div class="scene-ctl">
-            <span class="scene-lab">others size</span>
+            <span class="scene-lab">others</span>
             <div class="field"><select id="restSize"></select></div>
           </div>
           <div class="scene-ctl">
@@ -713,8 +713,7 @@ function renderPalette(){
         sel.classList.toggle("def", cur[key]===defs[key]);
         renderReadout(); applyLive(); setResult("");
         updateBadge();
-        // mode-aware: build/explain slide the panel away so the result is visible; sandbox stays open for rapid fiddling
-        if(state.mode!=="sandbox") closeDrawer();
+        // drawer stays open until the user dismisses it (✕ / tap-away / Esc) — no auto-close on change
       });
       field.appendChild(sel); row.appendChild(lab); row.appendChild(field); s.appendChild(row);
     });
@@ -773,7 +772,7 @@ function multiRow(label, opts, current, onChange){
 function refreshMulti(){
   if(liveMover){ state.playing=false; applyMultiStyles(liveMover); }
   renderReadout(); setResult(""); updateBadge();
-  if(state.mode!=="sandbox") closeDrawer();   // build slides panel away to show result, like flex
+  // drawer stays open until the user dismisses it (✕ / tap-away / Esc)
 }
 function buildReadoutHTML(topic, obj){
   if(topic==="flex"){

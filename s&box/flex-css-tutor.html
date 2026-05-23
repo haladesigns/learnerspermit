@@ -68,6 +68,16 @@
   .section{padding:12px 0;border-bottom:1px solid var(--line)}
   .section:last-child{border-bottom:0;padding-bottom:2px}
   .section-head{font-size:10.5px;letter-spacing:1.5px;color:var(--label);text-transform:uppercase;margin-bottom:11px}
+  .multi-hint{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .section.track{transition:opacity .15s}
+  .section.track:not(.on){opacity:.7}
+  .track-head{display:flex;align-items:center;gap:10px}
+  .track-name{font-size:12.5px;color:var(--txt);font-family:var(--mono)}
+  .section.track.on .track-name{color:var(--accent)}
+  .track-toggle{font-family:var(--mono);font-size:10.5px;letter-spacing:.5px;cursor:pointer;border-radius:6px;padding:4px 9px;border:1px solid var(--line);background:var(--cell);color:var(--dim);min-width:36px;transition:background .15s,color .15s,border-color .15s}
+  .track-toggle:hover{background:var(--cell-hi)}
+  .track-toggle.on{border-color:var(--accent-dim);color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+  .track-body{margin-top:10px;padding-left:11px;border-left:2px solid var(--line)}
   .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
   .row:last-child{margin-bottom:0}
   .rk{font-size:11.5px;color:var(--muted);white-space:nowrap}
@@ -391,7 +401,7 @@ const TRANS_PROPS = {
 const TRANS_DEFAULTS = { effect:"slide", duration:"0.5s", timing:"ease", delay:"0s" };
 const TRANS_SECTIONS = [ { title:"transition", keys:["effect","duration","timing","delay"] } ];
 
-const LABELS = { effect:"effect (what changes)", duration:"duration", timing:"timing-function", delay:"delay" };
+const LABELS = { effect:"effect", duration:"duration", timing:"timing-function", delay:"delay" };
 const labelFor = k => LABELS[k] || k;
 
 const EFFECT_MAP = {
@@ -401,6 +411,52 @@ const EFFECT_MAP = {
   fade:{ css:"opacity", to:"0.12" },
   color:{ css:"background-color", to:"color-mix(in srgb,var(--warm) 55%,transparent)" }
 };
+
+/* ---- Tier-1 multi-track model (sandbox transitions only) ----
+   Three genuinely-distinct CSS properties can stack. transform's three
+   variants (slide/scale/rotate) are sub-choices, NOT separate tracks,
+   because they all compile to the single `transform` property.        */
+const TRACK_DEFS = {
+  transform:{ css:"transform", label:"transform", variants:["slide","scale","rotate"] },
+  opacity:  { css:"opacity",   label:"opacity (fade)", variants:null },
+  color:    { css:"background-color", label:"background-color", variants:null }
+};
+const TRACK_ORDER = ["transform","opacity","color"];
+const TIMING_OPTS = ["ease","linear","ease-in","ease-out","ease-in-out","steps(4)","cubic-bezier(.68,-0.55,.27,1.55)"];
+const DUR_OPTS = ["0.2s","0.3s","0.5s","0.75s","1s","1.5s","2s","3s"];
+const DELAY_OPTS = ["0s","0.1s","0.25s","0.5s","1s"];
+// per-track resting/active CSS values
+const TRACK_TO = {
+  slide:"translateX(180px)", scale:"scale(1.7)", rotate:"rotate(180deg)",
+  opacity:"0.12", color:"color-mix(in srgb,var(--warm) 55%,transparent)"
+};
+function multiTrackDefaults(){
+  return {
+    transform:{ on:false, variant:"slide", duration:"1s",  timing:"ease-in-out", delay:"0s" },
+    opacity:  { on:false, duration:"0.5s", timing:"linear", delay:"0s" },
+    color:    { on:false, duration:"0.5s", timing:"ease",   delay:"0s" }
+  };
+}
+// which track an old-style effect belongs to (+ the transform variant, if any)
+const EFFECT_TO_TRACK = {
+  slide:{ track:"transform", variant:"slide" },
+  scale:{ track:"transform", variant:"scale" },
+  rotate:{ track:"transform", variant:"rotate" },
+  fade:{ track:"opacity" },
+  color:{ track:"color" }
+};
+// turn a single-effect config ({effect,duration,timing,delay}) into a fresh multi-track state
+function multiFromEffect(cfg){
+  const c={...TRANS_DEFAULTS, ...cfg};
+  const m=multiTrackDefaults();
+  // start with everything off, then enable just the one the challenge is about
+  m.transform.on=false; m.opacity.on=false; m.color.on=false;
+  const map=EFFECT_TO_TRACK[c.effect];
+  const tk=m[map.track];
+  tk.on=true; tk.duration=c.duration; tk.timing=c.timing; tk.delay=c.delay;
+  if(map.variant) tk.variant=map.variant;
+  return m;
+}
 
 /* ---------------- challenges ---------------- */
 const CHALLENGES = {
@@ -501,7 +557,15 @@ const EXPLAIN = {
     { config:{ effect:"slide",duration:"0.5s",timing:"ease",delay:"1s" },
       q:"Hit play: nothing happens for a beat, THEN the box moves. Which part of the shorthand creates that initial pause?",
       options:["duration","delay","timing-function","property"], answer:"delay",
-      why:"<b>delay</b> (the 4th value) holds the transition before it starts. duration is how long the motion itself lasts." }
+      why:"<b>delay</b> (the 4th value) holds the transition before it starts. duration is how long the motion itself lasts." },
+    { noPreview:true,
+      q:"You set <code>transition: display 0.3s</code> and the element just snaps on/off with no fade. Why won't it animate smoothly?",
+      options:["display has no in-between values to interpolate","the duration is too short","display isn't a valid property","you forgot the timing-function"], answer:"display has no in-between values to interpolate",
+      why:"Transitions need <b>intermediate values</b> to compute — a half-opacity, a part-way color, a mid transform. <code>display</code> is discrete (none ↔ block), so there's nothing to tween: it flips. To fade something out, animate <code>opacity</code> instead. (Modern CSS <i>can</i> transition display with <code>allow-discrete</code> + <code>@starting-style</code>, but that's an advanced add-on.)" },
+    { noPreview:true,
+      q:"Which of these properties <b>cannot</b> be smoothly transitioned?",
+      options:["opacity","transform","background-color","visibility: visible ↔ hidden"], answer:"visibility: visible ↔ hidden",
+      why:"<b>opacity</b>, <b>transform</b>, and <b>color</b> values all have continuous in-between states, so they tween smoothly. <code>visibility</code> is effectively discrete — like <code>display</code>, it flips rather than fades. Rule of thumb: if you can't picture a 'halfway' value, it can't transition." }
   ]
 };
 
@@ -512,7 +576,7 @@ const HELP = {
     groups:[
       ["the big idea", [
         ["main vs cross axis","Everything hinges on these. <code>justify-content</code> works the <b>main</b> axis; <code>align-items</code> works the <b>cross</b> axis. Change <code>flex-direction</code> and the two axes swap, so the same property suddenly moves things the other way."],
-        ["one line vs many","With <code>flex-wrap: wrap</code>, each wrapped <b>line</b> gets its own main + cross axis. <code>align-items</code> then aligns items <i>within each line</i>; <code>align-content</code> positions <i>all the lines together</i>. That second property only exists once you have multiple lines."],
+        ["one line vs many","With <code>flex-wrap: wrap</code>, each wrapped <b>line</b> gets its own main + cross axis. <code>align-items</code> then aligns items <i>within each line</i>; <code>align-content</code> positions <i>all the lines together</i>. The real aha: <code>justify-content</code> and <code>align-items</code> act on <b>items</b>, but <code>align-content</code> acts on <b>lines</b> — and lines only exist once you've wrapped, which is why it does nothing on a single line."],
         ["grow/shrink are rates","<code>flex-grow</code>/<code>flex-shrink</code> are <b>rates, not sizes</b>. An item with <code>flex-grow: 5</code> next to others at 1 isn't bigger to start — it just claims a bigger <b>share</b> of spare space, growing 5× faster."]
       ]],
       ["container", [
@@ -528,7 +592,7 @@ const HELP = {
           ["wrap","Items flow onto new lines when they run out of room."],
           ["wrap-reverse","Wraps, but new lines stack in the opposite cross-axis direction."]
         ]],
-        ["justify-content","Distributes items along the <b>main</b> axis. Default <code>flex-start</code>.",[
+        ["justify-content","Distributes spare space along the <b>main</b> axis — works even with a single item, since there's still space to place it in. Default <code>flex-start</code>.",[
           ["flex-start","Pack items at the start of the main axis."],
           ["flex-end","Pack items at the end."],
           ["center","Pack items in the middle."],
@@ -536,14 +600,14 @@ const HELP = {
           ["space-around","Each item gets equal space on both sides — so the outer gaps look <i>half</i> as big as the gaps between items (a left + a right meet in the middle)."],
           ["space-evenly","Every gap is equal, including the outer edges. The 'fix' for space-around's uneven look."]
         ]],
-        ["align-items","Aligns items along the <b>cross</b> axis, line by line. Default <b>stretch</b>.",[
+        ["align-items","Aligns items along the <b>cross</b> axis, <i>within</i> their line — so it works even with one line. Acts on <b>items</b>. Default <b>stretch</b>.",[
           ["stretch","Default. Items grow to fill the cross size (unless they have a fixed size on that axis)."],
           ["flex-start","Align items to the start of the cross axis."],
           ["flex-end","Align items to the end."],
           ["center","Center items on the cross axis."],
           ["baseline","Align items by their text baselines."]
         ]],
-        ["align-content","Positions the wrapped <b>lines</b> as a group on the cross axis. Default <b>stretch</b>. Only does anything on multi-line containers (<code>flex-wrap: wrap</code>) — nothing on a single line. Fully centered = <code>justify-content</code> + <code>align-items</code> + <code>align-content</code> all <code>center</code>.",[
+        ["align-content","Distributes the <b>lines themselves</b> along the cross axis. Acts on <b>lines</b>, not items — so it needs multiple lines (<code>flex-wrap: wrap</code> + enough items) to do anything; on a single line there are no lines to space apart. Default <b>stretch</b>. Fully centered = <code>justify-content</code> + <code>align-items</code> + <code>align-content</code> all <code>center</code>.",[
           ["stretch","Default. Lines grow to share the spare cross-axis space."],
           ["flex-start","Pack all lines at the start of the cross axis."],
           ["flex-end","Pack all lines at the end."],
@@ -594,6 +658,14 @@ const HELP = {
         ["ease-in / ease-out","ease-in starts slow then accelerates; ease-out is the reverse (fast then settles)."],
         ["steps(n)","Jumps through n discrete frames instead of gliding — used for sprite-sheet style motion."],
         ["cubic-bezier(…)","A custom curve. If a y-value goes above 1 it <b>overshoots</b> the target, then springs back."]
+      ]],
+      ["good to know", [
+        ["what can animate","Only properties with <b>in-between values</b> can transition — a color, a length, an opacity, a transform. If you can't picture a 'halfway' state, it can't tween."],
+        ["the auto / discrete trap","Avoid transitioning to/from <code>auto</code> (e.g. <code>height: auto</code>) — it's unreliable across browsers. Discrete properties like <code>display</code> and <code>visibility</code> just flip rather than fade; to make something disappear smoothly, animate <code>opacity</code> instead."],
+        ["implicit transitions","You define only the two endpoints (start and end); the browser invents every frame between. That's why they're called <i>implicit</i> — the in-between states are filled in for you."],
+        ["multiple properties at once","One declaration can animate several properties, comma-separated, each with its own timing: <code>transition: width 2s, background-color 0.5s ease-in;</code>. This tool animates one at a time, but real CSS lets you orchestrate many."],
+        ["JS hooks","Transitions fire DOM events you can listen for — <code>transitionstart</code> and <code>transitionend</code> — so code can react when an animation begins or finishes. The bridge from CSS visuals to scripted behavior."],
+        ["see the curves","For a visual reference of every easing curve (and copy-paste cubic-beziers), <b>easings.net</b> is the canonical cheat sheet."]
       ]]
     ]
   }
@@ -607,7 +679,7 @@ const ITEM_MIN=1, ITEM_MAX=30;
 
 const state = {
   topic:"flex", mode:"build",
-  flex:{...FLEX_DEFAULTS}, trans:{...TRANS_DEFAULTS},
+  flex:{...FLEX_DEFAULTS}, trans:{...TRANS_DEFAULTS}, multi:multiTrackDefaults(),
   scene:{...SCENE_DEFAULTS},
   idx:{flex:0,trans:0}, eidx:{flex:0,trans:0},
   correct:0, attempts:0, log:0, playing:false, theme:"dark", answered:false, showAxis:true, showFlow:false
@@ -619,6 +691,7 @@ const curProps = () => state.topic==="flex" ? FLEX_PROPS : TRANS_PROPS;
 
 /* ---------------- palette (dropdowns) ---------------- */
 function renderPalette(){
+  if(state.topic==="trans"){ renderMultiPalette(); return; }
   const pal=$("palette"); pal.innerHTML="";
   const sections = state.topic==="flex" ? FLEX_SECTIONS : TRANS_SECTIONS;
   const props=curProps(), cur=curState(), defs=curDefs();
@@ -649,7 +722,59 @@ function renderPalette(){
   });
 }
 
-/* ---------------- readout (real CSS) ---------------- */
+/* ---------------- multi-track palette (sandbox transitions) ---------------- */
+function renderMultiPalette(){
+  const pal=$("palette"); pal.innerHTML="";
+  const intro=document.createElement("div"); intro.className="section";
+  const hint = (state.mode==="build")
+    ? `Match the target. Grading checks the <b>transform</b> track; extra tracks are yours to play with.`
+    : `Enable one or more properties — each animates independently with its own timing. They play together on ▶.`;
+  intro.innerHTML=`<div class="section-head">tracks</div><div class="multi-hint">${hint}</div>`;
+  pal.appendChild(intro);
+
+  TRACK_ORDER.forEach(key=>{
+    const def=TRACK_DEFS[key], t=state.multi[key];
+    const sec=document.createElement("div"); sec.className="section track"+(t.on?" on":"");
+
+    // header row: toggle + label
+    const head=document.createElement("div"); head.className="track-head";
+    const tog=document.createElement("button"); tog.type="button"; tog.className="track-toggle"+(t.on?" on":"");
+    tog.setAttribute("aria-pressed", String(t.on)); tog.textContent = t.on?"on":"off";
+    const name=document.createElement("span"); name.className="track-name"; name.textContent=def.label;
+    tog.addEventListener("click",()=>{ t.on=!t.on; renderMultiPalette(); refreshMulti(); });
+    head.appendChild(tog); head.appendChild(name); sec.appendChild(head);
+
+    // body (only when on)
+    if(t.on){
+      const body=document.createElement("div"); body.className="track-body";
+      // transform variant selector
+      if(def.variants){
+        body.appendChild(multiRow("variant", def.variants, t.variant, v=>{ t.variant=v; }));
+      }
+      body.appendChild(multiRow("duration", DUR_OPTS, t.duration, v=>{ t.duration=v; }));
+      body.appendChild(multiRow("timing", TIMING_OPTS, t.timing, v=>{ t.timing=v; }));
+      body.appendChild(multiRow("delay", DELAY_OPTS, t.delay, v=>{ t.delay=v; }));
+      sec.appendChild(body);
+    }
+    pal.appendChild(sec);
+  });
+}
+function multiRow(label, opts, current, onChange){
+  const row=document.createElement("div"); row.className="row";
+  const lab=document.createElement("label"); lab.className="rk"; lab.textContent=label;
+  const field=document.createElement("div"); field.className="field";
+  const sel=document.createElement("select");
+  opts.forEach(v=>{ const o=document.createElement("option"); o.value=v; o.textContent=v; if(v===current) o.selected=true; sel.appendChild(o); });
+  sel.addEventListener("change",()=>{ onChange(sel.value); refreshMulti(); });
+  field.appendChild(sel); row.appendChild(lab); row.appendChild(field);
+  return row;
+}
+// re-apply multi styles to the live preview + refresh readout (no full remount)
+function refreshMulti(){
+  if(liveMover){ state.playing=false; applyMultiStyles(liveMover); }
+  renderReadout(); setResult(""); updateBadge();
+  if(state.mode!=="sandbox") closeDrawer();   // build slides panel away to show result, like flex
+}
 function buildReadoutHTML(topic, obj){
   if(topic==="flex"){
     const c={...FLEX_DEFAULTS, ...obj};
@@ -670,7 +795,27 @@ function buildReadoutHTML(topic, obj){
       `<div class="readout-line"><span class="prop">${m.css}</span><span class="punc">: </span><span class="sel">${stripT(m.to)}</span><span class="punc">;</span></div>`;
   }
 }
-function renderReadout(){ $("readout").innerHTML = buildReadoutHTML(state.topic, curState()); }
+function renderReadout(){
+  if(state.topic==="trans"){ $("readout").innerHTML = buildMultiReadoutHTML(state.multi); return; }
+  $("readout").innerHTML = buildReadoutHTML(state.topic, curState());
+}
+function buildMultiReadoutHTML(mu){
+  mu=mu||state.multi;
+  const active=activeTracks(mu);
+  if(!active.length){
+    return `<div class="readout-line"><span class="prop">transition</span><span class="punc">: </span><span class="val def">none</span><span class="punc">;</span> <span class="cmt">/* enable a track */</span></div>`;
+  }
+  // multi-line transition shorthand
+  const lines=active.map((k,i)=>{ const t=mu[k], comma=(i<active.length-1)?",":";";
+    return `<div class="readout-line ind"><span class="val">${TRACK_DEFS[k].css}</span> <span class="val">${t.duration}</span> <span class="val">${t.timing}</span> <span class="val">${t.delay}</span><span class="punc">${comma}</span></div>`; });
+  // the "to" state each track animates toward
+  const toState=k=>{ if(k==="transform") return stripT(multiActiveTransform(mu)); if(k==="opacity") return TRACK_TO.opacity; return "#e8c477"; };
+  const tos=active.map(k=>`<div class="readout-line"><span class="prop">${TRACK_DEFS[k].css}</span><span class="punc">: </span><span class="sel">${toState(k)}</span><span class="punc">;</span></div>`);
+  return `<div class="readout-line"><span class="prop">transition</span><span class="punc">:</span></div>`+
+    lines.join("")+
+    `<div class="readout-line"><span class="cmt">/* on trigger → */</span></div>`+
+    tos.join("");
+}
 const stripT = v => v.replace("translateY(-50%) ","").replace("color-mix(in srgb,var(--warm) 55%,transparent)","#e8c477");
 
 /* ---------------- scene controls ---------------- */
@@ -771,6 +916,38 @@ function setEffectState(mover, m, go){
 }
 let liveMover=null, targetMover=null;
 
+/* ---- multi-track compute helpers (operate on any multi-state, default = live) ---- */
+function activeTracks(mu){ mu=mu||state.multi; return TRACK_ORDER.filter(k=>mu[k].on); }
+// the combined `transition:` shorthand value across enabled tracks
+function multiTransitionString(mu){
+  mu=mu||state.multi;
+  const parts=activeTracks(mu).map(k=>{ const t=mu[k]; return `${TRACK_DEFS[k].css} ${t.duration} ${t.timing} ${t.delay}`; });
+  return parts.length ? parts.join(", ") : "none";
+}
+// resting transform string (always centers vertically)
+const REST_TRANSFORM = "translateY(-50%) translateX(0) scale(1) rotate(0deg)";
+// the active transform = compose only the enabled transform variant onto the vertical centering
+function multiActiveTransform(mu){
+  mu=mu||state.multi;
+  const tf=mu.transform;
+  if(!tf.on) return REST_TRANSFORM;
+  return `translateY(-50%) ${TRACK_TO[tf.variant]}`;
+}
+function applyMultiStyles(mover, mu){
+  mu=mu||state.multi;
+  mover.style.transition = multiTransitionString(mu);
+  mover.style.transform = REST_TRANSFORM;   // resting state
+  mover.style.opacity = "1";
+  mover.style.backgroundColor = "";
+}
+function playMulti(mover, go, mu){
+  mu=mu||state.multi;
+  if(!go){ applyMultiStyles(mover, mu); return; }
+  if(mu.transform.on) mover.style.transform = multiActiveTransform(mu);
+  if(mu.opacity.on)   mover.style.opacity = TRACK_TO.opacity;
+  if(mu.color.on)     mover.style.backgroundColor = TRACK_TO.color;
+}
+
 /* ---------------- render pipeline ---------------- */
 const currentChallenge = () => CHALLENGES[state.topic][state.idx[state.topic]];
 const currentExplain   = () => EXPLAIN[state.topic][state.eidx[state.topic]];
@@ -788,6 +965,8 @@ function mount(){
 
   // region visibility per mode
   $("grid").classList.toggle("solo", mode==="explain");
+  const lpWrap = $("livePreview").closest(".preview-wrap");
+  if(lpWrap) lpWrap.style.display = "";                          // restore (a no-preview explain Q may have hidden it)
   $("palette").style.display = mode==="explain" ? "none" : "";
   $("codeCard").style.display = mode==="explain" ? "none" : "";   // card hidden until explain reveal
   $("targetWrap").style.display = mode==="build" ? "" : "none";
@@ -804,7 +983,10 @@ function mount(){
     const ch=currentChallenge();
     $("prompt").innerHTML=`<span class="tag">build ${state.idx[state.topic]+1}/${CHALLENGES[state.topic].length}</span>${ch.ask}`;
   } else {
-    $("prompt").innerHTML=`<span class="tag">sandbox</span>Free play — change any dropdown, watch the preview. No scoring here.`;
+    const sandboxMsg = (state.topic==="trans")
+      ? `Free play — enable one or more <b>tracks</b>, give each its own timing, then ▶ play to watch them animate together. No scoring here.`
+      : `Free play — change any dropdown, watch the preview. No scoring here.`;
+    $("prompt").innerHTML=`<span class="tag">sandbox</span>${sandboxMsg}`;
   }
   renderPalette(); renderReadout();
   const showScene = (state.topic==="flex");   // scene controls only apply to the flex playground
@@ -814,22 +996,34 @@ function mount(){
     buildFlexPreview($("livePreview"), state.flex, state.scene);
     if(mode==="build") buildFlexPreview($("targetPreview"), {...FLEX_DEFAULTS, ...currentChallenge().target});
   } else {
-    liveMover=buildTransPreview($("livePreview")); applyTransStyles(liveMover, state.trans);
-    if(mode==="build"){ targetMover=buildTransPreview($("targetPreview")); applyTransStyles(targetMover, {...TRANS_DEFAULTS, ...currentChallenge().target}); }
+    // transitions: multi-track UI in every mode; grading uses the transform track
+    liveMover=buildTransPreview($("livePreview")); applyMultiStyles(liveMover, state.multi);
+    if(mode==="build"){
+      targetMover=buildTransPreview($("targetPreview"));
+      applyMultiStyles(targetMover, multiFromEffect(currentChallenge().target));   // target = the one effect, as a track
+    }
   }
   renderActions();
 }
 
 function mountExplain(){
   const ex=currentExplain();
-  $("yoursLabel").textContent = state.topic==="flex" ? "what do you see?" : "what do you see? (press play)";
+  const noPrev = !!ex.noPreview;
+  // the preview-wrap is the parent of #livePreview; hide it entirely for conceptual questions
+  const previewWrap = $("livePreview").closest(".preview-wrap");
+  if(previewWrap) previewWrap.style.display = noPrev ? "none" : "";
   $("prompt").innerHTML=`<span class="tag">explain ${state.eidx[state.topic]+1}/${EXPLAIN[state.topic].length}</span>${ex.q}`;
-  // build the preview from the hidden config
-  if(state.topic==="flex"){
-    buildFlexPreview($("livePreview"), {...FLEX_DEFAULTS, ...ex.config});
+  if(noPrev){
     explainMover=null;
   } else {
-    explainMover=buildTransPreview($("livePreview")); applyTransStyles(explainMover, {...TRANS_DEFAULTS, ...ex.config});
+    $("yoursLabel").textContent = state.topic==="flex" ? "what do you see?" : "what do you see? (press play)";
+    // build the preview from the hidden config
+    if(state.topic==="flex"){
+      buildFlexPreview($("livePreview"), {...FLEX_DEFAULTS, ...ex.config});
+      explainMover=null;
+    } else {
+      explainMover=buildTransPreview($("livePreview")); applyMultiStyles(explainMover, multiFromEffect(ex.config));
+    }
   }
   renderChoices(ex);
   renderActions();
@@ -854,10 +1048,11 @@ function answerExplain(ex, opt, btn, container){
   });
   if(opt===ex.answer){ state.correct++; setResult("✓ correct","ok"); }
   else { btn.classList.add("wrong"); setResult("✗ not quite","no"); }
-  // reveal the real CSS + the why
+  // reveal: show the real CSS for preview questions; just the explanation for conceptual ones
   const rv=$("reveal");
   rv.className="reveal show";
-  rv.innerHTML=`<div class="readout">${buildReadoutHTML(state.topic, ex.config)}</div><div class="why">${ex.why}</div>`;
+  const readoutHTML = ex.noPreview ? "" : `<div class="readout">${buildReadoutHTML(state.topic, ex.config)}</div>`;
+  rv.innerHTML=`${readoutHTML}<div class="why">${ex.why}</div>`;
   refreshScore(); renderActions();
 }
 
@@ -870,7 +1065,9 @@ function applyLive(){
 function renderActions(){
   const a=$("actions"); a.innerHTML="";
   const mk=(label,cls,fn)=>{const b=document.createElement("button");b.className="btn "+cls;b.textContent=label;b.onclick=fn;return b;};
-  if(state.topic==="trans") a.appendChild(mk("▶ play","warm",playTransition));
+  // play button: trans topic, but not on a conceptual (no-preview) explain question
+  const conceptualExplain = (state.mode==="explain" && currentExplain().noPreview);
+  if(state.topic==="trans" && !conceptualExplain) a.appendChild(mk("▶ play","warm",playTransition));
   if(state.mode==="build"){
     a.appendChild(mk("submit","primary",submit));
     a.appendChild(mk("show hint","ghost",showHint));
@@ -884,16 +1081,35 @@ function renderActions(){
 function playTransition(){
   state.playing=!state.playing;
   if(state.mode==="explain"){
-    if(explainMover) setEffectState(explainMover, EFFECT_MAP[(({...TRANS_DEFAULTS, ...currentExplain().config}).effect)], state.playing);
+    if(explainMover) playMulti(explainMover, state.playing, multiFromEffect(currentExplain().config));
     return;
   }
-  if(liveMover) setEffectState(liveMover, EFFECT_MAP[state.trans.effect], state.playing);
-  if(state.mode==="build" && targetMover){ const tgt={...TRANS_DEFAULTS, ...currentChallenge().target}; setEffectState(targetMover, EFFECT_MAP[tgt.effect], state.playing); }
+  // build + sandbox: live preview uses the live multi-state
+  if(liveMover) playMulti(liveMover, state.playing, state.multi);
+  // build also plays the target alongside, from the challenge's mapped effect
+  if(state.mode==="build" && targetMover) playMulti(targetMover, state.playing, multiFromEffect(currentChallenge().target));
 }
 function submit(){
-  const ch=currentChallenge(), cur=curState();
-  const misses=Object.keys(ch.target).filter(k=>cur[k]!==ch.target[k]);
+  const ch=currentChallenge();
   state.attempts++; state.log++;
+  let misses;
+  if(state.topic==="trans"){
+    // grade the single track the challenge is about; extra tracks the user enabled are ignored
+    const tgt={...TRANS_DEFAULTS, ...ch.target};
+    const map=EFFECT_TO_TRACK[tgt.effect];
+    const tk=state.multi[map.track];
+    misses=[];
+    if(!tk.on) misses.push(`enable the ${TRACK_DEFS[map.track].label} track`);
+    else {
+      if(map.variant && tk.variant!==map.variant) misses.push("variant");
+      if(tk.duration!==tgt.duration) misses.push("duration");
+      if(tk.timing!==tgt.timing) misses.push("timing-function");
+      if(tk.delay!==tgt.delay) misses.push("delay");
+    }
+  } else {
+    const cur=curState();
+    misses=Object.keys(ch.target).filter(k=>cur[k]!==ch.target[k]);
+  }
   if(misses.length===0){
     state.correct++; setResult("✓ correct","ok");
     $("hint").className="hint show"; $("hint").textContent="Nailed it. Hit  next →  for another.";
@@ -907,7 +1123,7 @@ function submit(){
 function showHint(){ $("hint").className="hint show"; $("hint").textContent="💡 "+currentChallenge().hint; }
 function nextChallenge(){
   const list=CHALLENGES[state.topic]; state.idx[state.topic]=(state.idx[state.topic]+1)%list.length;
-  if(state.topic==="flex") state.flex={...FLEX_DEFAULTS}; else state.trans={...TRANS_DEFAULTS};
+  if(state.topic==="flex") state.flex={...FLEX_DEFAULTS}; else state.multi=multiTrackDefaults();
   mount();
 }
 function nextExplain(){
@@ -915,9 +1131,11 @@ function nextExplain(){
   mount();
 }
 function resetSandbox(){
-  if(state.topic==="flex"){ state.flex={...FLEX_DEFAULTS}; state.scene={...SCENE_DEFAULTS}; } else state.trans={...TRANS_DEFAULTS};
+  if(state.topic==="flex"){ state.flex={...FLEX_DEFAULTS}; state.scene={...SCENE_DEFAULTS}; }
+  else { state.multi=multiTrackDefaults(); }
   renderPalette(); renderReadout();
-  if(state.topic==="flex"){ buildFlexPreview($("livePreview"), state.flex, state.scene); renderScene(); } else applyLive();
+  if(state.topic==="flex"){ buildFlexPreview($("livePreview"), state.flex, state.scene); renderScene(); }
+  else { liveMover=buildTransPreview($("livePreview")); applyMultiStyles(liveMover); }
   state.playing=false; updateBadge();
 }
 function setResult(txt,cls){ const r=$("result"); r.textContent=txt||""; r.className="res"+(cls?" "+cls:""); }
@@ -925,7 +1143,7 @@ function refreshScore(){ $("score").textContent=state.correct; $("attempts").tex
 
 /* ---------------- switches ---------------- */
 $("topicSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;[...$("topicSeg").children].forEach(x=>x.classList.remove("on"));b.classList.add("on");state.topic=b.dataset.topic;liveMover=null;targetMover=null;mount();});
-$("modeSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;[...$("modeSeg").children].forEach(x=>x.classList.remove("on"));b.classList.add("on");state.mode=b.dataset.mode;mount();});
+$("modeSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;[...$("modeSeg").children].forEach(x=>x.classList.remove("on"));b.classList.add("on");state.mode=b.dataset.mode; if(state.topic==="trans" && state.mode!=="sandbox") state.multi=multiTrackDefaults(); mount();});
 $("themeBtn").addEventListener("click",()=>{
   state.theme = state.theme==="dark" ? "light" : "dark";
   document.documentElement.dataset.theme=state.theme;
@@ -946,6 +1164,7 @@ $("flowBtn").addEventListener("click",()=>{
 function openDrawer(){ $("drawer").classList.add("open"); $("drawerBackdrop").classList.add("open"); $("drawerBackdrop").setAttribute("aria-hidden","false"); }
 function closeDrawer(){ $("drawer").classList.remove("open"); $("drawerBackdrop").classList.remove("open"); $("drawerBackdrop").setAttribute("aria-hidden","true"); }
 function countChanged(){
+  if(state.topic==="trans" && state.mode==="sandbox") return activeTracks().length;  // # of enabled tracks
   const cur=curState(), defs=curDefs();
   return Object.keys(defs).filter(k=>cur[k]!==defs[k]).length;
 }

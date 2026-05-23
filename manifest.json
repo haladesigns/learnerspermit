@@ -213,6 +213,12 @@
         "children": [
           {
             "type": "file",
+            "name": "ai-context-engineering-guide.html",
+            "label": "Ai Context Engineering Guide",
+            "path": "coding_web-design/ai/ai-context-engineering-guide.html"
+          },
+          {
+            "type": "file",
             "name": "ai-context-engineering-guide.pdf",
             "label": "Ai Context Engineering Guide",
             "path": "coding_web-design/ai/ai-context-engineering-guide.pdf"

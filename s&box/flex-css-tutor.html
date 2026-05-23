@@ -114,6 +114,10 @@
   .stepper button:hover{background:var(--cell-hi)}
   .stepper button:disabled{color:var(--dim);cursor:default;background:transparent}
   .stepper-val{min-width:22px;text-align:center;font-size:12.5px;color:var(--txt)}
+  .sync-btn{font-family:var(--mono);font-size:11.5px;letter-spacing:.3px;cursor:pointer;border-radius:7px;padding:7px 11px;border:1px solid var(--line);background:var(--cell);color:var(--muted);transition:background .15s,color .15s,border-color .15s}
+  .sync-btn:hover{background:var(--cell-hi);color:var(--txt)}
+  .sync-btn.on{border-color:var(--accent-dim);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+  .field select:disabled{opacity:.5;cursor:not-allowed}
 
   .flexbox{position:relative;height:240px;border:1px dashed var(--line-hi);border-radius:8px;background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--txt) 2%,transparent) 0 10px,transparent 10px 20px);padding:10px;display:flex;overflow:hidden}
   .axis{position:absolute;top:8px;left:8px;z-index:5;display:flex;gap:12px;align-items:center;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:color-mix(in srgb,var(--code-bg) 88%,transparent);pointer-events:none;font-size:10px;letter-spacing:.5px}
@@ -293,12 +297,15 @@
             </div>
           </div>
           <div class="scene-ctl">
-            <span class="scene-lab">item #1 size</span>
+            <span class="scene-lab">#1</span>
             <div class="field"><select id="leadSize"></select></div>
           </div>
           <div class="scene-ctl">
-            <span class="scene-lab">others size</span>
+            <span class="scene-lab">others</span>
             <div class="field"><select id="restSize"></select></div>
+          </div>
+          <div class="scene-ctl">
+            <button type="button" class="sync-btn on" id="syncBtn" aria-pressed="true">⇄ sync sizes</button>
           </div>
         </div>
         <div id="livePreview"></div>
@@ -527,8 +534,8 @@ const HELP = {
 
 /* ---------------- scene (playground) config ---------------- */
 const SIZE_OPTS = ["auto","30px","48px","64px","90px","120px"];
-const SCENE_DEFAULTS = { count:6, leadSize:"auto", restSize:"auto" };
-const ITEM_MIN=1, ITEM_MAX=20;
+const SCENE_DEFAULTS = { count:6, leadSize:"auto", restSize:"auto", sizeSynced:true };
+const ITEM_MIN=1, ITEM_MAX=30;
 
 const state = {
   topic:"flex", mode:"build",
@@ -602,7 +609,7 @@ const stripT = v => v.replace("translateY(-50%) ","").replace("color-mix(in srgb
 function fillSizeSelect(sel, current){
   sel.innerHTML="";
   SIZE_OPTS.forEach(v=>{ const o=document.createElement("option"); o.value=v; o.textContent=v; if(v===current) o.selected=true; sel.appendChild(o); });
-  sel.classList.toggle("def", current===SCENE_DEFAULTS.leadSize); // dim when at default "auto"
+  sel.classList.toggle("def", current==="auto"); // dim when at default "auto"
 }
 function renderScene(){
   $("itemCount").textContent = state.scene.count;
@@ -610,6 +617,12 @@ function renderScene(){
   $("itemPlus").disabled  = state.scene.count>=ITEM_MAX;
   fillSizeSelect($("leadSize"), state.scene.leadSize);
   fillSizeSelect($("restSize"), state.scene.restSize);
+  // sync: item #1 follows "others"; its dropdown is shown but locked
+  const synced=state.scene.sizeSynced;
+  $("leadSize").disabled = synced;
+  const btn=$("syncBtn");
+  btn.classList.toggle("on", synced);
+  btn.setAttribute("aria-pressed", String(synced));
 }
 
 /* ---------------- previews ---------------- */
@@ -867,8 +880,21 @@ function restyleLiveScene(){   // size changed → same DOM → restyle in place
 }
 $("itemMinus").addEventListener("click",()=>{ if(state.scene.count>ITEM_MIN){ state.scene.count--; rebuildLiveScene(); } });
 $("itemPlus").addEventListener("click",()=>{ if(state.scene.count<ITEM_MAX){ state.scene.count++; rebuildLiveScene(); } });
-$("leadSize").addEventListener("change",e=>{ state.scene.leadSize=e.target.value; restyleLiveScene(); });
-$("restSize").addEventListener("change",e=>{ state.scene.restSize=e.target.value; restyleLiveScene(); });
+$("leadSize").addEventListener("change",e=>{
+  state.scene.leadSize=e.target.value;
+  if(state.scene.sizeSynced) state.scene.restSize=e.target.value;  // shouldn't fire while synced (disabled), but stay consistent
+  restyleLiveScene();
+});
+$("restSize").addEventListener("change",e=>{
+  state.scene.restSize=e.target.value;
+  if(state.scene.sizeSynced) state.scene.leadSize=e.target.value;  // synced: item #1 follows others
+  restyleLiveScene();
+});
+$("syncBtn").addEventListener("click",()=>{
+  state.scene.sizeSynced=!state.scene.sizeSynced;
+  if(state.scene.sizeSynced) state.scene.leadSize=state.scene.restSize;  // re-link: snap item #1 to others
+  restyleLiveScene();
+});
 
 /* ---------------- help modal ---------------- */
 let helpTab="flex";

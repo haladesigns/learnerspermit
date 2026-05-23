@@ -103,6 +103,18 @@
   .pv-label .res{font-size:11px;letter-spacing:.4px}
   .pv-label .res.ok{color:var(--ok)} .pv-label .res.no{color:var(--no)}
 
+  /* scene controls (item count + sizing) above the live preview */
+  .scene-bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-bottom:10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:color-mix(in srgb,var(--code-bg) 70%,transparent)}
+  .scene-ctl{display:flex;align-items:center;gap:7px}
+  .scene-lab{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--label);white-space:nowrap}
+  .scene-ctl .field{flex:0 0 84px}
+  .scene-bar.hide{display:none}
+  .stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--cell)}
+  .stepper button{font-family:var(--mono);font-size:15px;line-height:1;color:var(--accent);background:transparent;border:0;width:28px;height:28px;cursor:pointer;transition:background .15s}
+  .stepper button:hover{background:var(--cell-hi)}
+  .stepper button:disabled{color:var(--dim);cursor:default;background:transparent}
+  .stepper-val{min-width:22px;text-align:center;font-size:12.5px;color:var(--txt)}
+
   .flexbox{position:relative;height:240px;border:1px dashed var(--line-hi);border-radius:8px;background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--txt) 2%,transparent) 0 10px,transparent 10px 20px);padding:10px;display:flex;overflow:hidden}
   .axis{position:absolute;top:8px;left:8px;z-index:5;display:flex;gap:12px;align-items:center;padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:color-mix(in srgb,var(--code-bg) 88%,transparent);pointer-events:none;font-size:10px;letter-spacing:.5px}
   .axis .ax{display:flex;align-items:center;gap:4px}
@@ -258,7 +270,7 @@
     </div>
     <div class="stage">
       <div class="prompt" id="prompt"></div>
-      <div class="code-card" id="codeCard">
+      <div class="code-card collapsed" id="codeCard">
         <button class="code-head" id="codeHead" aria-expanded="true" aria-controls="readout">
           <span class="code-title">CSS</span>
           <span class="chev" aria-hidden="true">▾</span>
@@ -271,6 +283,24 @@
       </div>
       <div class="preview-wrap">
         <div class="pv-label"><span id="yoursLabel">live preview</span><span class="res" id="result"></span></div>
+        <div class="scene-bar" id="sceneBar">
+          <div class="scene-ctl">
+            <span class="scene-lab">items</span>
+            <div class="stepper">
+              <button type="button" id="itemMinus" aria-label="fewer items">−</button>
+              <span class="stepper-val" id="itemCount">6</span>
+              <button type="button" id="itemPlus" aria-label="more items">+</button>
+            </div>
+          </div>
+          <div class="scene-ctl">
+            <span class="scene-lab">item #1 size</span>
+            <div class="field"><select id="leadSize"></select></div>
+          </div>
+          <div class="scene-ctl">
+            <span class="scene-lab">others size</span>
+            <div class="field"><select id="restSize"></select></div>
+          </div>
+        </div>
         <div id="livePreview"></div>
       </div>
       <div class="choices" id="choices"></div>
@@ -495,9 +525,15 @@ const HELP = {
 };
 
 
+/* ---------------- scene (playground) config ---------------- */
+const SIZE_OPTS = ["auto","30px","48px","64px","90px","120px"];
+const SCENE_DEFAULTS = { count:6, leadSize:"auto", restSize:"auto" };
+const ITEM_MIN=1, ITEM_MAX=20;
+
 const state = {
   topic:"flex", mode:"build",
   flex:{...FLEX_DEFAULTS}, trans:{...TRANS_DEFAULTS},
+  scene:{...SCENE_DEFAULTS},
   idx:{flex:0,trans:0}, eidx:{flex:0,trans:0},
   correct:0, attempts:0, log:0, playing:false, theme:"dark", answered:false, showAxis:true
 };
@@ -562,6 +598,20 @@ function buildReadoutHTML(topic, obj){
 function renderReadout(){ $("readout").innerHTML = buildReadoutHTML(state.topic, curState()); }
 const stripT = v => v.replace("translateY(-50%) ","").replace("color-mix(in srgb,var(--warm) 55%,transparent)","#e8c477");
 
+/* ---------------- scene controls ---------------- */
+function fillSizeSelect(sel, current){
+  sel.innerHTML="";
+  SIZE_OPTS.forEach(v=>{ const o=document.createElement("option"); o.value=v; o.textContent=v; if(v===current) o.selected=true; sel.appendChild(o); });
+  sel.classList.toggle("def", current===SCENE_DEFAULTS.leadSize); // dim when at default "auto"
+}
+function renderScene(){
+  $("itemCount").textContent = state.scene.count;
+  $("itemMinus").disabled = state.scene.count<=ITEM_MIN;
+  $("itemPlus").disabled  = state.scene.count>=ITEM_MAX;
+  fillSizeSelect($("leadSize"), state.scene.leadSize);
+  fillSizeSelect($("restSize"), state.scene.restSize);
+}
+
 /* ---------------- previews ---------------- */
 // main/cross axis directions per flex-direction, as arrow glyphs
 const AXIS_ARROWS = {
@@ -575,17 +625,26 @@ function axisHTML(direction){
   return `<span class="ax main">main <span class="arr">${a.main}</span></span>`+
          `<span class="ax cross">cross <span class="arr">${a.cross}</span></span>`;
 }
-function buildFlexPreview(container, styleObj){
+function buildFlexPreview(container, styleObj, scene){
+  const sc = scene || SCENE_DEFAULTS;
   const box=document.createElement("div"); box.className="flexbox";
   const axis=document.createElement("div"); axis.className="axis"; box.appendChild(axis);  // compass overlay
-  for(let i=1;i<=6;i++){ const it=document.createElement("div"); it.className="item"+(i===1?" lead":""); it.textContent=i; box.appendChild(it); }
-  applyFlexStyles(box, styleObj); container.innerHTML=""; container.appendChild(box); return box;
+  for(let i=1;i<=sc.count;i++){ const it=document.createElement("div"); it.className="item"+(i===1?" lead":""); it.textContent=i; box.appendChild(it); }
+  applyFlexStyles(box, styleObj, sc); container.innerHTML=""; container.appendChild(box); return box;
 }
-function applyFlexStyles(box, s){
+function sizeItem(el, size){
+  // size applies to BOTH dimensions so it reads in row and column; "auto" clears it
+  if(size==="auto"){ el.style.width=""; el.style.height=""; el.style.minWidth=""; }
+  else { el.style.width=size; el.style.height=size; el.style.minWidth="0"; }
+}
+function applyFlexStyles(box, s, scene){
+  const sc = scene || SCENE_DEFAULTS;
   box.style.flexDirection=s["flex-direction"]; box.style.flexWrap=s["flex-wrap"];
   box.style.justifyContent=s["justify-content"]; box.style.alignItems=s["align-items"];
   box.style.alignContent=s["align-content"]; box.style.gap=s["gap"];
-  const it=box.querySelector(".item");
+  const items=box.querySelectorAll(".item");
+  items.forEach((it,i)=>{ sizeItem(it, i===0 ? sc.leadSize : sc.restSize); });
+  const it=items[0];
   if(it){ it.style.order=s["order"]; it.style.flexGrow=s["flex-grow"]; it.style.flexShrink=s["flex-shrink"]; it.style.flexBasis=s["flex-basis"]; it.style.alignSelf=s["align-self"]; }
   const axis=box.querySelector(".axis");
   if(axis){ axis.innerHTML=axisHTML(s["flex-direction"]); axis.style.display = state.showAxis ? "" : "none"; }   // reorient + show/hide compass
@@ -629,6 +688,7 @@ function mount(){
   $("codeCard").style.display = mode==="explain" ? "none" : "";   // card hidden until explain reveal
   $("targetWrap").style.display = mode==="build" ? "" : "none";
   $("propsFab").classList.toggle("hide", mode==="explain");      // no palette in explain → no opener
+  $("sceneBar").classList.toggle("hide", mode==="explain");      // scene controls don't apply in explain
   closeDrawer();                                                 // never carry an open drawer across mounts
   updateBadge();
 
@@ -643,8 +703,11 @@ function mount(){
     $("prompt").innerHTML=`<span class="tag">sandbox</span>Free play — change any dropdown, watch the preview. No scoring here.`;
   }
   renderPalette(); renderReadout();
+  const showScene = (state.topic==="flex");   // scene controls only apply to the flex playground
+  $("sceneBar").classList.toggle("hide", !showScene);
+  if(showScene) renderScene();
   if(state.topic==="flex"){
-    buildFlexPreview($("livePreview"), state.flex);
+    buildFlexPreview($("livePreview"), state.flex, state.scene);
     if(mode==="build") buildFlexPreview($("targetPreview"), {...FLEX_DEFAULTS, ...currentChallenge().target});
   } else {
     liveMover=buildTransPreview($("livePreview")); applyTransStyles(liveMover, state.trans);
@@ -695,7 +758,7 @@ function answerExplain(ex, opt, btn, container){
 }
 
 function applyLive(){
-  if(state.topic==="flex"){ const box=$("livePreview").querySelector(".flexbox"); if(box) applyFlexStyles(box, state.flex); }
+  if(state.topic==="flex"){ const box=$("livePreview").querySelector(".flexbox"); if(box) applyFlexStyles(box, state.flex, state.scene); }
   else if(liveMover){ state.playing=false; applyTransStyles(liveMover, state.trans); }
 }
 
@@ -748,8 +811,10 @@ function nextExplain(){
   mount();
 }
 function resetSandbox(){
-  if(state.topic==="flex") state.flex={...FLEX_DEFAULTS}; else state.trans={...TRANS_DEFAULTS};
-  renderPalette(); renderReadout(); applyLive(); state.playing=false; updateBadge();
+  if(state.topic==="flex"){ state.flex={...FLEX_DEFAULTS}; state.scene={...SCENE_DEFAULTS}; } else state.trans={...TRANS_DEFAULTS};
+  renderPalette(); renderReadout();
+  if(state.topic==="flex"){ buildFlexPreview($("livePreview"), state.flex, state.scene); renderScene(); } else applyLive();
+  state.playing=false; updateBadge();
 }
 function setResult(txt,cls){ const r=$("result"); r.textContent=txt||""; r.className="res"+(cls?" "+cls:""); }
 function refreshScore(){ $("score").textContent=state.correct; $("attempts").textContent=state.attempts; $("log").textContent=state.log; }
@@ -789,6 +854,21 @@ $("codeHead").addEventListener("click",()=>{
   const card=$("codeCard"), collapsed=card.classList.toggle("collapsed");
   $("codeHead").setAttribute("aria-expanded", String(!collapsed));
 });
+
+/* ---------------- scene control listeners ---------------- */
+function rebuildLiveScene(){   // count changed → DOM differs → rebuild
+  buildFlexPreview($("livePreview"), state.flex, state.scene);
+  renderScene();
+}
+function restyleLiveScene(){   // size changed → same DOM → restyle in place
+  const box=$("livePreview").querySelector(".flexbox");
+  if(box) applyFlexStyles(box, state.flex, state.scene);
+  renderScene();
+}
+$("itemMinus").addEventListener("click",()=>{ if(state.scene.count>ITEM_MIN){ state.scene.count--; rebuildLiveScene(); } });
+$("itemPlus").addEventListener("click",()=>{ if(state.scene.count<ITEM_MAX){ state.scene.count++; rebuildLiveScene(); } });
+$("leadSize").addEventListener("change",e=>{ state.scene.leadSize=e.target.value; restyleLiveScene(); });
+$("restSize").addEventListener("change",e=>{ state.scene.restSize=e.target.value; restyleLiveScene(); });
 
 /* ---------------- help modal ---------------- */
 let helpTab="flex";

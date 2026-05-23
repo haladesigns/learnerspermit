@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Context Engineering — A Working Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e10;
+    --bg-raised: #18181b;
+    --bg-sunk: #08080a;
+    --ink: #e8e6e0;
+    --ink-soft: #a3a099;
+    --ink-faint: #6b6862;
+    --rule: #2a2a2e;
+    --rule-soft: #1f1f23;
+    --accent: #d8a657;
+    --accent-soft: #3a3022;
+    --ok: #8fbf7f;
+    --ok-soft: #232e1f;
+    --warn: #d99a52;
+    --warn-soft: #322512;
+    --discount: #c97a6d;
+    --discount-soft: #321e1a;
+    --shadow: 0 1px 0 rgba(255,255,255,0.02);
+  }
+  [data-theme="light"] {
+    --bg: #f4f1ea;
+    --bg-raised: #fbfaf6;
+    --bg-sunk: #e9e5db;
+    --ink: #1c1b18;
+    --ink-soft: #56534c;
+    --ink-faint: #8b877e;
+    --rule: #d8d3c7;
+    --rule-soft: #e4dfd4;
+    --accent: #9a6a13;
+    --accent-soft: #f0e6cf;
+    --ok: #3f6b2c;
+    --ok-soft: #e3ecd9;
+    --warn: #9a5d12;
+    --warn-soft: #f2e4cc;
+    --discount: #9c3f30;
+    --discount-soft: #f1ddd6;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 18px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.4s ease, color 0.4s ease;
+    padding: 0 1.5rem 6rem;
+  }
+
+  .wrap { max-width: 920px; margin: 0 auto; }
+
+  /* ---- Header ---- */
+  header {
+    padding: 3.5rem 0 2.5rem;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.2rem;
+    display: block;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(2.2rem, 6vw, 3.4rem);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.6rem;
+  }
+  h1 .dim { color: var(--ink-faint); font-weight: 400; font-style: italic; }
+  .dek {
+    font-size: 16px;
+    color: var(--ink-soft);
+    max-width: 52ch;
+    line-height: 1.55;
+  }
+  .dek code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+
+  /* ---- Theme toggle ---- */
+  .toggle {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg-raised);
+    border: 1px solid var(--rule);
+    border-radius: 100px;
+    padding: 0.4rem 0.45rem;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    box-shadow: var(--shadow);
+    transition: background 0.4s ease, border-color 0.4s ease;
+  }
+  .toggle:hover { border-color: var(--accent); }
+  .toggle .knob {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: grid; place-items: center;
+    color: var(--bg);
+    font-size: 12px;
+    transition: transform 0.3s ease;
+  }
+  .toggle .lbl { padding-right: 0.4rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ---- Sections ---- */
+  section { padding: 2.8rem 0; border-bottom: 1px solid var(--rule-soft); }
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.85rem;
+    margin-bottom: 1.4rem;
+  }
+  .sec-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.7rem;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+  }
+  h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.01em;
+    margin: 1.8rem 0 0.5rem;
+    color: var(--ink);
+  }
+  p { margin-bottom: 1rem; }
+  p:last-child { margin-bottom: 0; }
+  em { font-style: italic; color: var(--ink); }
+  strong { font-weight: 500; color: var(--ink); }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-soft); }
+  a:hover { border-bottom-color: var(--accent); }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    background: var(--bg-sunk);
+    padding: 0.12em 0.4em;
+    border-radius: 4px;
+    color: var(--ink);
+    border: 1px solid var(--rule-soft);
+  }
+
+  .thesis-list { list-style: none; counter-reset: t; }
+  .thesis-list li {
+    counter-increment: t;
+    position: relative;
+    padding-left: 2.6rem;
+    margin-bottom: 1.3rem;
+  }
+  .thesis-list li::before {
+    content: counter(t);
+    position: absolute;
+    left: 0; top: 0.05em;
+    font-family: 'Fraunces', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  /* ---- Workflow steps ---- */
+  .step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.1rem;
+    padding: 1.1rem 0;
+    border-top: 1px solid var(--rule-soft);
+  }
+  .step:first-of-type { border-top: none; }
+  .step-n {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--bg);
+    background: var(--accent);
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+  }
+  .step-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    color: var(--ink);
+  }
+  .step p { font-size: 16px; margin-bottom: 0; }
+
+  .pull {
+    font-family: 'Fraunces', serif;
+    font-size: 1.25rem;
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--ink);
+    border-left: 2px solid var(--accent);
+    padding: 0.3rem 0 0.3rem 1.3rem;
+    margin: 2rem 0 0.5rem;
+  }
+
+  /* ---- Tool cards ---- */
+  .tool {
+    background: var(--bg-raised);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1.4rem 1.5rem;
+    margin-bottom: 1.1rem;
+    box-shadow: var(--shadow);
+    transition: background 0.4s ease, border-color 0.4s ease;
+  }
+  .tool-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .tool-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .tool-name .what {
+    font-family: 'Newsreader', serif;
+    font-weight: 400;
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-style: italic;
+    margin-left: 0.5rem;
+  }
+  .tool p { font-size: 15.5px; }
+  .tool ul { list-style: none; margin-top: 0.6rem; }
+  .tool ul li {
+    font-size: 15px;
+    color: var(--ink-soft);
+    padding-left: 1.1rem;
+    position: relative;
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+  }
+  .tool ul li::before {
+    content: '—';
+    position: absolute; left: 0;
+    color: var(--ink-faint);
+  }
+  .tool ul li strong { color: var(--ink); }
+
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.28em 0.7em;
+    border-radius: 100px;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .badge.ok { background: var(--ok-soft); color: var(--ok); }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); }
+
+  .caveat {
+    margin-top: 0.9rem;
+    padding: 0.85rem 1rem;
+    background: var(--warn-soft);
+    border-radius: 7px;
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .caveat strong { color: var(--warn); }
+
+  /* ---- Security callout ---- */
+  .security {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 1.6rem 1.6rem;
+  }
+  .security .big {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.9rem;
+  }
+  .security .big code {
+    background: var(--bg-sunk);
+    font-size: 0.7em;
+  }
+  .security p { font-size: 15.5px; }
+
+  /* ---- Discount list ---- */
+  .discount-item {
+    padding: 1rem 0 1rem 1.4rem;
+    border-left: 2px solid var(--discount);
+    margin-bottom: 1rem;
+    background: linear-gradient(90deg, var(--discount-soft), transparent 60%);
+    border-radius: 0 7px 7px 0;
+  }
+  .discount-item .dtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--discount);
+    margin-bottom: 0.3rem;
+  }
+  .discount-item p { font-size: 15.5px; margin: 0; color: var(--ink-soft); }
+
+  /* ---- Reference table ---- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14.5px;
+    margin-top: 0.5rem;
+  }
+  th {
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    padding: 0 0.8rem 0.7rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  td {
+    padding: 0.7rem 0.8rem 0.7rem 0;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+    color: var(--ink-soft);
+  }
+  td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .v-ok { color: var(--ok); white-space: nowrap; }
+  .v-no { color: var(--discount); white-space: nowrap; }
+  .v-meh { color: var(--warn); white-space: nowrap; }
+
+  footer {
+    padding-top: 2.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    line-height: 1.7;
+    letter-spacing: 0.02em;
+  }
+
+  /* ---- Load animation ---- */
+  .reveal { opacity: 0; transform: translateY(12px); animation: rise 0.7s cubic-bezier(0.2,0.7,0.2,1) forwards; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { animation: none; opacity: 1; transform: none; }
+    html { scroll-behavior: auto; }
+  }
+
+  @media (max-width: 560px) {
+    body { font-size: 17px; padding: 0 1.1rem 4rem; }
+    .toggle .lbl { display: none; }
+    .tool { padding: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<button class="toggle" id="themeToggle" aria-label="Toggle light and dark mode">
+  <span class="lbl" id="themeLbl">Dark</span>
+  <span class="knob" id="themeKnob">☾</span>
+</button>
+
+<div class="wrap">
+
+  <header class="reveal">
+    <span class="eyebrow">Field notes · verified May 2026</span>
+    <h1>Context<br>Engineering <span class="dim"><br>A working guide...for now</span></h1>
+    <!-- <p class="dek">A working guide extracted from a 2026 podcast and fact-checked against primary sources. Tool names, model names, and feature claims below were verified via search. Where a claim couldn't be confirmed, it's flagged.</p> -->
+  </header>
+
+  <section class="reveal" style="animation-delay:.05s">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The core thesis</h2></div>
+    <p>Two ideas drive everything else.</p>
+    <ul class="thesis-list">
+      <li><strong>Code is better context than human-written documentation.</strong> The single best source of truth about how a library behaves is its source code, not its docs. Docs drift, omit edge cases, and are written for humans skimming — source is exact.</li>
+      <li><strong>Less context beats more context.</strong> A model degrades as its context window fills. The goal is to give it <em>just enough</em> — the exact function, the exact constraint — not the whole codebase.</li>
+    </ul>
+    <p>These reverse the prevailing 2024–2025 approach, which was to stuff the agent with everything: minifying entire codebases into XML, vector-indexing the whole repo with RAG. Modern models search well enough that you point them at the right place rather than pre-loading everything. The reversal is real and worth internalizing — the techniques here have roughly a six-month half-life.</p>
+  </section>
+
+  <section class="reveal" style="animation-delay:.1s">
+    <div class="sec-head"><span class="sec-num">02</span><h2>The workflow</h2></div>
+    <p>The whole thing is a loop that ends in a verifiable state. Each piece exists to keep context small and the end condition clear.</p>
+
+    <div class="step">
+      <span class="step-n">1</span>
+      <div>
+        <div class="step-title">Plan first — for your accountability, not the agent's</div>
+        <p>Have the model generate a plan before it writes code. The value is that <em>you</em> can catch a too-large scope before any code exists. A model writing a plan doesn't account for its own context window; it dumps everything the task needs into one plan. When the plan looks big, push back: "break this into the smallest reviewable PRs you can."</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="step-n">2</span>
+      <div>
+        <div class="step-title">Give it exact context, not documentation</div>
+        <p>Instead of pasting docs or letting the agent guess at an API, fetch the actual source of the dependency into the repo and tell the agent to reference it (see <code>opensrc</code> below). The agent finds the exact function — no guessing.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="step-n">3</span>
+      <div>
+        <div class="step-title">Generate the feature in a small PR</div>
+        <p>Small, single-purpose PR. Resist the urge to bundle.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="step-n">4</span>
+      <div>
+        <div class="step-title">Run an external review loop until it passes</div>
+        <p>A separate review agent scores the PR. Re-run the fix loop until the score clears your bar. The loop self-terminates on a defined end state — a passing score, a passing test — rather than running forever. This is Karpathy's "auto-research loop" applied to shipping code.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <span class="step-n">5</span>
+      <div>
+        <div class="step-title">Restructure after the feature lands</div>
+        <p>Agents rewrite existing functions rather than reuse them, which accumulates duplicate code and makes future debugging harder. After a feature, run a pass that consolidates repeated logic into a reusable service layer. Cleaner structure is easier for the <em>next</em> session to pick up.</p>
+      </div>
+    </div>
+
+    <p class="pull">The model predicts the next token; it has no model of whether its decision is correct. Your judgment is the part that doesn't come in the box.</p>
+  </section>
+
+  <section class="reveal" style="animation-delay:.15s">
+    <div class="sec-head"><span class="sec-num">03</span><h2>The verified tool stack</h2></div>
+
+    <div class="tool">
+      <div class="tool-head">
+        <span class="tool-name">opensrc <span class="what">exact source as context</span></span>
+        <span class="badge ok">✓ vercel-labs</span>
+      </div>
+      <p><code>npx opensrc &lt;package&gt;</code> clones a dependency's source into <code>./opensrc/</code> and adds a prompt block telling the agent the source is available for understanding how a package works internally, not just its types.</p>
+      <ul>
+        <li>The podcast's auto-transcript renders it as "open source" — a homophone, not the license term.</li>
+        <li>Works beyond npm: <code>pypi:requests</code>, <code>crates:serde</code>, <code>owner/repo</code>. <strong>Relevant to Python / Rust / Lisp-adjacent work, not just JavaScript.</strong></li>
+        <li>Usage: fetch the source, then tag the folder in your prompt and say "reference the codebase."</li>
+        <li><a href="https://github.com/vercel-labs/opensrc">github.com/vercel-labs/opensrc</a></li>
+      </ul>
+    </div>
+
+    <div class="tool">
+      <div class="tool-head">
+        <span class="tool-name">Greptile <span class="what">AI PR review + confidence score</span></span>
+        <span class="badge warn">✓ watch FPs</span>
+      </div>
+      <p>Indexes the whole repo into a semantic map, then reviews each PR with multi-hop investigation across files and git history. Every review gets a <strong>0–5 confidence score</strong> based on issue severity, change complexity, and pattern fit.</p>
+      <ul>
+        <li>v3+ runs on the Claude Agent SDK. The "loop until 5/5" workflow is legitimate.</li>
+        <li>Pricing early 2026: ~$30/user/month. Self-hostable in-VPC.</li>
+      </ul>
+      <div class="caveat"><strong>Caveat the podcast omits:</strong> independent benchmarks show Greptile has both the highest catch rate <em>and</em> the highest false-positive rate. Its own docs call the score a triage signal, not a rubber stamp — a high score means it found nothing concerning, not that nothing is wrong. Looping blindly to 5/5 can mean chasing phantom findings.</div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-head">
+        <span class="tool-name">Cursor + frontier models <span class="what">the harness</span></span>
+        <span class="badge ok">✓ current</span>
+      </div>
+      <p>The harness wraps the model with tools, a system prompt, and config files. The podcast's stack: Cursor switching between <strong>GPT-5.5</strong> (backend, "extra high" reasoning) and <strong>Opus 4.7</strong> (UI, "max" reasoning).</p>
+      <ul>
+        <li><strong>Opus 4.7</strong> shipped April 16, 2026 as Anthropic's flagship. <strong>GPT-5.5</strong> is real; <code>xhigh</code> is a genuine reasoning-effort setting. "Opus 4.7 Max" = model + Cursor's max reasoning, not a separate model.</li>
+      </ul>
+      <div class="caveat"><strong>Unverified claim:</strong> the podcast asserts Cursor's harness benchmarks ahead of Claude Code and Codex on the same models. No source given — treat as a preference, not an established fact.</div>
+    </div>
+
+    <div class="tool">
+      <div class="tool-head">
+        <span class="tool-name">Convex <span class="what">backend as code</span></span>
+        <span class="badge ok">✓ positioning</span>
+      </div>
+      <p>Everything — schema, scheduled functions, APIs — is TypeScript code, so the agent has full backend context without screenshots of a dashboard. The dashboard is only for production setup and billing.</p>
+      <ul>
+        <li>The "everything is code = full agent context" framing is accurate.</li>
+        <li><strong>Tension with Supabase:</strong> Supabase mixes code with dashboard-managed config (RLS policies, etc.), so some backend state lives where the agent can't see it. That's the gap Convex argues against. Whether it's worth switching is a separate question — the context argument is the relevant one.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="reveal" style="animation-delay:.2s">
+    <div class="sec-head"><span class="sec-num">04</span><h2>The one security tip worth adopting now</h2></div>
+    <div class="security">
+      <p class="big">Tell your agent: never install a package younger than <code>~14 days</code>.</p>
+      <p>Most supply-chain attacks are malicious package versions that drop and get caught within days. A 14-day floor means the vulnerability is usually flagged before you'd pull it. Directly relevant to automated pipelines (n8n, Supabase, GitHub Actions) where dependencies update without a human in the loop.</p>
+      <p style="margin-top:0.9rem; color:var(--ink-soft);">Adjacent verified-sensible advice: 2FA via an authenticator app, not SMS (SIM-swap is real); a password manager; and when a breach hits your feed, paste the details to your coding agent and have it check whether the affected package is in your project.</p>
+    </div>
+  </section>
+
+  <section class="reveal" style="animation-delay:.25s">
+    <div class="sec-head"><span class="sec-num">05</span><h2>What to discount</h2></div>
+
+    <div class="discount-item">
+      <div class="dtitle">The funnel</div>
+      <p>"Click the link, it's free, I'll email you everything" repeated ~6 times means the product is your email address. The content is the bait.</p>
+    </div>
+    <div class="discount-item">
+      <div class="dtitle">"Be delusional"</div>
+      <p>Survivorship bias. You hear about the delusional founders who shipped; not the larger number who shipped broken things and vanished. "Launch early, get feedback, iterate" is sound. "Believe your half-working MVP will change the world" is selection effect dressed as strategy.</p>
+    </div>
+    <div class="discount-item">
+      <div class="dtitle">Unsourced benchmark claims</div>
+      <p>Any specific "X beats Y" number stated without a citation — treat as vibes until verified.</p>
+    </div>
+  </section>
+
+  <section class="reveal" style="animation-delay:.3s; border-bottom:none;">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Quick reference</h2></div>
+    <table>
+      <thead>
+        <tr><th>Thing</th><th>What it is</th><th>Verified?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>opensrc</td><td><code>npx</code> tool, fetches dep source as context (npm / pypi / crates / github)</td><td class="v-ok">✓ vercel-labs</td></tr>
+        <tr><td>Greptile</td><td>AI PR reviewer, 0–5 confidence score, loop-to-pass</td><td class="v-meh">✓ watch FPs</td></tr>
+        <tr><td>Cursor</td><td>Harness; switch models per task</td><td class="v-ok">✓</td></tr>
+        <tr><td>Opus 4.7</td><td>Anthropic flagship, strong on UI / frontend</td><td class="v-ok">✓ Apr 16 2026</td></tr>
+        <tr><td>GPT-5.5</td><td>OpenAI model (xhigh), strong on backend / architecture</td><td class="v-ok">✓</td></tr>
+        <tr><td>Convex</td><td>Backend-as-code, full agent context</td><td class="v-ok">✓ positioning</td></tr>
+        <tr><td>14-day floor</td><td>Supply-chain defense heuristic</td><td class="v-ok">✓ sensible</td></tr>        
+      </tbody>
+    </table>
+  </section>
+
+  <footer class="reveal" style="animation-delay:.35s">
+    FIN
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    var lbl = document.getElementById('themeLbl');
+    var knob = document.getElementById('themeKnob');
+
+    function apply(theme) {
+      root.setAttribute('data-theme', theme);
+      lbl.textContent = theme === 'dark' ? 'Dark' : 'Light';
+      knob.textContent = theme === 'dark' ? '☾' : '☀';
+    }
+
+    btn.addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      apply(next);
+    });
+
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      apply('light');
+    }
+  })();
+</script>
+
+</body>
+</html>

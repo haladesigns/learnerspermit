@@ -620,6 +620,12 @@
       },
       {
         "type": "file",
+        "name": "ai-context-engineering-guide.pdf",
+        "label": "Ai Context Engineering Guide",
+        "path": "coding_web-design/ai-context-engineering-guide.pdf"
+      },
+      {
+        "type": "file",
         "name": "animated-websites-reference.html",
         "label": "Animated Websites Reference",
         "path": "coding_web-design/animated-websites-reference.html"

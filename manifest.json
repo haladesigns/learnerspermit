@@ -836,18 +836,6 @@
     "children": [
       {
         "type": "file",
-        "name": "A Complete CSS Flexbox Layout Guide.docx",
-        "label": "A Complete Css Flexbox Layout Guide",
-        "path": "s&box/A Complete CSS Flexbox Layout Guide.docx"
-      },
-      {
-        "type": "file",
-        "name": "A Complete CSS Flexbox Layout Guide.md",
-        "label": "A Complete Css Flexbox Layout Guide",
-        "path": "s&box/A Complete CSS Flexbox Layout Guide.md"
-      },
-      {
-        "type": "file",
         "name": "A Complete CSS Flexbox Layout Guide.pdf",
         "label": "A Complete Css Flexbox Layout Guide",
         "path": "s&box/A Complete CSS Flexbox Layout Guide.pdf"
@@ -869,12 +857,6 @@
         "name": "css-positioning-playground.html",
         "label": "Css Positioning Playground",
         "path": "s&box/css-positioning-playground.html"
-      },
-      {
-        "type": "file",
-        "name": "flex-css-transitions-tutor.html",
-        "label": "Flex Css Transitions Tutor",
-        "path": "s&box/flex-css-transitions-tutor.html"
       },
       {
         "type": "file",

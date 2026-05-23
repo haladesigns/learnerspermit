@@ -86,7 +86,14 @@
   .prompt{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:12px 14px;font-size:13.5px;color:var(--txt);min-height:44px}
   .prompt .tag{color:var(--accent);font-size:11px;letter-spacing:.6px;display:block;margin-bottom:3px}
 
-  .readout{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:12px;overflow-x:auto}
+  .code-card{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+  .code-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--mono);cursor:pointer;background:transparent;border:0;color:var(--muted);padding:10px 14px;letter-spacing:.4px}
+  .code-head:hover{color:var(--txt)}
+  .code-title{font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--label)}
+  .code-head .chev{font-size:12px;transition:transform .2s ease;color:var(--dim)}
+  .code-card.collapsed .code-head .chev{transform:rotate(-90deg)}
+  .readout{background:var(--code-bg);border-top:1px solid var(--line);padding:12px 14px;font-size:12px;overflow-x:auto}
+  .code-card.collapsed .readout{display:none}
   .readout .sel{color:var(--warm)} .readout .prop{color:var(--muted)} .readout .val{color:var(--accent)}
   .readout .val.def{color:var(--dim)} .readout .punc{color:var(--dim)} .readout .cmt{color:var(--label)}
   .readout-line{white-space:pre} .readout .ind{padding-left:18px}
@@ -129,6 +136,7 @@
   .choice.wrong{border-color:var(--no);color:var(--no);background:color-mix(in srgb,var(--no) 12%,transparent)}
   .choice:disabled{cursor:default;opacity:.85}
   .reveal{display:none}
+  .reveal .readout{border:1px solid var(--line);border-radius:10px}
   .reveal.show{display:block}
   .reveal .why{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:10px}
   .reveal .why b{color:var(--warm);font-weight:500}
@@ -250,7 +258,13 @@
     </div>
     <div class="stage">
       <div class="prompt" id="prompt"></div>
-      <div class="readout" id="readout"></div>
+      <div class="code-card" id="codeCard">
+        <button class="code-head" id="codeHead" aria-expanded="true" aria-controls="readout">
+          <span class="code-title">CSS</span>
+          <span class="chev" aria-hidden="true">▾</span>
+        </button>
+        <div class="readout" id="readout"></div>
+      </div>
       <div class="preview-wrap target-box" id="targetWrap" style="display:none">
         <div class="pv-label">target</div>
         <div id="targetPreview"></div>
@@ -612,7 +626,7 @@ function mount(){
   // region visibility per mode
   $("grid").classList.toggle("solo", mode==="explain");
   $("palette").style.display = mode==="explain" ? "none" : "";
-  $("readout").style.display = mode==="explain" ? "none" : "";   // hidden until revealed
+  $("codeCard").style.display = mode==="explain" ? "none" : "";   // card hidden until explain reveal
   $("targetWrap").style.display = mode==="build" ? "" : "none";
   $("propsFab").classList.toggle("hide", mode==="explain");      // no palette in explain → no opener
   closeDrawer();                                                 // never carry an open drawer across mounts
@@ -769,6 +783,12 @@ $("propsFab").addEventListener("click",openDrawer);
 $("closeDrawer").addEventListener("click",closeDrawer);
 $("drawerBackdrop").addEventListener("click",closeDrawer);
 document.addEventListener("keydown",e=>{ if(e.key==="Escape" && $("drawer").classList.contains("open")) closeDrawer(); });
+
+/* ---------------- collapsible code card ---------------- */
+$("codeHead").addEventListener("click",()=>{
+  const card=$("codeCard"), collapsed=card.classList.toggle("collapsed");
+  $("codeHead").setAttribute("aria-expanded", String(!collapsed));
+});
 
 /* ---------------- help modal ---------------- */
 let helpTab="flex";

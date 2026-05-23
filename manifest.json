@@ -860,6 +860,12 @@
       },
       {
         "type": "file",
+        "name": "flex-css-tutor.html",
+        "label": "Flex Css Tutor",
+        "path": "s&box/flex-css-tutor.html"
+      },
+      {
+        "type": "file",
         "name": "understanding-flexbox.pdf",
         "label": "Understanding Flexbox",
         "path": "s&box/understanding-flexbox.pdf"

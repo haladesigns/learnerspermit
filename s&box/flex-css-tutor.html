@@ -598,7 +598,7 @@ const HELP = {
           ["wrap","Items flow onto new lines when they run out of room."],
           ["wrap-reverse","Wraps, but new lines stack in the opposite cross-axis direction."]
         ]],
-        ["justify-content","Distributes spare space along the <b>main</b> axis — works even with a single item, since there's still space to place it in. Default <code>flex-start</code>.",[
+        ["justify-content","Distributes the <b>free space around items</b> along the <b>main</b> axis — it parcels out the leftover room (before / between / after), it doesn't resize the items. Works even with a single item. Default <code>flex-start</code>. If items already fill the axis (no free space), it looks inert — there's nothing to distribute.",[
           ["flex-start","Pack items at the start of the main axis."],
           ["flex-end","Pack items at the end."],
           ["center","Pack items in the middle."],
@@ -613,8 +613,8 @@ const HELP = {
           ["center","Center items on the cross axis."],
           ["baseline","Align items by their text baselines."]
         ]],
-        ["align-content","Distributes the <b>lines themselves</b> along the cross axis. Acts on <b>lines</b>, not items — so it needs multiple lines (<code>flex-wrap: wrap</code> + enough items) to do anything; on a single line there are no lines to space apart. Default <b>stretch</b>. Fully centered = <code>justify-content</code> + <code>align-items</code> + <code>align-content</code> all <code>center</code>.",[
-          ["stretch","Default. Lines grow to share the spare cross-axis space."],
+        ["align-content","The cross-axis twin of <code>justify-content</code>: distributes the <b>free space around the lines</b> (above / between / below), same six values, same logic. Acts on <b>lines</b>, not items — so it needs multiple lines (<code>flex-wrap: wrap</code> + enough items) to do anything; on a single line there are no lines to space apart. Default <b>stretch</b>. Fully centered = <code>justify-content</code> + <code>align-items</code> + <code>align-content</code> all <code>center</code>. <b>Gotcha:</b> the default <code>stretch</code> doesn't <i>move</i> lines into the free space — it <i>grows the lines</i> to absorb it (leaving none). The <code>space-*</code> values instead keep lines their natural size and push the free space into gaps. That's the one extra wrinkle the cross-axis has that the main-axis doesn't.",[
+          ["stretch","Default. Lines grow to absorb the free cross-axis space (so there's no leftover space to distribute)."],
           ["flex-start","Pack all lines at the start of the cross axis."],
           ["flex-end","Pack all lines at the end."],
           ["center","Pack all lines in the middle."],

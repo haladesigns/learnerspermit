@@ -582,7 +582,8 @@ const HELP = {
       ["the big idea", [
         ["main vs cross axis","Everything hinges on these. <code>justify-content</code> works the <b>main</b> axis; <code>align-items</code> works the <b>cross</b> axis. Change <code>flex-direction</code> and the two axes swap, so the same property suddenly moves things the other way."],
         ["one line vs many","With <code>flex-wrap: wrap</code>, each wrapped <b>line</b> gets its own main + cross axis. <code>align-items</code> then aligns items <i>within each line</i>; <code>align-content</code> positions <i>all the lines together</i>. The real aha: <code>justify-content</code> and <code>align-items</code> act on <b>items</b>, but <code>align-content</code> acts on <b>lines</b> — and lines only exist once you've wrapped, which is why it does nothing on a single line."],
-        ["grow/shrink are rates","<code>flex-grow</code>/<code>flex-shrink</code> are <b>rates, not sizes</b>. An item with <code>flex-grow: 5</code> next to others at 1 isn't bigger to start — it just claims a bigger <b>share</b> of spare space, growing 5× faster."]
+        ["grow/shrink are rates","<code>flex-grow</code>/<code>flex-shrink</code> are <b>rates, not sizes</b>. An item with <code>flex-grow: 5</code> next to others at 1 isn't bigger to start — it just claims a bigger <b>share</b> of spare space, growing 5× faster."],
+        ["what \"auto\" means","<code>auto</code> isn't one fixed value — it means <b>'let the layout algorithm decide,'</b> and the decision is property-specific. <code>align-self: auto</code> = defer to the parent's <code>align-items</code>; <code>flex-basis: auto</code> = size to the item's content; <code>margin: auto</code> = absorb the free space (the centering trick). Same keyword, different behavior per property."]
       ]],
       ["container", [
         ["display: flex","Turns the element into a flex container; its direct children become flex items. Block children would otherwise each take a full line."],
@@ -605,7 +606,7 @@ const HELP = {
           ["space-around","Each item gets equal space on both sides — so the outer gaps look <i>half</i> as big as the gaps between items (a left + a right meet in the middle)."],
           ["space-evenly","Every gap is equal, including the outer edges. The 'fix' for space-around's uneven look."]
         ]],
-        ["align-items","Aligns items along the <b>cross</b> axis, <i>within</i> their line — so it works even with one line. Acts on <b>items</b>. Default <b>stretch</b>.",[
+        ["align-items","Aligns items along the <b>cross</b> axis, <i>within</i> their line — so it works even with one line. Acts on <b>items</b>. Default <b>stretch</b>. It sets the group default that every child follows unless that child overrides with its own <code>align-self</code>.",[
           ["stretch","Default. Items grow to fill the cross size (unless they have a fixed size on that axis)."],
           ["flex-start","Align items to the start of the cross axis."],
           ["flex-end","Align items to the end."],
@@ -635,10 +636,10 @@ const HELP = {
         ]],
         ["flex-basis","The item's starting size before grow/shrink act. <b>auto</b> = use its content/width. Pairing grow/shrink with min/max-width lets you cap where growing stops (clean) and where shrinking stops (then it overflows — avoid)."],
         ["order","Visual reordering without touching the HTML. Default 0; higher sorts later, negative earlier."],
-        ["align-self","Overrides <code>align-items</code> for this one item on the cross axis. Same values as align-items. (For the navbar 'push one item away from the rest' effect, reach for <code>margin: auto</code> instead.)",[
-          ["auto","Default. Follow the container's <code>align-items</code>."],
-          ["flex-start / flex-end","Pin just this item to the start/end of the cross axis."],
-          ["center","Center just this item."],
+        ["align-self","Overrides <code>align-items</code> for this one item on the cross axis. Same values as align-items. Think of it as the parent–child relationship: <code>align-items</code> sets the group default on the container, and <code>align-self</code> lets one child break away. (For the navbar 'push one item away from the rest' effect, reach for <code>margin: auto</code> instead.)",[
+          ["auto","Default — means <b>'defer to the parent'</b>: the item inherits whatever the container's <code>align-items</code> is. If that's unset too, the cascade bottoms out at <code>stretch</code> (align-items' own default) — which is why an item with no alignment set anywhere fills the cross size. More broadly, <code>auto</code> = 'let the layout algorithm decide,' and what it decides is property-specific."],
+          ["flex-start / flex-end","Pin just this item to the start/end of the cross axis, ignoring the parent."],
+          ["center","Center just this item, ignoring the parent."],
           ["stretch","Stretch just this item to fill the cross size."]
         ]]
       ]],

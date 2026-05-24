@@ -379,7 +379,7 @@ const FLEX_PROPS = {
   "flex-wrap":["nowrap","wrap","wrap-reverse"],
   "justify-content":["flex-start","flex-end","center","space-between","space-around","space-evenly"],
   "align-items":["stretch","flex-start","flex-end","center","baseline"],
-  "align-content":["stretch","flex-start","flex-end","center","space-between","space-around"],
+  "align-content":["stretch","flex-start","flex-end","center","space-between","space-around","space-evenly"],
   "gap":["0px","4px","8px","12px","16px","24px","40px","60px"],
   "order":["-2","-1","0","1","2","3"],
   "flex-grow":["0","1","2","3"],
@@ -619,7 +619,8 @@ const HELP = {
           ["flex-end","Pack all lines at the end."],
           ["center","Pack all lines in the middle."],
           ["space-between","First & last lines at the edges; equal space between lines."],
-          ["space-around","Equal space around each line (half-size outer gaps, like justify's version)."]
+          ["space-around","Equal space around each line (half-size outer gaps, like justify's version)."],
+          ["space-evenly","Every gap equal, including above the first and below the last line."]
         ]],
         ["gap","Space between items — no leftover gap at the outer edges, so you rarely need margins. Accepts one value or two (<code>gap: row col</code>)."]
       ]],

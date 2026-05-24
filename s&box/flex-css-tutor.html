@@ -151,6 +151,10 @@
   .item.lead{background:color-mix(in srgb,var(--lead) 16%,transparent);border-color:var(--lead-dim);color:var(--lead)}
   .target-box .flexbox{border-color:var(--accent-dim);background:color-mix(in srgb,var(--accent) 3%,transparent)}
 
+  /* bounds overlay: outline container (subtle) + items (brighter) so spacing reads at a glance */
+  .flexbox.show-bounds{outline:2px solid color-mix(in srgb,var(--muted) 55%,transparent);outline-offset:-1px}
+  .flexbox.show-bounds .item{outline:1.5px dashed var(--accent);outline-offset:1px}
+
   .transbox{height:200px;border:1px dashed var(--line-hi);border-radius:8px;position:relative;overflow:hidden;background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--txt) 2%,transparent) 0 10px,transparent 10px 20px)}
   .mover{position:absolute;left:18px;top:50%;transform:translateY(-50%);width:54px;height:54px;border-radius:8px;background:color-mix(in srgb,var(--accent) 18%,transparent);border:1px solid var(--accent)}
   .target-box .mover{background:color-mix(in srgb,var(--warm) 16%,transparent);border-color:var(--warm)}
@@ -289,6 +293,7 @@
     </div>
     <button class="theme-btn" id="axisBtn">axis: on</button>
     <button class="theme-btn" id="flowBtn">flow: off</button>
+    <button class="theme-btn" id="boundsBtn">bounds: off</button>
   </div>
 
   <div class="grid" id="grid">
@@ -324,11 +329,11 @@
             </div>
           </div>
           <div class="scene-ctl">
-            <span class="scene-lab">#1 size</span>
+            <span class="scene-lab">item #1 size</span>
             <div class="field"><select id="leadSize"></select></div>
           </div>
           <div class="scene-ctl">
-            <span class="scene-lab">others</span>
+            <span class="scene-lab">others size</span>
             <div class="field"><select id="restSize"></select></div>
           </div>
           <div class="scene-ctl">
@@ -682,7 +687,7 @@ const state = {
   flex:{...FLEX_DEFAULTS}, trans:{...TRANS_DEFAULTS}, multi:multiTrackDefaults(),
   scene:{...SCENE_DEFAULTS},
   idx:{flex:0,trans:0}, eidx:{flex:0,trans:0},
-  correct:0, attempts:0, log:0, playing:false, theme:"dark", answered:false, showAxis:true, showFlow:false
+  correct:0, attempts:0, log:0, playing:false, theme:"dark", answered:false, showAxis:true, showFlow:false, showBounds:false
 };
 const $ = id => document.getElementById(id);
 const curState = () => state.topic==="flex" ? state.flex : state.trans;
@@ -895,6 +900,7 @@ function applyFlexStyles(box, s, scene){
   if(axis){ axis.innerHTML=axisHTML(s["flex-direction"]); axis.style.display = state.showAxis ? "" : "none"; }   // reorient + show/hide compass
   const flow=box.querySelector(".flow");
   if(flow){ flow.innerHTML=flowHTML(s["flex-direction"]); flow.classList.toggle("show", state.showFlow); }       // recolor + redirect edges
+  box.classList.toggle("show-bounds", state.showBounds);                                                        // outline container + items
 }
 function buildTransPreview(container){
   const box=document.createElement("div"); box.className="transbox";
@@ -956,6 +962,7 @@ function mount(){
   $("badge").textContent = state.topic==="flex" ? "/flex/" : "/transition/";
   $("axisBtn").style.display = state.topic==="flex" ? "" : "none";   // axis only exists for flex
   $("flowBtn").style.display = state.topic==="flex" ? "" : "none";   // flow overlay only exists for flex
+  $("boundsBtn").style.display = state.topic==="flex" ? "" : "none"; // bounds overlay only exists for flex
   refreshScore();
   const mode=state.mode;
   // reset transient regions
@@ -1157,6 +1164,11 @@ $("flowBtn").addEventListener("click",()=>{
   state.showFlow=!state.showFlow;
   $("flowBtn").textContent = "flow: "+(state.showFlow?"on":"off");
   document.querySelectorAll(".flexbox .flow").forEach(f=>{ f.classList.toggle("show", state.showFlow); }); // update any on-screen previews
+});
+$("boundsBtn").addEventListener("click",()=>{
+  state.showBounds=!state.showBounds;
+  $("boundsBtn").textContent = "bounds: "+(state.showBounds?"on":"off");
+  document.querySelectorAll(".flexbox").forEach(b=>{ b.classList.toggle("show-bounds", state.showBounds); }); // update any on-screen previews (live + target)
 });
 
 /* ---------------- mobile properties drawer ---------------- */

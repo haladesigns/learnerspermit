@@ -143,9 +143,14 @@ function mapTree(node, fn) {
   return { ...next, children: next.children.map((c) => mapTree(c, fn)) };
 }
 function updateStyles(tree, id, patch) {
-  return mapTree(tree, (n) =>
-    n.id === id ? { ...n, styles: { ...n.styles, ...patch } } : n
-  );
+  return mapTree(tree, (n) => {
+    if (n.id !== id) return n;
+    const styles = { ...n.styles, ...patch };
+    // A patch value of `undefined` means "remove this property" (e.g. clearing
+    // a border) — otherwise it would serialize as `prop: undefined` in CSS.
+    for (const k in patch) if (patch[k] === undefined) delete styles[k];
+    return { ...n, styles };
+  });
 }
 function findNode(tree, id) {
   if (tree.id === id) return tree;
@@ -294,6 +299,7 @@ const KNOWN_STYLE_KEYS = new Set([
   "display", "flexDirection", "justifyContent", "alignItems", "alignContent",
   "flexWrap", "gap", "flexGrow", "flexShrink", "flexBasis", "alignSelf",
   "order", "width", "height", "minHeight", "padding", "margin",
+  "borderWidth", "borderStyle", "borderColor",
 ]);
 function importValue(key, raw) {
   const v = raw.trim();
@@ -325,6 +331,34 @@ function parseCssRules(cssStr) {
     map[cls] = { ...(map[cls] || {}), ...styles };
   }
   return { map, skipped };
+}
+// Parse just the DECLARATIONS (the lines inside the braces) into a styles
+// object — KEEPING every property, including ones the tool has no control for
+// (border-radius, box-shadow, transform, …). This backs the manual CSS-edit
+// feature: experiment with any CSS and it becomes a real style on the node.
+// Returns { styles, error }. A `null` error means it parsed cleanly.
+function parseDeclsToStyles(text) {
+  // tolerate the user leaving/removing the `.cls { }` wrapper: if braces are
+  // present, take what's inside them; otherwise treat the whole thing as decls.
+  let body = text;
+  const brace = text.indexOf("{");
+  if (brace !== -1) {
+    const close = text.lastIndexOf("}");
+    body = text.slice(brace + 1, close === -1 ? undefined : close);
+  }
+  const styles = {};
+  let bad = 0;
+  body.split(";").forEach((d) => {
+    const decl = d.trim();
+    if (!decl) return;
+    const idx = decl.indexOf(":");
+    if (idx === -1) { bad += 1; return; } // a non-empty chunk with no colon = malformed
+    const prop = decl.slice(0, idx).trim();
+    const val = decl.slice(idx + 1).trim();
+    if (!prop || !val) { bad += 1; return; }
+    styles[KEBAB_TO_CAMEL(prop)] = importValue(prop, val);
+  });
+  return { styles, error: bad > 0 ? `${bad} line${bad === 1 ? "" : "s"} ignored (no value)` : null };
 }
 function parseImport(htmlStr, cssStr) {
   if (typeof DOMParser === "undefined")
@@ -843,6 +877,7 @@ function CanvasNode({
   onResize,
   syncDims,
   isDragging,
+  onText,
 }) {
   const isSelected = node.id === selectedId;
   const isContainer = node.styles.display === "flex";
@@ -860,6 +895,41 @@ function CanvasNode({
   // Live readout shown next to the cursor while dragging a resize handle:
   // { x, y, text } or null. Cleared on pointer-up.
   const [resizeTip, setResizeTip] = React.useState(null);
+  // Inline text editing: true while this leaf box's text is being edited via
+  // contentEditable. textRef points at the editable span so we can read its
+  // final text on commit (we DON'T control it keystroke-by-keystroke, which
+  // would fight the cursor — we read it once when editing ends).
+  const [editing, setEditing] = React.useState(false);
+  const textRef = React.useRef(null);
+  const isLeaf = !isContainer && node.children.length === 0;
+
+  // When entering edit mode, focus the span and select all its text so typing
+  // replaces it (and the caret is placed correctly).
+  React.useEffect(() => {
+    if (editing && textRef.current) {
+      const el = textRef.current;
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }, [editing]);
+
+  const commitText = () => {
+    if (!editing) return;
+    const next = (textRef.current?.textContent || "").trim();
+    setEditing(false);
+    if (next !== (node.text || "") && typeof onText === "function") {
+      onText(node.id, next);
+    }
+  };
+  const cancelText = () => {
+    // Revert the DOM to the stored text, then exit without committing.
+    if (textRef.current) textRef.current.textContent = node.text || "";
+    setEditing(false);
+  };
 
   // Begin an edge-resize drag. `axis` is "x" (width) or "y" (height).
   // We use POINTER events (not HTML5 drag) so this works on touch and never
@@ -923,7 +993,7 @@ function CanvasNode({
   // padding/margin/gap all appear together when ▣ is on.
   const gapOn = overlayOn && isContainer && node.children.length > 1;
 
-  const dragProps = isRoot
+  const dragProps = isRoot || editing
     ? {}
     : {
         draggable: true,
@@ -964,6 +1034,7 @@ function CanvasNode({
         onResize={onResize}
         syncDims={syncDims}
         isDragging={isDragging}
+        onText={onText}
       />
     ));
 
@@ -1007,6 +1078,15 @@ function CanvasNode({
       onClick={(e) => {
         e.stopPropagation();
         onSelect(node.id);
+      }}
+      onDoubleClick={(e) => {
+        // Double-click a leaf box → edit its text inline. Containers ignore it
+        // (their "content" is their children, not text).
+        if (isLeaf) {
+          e.stopPropagation();
+          onSelect(node.id);
+          setEditing(true);
+        }
       }}
       className={
         "fc-node" +
@@ -1123,10 +1203,26 @@ function CanvasNode({
               onResize={onResize}
               syncDims={syncDims}
               isDragging={isDragging}
+              onText={onText}
             />
           ))
-        : node.text
-        ? <span className="fc-node-text">{node.text}</span>
+        : (node.text || editing)
+        ? <span
+            ref={textRef}
+            className={"fc-node-text" + (editing ? " is-editing" : "")}
+            contentEditable={editing}
+            suppressContentEditableWarning
+            onBlur={commitText}
+            onKeyDown={(e) => {
+              if (!editing) return;
+              if (e.key === "Enter") { e.preventDefault(); commitText(); }
+              else if (e.key === "Escape") { e.preventDefault(); cancelText(); }
+              e.stopPropagation(); // keep keystrokes out of global shortcuts
+            }}
+            onClick={(e) => { if (editing) e.stopPropagation(); }}
+          >
+            {node.text}
+          </span>
         : null}
     </div>
   );
@@ -1187,6 +1283,20 @@ function LayerRow({ node, depth, selectedId, onSelect }) {
       ))}
     </>
   );
+}
+
+// Map a CSS color value to a hex string for <input type="color"> (which only
+// accepts hex). Passes through existing hex; maps the few named colors we seed;
+// falls back to a sensible default for anything else (the swatch is a
+// convenience — the actual stored value can still be any CSS color string).
+function toHexColor(c) {
+  if (typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c)) return c;
+  const named = {
+    blue: "#0000ff", red: "#ff0000", green: "#008000", black: "#000000",
+    white: "#ffffff", gray: "#808080", grey: "#808080", orange: "#ffa500",
+    purple: "#800080", teal: "#008080",
+  };
+  return named[(c || "").toLowerCase()] || "#0000ff";
 }
 
 // Display string for a keybinding descriptor (e.g. "⌃ Ctrl", "⇧ Shift", "G").
@@ -1355,6 +1465,8 @@ function FlexCraft() {
   const [selectedId, setSelectedId] = useState(null);
   const [dropTarget, setDropTarget] = useState(null);
   const [tab, setTab] = useState("css"); // code drawer: css | html
+  const [codeEditing, setCodeEditing] = useState(false); // freeform whole-panel edit
+  const [codeDraft, setCodeDraft] = useState("");        // textarea contents while editing
   const [theme, setTheme] = useState("dark");
   const [mobilePane, setMobilePane] = useState("canvas"); // canvas|add|style|code
   const [showBoxModel, setShowBoxModel] = useState(false);
@@ -1463,23 +1575,32 @@ function FlexCraft() {
       // Normal mode: did the bound key just go down? Ignore auto-repeat so a
       // held key doesn't flap the toggle.
       if (e.repeat) return;
+
+      // GUARD (applies to ALL shortcuts below): never fire while the user is
+      // typing in a field or editing element text inline. Checked here, before
+      // the tooltip key, so even a letter-bound tooltip key yields to typing.
+      const tag = (e.target && e.target.tagName) || "";
+      const inCE =
+        (e.target && e.target.isContentEditable) ||
+        (e.target && e.target.closest && e.target.closest('[contenteditable="true"]'));
+      const typing = tag === "INPUT" || tag === "TEXTAREA" || inCE;
+
       const tipMatches =
         tipKey.kind === "modifier"
           ? MOD_NAMES[e.key] === tipKey.value
           : (e.key.length === 1 ? e.key.toLowerCase() : e.key) === tipKey.value;
-      if (tipMatches) {
+      if (tipMatches && !(typing && tipKey.kind === "key")) {
         // Don't preventDefault for bare modifiers (would swallow other combos);
-        // only for our own regular-key binding.
+        // only for our own regular-key binding. (A modifier tooltip key like
+        // Ctrl still works while editing; a letter-bound one yields to typing.)
         if (tipKey.kind === "key") e.preventDefault();
         setShowTooltip((v) => !v);
         return; // tooltip key wins if it happens to collide with a letter below
       }
 
       // Fixed letter shortcuts for the overlay toggles. Suppressed when typing
-      // in a field (number inputs etc.) or while modifier combos are held (so we
+      // in a field / editing text, or while modifier combos are held (so we
       // don't hijack browser shortcuts like Ctrl-L). Bare lowercase letters only.
-      const tag = (e.target && e.target.tagName) || "";
-      const typing = tag === "INPUT" || tag === "TEXTAREA" || (e.target && e.target.isContentEditable);
       if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
       switch (e.key.toLowerCase()) {
         case "b": setShowBoxModel((v) => !v); break;   // box model
@@ -1538,16 +1659,83 @@ function FlexCraft() {
     });
   }, []);
 
+  // Commit edited text for a leaf node (one undo entry per edit). mapTree keeps
+  // the tree immutable; only the target node's `text` changes.
+  const onText = useCallback((id, text) => {
+    commit((t) => mapTree(t, (n) => (n.id === id ? { ...n, text } : n)));
+  }, [commit]);
+
   // ---- site export (A: download one runnable .html · C: copy full document) -
   const [siteMsg, setSiteMsg] = useState(null); // transient feedback for export/import
+  const [pendingExport, setPendingExport] = useState(null); // "download" | "copy" while the border prompt is open
   const flashMsg = useCallback((m) => {
     setSiteMsg(m);
     setTimeout(() => setSiteMsg(null), 3500);
   }, []);
 
-  const exportSite = useCallback(() => {
-    const doc = buildStandaloneSite(exportHtml(tree), exportCss(tree));
-    // (A) try a Blob download; (C) always also offer it via copy as fallback.
+  // ---- FREEFORM whole-panel code editing (experimental) --------------------
+  // Reparse the ENTIRE panel on commit (never per keystroke). Guardrails (b+c):
+  //  (c) reject if the edit doesn't yield a usable result — keep current tree;
+  //  (b) whatever DOES apply goes through one atomic commit() → single undo.
+
+  // CSS whole-panel: reparse all `.class { … }` rules and reapply to matching
+  // nodes by class (the export class is `${tag}-${id}`). Properties beyond the
+  // tool's vocabulary are KEPT. Unmatched rules are ignored (reported).
+  const onCommitCssAll = useCallback((text) => {
+    // parse every rule, keeping ALL props (not just KNOWN ones)
+    const clean = (text || "").replace(/\/\*[\s\S]*?\*\//g, "");
+    const ruleRe = /\.([A-Za-z0-9_-]+)\s*\{([^}]*)\}/g;
+    const byClass = {};
+    let m, ruleCount = 0;
+    while ((m = ruleRe.exec(clean))) {
+      ruleCount += 1;
+      const { styles } = parseDeclsToStyles("{" + m[2] + "}");
+      byClass[m[1]] = styles;
+    }
+    if (ruleCount === 0) {                       // (c) nothing usable → reject
+      flashMsg("No CSS rules found — kept current styles");
+      return false;
+    }
+    let applied = 0;
+    commit((t) =>                                // (b) one atomic commit
+      mapTree(t, (n) => {
+        const cls = `${n.tag}-${n.id}`;
+        if (cls in byClass) { applied += 1; return { ...n, styles: byClass[cls] }; }
+        return n;
+      })
+    );
+    flashMsg(`Applied CSS to ${applied} element${applied === 1 ? "" : "s"}`);
+    return true;
+  }, [commit, flashMsg]);
+
+  // HTML whole-panel: rebuild the WHOLE tree from edited markup via parseImport
+  // (using the current CSS for styling). This is the "rewrite structure / add
+  // custom elements" path — bounded by what the tree can represent (divs, class,
+  // text, nesting). Re-ids nodes, so selection resets.
+  const onCommitHtmlAll = useCallback((text) => {
+    const r = parseImport(text, exportCss(tree));
+    if (!r.tree) {                               // (c) parse failed → reject
+      flashMsg(r.error || "Couldn't parse HTML — kept current layout");
+      return false;
+    }
+    commit(() => r.tree);                        // (b) one atomic commit
+    setSelectedId(null);
+    const skipped = r.skippedProps.length
+      ? ` · skipped ${[...new Set(r.skippedProps)].slice(0, 4).join(", ")}`
+      : "";
+    flashMsg(`Rebuilt ${r.count} element${r.count === 1 ? "" : "s"} from HTML${skipped}`);
+    return true;
+  }, [commit, flashMsg, tree]);
+
+  // Produce the output (download or copy) from a given tree.
+  const doExport = useCallback((mode, srcTree) => {
+    const doc = buildStandaloneSite(exportHtml(srcTree), exportCss(srcTree));
+    if (mode === "copy") {
+      navigator.clipboard?.writeText(doc);
+      flashMsg("Copied full runnable HTML to clipboard");
+      return;
+    }
+    // (A) try a Blob download; fall back to clipboard if the sandbox blocks it.
     try {
       const blob = new Blob([doc], { type: "text/html" });
       const url = URL.createObjectURL(blob);
@@ -1560,17 +1748,37 @@ function FlexCraft() {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       flashMsg("Downloaded flexcraft-layout.html");
     } catch (err) {
-      // Sandbox blocked the download → fall back to clipboard.
       navigator.clipboard?.writeText(doc);
       flashMsg("Download blocked — copied full HTML to clipboard instead");
     }
-  }, [tree, flashMsg]);
+  }, [flashMsg]);
 
-  const copySite = useCallback(() => {
-    const doc = buildStandaloneSite(exportHtml(tree), exportCss(tree));
-    navigator.clipboard?.writeText(doc);
-    flashMsg("Copied full runnable HTML to clipboard");
-  }, [tree, flashMsg]);
+  // Add a 1px solid blue border to every element that doesn't already have one
+  // (don't clobber deliberate per-element borders). Returns a NEW tree.
+  const withBordersAll = useCallback((t) =>
+    mapTree(t, (n) =>
+      (n.styles.borderWidth ?? 0) > 0
+        ? n
+        : { ...n, styles: { ...n.styles, borderWidth: 1, borderStyle: "solid", borderColor: "blue" } }
+    ), []);
+
+  // Public entry points: open the border prompt, remembering which output mode.
+  const exportSite = useCallback(() => setPendingExport("download"), []);
+  const copySite = useCallback(() => setPendingExport("copy"), []);
+
+  // Resolve the prompt. "all" exports a bordered COPY without touching the
+  // editor (borders live only in the output file); "current" exports as-is.
+  const resolveExport = useCallback((choice) => {
+    const mode = pendingExport;
+    setPendingExport(null);
+    if (!mode) return;
+    if (choice === "all") {
+      doExport(mode, withBordersAll(tree)); // bordered copy — editor unchanged
+    } else if (choice === "current") {
+      doExport(mode, tree);
+    }
+    // choice === "cancel" → do nothing
+  }, [pendingExport, tree, withBordersAll, doExport]);
 
   // ---- import (FlexCraft-shaped HTML, or HTML + CSS) ------------------------
   // Honest scope: this reliably round-trips OUR exports (flat class→rule CSS,
@@ -1672,6 +1880,11 @@ function FlexCraft() {
   const resetProp = useCallback(
     (key) => {
       if (!selected) return;
+      // Border longhands reset as a group → clear the whole border.
+      if (key === "borderWidth" || key === "borderStyle" || key === "borderColor") {
+        setStyle({ borderWidth: undefined, borderStyle: undefined, borderColor: undefined });
+        return;
+      }
       const def = defaultsFor(selected);
       const value = key in def ? def[key] : "auto";
       setStyle({ [key]: value });
@@ -2095,40 +2308,130 @@ function FlexCraft() {
           onChange={(v) => setStyle({ margin: v })}
           {...rp("margin")}
         />
+        <Slider
+          label="border width"
+          value={selected.styles.borderWidth ?? 0}
+          min={0}
+          max={12}
+          onChange={(v) => {
+            if (v === 0) {
+              // width 0 → clear the whole border (all three longhands)
+              setStyle({ borderWidth: undefined, borderStyle: undefined, borderColor: undefined });
+            } else {
+              // seed style/color defaults if this is the first time enabling it
+              setStyle({
+                borderWidth: v,
+                borderStyle: selected.styles.borderStyle || "solid",
+                borderColor: selected.styles.borderColor || "blue",
+              });
+            }
+          }}
+          {...rp("borderWidth")}
+        />
+        {(selected.styles.borderWidth ?? 0) > 0 && (
+          <>
+            <Segmented
+              label="border style"
+              value={selected.styles.borderStyle || "solid"}
+              options={[
+                { value: "solid", label: "solid" },
+                { value: "dashed", label: "dashed" },
+                { value: "dotted", label: "dotted" },
+              ]}
+              onChange={(v) => setStyle({ borderStyle: v })}
+              {...rp("borderStyle")}
+            />
+            <FieldLabel label="border color" {...rp("borderColor")}>
+              <div className="fc-color-row">
+                <input
+                  type="color"
+                  className="fc-color-swatch"
+                  value={toHexColor(selected.styles.borderColor || "blue")}
+                  onChange={(e) => setStyle({ borderColor: e.target.value })}
+                />
+                <code className="fc-color-val">{selected.styles.borderColor || "blue"}</code>
+              </div>
+            </FieldLabel>
+          </>
+        )}
       </section>
     </div>
   );
+
+  // Enter/leave freeform edit. Entering seeds the draft from current code.
+  const beginCodeEdit = () => {
+    setCodeDraft(tab === "css" ? cssText : htmlText);
+    setCodeEditing(true);
+  };
+  const applyCodeEdit = () => {
+    const ok =
+      tab === "css" ? onCommitCssAll(codeDraft) : onCommitHtmlAll(codeDraft);
+    if (ok) setCodeEditing(false); // (c) on reject, stay in editor so work isn't lost
+  };
+  const cancelCodeEdit = () => setCodeEditing(false);
 
   const CodePanel = (
     <div className="fc-code-inner">
       <div className="fc-code-tabs">
         <button
-          onClick={() => setTab("css")}
+          onClick={() => { if (!codeEditing) setTab("css"); }}
           className={"fc-code-tab" + (tab === "css" ? " is-active" : "")}
+          disabled={codeEditing}
         >
           CSS
         </button>
         <button
-          onClick={() => setTab("html")}
+          onClick={() => { if (!codeEditing) setTab("html"); }}
           className={"fc-code-tab" + (tab === "html" ? " is-active" : "")}
+          disabled={codeEditing}
         >
           HTML
         </button>
         <span style={{ flex: 1 }} />
-        <button
-          className="fc-copy-btn"
-          onClick={() =>
-            navigator.clipboard?.writeText(tab === "css" ? cssText : htmlText)
-          }
-        >
-          copy
-        </button>
+        {codeEditing ? (
+          <>
+            <span className="fc-code-editnote">
+              {tab === "html" ? "rebuilds the whole layout" : "reapplies all rules"} · ⌘↵ apply · esc cancel
+            </span>
+            <button className="fc-copy-btn" onClick={cancelCodeEdit}>cancel</button>
+            <button className="fc-copy-btn is-primary" onClick={applyCodeEdit}>apply</button>
+          </>
+        ) : (
+          <>
+            <button
+              className="fc-copy-btn"
+              onClick={() => navigator.clipboard?.writeText(tab === "css" ? cssText : htmlText)}
+            >
+              copy
+            </button>
+            <button className="fc-copy-btn" onClick={beginCodeEdit} title="Freeform edit (experimental)">
+              ✎ edit
+            </button>
+          </>
+        )}
       </div>
-      <CodeView
-        segments={tab === "css" ? cssSegs : htmlSegs}
-        selectedId={selectedId}
-        joiner={tab === "css" ? "\n\n" : "\n"}
-      />
+      {codeEditing ? (
+        <textarea
+          className="fc-code-edit fc-code-edit-full"
+          value={codeDraft}
+          autoFocus
+          spellCheck={false}
+          onChange={(e) => setCodeDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") { e.preventDefault(); cancelCodeEdit(); }
+            else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); applyCodeEdit(); }
+            e.stopPropagation();
+          }}
+        />
+      ) : (
+        <div className="fc-code-viewwrap" onDoubleClick={beginCodeEdit} title="Double-click to edit (experimental)">
+          <CodeView
+            segments={tab === "css" ? cssSegs : htmlSegs}
+            selectedId={selectedId}
+            joiner={tab === "css" ? "\n\n" : "\n"}
+          />
+        </div>
+      )}
     </div>
   );
 
@@ -2167,6 +2470,7 @@ function FlexCraft() {
           onResize={onResize}
           syncDims={syncDims}
           isDragging={isDragging}
+          onText={onText}
         />
       </div>
       {showTooltip && hoverInfo && <HoverTooltip info={hoverInfo} treeRootId={tree.id} />}
@@ -2177,6 +2481,28 @@ function FlexCraft() {
     <div className={"fc-app fc-theme-" + theme}>
       <style>{css}</style>
       {siteMsg && <div className="fc-toast">{siteMsg}</div>}
+      {pendingExport && (
+        <div className="fc-modal-backdrop" onClick={() => resolveExport("cancel")}>
+          <div className="fc-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="fc-modal-title">Export borders</div>
+            <p className="fc-modal-text">
+              Give every element a <b>1px solid blue</b> border <b>in the exported file</b>?
+              Your editor stays unchanged. Only elements without a border get one.
+            </p>
+            <div className="fc-modal-actions">
+              <button className="fc-modal-btn" onClick={() => resolveExport("current")}>
+                Current settings
+              </button>
+              <button className="fc-modal-btn is-primary" onClick={() => resolveExport("all")}>
+                Border all
+              </button>
+            </div>
+            <button className="fc-modal-cancel" onClick={() => resolveExport("cancel")}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ---- top toolbar ---- */}
       <header className="fc-toolbar">
@@ -2451,6 +2777,33 @@ const css = `
   box-shadow:0 6px 24px rgba(0,0,0,0.5); z-index:10000; max-width:80vw;
   text-align:center;
 }
+.fc-modal-backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:10001;
+  display:flex; align-items:center; justify-content:center;
+}
+.fc-modal{
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  padding:20px; width:min(380px,90vw); box-shadow:0 12px 48px rgba(0,0,0,0.6);
+}
+.fc-modal-title{ font-family:'Fraunces',Georgia,serif; font-size:16px; color:var(--txt); margin-bottom:8px; }
+.fc-modal-text{ font-size:12px; line-height:1.6; color:var(--mut); margin:0 0 16px; }
+.fc-modal-actions{ display:flex; gap:8px; }
+.fc-modal-btn{
+  flex:1; padding:9px 12px; border-radius:7px; cursor:pointer; font-family:inherit;
+  font-size:12px; background:var(--panel2); border:1px solid var(--line); color:var(--txt);
+}
+.fc-modal-btn:hover{ border-color:var(--accent); }
+.fc-modal-btn.is-primary{ background:var(--accent); color:var(--ink); border-color:var(--accent); font-weight:700; }
+.fc-modal-cancel{
+  display:block; margin:12px auto 0; background:none; border:none; color:var(--mut);
+  font-family:inherit; font-size:11px; cursor:pointer; text-decoration:underline;
+}
+.fc-color-row{ display:flex; align-items:center; gap:8px; }
+.fc-color-swatch{
+  width:30px; height:24px; padding:0; border:1px solid var(--line); border-radius:5px;
+  background:none; cursor:pointer;
+}
+.fc-color-val{ font-size:11px; color:var(--mut); font-family:'Space Mono',monospace; }
 
 /* ---- body layout ---- */
 .fc-body{ flex:1; display:flex; min-height:0; }
@@ -2569,6 +2922,11 @@ const css = `
   color:var(--mut); font-size:11px; font-family:'Space Mono',monospace;
   pointer-events:none; user-select:none; white-space:nowrap;
 }
+.fc-node-text.is-editing{
+  pointer-events:auto; user-select:text; cursor:text; color:var(--txt);
+  outline:2px solid var(--accent); outline-offset:2px; border-radius:3px;
+  background:var(--ink); padding:1px 4px; white-space:normal; min-width:1ch;
+}
 .fc-dropzone{ border-radius:3px; transition:background 80ms, box-shadow 80ms; }
 .fc-dropzone.is-active{ background:var(--accent); box-shadow:0 0 12px var(--accent); }
 
@@ -2600,14 +2958,35 @@ const css = `
 .fc-code-tab.is-active{ background:var(--panel2); color:var(--accent); }
 .fc-copy-btn{ background:transparent; border:1px solid var(--line); color:var(--mut); font-family:inherit; font-size:10px; padding:4px 10px; border-radius:4px; cursor:pointer; }
 .fc-copy-btn:hover{ border-color:var(--accent); color:var(--accent); }
-.fc-code{ margin:0; padding:12px 16px; overflow:auto; font-size:11px; line-height:1.5; color:var(--txt); font-family:inherit; flex:1; }
-/* highlighted block = the currently-selected element's CSS rule / HTML tags */
+.fc-code{ margin:0; padding:12px 16px; overflow:auto; min-height:0; font-size:11px; line-height:1.5; color:var(--txt); font-family:inherit; flex:1; }
+/* the double-click wrapper around CodeView must be a proper flex child, or it
+   grows to fit ALL the code and the <pre> never scrolls (flex min-height:auto
+   trap — the vertical sibling of the min-width:0 gotcha). */
+.fc-code-viewwrap{ flex:1; min-height:0; display:flex; flex-direction:column; }
+/* highlighted block = the currently-selected element's CSS rule / HTML tags.
+   MUST be display:inline (not inline-block) so a multi-line rule flows line by
+   line inside the <pre>; box-decoration-break:clone then paints the bg+border
+   on every wrapped line. inline-block collapses the lines into one box and
+   makes adjacent rules overlap/stack. */
 .fc-code-hl{
-  display:inline-block; background:var(--accent-soft); color:var(--accent);
-  border-left:2px solid var(--accent); border-radius:0 3px 3px 0;
-  margin-left:-16px; padding-left:14px; padding-right:6px;
+  display:inline; background:var(--accent-soft); color:var(--accent);
+  border-left:2px solid var(--accent);
+  padding-left:14px; padding-right:6px;
   box-decoration-break:clone; -webkit-box-decoration-break:clone;
 }
+.fc-code-hl.is-editable{ cursor:text; }
+.fc-code-edit{
+  display:inline-block; width:calc(100% - 4px); margin-left:-16px;
+  background:var(--ink); color:var(--txt); border:1px solid var(--accent);
+  border-radius:4px; padding:8px 10px; font-family:inherit; font-size:11px;
+  line-height:1.5; resize:vertical; outline:none; box-sizing:border-box;
+}
+.fc-code-edit-full{
+  width:100%; margin:0; flex:1; min-height:120px; border:none; border-radius:0;
+  border-top:2px solid var(--accent); resize:none;
+}
+.fc-copy-btn.is-primary{ background:var(--accent); color:var(--ink); border-color:var(--accent); font-weight:700; }
+.fc-code-editnote{ font-size:9.5px; color:var(--mut); margin-right:6px; white-space:nowrap; }
 
 /* ---- props ---- */
 .fc-props-inner{ padding:18px; padding-top:32px; min-width:0; max-width:100%; box-sizing:border-box; }

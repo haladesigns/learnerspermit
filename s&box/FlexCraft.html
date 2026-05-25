@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>FlexCraft — flexbox WYSIWYG editor</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0d0f14; }
+  #root { height: 100%; }
+  /* boot message shown until React mounts / if scripts fail to load */
+  #boot {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, monospace; color: #8b91a3; font-size: 13px; text-align: center;
+    padding: 24px; line-height: 1.6;
+  }
+</style>
+<!-- React + ReactDOM (development builds: readable errors) from CDN -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<!-- Babel Standalone: compiles the JSX below in-browser -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<div id="boot">Loading FlexCraft&hellip;<br/><span style="font-size:11px">(needs internet on first load to fetch React from a CDN)</span></div>
+
+<script type="text/babel" data-presets="react">
+// Remove the boot message once this script begins executing.
+document.getElementById('boot').remove();
+
+const { useState, useRef, useCallback, useMemo, useEffect } = React;
+
+
+/* ============================================================================
+   FlexCraft v2 — a flexbox-first WYSIWYG layout editor
+   ----------------------------------------------------------------------------
+   New since v1:
+     · CSS-variable theming + light/dark toggle (colors live in :root, not JS)
+     · Mobile-responsive shell: 3-pane on desktop, tabbed single-pane on phones
+     · Undo / redo via an immutable history stack (cheap — tree is already
+       immutable, so we just keep past/future arrays of snapshots)
+     · Duplicate element (deep clone with fresh ids)
+     · width / height / margin controls (not just padding)
+
+   Document model is unchanged: a tree of { id, tag, label, styles:{}, children:[] }.
+   The canvas renders the tree as REAL DOM (display:flex) so it stays WYSIWYG.
+   ============================================================================ */
+
+// ---- node factory ---------------------------------------------------------
+let _seq = 1;
+const uid = () => `n${_seq++}`;
+
+const makeNode = (tag, label, styles = {}, children = []) => ({
+  id: uid(),
+  tag,
+  label,
+  styles,
+  children,
+});
+
+const makeContainer = () =>
+  makeNode("div", "Flex container", {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "stretch",
+    gap: 12,
+    padding: 16,
+    flexWrap: "nowrap",
+  });
+
+const makeBox = () =>
+  makeNode("div", "Box", {
+    padding: 20,
+    flexGrow: 0,
+    flexShrink: 1,
+    flexBasis: "auto",
+    alignSelf: "auto",
+  });
+
+// Default styles per element kind. Reset reads from here so "default" always
+// means "what a fresh element of this type looks like" — honest, not arbitrary.
+const DEFAULT_STYLES = {
+  container: makeContainer().styles,
+  box: makeBox().styles,
+};
+// Which factory's defaults apply to a given node (containers vs leaf boxes).
+const defaultsFor = (node) =>
+  node.styles.display === "flex" ? DEFAULT_STYLES.container : DEFAULT_STYLES.box;
+// Is this property currently at its default value for this node's type?
+const isDefaultValue = (node, key) => {
+  const def = defaultsFor(node);
+  const cur = node.styles[key];
+  // Properties not in the factory default count as "default" only when absent.
+  if (!(key in def)) return cur === undefined || cur === "auto" || cur === 0;
+  return cur === def[key];
+};
+
+// Deep clone a subtree but with brand-new ids (for "duplicate").
+const cloneWithNewIds = (node) => ({
+  ...node,
+  id: uid(),
+  styles: { ...node.styles },
+  children: node.children.map(cloneWithNewIds),
+});
+
+const initialTree = () => {
+  const root = makeContainer();
+  root.label = "Root";
+  root.styles.minHeight = 300;
+  root.children = [makeBox(), makeBox(), makeBox()];
+  return root;
+};
+
+// ---- tree helpers (immutable) ---------------------------------------------
+function mapTree(node, fn) {
+  const next = fn(node);
+  return { ...next, children: next.children.map((c) => mapTree(c, fn)) };
+}
+function updateStyles(tree, id, patch) {
+  return mapTree(tree, (n) =>
+    n.id === id ? { ...n, styles: { ...n.styles, ...patch } } : n
+  );
+}
+function findNode(tree, id) {
+  if (tree.id === id) return tree;
+  for (const c of tree.children) {
+    const f = findNode(c, id);
+    if (f) return f;
+  }
+  return null;
+}
+function findParent(tree, id, parent = null) {
+  if (tree.id === id) return parent;
+  for (const c of tree.children) {
+    const f = findParent(c, id, tree);
+    if (f !== null) return f;
+  }
+  return null;
+}
+function removeNode(tree, id) {
+  let removed = null;
+  const walk = (node) => {
+    const kept = [];
+    for (const c of node.children) {
+      if (c.id === id) removed = c;
+      else kept.push(walk(c));
+    }
+    return { ...node, children: kept };
+  };
+  return [walk(tree), removed];
+}
+function insertNode(tree, parentId, idx, node) {
+  return mapTree(tree, (n) => {
+    if (n.id !== parentId) return n;
+    const children = [...n.children];
+    children.splice(idx, 0, node);
+    return { ...n, children };
+  });
+}
+// Insert a clone right after `id` within its parent.
+function duplicateNode(tree, id) {
+  const parent = findParent(tree, id);
+  if (!parent) return [tree, null];
+  const idx = parent.children.findIndex((c) => c.id === id);
+  const clone = cloneWithNewIds(findNode(tree, id));
+  return [insertNode(tree, parent.id, idx + 1, clone), clone.id];
+}
+
+// ---- CSS export ------------------------------------------------------------
+const camelToKebab = (s) => s.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+const UNITLESS = ["flexGrow", "flexShrink", "order", "opacity"];
+const cssValue = (k, v) =>
+  typeof v === "number" && !UNITLESS.includes(k) ? `${v}px` : v;
+function styleToCss(styles) {
+  return Object.entries(styles)
+    .map(([k, v]) => `  ${camelToKebab(k)}: ${cssValue(k, v)};`)
+    .join("\n");
+}
+function exportCss(tree) {
+  const rules = [];
+  const walk = (node) => {
+    const body = styleToCss(node.styles);
+    if (body.trim()) rules.push(`.${node.tag}-${node.id} {\n${body}\n}`);
+    node.children.forEach(walk);
+  };
+  walk(tree);
+  return rules.join("\n\n");
+}
+function exportHtml(tree) {
+  const walk = (node, depth) => {
+    const pad = "  ".repeat(depth);
+    const cls = `${node.tag}-${node.id}`;
+    if (node.children.length === 0)
+      return `${pad}<${node.tag} class="${cls}"></${node.tag}>`;
+    const inner = node.children.map((c) => walk(c, depth + 1)).join("\n");
+    return `${pad}<${node.tag} class="${cls}">\n${inner}\n${pad}</${node.tag}>`;
+  };
+  return walk(tree, 0);
+}
+
+// ============================================================================
+//  Control primitives
+// ============================================================================
+// Shared label row. Shows a "↺" reset button only when the value is non-default
+// (modified !== undefined && true) and an onReset handler is provided.
+function FieldLabel({ label, modified, onReset, children }) {
+  return (
+    <label className="fc-field-label">
+      <span className="fc-label-text">
+        {label}
+        {modified && onReset && (
+          <button
+            className="fc-reset-dot"
+            title="Reset to default"
+            onClick={(e) => {
+              e.preventDefault();
+              onReset();
+            }}
+          >
+            ↺
+          </button>
+        )}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function Segmented({ label, value, options, onChange, modified, onReset }) {
+  return (
+    <div className="fc-field">
+      <FieldLabel label={label} modified={modified} onReset={onReset} />
+      <div className="fc-segmented">
+        {options.map((opt) => {
+          const v = typeof opt === "string" ? opt : opt.value;
+          const lbl = typeof opt === "string" ? opt : opt.label;
+          return (
+            <button
+              key={v}
+              title={v}
+              onClick={() => onChange(v)}
+              className={"fc-seg-btn" + (value === v ? " is-active" : "")}
+            >
+              {lbl}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Slider({ label, value, min, max, step = 1, suffix = "px", onChange, modified, onReset }) {
+  return (
+    <div className="fc-field">
+      <FieldLabel label={label} modified={modified} onReset={onReset}>
+        <span className="fc-field-val">
+          {value}
+          {suffix}
+        </span>
+      </FieldLabel>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="fc-range"
+      />
+    </div>
+  );
+}
+
+// width / height / flex-basis can be a number(px) or the keyword "auto".
+function DimInput({ label, value, onChange, modified, onReset }) {
+  const isAuto = value === undefined || value === "auto" || value === "";
+  return (
+    <div className="fc-field">
+      <FieldLabel label={label} modified={modified} onReset={onReset}>
+        <button
+          className={"fc-mini-toggle" + (isAuto ? " is-active" : "")}
+          onClick={() => onChange(isAuto ? 120 : "auto")}
+        >
+          {isAuto ? "auto" : "fixed"}
+        </button>
+      </FieldLabel>
+      {!isAuto && (
+        <input
+          type="number"
+          value={typeof value === "number" ? value : 120}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="fc-num"
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+//  Canvas node renderer
+// ============================================================================
+function CanvasNode({
+  node,
+  isRoot,
+  selectedId,
+  onSelect,
+  dropTarget,
+  setDropTarget,
+  onDropNew,
+  onDropMove,
+  dragState,
+  showBoxModel,
+}) {
+  const isSelected = node.id === selectedId;
+  const isContainer = node.styles.display === "flex";
+
+  // Box-model overlay: show padding (green) and margin (amber) bands on the
+  // selected element when the toggle is on. We draw each band as a border on an
+  // absolutely-positioned layer — a border's per-side thickness IS the band.
+  const overlayOn = showBoxModel && isSelected;
+  const marginVal = typeof node.styles.margin === "number" ? node.styles.margin : 0;
+  const paddingVal = typeof node.styles.padding === "number" ? node.styles.padding : 0;
+
+  const dragProps = isRoot
+    ? {}
+    : {
+        draggable: true,
+        onDragStart: (e) => {
+          e.stopPropagation();
+          dragState.current = { kind: "move", id: node.id };
+          e.dataTransfer.effectAllowed = "move";
+        },
+        onDragEnd: () => {
+          dragState.current = null;
+          setDropTarget(null);
+        },
+      };
+
+  const renderChildrenWithZones = () => {
+    const zones = [];
+    const dir = node.styles.flexDirection || "row";
+    const horizontal = dir.startsWith("row");
+    for (let i = 0; i <= node.children.length; i++) {
+      const active =
+        dropTarget && dropTarget.parentId === node.id && dropTarget.index === i;
+      zones.push(
+        <DropZone
+          key={`z${i}`}
+          horizontal={horizontal}
+          active={active}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDropTarget({ parentId: node.id, index: i });
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const ds = dragState.current;
+            if (!ds) return;
+            if (ds.kind === "new") onDropNew(node.id, i, ds.factory);
+            else if (ds.kind === "move") onDropMove(node.id, i, ds.id);
+            setDropTarget(null);
+          }}
+        />
+      );
+      if (i < node.children.length) {
+        zones.push(
+          <CanvasNode
+            key={node.children[i].id}
+            node={node.children[i]}
+            isRoot={false}
+            selectedId={selectedId}
+            onSelect={onSelect}
+            dropTarget={dropTarget}
+            setDropTarget={setDropTarget}
+            onDropNew={onDropNew}
+            onDropMove={onDropMove}
+            dragState={dragState}
+            showBoxModel={showBoxModel}
+          />
+        );
+      }
+    }
+    return zones;
+  };
+
+  return (
+    <div
+      {...dragProps}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(node.id);
+      }}
+      className={
+        "fc-node" +
+        (isSelected ? " is-selected" : "") +
+        (isContainer ? " is-container" : "")
+      }
+      style={{ ...node.styles, position: "relative" }}
+    >
+      {/* Box-model overlays (selected element only, when toggle is on). */}
+      {overlayOn && marginVal > 0 && (
+        <div
+          className="fc-bm-margin"
+          style={{
+            position: "absolute",
+            top: -marginVal,
+            left: -marginVal,
+            right: -marginVal,
+            bottom: -marginVal,
+            borderStyle: "solid",
+            borderColor: "rgba(246,173,85,0.45)",
+            borderTopWidth: marginVal,
+            borderRightWidth: marginVal,
+            borderBottomWidth: marginVal,
+            borderLeftWidth: marginVal,
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        >
+          <span className="fc-bm-tag fc-bm-tag-margin">margin {marginVal}</span>
+        </div>
+      )}
+      {overlayOn && paddingVal > 0 && (
+        <div
+          className="fc-bm-padding"
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderStyle: "solid",
+            borderColor: "rgba(104,211,145,0.40)",
+            borderTopWidth: paddingVal,
+            borderRightWidth: paddingVal,
+            borderBottomWidth: paddingVal,
+            borderLeftWidth: paddingVal,
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        >
+          <span className="fc-bm-tag fc-bm-tag-padding">padding {paddingVal}</span>
+        </div>
+      )}
+      <span className="fc-node-tag">
+        {node.label}
+        {isContainer ? ` · ${node.styles.flexDirection}` : ""}
+      </span>
+      {isContainer
+        ? renderChildrenWithZones()
+        : node.children.map((c) => (
+            <CanvasNode
+              key={c.id}
+              node={c}
+              isRoot={false}
+              selectedId={selectedId}
+              onSelect={onSelect}
+              dropTarget={dropTarget}
+              setDropTarget={setDropTarget}
+              onDropNew={onDropNew}
+              onDropMove={onDropMove}
+              dragState={dragState}
+              showBoxModel={showBoxModel}
+            />
+          ))}
+    </div>
+  );
+}
+
+function DropZone({ horizontal, active, onDragOver, onDrop }) {
+  return (
+    <div
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={"fc-dropzone" + (active ? " is-active" : "")}
+      style={{
+        width: horizontal ? 8 : "auto",
+        minWidth: horizontal ? 8 : undefined,
+        height: horizontal ? "auto" : 8,
+        minHeight: horizontal ? 40 : 8,
+        alignSelf: "stretch",
+      }}
+    />
+  );
+}
+
+// ============================================================================
+//  Layer tree (mini outline so you can select hard-to-click nodes)
+// ============================================================================
+function LayerRow({ node, depth, selectedId, onSelect }) {
+  const isContainer = node.styles.display === "flex";
+  return (
+    <>
+      <button
+        className={"fc-layer" + (node.id === selectedId ? " is-active" : "")}
+        style={{ paddingLeft: 8 + depth * 14 }}
+        onClick={() => onSelect(node.id)}
+      >
+        <span className="fc-layer-icon">{isContainer ? "▦" : "▢"}</span>
+        {node.label}
+      </button>
+      {node.children.map((c) => (
+        <LayerRow
+          key={c.id}
+          node={c}
+          depth={depth + 1}
+          selectedId={selectedId}
+          onSelect={onSelect}
+        />
+      ))}
+    </>
+  );
+}
+
+// ============================================================================
+//  Main app
+// ============================================================================
+function FlexCraft() {
+  // history: { past:[], present:tree, future:[] }
+  const [history, setHistory] = useState(() => ({
+    past: [],
+    present: initialTree(),
+    future: [],
+  }));
+  const tree = history.present;
+
+  const [selectedId, setSelectedId] = useState(null);
+  const [dropTarget, setDropTarget] = useState(null);
+  const [tab, setTab] = useState("css"); // code drawer: css | html
+  const [theme, setTheme] = useState("dark");
+  const [mobilePane, setMobilePane] = useState("canvas"); // canvas|add|style|code
+  const [showBoxModel, setShowBoxModel] = useState(false);
+  const dragState = useRef(null);
+
+  // commit a new tree, pushing the old one onto the undo stack
+  const commit = useCallback((producer) => {
+    setHistory((h) => {
+      const next =
+        typeof producer === "function" ? producer(h.present) : producer;
+      if (next === h.present) return h;
+      return { past: [...h.past, h.present], present: next, future: [] };
+    });
+  }, []);
+
+  const undo = useCallback(() => {
+    setHistory((h) => {
+      if (!h.past.length) return h;
+      const prev = h.past[h.past.length - 1];
+      return {
+        past: h.past.slice(0, -1),
+        present: prev,
+        future: [h.present, ...h.future],
+      };
+    });
+  }, []);
+  const redo = useCallback(() => {
+    setHistory((h) => {
+      if (!h.future.length) return h;
+      const [next, ...rest] = h.future;
+      return { past: [...h.past, h.present], present: next, future: rest };
+    });
+  }, []);
+
+  // keyboard: cmd/ctrl-z, shift for redo
+  useEffect(() => {
+    const onKey = (e) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        e.shiftKey ? redo() : undo();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [undo, redo]);
+
+  const selected = useMemo(
+    () => (selectedId ? findNode(tree, selectedId) : null),
+    [tree, selectedId]
+  );
+  const selectedParent = useMemo(
+    () => (selectedId ? findParent(tree, selectedId) : null),
+    [tree, selectedId]
+  );
+
+  const setStyle = useCallback(
+    (patch) => {
+      if (!selectedId) return;
+      commit((t) => updateStyles(t, selectedId, patch));
+    },
+    [selectedId, commit]
+  );
+
+  // Reset a single property to its factory default for this element's type.
+  // If the property isn't part of the factory defaults, fall back to "auto".
+  const resetProp = useCallback(
+    (key) => {
+      if (!selected) return;
+      const def = defaultsFor(selected);
+      const value = key in def ? def[key] : "auto";
+      setStyle({ [key]: value });
+    },
+    [selected, setStyle]
+  );
+
+  // Reset the whole element's styles to its factory defaults (preserving any
+  // structural styles the factory doesn't manage, like the root's minHeight).
+  const resetElement = useCallback(() => {
+    if (!selected) return;
+    const def = defaultsFor(selected);
+    commit((t) =>
+      mapTree(t, (n) =>
+        n.id === selected.id ? { ...n, styles: { ...def } } : n
+      )
+    );
+  }, [selected, commit]);
+
+  const onDropNew = useCallback(
+    (parentId, idx, factory) => {
+      const node = factory();
+      commit((t) => insertNode(t, parentId, idx, node));
+      setSelectedId(node.id);
+    },
+    [commit]
+  );
+
+  const onDropMove = useCallback(
+    (parentId, idx, id) => {
+      commit((t) => {
+        const moving = findNode(t, id);
+        if (!moving) return t;
+        if (findNode(moving, parentId)) return t; // can't drop into own subtree
+        const [without, removed] = removeNode(t, id);
+        if (!removed) return t;
+        const parent = findNode(without, parentId);
+        return insertNode(
+          without,
+          parentId,
+          Math.min(idx, parent.children.length),
+          removed
+        );
+      });
+    },
+    [commit]
+  );
+
+  const deleteSelected = () => {
+    if (!selectedId || selectedId === tree.id) return;
+    commit((t) => removeNode(t, selectedId)[0]);
+    setSelectedId(null);
+  };
+  const duplicateSelected = () => {
+    if (!selectedId || selectedId === tree.id) return;
+    let newId = null;
+    commit((t) => {
+      const [next, id] = duplicateNode(t, selectedId);
+      newId = id;
+      return next;
+    });
+    if (newId) setSelectedId(newId);
+  };
+  const convertToContainer = () => selected && setStyle(makeContainer().styles);
+
+  // tap palette item on mobile (no drag): append to root or selected container
+  const addToCanvas = (factory) => {
+    const target =
+      selected && selected.styles.display === "flex" ? selected : tree;
+    const node = factory();
+    commit((t) => insertNode(t, target.id, target.children.length, node));
+    setSelectedId(node.id);
+    setMobilePane("canvas");
+  };
+
+  const palette = [
+    { label: "Flex container", factory: makeContainer, hint: "display:flex", icon: "▦" },
+    { label: "Box", factory: makeBox, hint: "a flex item", icon: "▢" },
+  ];
+
+  const cssText = useMemo(() => exportCss(tree), [tree]);
+  const htmlText = useMemo(() => exportHtml(tree), [tree]);
+
+  const isFlexItem =
+    selected && selectedParent && selectedParent.styles.display === "flex";
+  const isContainer = selected && selected.styles.display === "flex";
+
+  // ---- sub-renders (shared between desktop panes and mobile tabs) ----------
+  const PalettePanel = (
+    <div className="fc-palette-inner">
+      <div className="fc-palette-head">Elements</div>
+      {palette.map((p) => (
+        <div
+          key={p.label}
+          draggable
+          onDragStart={(e) => {
+            dragState.current = { kind: "new", factory: p.factory };
+            e.dataTransfer.effectAllowed = "copy";
+          }}
+          onDragEnd={() => {
+            dragState.current = null;
+            setDropTarget(null);
+          }}
+          onClick={() => addToCanvas(p.factory)}
+          className="fc-palette-item"
+        >
+          <span className="fc-palette-icon">{p.icon}</span>
+          <div>
+            <div className="fc-palette-name">{p.label}</div>
+            <code className="fc-palette-hint">{p.hint}</code>
+          </div>
+        </div>
+      ))}
+      <div className="fc-palette-head" style={{ marginTop: 18 }}>
+        Layers
+      </div>
+      <div className="fc-layers">
+        <LayerRow
+          node={tree}
+          depth={0}
+          selectedId={selectedId}
+          onSelect={(id) => {
+            setSelectedId(id);
+            setMobilePane("style");
+          }}
+        />
+      </div>
+      <div className="fc-palette-note">
+        Drag onto the canvas (desktop) or <b>tap</b> to drop into the selected
+        container. Drag existing elements to the glowing gaps to reorder.
+      </div>
+    </div>
+  );
+
+  // Helper: per-control reset wiring. `modified` lights the ↺; `onReset` fires it.
+  const rp = (key) =>
+    selected
+      ? { modified: !isDefaultValue(selected, key), onReset: () => resetProp(key) }
+      : {};
+
+  const PropsPanel = !selected ? (
+    <div className="fc-empty">
+      <div className="fc-empty-mark">↖</div>
+      <p>Select an element to edit its flex properties.</p>
+    </div>
+  ) : (
+    <div className="fc-props-inner">
+      <div className="fc-prop-head">
+        <div>
+          <div className="fc-prop-title">{selected.label}</div>
+          <code className="fc-prop-id">
+            .{selected.tag}-{selected.id}
+          </code>
+        </div>
+        <div className="fc-prop-actions">
+          <button className="fc-icon-btn" title="Reset to defaults" onClick={resetElement}>
+            ↺
+          </button>
+          {selected.id !== tree.id && (
+            <>
+              <button className="fc-icon-btn" title="Duplicate" onClick={duplicateSelected}>
+                ⧉
+              </button>
+              <button className="fc-icon-btn is-danger" title="Delete" onClick={deleteSelected}>
+                ✕
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {isContainer ? (
+        <section>
+          <div className="fc-section-label">
+            Container <span className="fc-tag-pill">display: flex</span>
+          </div>
+          <Segmented
+            label="flex-direction"
+            value={selected.styles.flexDirection}
+            options={[
+              { value: "row", label: "→ row" },
+              { value: "row-reverse", label: "← rev" },
+              { value: "column", label: "↓ col" },
+              { value: "column-reverse", label: "↑ rev" },
+            ]}
+            onChange={(v) => setStyle({ flexDirection: v })}
+            {...rp("flexDirection")}
+          />
+          <Segmented
+            label="justify-content (main axis)"
+            value={selected.styles.justifyContent}
+            options={[
+              { value: "flex-start", label: "start" },
+              { value: "center", label: "center" },
+              { value: "flex-end", label: "end" },
+              { value: "space-between", label: "btwn" },
+              { value: "space-around", label: "arnd" },
+              { value: "space-evenly", label: "even" },
+            ]}
+            onChange={(v) => setStyle({ justifyContent: v })}
+            {...rp("justifyContent")}
+          />
+          <Segmented
+            label="align-items (cross axis)"
+            value={selected.styles.alignItems}
+            options={[
+              { value: "stretch", label: "stretch" },
+              { value: "flex-start", label: "start" },
+              { value: "center", label: "center" },
+              { value: "flex-end", label: "end" },
+              { value: "baseline", label: "base" },
+            ]}
+            onChange={(v) => setStyle({ alignItems: v })}
+            {...rp("alignItems")}
+          />
+          <Segmented
+            label="flex-wrap"
+            value={selected.styles.flexWrap}
+            options={["nowrap", "wrap", "wrap-reverse"]}
+            onChange={(v) => setStyle({ flexWrap: v })}
+            {...rp("flexWrap")}
+          />
+          {/* align-content only has an effect on multi-line (wrapping) flex
+              containers — it distributes the LINES along the cross axis. Hidden
+              when nowrap so the control isn't a no-op. */}
+          {selected.styles.flexWrap && selected.styles.flexWrap !== "nowrap" && (
+            <Segmented
+              label="align-content (wrapped lines)"
+              value={selected.styles.alignContent ?? "stretch"}
+              options={[
+                { value: "stretch", label: "stretch" },
+                { value: "flex-start", label: "start" },
+                { value: "center", label: "center" },
+                { value: "flex-end", label: "end" },
+                { value: "space-between", label: "btwn" },
+                { value: "space-around", label: "arnd" },
+              ]}
+              onChange={(v) => setStyle({ alignContent: v })}
+              {...rp("alignContent")}
+            />
+          )}
+          <Slider
+            label="gap"
+            value={selected.styles.gap ?? 0}
+            min={0}
+            max={64}
+            onChange={(v) => setStyle({ gap: v })}
+            {...rp("gap")}
+          />
+        </section>
+      ) : (
+        <section>
+          <div className="fc-section-label">This element is a leaf box</div>
+          <button className="fc-convert-btn" onClick={convertToContainer}>
+            ▦ Make it a flex container
+          </button>
+        </section>
+      )}
+
+      {isFlexItem && (
+        <section style={{ marginTop: 22 }}>
+          <div className="fc-section-label">
+            As a flex item <span className="fc-tag-pill">parent is flex</span>
+          </div>
+          <Slider
+            label="flex-grow"
+            value={selected.styles.flexGrow ?? 0}
+            min={0}
+            max={5}
+            suffix=""
+            onChange={(v) => setStyle({ flexGrow: v })}
+            {...rp("flexGrow")}
+          />
+          <Slider
+            label="flex-shrink"
+            value={selected.styles.flexShrink ?? 1}
+            min={0}
+            max={5}
+            suffix=""
+            onChange={(v) => setStyle({ flexShrink: v })}
+            {...rp("flexShrink")}
+          />
+          <Segmented
+            label="align-self"
+            value={selected.styles.alignSelf ?? "auto"}
+            options={[
+              { value: "auto", label: "auto" },
+              { value: "flex-start", label: "start" },
+              { value: "center", label: "center" },
+              { value: "flex-end", label: "end" },
+              { value: "stretch", label: "strch" },
+            ]}
+            onChange={(v) => setStyle({ alignSelf: v })}
+            {...rp("alignSelf")}
+          />
+        </section>
+      )}
+
+      <section style={{ marginTop: 22 }}>
+        <div className="fc-section-label">Box model</div>
+        <DimInput
+          label="width"
+          value={selected.styles.width}
+          onChange={(v) => setStyle({ width: v })}
+          {...rp("width")}
+        />
+        <DimInput
+          label="height"
+          value={selected.styles.height}
+          onChange={(v) => setStyle({ height: v })}
+          {...rp("height")}
+        />
+        <Slider
+          label="padding"
+          value={selected.styles.padding ?? 0}
+          min={0}
+          max={80}
+          onChange={(v) => setStyle({ padding: v })}
+          {...rp("padding")}
+        />
+        <Slider
+          label="margin"
+          value={selected.styles.margin ?? 0}
+          min={0}
+          max={80}
+          onChange={(v) => setStyle({ margin: v })}
+          {...rp("margin")}
+        />
+      </section>
+    </div>
+  );
+
+  const CodePanel = (
+    <div className="fc-code-inner">
+      <div className="fc-code-tabs">
+        <button
+          onClick={() => setTab("css")}
+          className={"fc-code-tab" + (tab === "css" ? " is-active" : "")}
+        >
+          CSS
+        </button>
+        <button
+          onClick={() => setTab("html")}
+          className={"fc-code-tab" + (tab === "html" ? " is-active" : "")}
+        >
+          HTML
+        </button>
+        <span style={{ flex: 1 }} />
+        <button
+          className="fc-copy-btn"
+          onClick={() =>
+            navigator.clipboard?.writeText(tab === "css" ? cssText : htmlText)
+          }
+        >
+          copy
+        </button>
+      </div>
+      <pre className="fc-code">
+        <code>{tab === "css" ? cssText : htmlText}</code>
+      </pre>
+    </div>
+  );
+
+  const CanvasPanel = (
+    <>
+      <div className="fc-canvas-head">
+        <span className="fc-canvas-title">Canvas</span>
+        <span className="fc-canvas-hint fc-desktop-only">
+          click to select · drag to reorder · drag from palette to add
+        </span>
+      </div>
+      <div className="fc-canvas-scroll" onClick={() => setSelectedId(null)}>
+        <CanvasNode
+          node={tree}
+          isRoot
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          dropTarget={dropTarget}
+          setDropTarget={setDropTarget}
+          onDropNew={onDropNew}
+          onDropMove={onDropMove}
+          dragState={dragState}
+          showBoxModel={showBoxModel}
+        />
+      </div>
+    </>
+  );
+
+  return (
+    <div className={"fc-app fc-theme-" + theme}>
+      <style>{css}</style>
+
+      {/* ---- top toolbar ---- */}
+      <header className="fc-toolbar">
+        <div className="fc-brand">
+          <span className="fc-brand-mark">◧</span>
+          <span className="fc-brand-name">FLEXCRAFT</span>
+        </div>
+        <div className="fc-toolbar-actions">
+          <button
+            className="fc-tool-btn"
+            onClick={undo}
+            disabled={!history.past.length}
+            title="Undo"
+          >
+            ↶
+          </button>
+          <button
+            className="fc-tool-btn"
+            onClick={redo}
+            disabled={!history.future.length}
+            title="Redo"
+          >
+            ↷
+          </button>
+          <button
+            className={"fc-tool-btn" + (showBoxModel ? " is-on" : "")}
+            onClick={() => setShowBoxModel((v) => !v)}
+            title="Show box model (padding / margin) on selected element"
+          >
+            ▣
+          </button>
+          <button
+            className="fc-tool-btn"
+            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+            title="Toggle theme"
+          >
+            {theme === "dark" ? "\u2600" : "\u263e"}
+          </button>
+        </div>
+      </header>
+
+      {/* ---- body: desktop = 3 panes; mobile = one pane at a time ---- */}
+      <div className="fc-body">
+        <aside className="fc-palette fc-desktop-only">{PalettePanel}</aside>
+
+        <main className="fc-canvas-wrap">
+          {/* mobile shows whichever pane is active; desktop always canvas+code */}
+          <div className="fc-mobile-only fc-mobile-pane">
+            {mobilePane === "canvas" && CanvasPanel}
+            {mobilePane === "add" && <div className="fc-scroll-pane">{PalettePanel}</div>}
+            {mobilePane === "style" && <div className="fc-scroll-pane">{PropsPanel}</div>}
+            {mobilePane === "code" && CodePanel}
+          </div>
+          <div className="fc-desktop-only fc-desktop-canvas">
+            {CanvasPanel}
+            <div className="fc-code-drawer">{CodePanel}</div>
+          </div>
+        </main>
+
+        <aside className="fc-props fc-desktop-only">{PropsPanel}</aside>
+      </div>
+
+      {/* ---- mobile bottom tab bar ---- */}
+      <nav className="fc-tabbar fc-mobile-only">
+        {[
+          { k: "canvas", label: "Canvas", icon: "\u25a6" },
+          { k: "add", label: "Add", icon: "\uff0b" },
+          { k: "style", label: "Style", icon: "\u2699" },
+          { k: "code", label: "Code", icon: "\u27e8\u27e9" },
+        ].map((t) => (
+          <button
+            key={t.k}
+            className={"fc-tabbar-btn" + (mobilePane === t.k ? " is-active" : "")}
+            onClick={() => setMobilePane(t.k)}
+          >
+            <span className="fc-tabbar-icon">{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+// ============================================================================
+//  Styles — now a real CSS string with theme variables (the v1 inline-style
+//  constants are gone; theming is just swapping the variable block).
+// ============================================================================
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+.fc-app *, .fc-app *::before, .fc-app *::after { box-sizing: border-box; }
+
+/* ---- THEME TOKENS ---- */
+.fc-theme-dark {
+  --ink:#0d0f14; --panel:#14171f; --panel2:#1b1f2a; --line:rgba(255,255,255,0.08);
+  --txt:#e6e8ee; --mut:#8b91a3; --accent:#e8b04b; --accent-soft:rgba(232,176,75,0.12);
+  --node:rgba(255,255,255,0.05); --node-line:rgba(255,255,255,0.12);
+  --dot:rgba(255,255,255,0.05); --track:#2a2f3c;
+}
+.fc-theme-light {
+  --ink:#f3f1ea; --panel:#ffffff; --panel2:#f0ede3; --line:rgba(0,0,0,0.1);
+  --txt:#1d1f26; --mut:#6c7180; --accent:#b8741a; --accent-soft:rgba(184,116,26,0.12);
+  --node:rgba(0,0,0,0.03); --node-line:rgba(0,0,0,0.14);
+  --dot:rgba(0,0,0,0.06); --track:#d8d4c8;
+}
+
+.fc-app {
+  display:flex; flex-direction:column; height:100vh; min-height:560px;
+  font-family:'Space Mono',ui-monospace,monospace; font-size:12px;
+  color:var(--txt); background:var(--ink); overflow:hidden;
+  transition: background 200ms, color 200ms;
+}
+.fc-app ::-webkit-scrollbar { width:10px; height:10px; }
+.fc-app ::-webkit-scrollbar-thumb { background:var(--track); border-radius:6px; }
+.fc-app ::-webkit-scrollbar-track { background:transparent; }
+
+.fc-range{ -webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;background:var(--track); }
+.fc-range::-webkit-slider-thumb{ -webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 0 3px var(--accent-soft); }
+.fc-range::-moz-range-thumb{ width:14px;height:14px;border:none;border-radius:50%;background:var(--accent);cursor:pointer; }
+
+/* ---- toolbar ---- */
+.fc-toolbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 14px; background:var(--panel); border-bottom:1px solid var(--line);
+  flex-shrink:0;
+}
+.fc-brand{ display:flex; align-items:center; gap:9px; }
+.fc-brand-mark{ font-size:20px; color:var(--accent); }
+.fc-brand-name{ font-family:'Fraunces',Georgia,serif; font-size:15px; letter-spacing:1px; }
+.fc-toolbar-actions{ display:flex; gap:6px; }
+.fc-tool-btn{
+  width:30px; height:30px; border-radius:6px; cursor:pointer; font-size:14px;
+  background:var(--panel2); border:1px solid var(--line); color:var(--txt);
+}
+.fc-tool-btn:disabled{ opacity:0.35; cursor:default; }
+.fc-tool-btn:not(:disabled):hover{ border-color:var(--accent); color:var(--accent); }
+.fc-tool-btn.is-on{ background:var(--accent); color:var(--ink); border-color:var(--accent); }
+
+/* ---- body layout ---- */
+.fc-body{ flex:1; display:flex; min-height:0; }
+.fc-palette{ width:210px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--line); overflow:auto; }
+.fc-props{ width:290px; flex-shrink:0; background:var(--panel); border-left:1px solid var(--line); overflow:auto; }
+.fc-canvas-wrap{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.fc-desktop-canvas{ flex:1; display:flex; flex-direction:column; min-height:0; }
+
+.fc-palette-inner{ padding:14px; display:flex; flex-direction:column; gap:9px; height:100%; }
+.fc-palette-head{ font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--mut); }
+.fc-palette-item{
+  display:flex; gap:10px; align-items:center; padding:10px 12px; background:var(--panel2);
+  border:1px solid var(--line); border-radius:6px; cursor:grab;
+}
+.fc-palette-item:hover{ border-color:var(--accent); }
+.fc-palette-icon{ color:var(--accent); font-size:16px; }
+.fc-palette-name{ font-weight:700; }
+.fc-palette-hint{ color:var(--mut); font-size:10px; }
+.fc-layers{ display:flex; flex-direction:column; gap:2px; }
+.fc-layer{
+  display:flex; align-items:center; gap:7px; padding:6px 8px; text-align:left;
+  background:transparent; border:none; color:var(--mut); cursor:pointer;
+  font-family:inherit; font-size:11px; border-radius:4px; width:100%;
+}
+.fc-layer:hover{ background:var(--node); color:var(--txt); }
+.fc-layer.is-active{ background:var(--accent-soft); color:var(--accent); }
+.fc-layer-icon{ color:var(--accent); }
+.fc-palette-note{ margin-top:auto; font-size:10.5px; line-height:1.6; color:var(--mut); border-top:1px solid var(--line); padding-top:12px; }
+
+/* ---- canvas ---- */
+.fc-canvas-head{ padding:11px 16px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:14px; background:var(--panel); }
+.fc-canvas-title{ font-family:'Fraunces',Georgia,serif; font-size:15px; }
+.fc-canvas-hint{ font-size:10.5px; color:var(--mut); }
+.fc-canvas-scroll{
+  flex:1; overflow:auto; padding:26px;
+  background:radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0) 0 0 / 22px 22px;
+}
+
+.fc-node{
+  border-radius:4px; transition:background 120ms, outline-color 120ms;
+  outline:1px solid var(--node-line); background:var(--node); min-width:40px; min-height:40px; cursor:grab;
+}
+.fc-node.is-container{ outline:1px dashed var(--accent); outline-offset:0; background:var(--accent-soft); min-width:0; min-height:0; }
+.fc-node.is-selected{ outline:2px solid var(--accent) !important; outline-offset:1px; background:var(--accent-soft); }
+.fc-node-tag{
+  position:absolute; top:-9px; left:6px; font-size:9px; letter-spacing:0.5px;
+  color:var(--ink); background:var(--accent); padding:1px 6px; border-radius:3px;
+  font-weight:700; pointer-events:none; white-space:nowrap; opacity:0.85;
+}
+.fc-dropzone{ border-radius:3px; transition:background 80ms, box-shadow 80ms; }
+.fc-dropzone.is-active{ background:var(--accent); box-shadow:0 0 12px var(--accent); }
+
+/* ---- code drawer ---- */
+.fc-code-drawer{ border-top:1px solid var(--line); background:var(--panel); max-height:190px; display:flex; flex-direction:column; flex-shrink:0; }
+.fc-code-inner{ display:flex; flex-direction:column; min-height:0; height:100%; }
+.fc-code-tabs{ display:flex; align-items:center; gap:4px; padding:6px 10px; border-bottom:1px solid var(--line); }
+.fc-code-tab{ background:transparent; border:none; color:var(--mut); font-family:inherit; font-size:11px; padding:4px 10px; border-radius:4px; cursor:pointer; }
+.fc-code-tab.is-active{ background:var(--panel2); color:var(--accent); }
+.fc-copy-btn{ background:transparent; border:1px solid var(--line); color:var(--mut); font-family:inherit; font-size:10px; padding:4px 10px; border-radius:4px; cursor:pointer; }
+.fc-copy-btn:hover{ border-color:var(--accent); color:var(--accent); }
+.fc-code{ margin:0; padding:12px 16px; overflow:auto; font-size:11px; line-height:1.5; color:var(--txt); font-family:inherit; flex:1; }
+
+/* ---- props ---- */
+.fc-props-inner{ padding:18px; }
+.fc-empty{ color:var(--mut); text-align:center; margin-top:60px; line-height:1.6; padding:20px; }
+.fc-empty-mark{ font-size:34px; color:var(--accent); margin-bottom:8px; }
+.fc-prop-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+.fc-prop-title{ font-family:'Fraunces',Georgia,serif; font-size:16px; }
+.fc-prop-id{ font-size:10px; color:var(--accent); }
+.fc-prop-actions{ display:flex; gap:6px; }
+.fc-icon-btn{ width:28px; height:28px; border-radius:5px; cursor:pointer; background:var(--panel2); border:1px solid var(--line); color:var(--txt); font-size:13px; }
+.fc-icon-btn:hover{ border-color:var(--accent); color:var(--accent); }
+.fc-icon-btn.is-danger:hover{ border-color:#ff6b6b; color:#ff6b6b; }
+.fc-section-label{ font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:var(--mut); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.fc-tag-pill{ font-size:9px; color:var(--accent); background:var(--accent-soft); padding:1px 6px; border-radius:3px; text-transform:none; }
+.fc-convert-btn{ width:100%; background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent); font-family:inherit; font-size:12px; padding:10px; border-radius:6px; cursor:pointer; }
+
+.fc-field{ margin-bottom:16px; }
+.fc-field-label{ display:flex; justify-content:space-between; align-items:center; font-size:10.5px; color:var(--mut); margin-bottom:7px; }
+.fc-label-text{ display:inline-flex; align-items:center; gap:6px; }
+.fc-reset-dot{
+  background:transparent; border:none; color:var(--accent); cursor:pointer;
+  font-size:11px; line-height:1; padding:0; opacity:0.85;
+}
+.fc-reset-dot:hover{ opacity:1; transform:rotate(-45deg); transition:transform 120ms; }
+.fc-field-val{ color:var(--accent); }
+.fc-bm-tag{
+  position:absolute; font-size:8.5px; font-weight:700; padding:1px 4px; border-radius:2px;
+  white-space:nowrap; line-height:1.2; pointer-events:none; font-family:'Space Mono',monospace;
+}
+.fc-bm-tag-padding{ top:1px; left:50%; transform:translateX(-50%); background:rgba(104,211,145,0.9); color:#06281a; }
+.fc-bm-tag-margin{ top:-12px; left:50%; transform:translateX(-50%); background:rgba(246,173,85,0.95); color:#3a2300; }
+.fc-segmented{ display:flex; flex-wrap:wrap; gap:4px; background:var(--ink); padding:3px; border-radius:6px; }
+.fc-seg-btn{ flex:1 1 auto; background:transparent; border:none; color:var(--mut); font-family:inherit; font-size:10px; padding:6px 4px; border-radius:4px; cursor:pointer; white-space:nowrap; }
+.fc-seg-btn.is-active{ background:var(--accent); color:var(--ink); font-weight:700; }
+.fc-num{ width:100%; background:var(--ink); border:1px solid var(--line); color:var(--txt); font-family:inherit; font-size:12px; padding:7px 9px; border-radius:5px; }
+.fc-mini-toggle{ background:var(--accent-soft); border:1px solid var(--line); color:var(--mut); font-family:inherit; font-size:9px; padding:2px 7px; border-radius:3px; cursor:pointer; }
+.fc-mini-toggle.is-active{ color:var(--accent); }
+
+/* ---- responsive: show/hide desktop vs mobile ---- */
+.fc-mobile-only{ display:none; }
+.fc-desktop-only{ display:flex; }
+.fc-scroll-pane{ flex:1; overflow:auto; }
+.fc-tabbar{ display:none; }
+
+@media (max-width: 760px){
+  .fc-desktop-only{ display:none !important; }
+  .fc-mobile-only{ display:flex; }
+  .fc-mobile-pane{ flex:1; flex-direction:column; min-height:0; width:100%; }
+  .fc-canvas-wrap{ flex:1; }
+  .fc-canvas-scroll{ padding:16px; }
+  .fc-props-inner, .fc-palette-inner{ padding:14px; }
+
+  .fc-tabbar{
+    display:flex; flex-shrink:0; border-top:1px solid var(--line); background:var(--panel);
+  }
+  .fc-tabbar-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding:9px 4px; background:transparent; border:none; color:var(--mut);
+    font-family:inherit; font-size:9.5px; cursor:pointer; border-top:2px solid transparent;
+  }
+  .fc-tabbar-btn.is-active{ color:var(--accent); border-top-color:var(--accent); }
+  .fc-tabbar-icon{ font-size:16px; }
+}
+`;
+
+
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(FlexCraft));
+
+</script>
+</body>
+</html>

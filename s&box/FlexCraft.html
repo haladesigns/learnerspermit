@@ -50,13 +50,31 @@ const { useState, useRef, useCallback, useMemo, useEffect } = React;
 let _seq = 1;
 const uid = () => `n${_seq++}`;
 
-const makeNode = (tag, label, styles = {}, children = []) => ({
+const makeNode = (tag, label, styles = {}, children = [], text = "") => ({
   id: uid(),
   tag,
   label,
   styles,
   children,
+  text,
 });
+
+// Word pool for box content. Kept short + UI-flavored so generated boxes read
+// like plausible layout content rather than lorem gibberish.
+const WORD_POOL = [
+  "hero", "panel", "card", "nav", "sidebar", "header", "footer", "badge",
+  "avatar", "banner", "tile", "feed", "menu", "modal", "toast", "chip",
+  "list", "grid", "media", "label", "field", "stack", "rail", "tray",
+];
+const randomWords = (n = 2) => {
+  const out = [];
+  const pool = [...WORD_POOL];
+  for (let i = 0; i < n && pool.length; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    out.push(pool.splice(idx, 1)[0]); // splice avoids repeating the same word
+  }
+  return out.join(" ");
+};
 
 const makeContainer = () =>
   makeNode("div", "Flex container", {
@@ -69,14 +87,21 @@ const makeContainer = () =>
     flexWrap: "nowrap",
   });
 
+// Each box gets two random words as its content (passed as the `text` field).
 const makeBox = () =>
-  makeNode("div", "Box", {
-    padding: 20,
-    flexGrow: 0,
-    flexShrink: 1,
-    flexBasis: "auto",
-    alignSelf: "auto",
-  });
+  makeNode(
+    "div",
+    "Box",
+    {
+      padding: 20,
+      flexGrow: 0,
+      flexShrink: 1,
+      flexBasis: "auto",
+      alignSelf: "auto",
+    },
+    [],
+    randomWords(2)
+  );
 
 // Default styles per element kind. Reset reads from here so "default" always
 // means "what a fresh element of this type looks like" — honest, not arbitrary.
@@ -192,7 +217,7 @@ function exportHtml(tree) {
     const pad = "  ".repeat(depth);
     const cls = `${node.tag}-${node.id}`;
     if (node.children.length === 0)
-      return `${pad}<${node.tag} class="${cls}"></${node.tag}>`;
+      return `${pad}<${node.tag} class="${cls}">${node.text || ""}</${node.tag}>`;
     const inner = node.children.map((c) => walk(c, depth + 1)).join("\n");
     return `${pad}<${node.tag} class="${cls}">\n${inner}\n${pad}</${node.tag}>`;
   };
@@ -228,24 +253,81 @@ function FieldLabel({ label, modified, onReset, children }) {
 }
 
 function Segmented({ label, value, options, onChange, modified, onReset }) {
+  const trackRef = React.useRef(null);
+  // overflow state: whether content is scrollable past the left / right edges,
+  // so we only show the fade + chevron affordances when there's hidden content.
+  const [edges, setEdges] = React.useState({ left: false, right: false });
+
+  // Recompute which edges have hidden content. scrollLeft>0 means stuff is
+  // hidden to the left; scrollLeft+clientWidth < scrollWidth means hidden right.
+  const updateEdges = React.useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const left = el.scrollLeft > 1;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+    setEdges((prev) =>
+      prev.left === left && prev.right === right ? prev : { left, right }
+    );
+  }, []);
+
+  // On mount + whenever the option set changes, measure overflow and scroll the
+  // active option into view so the current value is never hidden off-edge.
+  React.useLayoutEffect(() => {
+    updateEdges();
+    const el = trackRef.current;
+    if (!el) return;
+    const active = el.querySelector(".is-active");
+    if (active && active.scrollIntoView) {
+      active.scrollIntoView({ inline: "nearest", block: "nearest" });
+    }
+    updateEdges();
+  }, [value, options, updateEdges]);
+
+  // Click a chevron to nudge the row by ~70% of its visible width.
+  const nudge = (dir) => () => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.7, behavior: "smooth" });
+  };
+
   return (
     <div className="fc-field">
       <FieldLabel label={label} modified={modified} onReset={onReset} />
-      <div className="fc-segmented">
-        {options.map((opt) => {
-          const v = typeof opt === "string" ? opt : opt.value;
-          const lbl = typeof opt === "string" ? opt : opt.label;
-          return (
-            <button
-              key={v}
-              title={v}
-              onClick={() => onChange(v)}
-              className={"fc-seg-btn" + (value === v ? " is-active" : "")}
-            >
-              {lbl}
-            </button>
-          );
-        })}
+      <div className="fc-seg-wrap">
+        {edges.left && (
+          <button className="fc-seg-chev fc-seg-chev-l" onClick={nudge(-1)} title="Scroll left" tabIndex={-1}>
+            ‹
+          </button>
+        )}
+        <div
+          className={
+            "fc-segmented" +
+            (edges.left ? " fade-l" : "") +
+            (edges.right ? " fade-r" : "")
+          }
+          ref={trackRef}
+          onScroll={updateEdges}
+        >
+          {options.map((opt) => {
+            const v = typeof opt === "string" ? opt : opt.value;
+            const lbl = typeof opt === "string" ? opt : opt.label;
+            return (
+              <button
+                key={v}
+                title={v}
+                onClick={() => onChange(v)}
+                className={"fc-seg-btn" + (value === v ? " is-active" : "")}
+              >
+                {lbl}
+              </button>
+            );
+          })}
+        </div>
+        {edges.right && (
+          <button className="fc-seg-chev fc-seg-chev-r" onClick={nudge(1)} title="Scroll right" tabIndex={-1}>
+            ›
+          </button>
+        )}
       </div>
     </div>
   );
@@ -274,14 +356,20 @@ function Slider({ label, value, min, max, step = 1, suffix = "px", onChange, mod
 }
 
 // width / height / flex-basis can be a number(px) or the keyword "auto".
-function DimInput({ label, value, onChange, modified, onReset }) {
+function DimInput({ label, value, onChange, modified, onReset, measuredDefault }) {
   const isAuto = value === undefined || value === "auto" || value === "";
+  // When flipping to "fixed", seed with the element's actual current rendered
+  // size (measured by the parent) so the box doesn't visually jump — instead of
+  // a meaningless constant. Falls back to 120 only if no measurement is given.
+  const seed = typeof measuredDefault === "number" && measuredDefault > 0
+    ? Math.round(measuredDefault)
+    : 120;
   return (
     <div className="fc-field">
       <FieldLabel label={label} modified={modified} onReset={onReset}>
         <button
           className={"fc-mini-toggle" + (isAuto ? " is-active" : "")}
-          onClick={() => onChange(isAuto ? 120 : "auto")}
+          onClick={() => onChange(isAuto ? seed : "auto")}
         >
           {isAuto ? "auto" : "fixed"}
         </button>
@@ -289,12 +377,295 @@ function DimInput({ label, value, onChange, modified, onReset }) {
       {!isAuto && (
         <input
           type="number"
-          value={typeof value === "number" ? value : 120}
+          value={typeof value === "number" ? value : seed}
           onChange={(e) => onChange(Number(e.target.value))}
           className="fc-num"
         />
       )}
     </div>
+  );
+}
+
+// ============================================================================
+//  Flex-line measurement + overlay
+// ============================================================================
+// Group child rectangles into flex LINES. The browser exposes no flex-line API,
+// so we infer lines from laid-out geometry: in a row container, items on the
+// same line share a vertical band (their rects overlap on the Y axis); in a
+// column container, they share a horizontal band. Returns an array of line
+// bounding boxes {left, top, width, height} in the container's local coords.
+function groupIntoLines(childRects, containerRect, horizontal) {
+  if (!childRects.length) return [];
+  // Sort along the cross axis so consecutive items cluster into lines.
+  const rects = childRects
+    .map((r) => ({
+      left: r.left - containerRect.left,
+      top: r.top - containerRect.top,
+      right: r.right - containerRect.left,
+      bottom: r.bottom - containerRect.top,
+    }))
+    .sort((a, b) => (horizontal ? a.top - b.top : a.left - b.left));
+
+  const lines = [];
+  let cur = null;
+  for (const r of rects) {
+    // Cross-axis start of this item; a new line begins when an item starts
+    // clearly past the current line's cross-axis extent.
+    const crossStart = horizontal ? r.top : r.left;
+    const crossEnd = horizontal ? r.bottom : r.right;
+    if (
+      cur &&
+      crossStart < (horizontal ? cur.bottom : cur.right) - 1 // overlaps → same line
+    ) {
+      cur.left = Math.min(cur.left, r.left);
+      cur.top = Math.min(cur.top, r.top);
+      cur.right = Math.max(cur.right, r.right);
+      cur.bottom = Math.max(cur.bottom, r.bottom);
+    } else {
+      cur = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+      lines.push(cur);
+    }
+  }
+  return lines.map((l) => ({
+    left: l.left,
+    top: l.top,
+    width: l.right - l.left,
+    height: l.bottom - l.top,
+  }));
+}
+
+// Compute the GAP channels — the voids between adjacent flex items. `gap` space
+// belongs to the container, not to either neighbor, so it can't be tinted on an
+// element; we measure the space between consecutive items and emit a band per
+// channel. Items are grouped by line first (gap only exists between items on the
+// SAME line — the space between lines is row-gap/align-content, handled
+// separately). Returns band rects in container-local coords.
+function computeGapBands(childRects, containerRect, horizontal) {
+  if (childRects.length < 2) return [];
+  const rects = childRects.map((r) => ({
+    left: r.left - containerRect.left,
+    top: r.top - containerRect.top,
+    right: r.right - containerRect.left,
+    bottom: r.bottom - containerRect.top,
+  }));
+
+  // Group items into lines (same cross-axis overlap rule as groupIntoLines).
+  const sorted = [...rects].sort((a, b) =>
+    horizontal ? a.top - b.top || a.left - b.left : a.left - b.left || a.top - b.top
+  );
+  const lines = [];
+  let cur = null;
+  for (const r of sorted) {
+    const crossStart = horizontal ? r.top : r.left;
+    if (cur && crossStart < (horizontal ? cur.bottom : cur.right) - 1) {
+      cur.items.push(r);
+      cur.bottom = Math.max(cur.bottom, r.bottom);
+      cur.right = Math.max(cur.right, r.right);
+    } else {
+      cur = { items: [r], top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+      lines.push(cur);
+    }
+  }
+
+  // Within each line, sort along the MAIN axis and emit a band in each channel
+  // between consecutive items (only when there's actually a positive gap).
+  const bands = [];
+  for (const line of lines) {
+    const items = [...line.items].sort((a, b) =>
+      horizontal ? a.left - b.left : a.top - b.top
+    );
+    for (let i = 0; i < items.length - 1; i++) {
+      const a = items[i];
+      const b = items[i + 1];
+      if (horizontal) {
+        const gap = b.left - a.right;
+        if (gap > 0.5) {
+          bands.push({
+            left: a.right,
+            top: line.top,
+            width: gap,
+            height: line.bottom - line.top,
+          });
+        }
+      } else {
+        const gap = b.top - a.bottom;
+        if (gap > 0.5) {
+          bands.push({
+            left: line.left,
+            top: a.bottom,
+            width: line.right - line.left,
+            height: gap,
+          });
+        }
+      }
+    }
+  }
+  return bands;
+}
+
+// Overlay that measures the selected container's children and draws a band per
+// flex line, plus a main-axis direction arrow. Re-measures after every render
+// of the parent (cheap; layout is already done) via a layout effect + a tick.
+function FlexLineOverlay({ containerRef, node }) {
+  const [lines, setLines] = React.useState([]);
+  const horizontal = (node.styles.flexDirection || "row").startsWith("row");
+
+  // Serialize the layout-relevant styles so the measuring effect only re-runs
+  // when something that could change line layout actually changes — NOT on every
+  // render. (Re-running every render + setState in the body = infinite loop.)
+  const layoutKey = JSON.stringify({
+    fd: node.styles.flexDirection,
+    fw: node.styles.flexWrap,
+    g: node.styles.gap,
+    jc: node.styles.justifyContent,
+    ai: node.styles.alignItems,
+    ac: node.styles.alignContent,
+    n: node.children.length,
+  });
+
+  React.useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const cRect = el.getBoundingClientRect();
+      const kids = Array.from(el.children).filter(
+        (c) => c.classList && c.classList.contains("fc-node")
+      );
+      const rects = kids.map((k) => k.getBoundingClientRect());
+      const next = groupIntoLines(rects, cRect, horizontal);
+      // Only update state if the measurement changed — this is the key fix.
+      setLines((prev) => {
+        if (
+          prev.length === next.length &&
+          prev.every(
+            (p, i) =>
+              p.left === next[i].left &&
+              p.top === next[i].top &&
+              p.width === next[i].width &&
+              p.height === next[i].height
+          )
+        ) {
+          return prev; // identical → no re-render, observer can't loop
+        }
+        return next;
+      });
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    Array.from(el.children).forEach((c) => ro.observe(c));
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutKey, horizontal]);
+
+  return (
+    <>
+      {lines.map((ln, i) => (
+        <div
+          key={i}
+          className="fc-line-band"
+          style={{
+            position: "absolute",
+            left: ln.left,
+            top: ln.top,
+            width: ln.width,
+            height: ln.height,
+            pointerEvents: "none",
+            zIndex: 15,
+          }}
+        >
+          <span className="fc-line-tag">
+            line {i + 1}
+          </span>
+        </div>
+      ))}
+      {/* main-axis direction arrow, centered */}
+      <span
+        className={"fc-axis-arrow " + (horizontal ? "is-row" : "is-col")}
+        style={{ position: "absolute", pointerEvents: "none", zIndex: 16 }}
+      >
+        {node.styles.flexDirection === "row"
+          ? "→ main"
+          : node.styles.flexDirection === "row-reverse"
+          ? "← main"
+          : node.styles.flexDirection === "column"
+          ? "↓ main"
+          : "↑ main"}
+      </span>
+    </>
+  );
+}
+
+// Overlay that draws the GAP channels between items in violet — the third kind
+// of space alongside padding (green) and margin (amber). Same measure-then-draw
+// pattern as FlexLineOverlay, with the same equality guard so it can't loop.
+function GapOverlay({ containerRef, node }) {
+  const [bands, setBands] = React.useState([]);
+  const horizontal = (node.styles.flexDirection || "row").startsWith("row");
+  const layoutKey = JSON.stringify({
+    fd: node.styles.flexDirection,
+    fw: node.styles.flexWrap,
+    g: node.styles.gap,
+    jc: node.styles.justifyContent,
+    ai: node.styles.alignItems,
+    ac: node.styles.alignContent,
+    n: node.children.length,
+  });
+
+  React.useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => {
+      const cRect = el.getBoundingClientRect();
+      const kids = Array.from(el.children).filter(
+        (c) => c.classList && c.classList.contains("fc-node")
+      );
+      const rects = kids.map((k) => k.getBoundingClientRect());
+      const next = computeGapBands(rects, cRect, horizontal);
+      setBands((prev) => {
+        if (
+          prev.length === next.length &&
+          prev.every(
+            (p, i) =>
+              p.left === next[i].left &&
+              p.top === next[i].top &&
+              p.width === next[i].width &&
+              p.height === next[i].height
+          )
+        ) {
+          return prev; // identical → no re-render (no loop)
+        }
+        return next;
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    Array.from(el.children).forEach((c) => ro.observe(c));
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutKey, horizontal]);
+
+  return (
+    <>
+      {bands.map((b, i) => (
+        <div
+          key={i}
+          className="fc-gap-band"
+          style={{
+            position: "absolute",
+            left: b.left,
+            top: b.top,
+            width: b.width,
+            height: b.height,
+            pointerEvents: "none",
+            zIndex: 19,
+          }}
+        />
+      ))}
+    </>
   );
 }
 
@@ -312,6 +683,7 @@ function CanvasNode({
   onDropMove,
   dragState,
   showBoxModel,
+  showLines,
   hidePills,
   onResize,
   syncDims,
@@ -378,6 +750,11 @@ function CanvasNode({
 
   // Only show resize handles on the selected, non-root element.
   const showHandles = isSelected && !isRoot && typeof onResize === "function";
+  // Flex-line overlay only makes sense on a selected CONTAINER with items.
+  const linesOn = showLines && isSelected && isContainer && node.children.length > 0;
+  // Gap bands ride along with the box-model overlay (not the lines toggle), so
+  // padding/margin/gap all appear together when ▣ is on.
+  const gapOn = overlayOn && isContainer && node.children.length > 1;
 
   const dragProps = isRoot
     ? {}
@@ -436,6 +813,7 @@ function CanvasNode({
             onDropMove={onDropMove}
             dragState={dragState}
             showBoxModel={showBoxModel}
+            showLines={showLines}
             hidePills={hidePills}
             onResize={onResize}
             syncDims={syncDims}
@@ -461,6 +839,7 @@ function CanvasNode({
       }
       style={{ ...node.styles, position: "relative" }}
       ref={elRef}
+      data-node-id={node.id}
     >
       {/* Box-model overlays (selected element only, when toggle is on).
           Bands are opaque + high z-index so they read clearly over the node's
@@ -506,6 +885,8 @@ function CanvasNode({
           <span className="fc-bm-tag fc-bm-tag-padding">padding {paddingVal}</span>
         </div>
       )}
+      {gapOn && <GapOverlay containerRef={elRef} node={node} />}
+      {linesOn && <FlexLineOverlay containerRef={elRef} node={node} />}
       {!hidePills && (
         <span className="fc-node-tag">
           {node.label}
@@ -538,7 +919,8 @@ function CanvasNode({
       )}
       {isContainer
         ? renderChildrenWithZones()
-        : node.children.map((c) => (
+        : node.children.length
+        ? node.children.map((c) => (
             <CanvasNode
               key={c.id}
               node={c}
@@ -551,11 +933,15 @@ function CanvasNode({
               onDropMove={onDropMove}
               dragState={dragState}
               showBoxModel={showBoxModel}
+              showLines={showLines}
               hidePills={hidePills}
               onResize={onResize}
               syncDims={syncDims}
             />
-          ))}
+          ))
+        : node.text
+        ? <span className="fc-node-text">{node.text}</span>
+        : null}
     </div>
   );
 }
@@ -623,8 +1009,10 @@ function FlexCraft() {
   const [theme, setTheme] = useState("dark");
   const [mobilePane, setMobilePane] = useState("canvas"); // canvas|add|style|code
   const [showBoxModel, setShowBoxModel] = useState(false);
+  const [showLines, setShowLines] = useState(false);
   const [hidePills, setHidePills] = useState(false);
   const [syncDims, setSyncDims] = useState(false);
+  const [drawerHeight, setDrawerHeight] = useState(170);
   const dragState = useRef(null);
 
   // commit a new tree, pushing the old one onto the undo stack
@@ -713,7 +1101,26 @@ function FlexCraft() {
     });
   }, []);
 
-  // Reset a single property to its factory default for this element's type.
+  // Drag the drawer grip to resize the code panel. Dragging UP (negative dy)
+  // grows it; clamped to a sane min/max so it can't vanish or eat the canvas.
+  const startDrawerResize = useCallback((e) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = drawerHeight;
+    const onMove = (ev) => {
+      const dy = ev.clientY - startY; // down = positive → smaller drawer
+      const next = Math.min(560, Math.max(60, Math.round(startH - dy)));
+      setDrawerHeight(next);
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }, [drawerHeight]);
+
+
   // If the property isn't part of the factory defaults, fall back to "auto".
   const resetProp = useCallback(
     (key) => {
@@ -858,6 +1265,17 @@ function FlexCraft() {
       ? { modified: !isDefaultValue(selected, key), onReset: () => resetProp(key) }
       : {};
 
+  // Measure the selected element's actual rendered size from the DOM, so the
+  // width/height "fixed" toggle seeds with the real current size (e.g. 1000×500)
+  // instead of a constant. Read at render time via the data-node-id attribute.
+  const measuredSize = (() => {
+    if (!selected || typeof document === "undefined") return {};
+    const el = document.querySelector(`[data-node-id="${selected.id}"]`);
+    if (!el) return {};
+    const r = el.getBoundingClientRect();
+    return { w: r.width, h: r.height };
+  })();
+
   const PropsPanel = !selected ? (
     <div className="fc-empty">
       <div className="fc-empty-mark">↖</div>
@@ -954,6 +1372,7 @@ function FlexCraft() {
                 { value: "flex-end", label: "end" },
                 { value: "space-between", label: "btwn" },
                 { value: "space-around", label: "arnd" },
+                { value: "space-evenly", label: "even" },
               ]}
               onChange={(v) => setStyle({ alignContent: v })}
               {...rp("alignContent")}
@@ -1022,12 +1441,14 @@ function FlexCraft() {
           label="width"
           value={selected.styles.width}
           onChange={(v) => setStyle({ width: v })}
+          measuredDefault={measuredSize.w}
           {...rp("width")}
         />
         <DimInput
           label="height"
           value={selected.styles.height}
           onChange={(v) => setStyle({ height: v })}
+          measuredDefault={measuredSize.h}
           {...rp("height")}
         />
         <Slider
@@ -1088,6 +1509,13 @@ function FlexCraft() {
         <span className="fc-canvas-hint fc-desktop-only">
           click to select · drag to reorder · drag from palette to add
         </span>
+        {showBoxModel && (
+          <div className="fc-bm-legend">
+            <span className="fc-legend-item"><span className="fc-legend-sw sw-pad" />padding</span>
+            <span className="fc-legend-item"><span className="fc-legend-sw sw-mar" />margin</span>
+            <span className="fc-legend-item"><span className="fc-legend-sw sw-gap" />gap</span>
+          </div>
+        )}
       </div>
       <div className="fc-canvas-scroll" onClick={() => setSelectedId(null)}>
         <CanvasNode
@@ -1101,6 +1529,7 @@ function FlexCraft() {
           onDropMove={onDropMove}
           dragState={dragState}
           showBoxModel={showBoxModel}
+          showLines={showLines}
           hidePills={hidePills}
           onResize={onResize}
           syncDims={syncDims}
@@ -1144,6 +1573,13 @@ function FlexCraft() {
             ▣
           </button>
           <button
+            className={"fc-tool-btn" + (showLines ? " is-on" : "")}
+            onClick={() => setShowLines((v) => !v)}
+            title="Show flex lines & main axis on selected container"
+          >
+            ☰
+          </button>
+          <button
             className={"fc-tool-btn" + (hidePills ? " is-on" : "")}
             onClick={() => setHidePills((v) => !v)}
             title={hidePills ? "Show name pills" : "Minimize name pills"}
@@ -1181,7 +1617,21 @@ function FlexCraft() {
           </div>
           <div className="fc-desktop-only fc-desktop-canvas">
             {CanvasPanel}
-            <div className="fc-code-drawer">{CodePanel}</div>
+            <div
+              className="fc-code-drawer"
+              style={{ height: drawerHeight, maxHeight: "none" }}
+            >
+              {/* Drag this bar to grow/shrink the code drawer. Pointer-driven so
+                  it works the same way the resize handles do. */}
+              <div
+                className="fc-drawer-grip"
+                onPointerDown={startDrawerResize}
+                title="Drag to resize the code panel"
+              >
+                <span className="fc-drawer-grip-bar" />
+              </div>
+              {CodePanel}
+            </div>
           </div>
         </main>
 
@@ -1267,8 +1717,8 @@ const css = `
 
 /* ---- body layout ---- */
 .fc-body{ flex:1; display:flex; min-height:0; }
-.fc-palette{ width:210px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--line); overflow:auto; }
-.fc-props{ width:290px; flex-shrink:0; background:var(--panel); border-left:1px solid var(--line); overflow:auto; }
+.fc-palette{ width:210px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--line); overflow-y:auto; overflow-x:hidden; }
+.fc-props{ width:290px; flex-shrink:0; background:var(--panel); border-left:1px solid var(--line); overflow-y:auto; overflow-x:hidden; }
 .fc-canvas-wrap{ flex:1; min-width:0; display:flex; flex-direction:column; }
 .fc-desktop-canvas{ flex:1; display:flex; flex-direction:column; min-height:0; }
 
@@ -1316,6 +1766,10 @@ const css = `
   color:var(--ink); background:var(--accent); padding:1px 6px; border-radius:3px;
   font-weight:700; pointer-events:none; white-space:nowrap; opacity:0.85;
 }
+.fc-node-text{
+  color:var(--mut); font-size:11px; font-family:'Space Mono',monospace;
+  pointer-events:none; user-select:none; white-space:nowrap;
+}
 .fc-dropzone{ border-radius:3px; transition:background 80ms, box-shadow 80ms; }
 .fc-dropzone.is-active{ background:var(--accent); box-shadow:0 0 12px var(--accent); }
 
@@ -1328,7 +1782,14 @@ const css = `
 .fc-resize-br{ right:-4px; bottom:-4px; width:11px; height:11px; cursor:nwse-resize; border-radius:2px; }
 
 /* ---- code drawer ---- */
-.fc-code-drawer{ border-top:1px solid var(--line); background:var(--panel); max-height:190px; display:flex; flex-direction:column; flex-shrink:0; }
+.fc-code-drawer{ border-top:1px solid var(--line); background:var(--panel); display:flex; flex-direction:column; flex-shrink:0; position:relative; }
+.fc-drawer-grip{
+  height:11px; flex-shrink:0; cursor:ns-resize; display:flex; align-items:center;
+  justify-content:center; touch-action:none; background:var(--panel2);
+  border-bottom:1px solid var(--line);
+}
+.fc-drawer-grip:hover .fc-drawer-grip-bar{ background:var(--accent); }
+.fc-drawer-grip-bar{ width:34px; height:3px; border-radius:2px; background:var(--mut); transition:background 100ms; }
 .fc-code-inner{ display:flex; flex-direction:column; min-height:0; height:100%; }
 .fc-code-tabs{ display:flex; align-items:center; gap:4px; padding:6px 10px; border-bottom:1px solid var(--line); }
 .fc-code-tab{ background:transparent; border:none; color:var(--mut); font-family:inherit; font-size:11px; padding:4px 10px; border-radius:4px; cursor:pointer; }
@@ -1338,7 +1799,7 @@ const css = `
 .fc-code{ margin:0; padding:12px 16px; overflow:auto; font-size:11px; line-height:1.5; color:var(--txt); font-family:inherit; flex:1; }
 
 /* ---- props ---- */
-.fc-props-inner{ padding:18px; }
+.fc-props-inner{ padding:18px; min-width:0; max-width:100%; box-sizing:border-box; }
 .fc-empty{ color:var(--mut); text-align:center; margin-top:60px; line-height:1.6; padding:20px; }
 .fc-empty-mark{ font-size:34px; color:var(--accent); margin-bottom:8px; }
 .fc-prop-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--line); }
@@ -1352,7 +1813,7 @@ const css = `
 .fc-tag-pill{ font-size:9px; color:var(--accent); background:var(--accent-soft); padding:1px 6px; border-radius:3px; text-transform:none; }
 .fc-convert-btn{ width:100%; background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent); font-family:inherit; font-size:12px; padding:10px; border-radius:6px; cursor:pointer; }
 
-.fc-field{ margin-bottom:16px; }
+.fc-field{ margin-bottom:16px; min-width:0; max-width:100%; }
 .fc-field-label{ display:flex; justify-content:space-between; align-items:center; font-size:10.5px; color:var(--mut); margin-bottom:7px; }
 .fc-label-text{ display:inline-flex; align-items:center; gap:6px; }
 .fc-reset-dot{
@@ -1367,9 +1828,65 @@ const css = `
 }
 .fc-bm-tag-padding{ top:1px; left:50%; transform:translateX(-50%); background:rgba(104,211,145,0.9); color:#06281a; }
 .fc-bm-tag-margin{ top:-12px; left:50%; transform:translateX(-50%); background:rgba(246,173,85,0.95); color:#3a2300; }
-.fc-segmented{ display:flex; flex-wrap:wrap; gap:4px; background:var(--ink); padding:3px; border-radius:6px; }
-.fc-seg-btn{ flex:1 1 auto; background:transparent; border:none; color:var(--mut); font-family:inherit; font-size:10px; padding:6px 4px; border-radius:4px; cursor:pointer; white-space:nowrap; }
+
+/* ---- gap overlay (violet, devtools convention) ---- */
+.fc-gap-band{
+  background:
+    repeating-linear-gradient(45deg,
+      rgba(167,139,250,0.55) 0, rgba(167,139,250,0.55) 4px,
+      rgba(167,139,250,0.30) 4px, rgba(167,139,250,0.30) 8px);
+  border-radius:1px;
+}
+/* box-model legend (only while ▣ overlay is on) */
+.fc-bm-legend{
+  margin-left:auto; display:inline-flex; gap:12px;
+  padding:4px 10px; background:var(--panel2); border:1px solid var(--line);
+  border-radius:6px; font-size:10px; color:var(--mut); align-items:center;
+}
+.fc-legend-item{ display:inline-flex; align-items:center; gap:5px; }
+.fc-legend-sw{ width:11px; height:11px; border-radius:2px; display:inline-block; }
+.fc-legend-sw.sw-pad{ background:rgba(104,211,145,0.8); }
+.fc-legend-sw.sw-mar{ background:rgba(246,173,85,0.85); }
+.fc-legend-sw.sw-gap{ background:repeating-linear-gradient(45deg, rgba(167,139,250,0.7) 0 3px, rgba(167,139,250,0.35) 3px 6px); }
+
+/* ---- flex-line overlay ---- */
+.fc-line-band{
+  border:1.5px dashed rgba(120,170,255,0.9);
+  border-radius:3px;
+  background:rgba(120,170,255,0.08);
+}
+.fc-line-tag{
+  position:absolute; top:-1px; left:-1px; font-size:8.5px; font-weight:700;
+  padding:1px 5px; background:rgba(120,170,255,0.95); color:#04122e;
+  border-radius:2px 0 3px 0; white-space:nowrap; font-family:'Space Mono',monospace;
+}
+.fc-axis-arrow{
+  top:2px; right:4px; font-size:9px; font-weight:700; letter-spacing:0.5px;
+  color:#04122e; background:rgba(120,170,255,0.95); padding:1px 6px; border-radius:3px;
+  font-family:'Space Mono',monospace;
+}
+.fc-seg-wrap{ position:relative; display:flex; align-items:center; min-width:0; max-width:100%; }
+.fc-segmented{
+  display:flex; flex-wrap:nowrap; gap:4px; background:var(--ink); padding:3px;
+  border-radius:6px; overflow-x:auto; scroll-behavior:smooth; flex:1; min-width:0;
+  scrollbar-width:none; -ms-overflow-style:none;
+}
+.fc-segmented::-webkit-scrollbar{ display:none; height:0; }
+/* edge fades hint that there's more to scroll to in that direction */
+.fc-segmented.fade-l{ -webkit-mask-image:linear-gradient(to right, transparent, #000 18px); mask-image:linear-gradient(to right, transparent, #000 18px); }
+.fc-segmented.fade-r{ -webkit-mask-image:linear-gradient(to left, transparent, #000 18px); mask-image:linear-gradient(to left, transparent, #000 18px); }
+.fc-segmented.fade-l.fade-r{ -webkit-mask-image:linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent); mask-image:linear-gradient(to right, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
+.fc-seg-btn{ flex:0 0 auto; background:transparent; border:none; color:var(--mut); font-family:inherit; font-size:10px; padding:6px 9px; border-radius:4px; cursor:pointer; white-space:nowrap; }
 .fc-seg-btn.is-active{ background:var(--accent); color:var(--ink); font-weight:700; }
+.fc-seg-chev{
+  position:absolute; z-index:2; top:50%; transform:translateY(-50%);
+  width:16px; height:22px; border:none; border-radius:4px; cursor:pointer;
+  background:var(--panel2); color:var(--accent); font-size:13px; line-height:1;
+  display:flex; align-items:center; justify-content:center; padding:0;
+  box-shadow:0 0 6px rgba(0,0,0,0.4);
+}
+.fc-seg-chev-l{ left:-2px; }
+.fc-seg-chev-r{ right:-2px; }
 .fc-num{ width:100%; background:var(--ink); border:1px solid var(--line); color:var(--txt); font-family:inherit; font-size:12px; padding:7px 9px; border-radius:5px; }
 .fc-mini-toggle{ background:var(--accent-soft); border:1px solid var(--line); color:var(--mut); font-family:inherit; font-size:9px; padding:2px 7px; border-radius:3px; cursor:pointer; }
 .fc-mini-toggle.is-active{ color:var(--accent); }

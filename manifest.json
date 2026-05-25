@@ -866,6 +866,12 @@
       },
       {
         "type": "file",
+        "name": "FlexCraft.html",
+        "label": "Flexcraft",
+        "path": "s&box/FlexCraft.html"
+      },
+      {
+        "type": "file",
         "name": "understanding-flexbox.pdf",
         "label": "Understanding Flexbox",
         "path": "s&box/understanding-flexbox.pdf"

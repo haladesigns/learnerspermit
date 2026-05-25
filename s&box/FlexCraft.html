@@ -224,6 +224,40 @@ function exportHtml(tree) {
   return walk(tree, 0);
 }
 
+// ---- segment variants (for per-element highlighting in the code panels) -----
+// Each returns an array of { id, text } pieces. The panel wraps the segment
+// whose id === selectedId in a highlight. CSS = one rule per node. HTML keeps
+// the nesting but tags each node's OWN tag-line(s) with its id so selecting a
+// container lights just its tags, not its whole subtree.
+function exportCssSegments(tree) {
+  const segs = [];
+  const walk = (node) => {
+    const body = styleToCss(node.styles);
+    if (body.trim()) segs.push({ id: node.id, text: `.${node.tag}-${node.id} {\n${body}\n}` });
+    node.children.forEach(walk);
+  };
+  walk(tree);
+  return segs;
+}
+function exportHtmlSegments(tree) {
+  // Emit ordered line-segments. A node's open+close tags carry its id; the
+  // children sit between them as their own segments. Leaf = a single segment.
+  const segs = [];
+  const walk = (node, depth) => {
+    const pad = "  ".repeat(depth);
+    const cls = `${node.tag}-${node.id}`;
+    if (node.children.length === 0) {
+      segs.push({ id: node.id, text: `${pad}<${node.tag} class="${cls}">${node.text || ""}</${node.tag}>` });
+      return;
+    }
+    segs.push({ id: node.id, text: `${pad}<${node.tag} class="${cls}">` });
+    node.children.forEach((c) => walk(c, depth + 1));
+    segs.push({ id: node.id, text: `${pad}</${node.tag}>` });
+  };
+  walk(tree, 0);
+  return segs;
+}
+
 // ============================================================================
 //  Control primitives
 // ============================================================================
@@ -702,6 +736,9 @@ function CanvasNode({
   // Ref to the node's DOM element so a resize drag can measure its actual
   // rendered size as the starting point (flex may have sized it, not us).
   const elRef = React.useRef(null);
+  // Live readout shown next to the cursor while dragging a resize handle:
+  // { x, y, text } or null. Cleared on pointer-up.
+  const [resizeTip, setResizeTip] = React.useState(null);
 
   // Begin an edge-resize drag. `axis` is "x" (width) or "y" (height).
   // We use POINTER events (not HTML5 drag) so this works on touch and never
@@ -724,26 +761,34 @@ function CanvasNode({
       // auto-flexing." So we zero flex-grow/shrink so the explicit dimension
       // actually takes effect instead of being overridden by the flex algorithm.
       const patch = { flexGrow: 0, flexShrink: 0 };
-      if (axis === "x" || syncDims) {
+      if (axis === "x" || axis === "xy" || syncDims) {
         patch.width = Math.max(20, Math.round(startW + dx));
       }
-      if (axis === "y" || syncDims) {
+      if (axis === "y" || axis === "xy" || syncDims) {
         patch.height = Math.max(20, Math.round(startH + dy));
       }
       // With sync on, a single edge drives both dims to the same value so the
       // element stays square — we key off whichever axis was grabbed.
       if (syncDims) {
-        const v = axis === "x"
-          ? Math.max(20, Math.round(startW + dx))
-          : Math.max(20, Math.round(startH + dy));
+        const v = axis === "y"
+          ? Math.max(20, Math.round(startH + dy))
+          : Math.max(20, Math.round(startW + dx));
         patch.width = v;
         patch.height = v;
       }
       onResize(node.id, patch);
+      // Live readout: show the dimension(s) actually changing for this drag.
+      const showW = axis === "x" || axis === "xy" || syncDims;
+      const showH = axis === "y" || axis === "xy" || syncDims;
+      const parts = [];
+      if (showW) parts.push(`W ${patch.width}`);
+      if (showH) parts.push(`H ${patch.height}`);
+      setResizeTip({ x: ev.clientX, y: ev.clientY, text: parts.join("  ×  ") });
     };
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      setResizeTip(null);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -922,11 +967,19 @@ function CanvasNode({
           />
           <div
             className="fc-resize fc-resize-br"
-            onPointerDown={startResize("x")}
+            onPointerDown={startResize("xy")}
             onClick={(e) => e.stopPropagation()}
-            title="Drag to resize"
+            title="Drag to resize width & height"
           />
         </>
+      )}
+      {resizeTip && (
+        <span
+          className="fc-resize-tip"
+          style={{ position: "fixed", left: resizeTip.x + 16, top: resizeTip.y + 16, zIndex: 9999, pointerEvents: "none" }}
+        >
+          {resizeTip.text}
+        </span>
       )}
       {isContainer
         ? renderChildrenWithZones()
@@ -1022,6 +1075,40 @@ function keyLabel(tipKey) {
     return map[tipKey.value] || tipKey.value;
   }
   return tipKey.value.length === 1 ? tipKey.value.toUpperCase() : tipKey.value;
+}
+
+// ============================================================================
+//  Code view — renders export segments, highlighting the selected element's
+//  block and scrolling it into view. Plain text is kept for the copy button.
+// ============================================================================
+function CodeView({ segments, selectedId, joiner }) {
+  const hlRef = React.useRef(null);
+  // Scroll the highlighted block into view when selection (or tab) changes.
+  React.useEffect(() => {
+    if (hlRef.current && hlRef.current.scrollIntoView) {
+      hlRef.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [selectedId, segments]);
+
+  let firstHit = true;
+  return (
+    <pre className="fc-code">
+      <code>
+        {segments.map((seg, i) => {
+          const isSel = seg.id === selectedId;
+          const ref = isSel && firstHit ? ((firstHit = false), hlRef) : null;
+          return (
+            <React.Fragment key={i}>
+              {i > 0 && joiner}
+              <span ref={ref} className={isSel ? "fc-code-hl" : undefined}>
+                {seg.text}
+              </span>
+            </React.Fragment>
+          );
+        })}
+      </code>
+    </pre>
+  );
 }
 
 // ============================================================================
@@ -1474,6 +1561,8 @@ function FlexCraft() {
 
   const cssText = useMemo(() => exportCss(tree), [tree]);
   const htmlText = useMemo(() => exportHtml(tree), [tree]);
+  const cssSegs = useMemo(() => exportCssSegments(tree), [tree]);
+  const htmlSegs = useMemo(() => exportHtmlSegments(tree), [tree]);
 
   const isFlexItem =
     selected && selectedParent && selectedParent.styles.display === "flex";
@@ -1558,13 +1647,13 @@ function FlexCraft() {
       </div>
       <div className="fc-shortcut-list">
         {[
-          { k: "B", label: "Box model" },
-          { k: "L", label: "Flex lines" },
-          { k: "P", label: "Name pills" },
-          { k: "R", label: "Sync W/H" },
+          { k: "B", label: "Box model", on: showBoxModel },
+          { k: "L", label: "Flex lines", on: showLines },
+          { k: "P", label: "Name pills", on: hidePills },
+          { k: "R", label: "Sync W/H", on: syncDims },
         ].map((s) => (
-          <div className="fc-shortcut-mini" key={s.k}>
-            <span className="fc-keycap fc-keycap-static">{s.k}</span>
+          <div className={"fc-shortcut-mini" + (s.on ? " is-on" : "")} key={s.k}>
+            <span className={"fc-keycap fc-keycap-static" + (s.on ? " is-on" : "")}>{s.k}</span>
             <span>{s.label}</span>
           </div>
         ))}
@@ -1839,9 +1928,11 @@ function FlexCraft() {
           copy
         </button>
       </div>
-      <pre className="fc-code">
-        <code>{tab === "css" ? cssText : htmlText}</code>
-      </pre>
+      <CodeView
+        segments={tab === "css" ? cssSegs : htmlSegs}
+        selectedId={selectedId}
+        joiner={tab === "css" ? "\n\n" : "\n"}
+      />
     </div>
   );
 
@@ -1852,13 +1943,11 @@ function FlexCraft() {
         <span className="fc-canvas-hint fc-desktop-only">
           click to select · drag to reorder · drag from palette to add
         </span>
-        {showBoxModel && (
-          <div className="fc-bm-legend">
-            <span className="fc-legend-item"><span className="fc-legend-sw sw-pad" />padding</span>
-            <span className="fc-legend-item"><span className="fc-legend-sw sw-mar" />margin</span>
-            <span className="fc-legend-item"><span className="fc-legend-sw sw-gap" />gap</span>
-          </div>
-        )}
+        <div className={"fc-bm-legend fc-desktop-only" + (showBoxModel ? "" : " is-hidden")} aria-hidden={!showBoxModel}>
+          <span className="fc-legend-item"><span className="fc-legend-sw sw-pad" />padding</span>
+          <span className="fc-legend-item"><span className="fc-legend-sw sw-mar" />margin</span>
+          <span className="fc-legend-item"><span className="fc-legend-sw sw-gap" />gap</span>
+        </div>
       </div>
       <div
         className="fc-canvas-scroll"
@@ -2124,7 +2213,7 @@ const css = `
 }
 .fc-tool-btn:disabled{ opacity:0.35; cursor:default; }
 .fc-tool-btn:not(:disabled):hover{ border-color:var(--accent); color:var(--accent); }
-.fc-tool-btn.is-on{ background:var(--accent); color:var(--ink); border-color:var(--accent); }
+.fc-tool-btn.is-on{ background:var(--accent); color:var(--ink); border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft), 0 0 8px var(--accent-soft); }
 
 /* ---- body layout ---- */
 .fc-body{ flex:1; display:flex; min-height:0; }
@@ -2209,9 +2298,12 @@ const css = `
 .fc-keycap.is-binding{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); animation:fc-pulse 1s ease-in-out infinite; }
 @keyframes fc-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.5; } }
 .fc-shortcut-list{ display:flex; flex-direction:column; gap:5px; margin-top:8px; }
-.fc-shortcut-mini{ display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--mut); }
-.fc-keycap-static{ cursor:default; padding:2px 7px; font-size:10px; min-width:22px; text-align:center; }
+.fc-shortcut-mini{ display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--mut); transition:color 120ms; }
+.fc-shortcut-mini.is-on{ color:var(--accent); }
+.fc-keycap-static{ cursor:default; padding:2px 7px; font-size:10px; min-width:22px; text-align:center; transition:background 120ms, color 120ms, border-color 120ms; }
 .fc-keycap-static:hover{ border-color:var(--line); color:var(--txt); }
+.fc-keycap-static.is-on{ background:var(--accent); color:var(--ink); border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+.fc-keycap-static.is-on:hover{ color:var(--ink); border-color:var(--accent); }
 
 /* ---- canvas ---- */
 .fc-canvas-head{ padding:11px 16px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:14px; background:var(--panel); }
@@ -2250,6 +2342,11 @@ const css = `
 .fc-resize-r{ top:0; right:-3px; width:6px; height:100%; cursor:ew-resize; border-radius:3px; }
 .fc-resize-b{ left:0; bottom:-3px; height:6px; width:100%; cursor:ns-resize; border-radius:3px; }
 .fc-resize-br{ right:-4px; bottom:-4px; width:11px; height:11px; cursor:nwse-resize; border-radius:2px; }
+.fc-resize-tip{
+  background:var(--accent); color:var(--ink); font-family:'Space Mono',monospace;
+  font-size:11px; font-weight:700; padding:3px 8px; border-radius:5px;
+  white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,0.45);
+}
 
 /* ---- code drawer ---- */
 .fc-code-drawer{ border-top:1px solid var(--line); background:var(--panel); display:flex; flex-direction:column; flex-shrink:0; position:relative; }
@@ -2267,6 +2364,13 @@ const css = `
 .fc-copy-btn{ background:transparent; border:1px solid var(--line); color:var(--mut); font-family:inherit; font-size:10px; padding:4px 10px; border-radius:4px; cursor:pointer; }
 .fc-copy-btn:hover{ border-color:var(--accent); color:var(--accent); }
 .fc-code{ margin:0; padding:12px 16px; overflow:auto; font-size:11px; line-height:1.5; color:var(--txt); font-family:inherit; flex:1; }
+/* highlighted block = the currently-selected element's CSS rule / HTML tags */
+.fc-code-hl{
+  display:inline-block; background:var(--accent-soft); color:var(--accent);
+  border-left:2px solid var(--accent); border-radius:0 3px 3px 0;
+  margin-left:-16px; padding-left:14px; padding-right:6px;
+  box-decoration-break:clone; -webkit-box-decoration-break:clone;
+}
 
 /* ---- props ---- */
 .fc-props-inner{ padding:18px; padding-top:32px; min-width:0; max-width:100%; box-sizing:border-box; }
@@ -2313,6 +2417,7 @@ const css = `
   padding:4px 10px; background:var(--panel2); border:1px solid var(--line);
   border-radius:6px; font-size:10px; color:var(--mut); align-items:center;
 }
+.fc-bm-legend.is-hidden{ visibility:hidden; }
 .fc-legend-item{ display:inline-flex; align-items:center; gap:5px; }
 .fc-legend-sw{ width:11px; height:11px; border-radius:2px; display:inline-block; }
 .fc-legend-sw.sw-pad{ background:rgba(104,211,145,0.8); }

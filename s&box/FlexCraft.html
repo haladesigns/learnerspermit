@@ -545,31 +545,104 @@ function Slider({ label, value, min, max, step = 1, suffix = "px", onChange, mod
 }
 
 // width / height / flex-basis can be a number(px) or the keyword "auto".
+// Unit metadata for width/height. Numeric units carry a slider range + step;
+// keyword units (auto + intrinsic sizing) have no magnitude, so no slider.
+const DIM_UNITS = {
+  px:  { numeric: true,  min: 0, max: 800, step: 1,   label: "px" },
+  "%": { numeric: true,  min: 0, max: 100, step: 1,   label: "%" },
+  rem: { numeric: true,  min: 0, max: 50,  step: 0.5, label: "rem" },
+  vw:  { numeric: true,  min: 0, max: 100, step: 1,   label: "vw" },
+  vh:  { numeric: true,  min: 0, max: 100, step: 1,   label: "vh" },
+  auto:          { numeric: false, label: "auto" },
+  "min-content": { numeric: false, label: "min-content" },
+  "max-content": { numeric: false, label: "max-content" },
+  "fit-content": { numeric: false, label: "fit-content" },
+};
+// Parse a stored width/height value into { num, unit }.
+//  number        → px (e.g. 200 → {200,"px"})
+//  "50%","20rem" → numeric unit
+//  "auto", etc.  → keyword unit (num undefined)
+//  undefined/""  → treated as auto
+function parseDim(value) {
+  if (typeof value === "number") return { num: value, unit: "px" };
+  if (value === undefined || value === "" || value === "auto") return { num: undefined, unit: "auto" };
+  const m = /^(-?\d+(?:\.\d+)?)(px|%|rem|vw|vh)$/.exec(String(value).trim());
+  if (m) return { num: Number(m[1]), unit: m[2] };
+  if (value in DIM_UNITS) return { num: undefined, unit: value }; // keyword
+  return { num: undefined, unit: "auto" }; // unrecognized → auto
+}
+// Compose { num, unit } back into a stored value: px → bare number (keeps the
+// existing numeric model + resize/overlay logic working), other numeric units →
+// "<n><unit>" string, keyword → the keyword string.
+function composeDim(num, unit) {
+  const meta = DIM_UNITS[unit] || DIM_UNITS.auto;
+  if (!meta.numeric) return unit;          // "auto" / "min-content" / …
+  if (unit === "px") return Math.round(num);
+  return `${num}${unit}`;
+}
+
 function DimInput({ label, value, onChange, modified, onReset, measuredDefault }) {
-  const isAuto = value === undefined || value === "auto" || value === "";
-  // When flipping to "fixed", seed with the element's actual current rendered
-  // size (measured by the parent) so the box doesn't visually jump — instead of
-  // a meaningless constant. Falls back to 120 only if no measurement is given.
-  const seed = typeof measuredDefault === "number" && measuredDefault > 0
-    ? Math.round(measuredDefault)
-    : 120;
+  const { num, unit } = parseDim(value);
+  const meta = DIM_UNITS[unit] || DIM_UNITS.auto;
+  // Seed value when switching INTO a numeric unit. For px, use the element's
+  // measured size (no visual jump); for relative units a sensible default.
+  const seedFor = (u) => {
+    if (u === "px") return typeof measuredDefault === "number" && measuredDefault > 0 ? Math.round(measuredDefault) : 120;
+    if (u === "%") return 50;
+    if (u === "rem") return 10;
+    return 50; // vw / vh
+  };
+  const cur = typeof num === "number" ? num : seedFor(unit);
+
   return (
     <div className="fc-field">
       <FieldLabel label={label} modified={modified} onReset={onReset}>
-        <button
-          className={"fc-mini-toggle" + (isAuto ? " is-active" : "")}
-          onClick={() => onChange(isAuto ? seed : "auto")}
+        <select
+          className="fc-unit-select"
+          value={unit}
+          onChange={(e) => {
+            const u = e.target.value;
+            const m = DIM_UNITS[u];
+            onChange(m.numeric ? composeDim(seedFor(u), u) : u);
+          }}
         >
-          {isAuto ? "auto" : "fixed"}
-        </button>
+          <optgroup label="length">
+            <option value="px">px</option>
+            <option value="%">%</option>
+            <option value="rem">rem</option>
+            <option value="vw">vw</option>
+            <option value="vh">vh</option>
+          </optgroup>
+          <optgroup label="keyword">
+            <option value="auto">auto</option>
+            <option value="min-content">min-content</option>
+            <option value="max-content">max-content</option>
+            <option value="fit-content">fit-content</option>
+          </optgroup>
+        </select>
       </FieldLabel>
-      {!isAuto && (
-        <input
-          type="number"
-          value={typeof value === "number" ? value : seed}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="fc-num"
-        />
+      {meta.numeric && (
+        <div className="fc-dim-value">
+          <input
+            type="range"
+            min={meta.min}
+            max={meta.max}
+            step={meta.step}
+            value={cur}
+            onChange={(e) => onChange(composeDim(Number(e.target.value), unit))}
+            className="fc-range"
+          />
+          <input
+            type="number"
+            value={cur}
+            step={meta.step}
+            onChange={(e) => {
+              const n = e.target.value === "" ? 0 : Number(e.target.value);
+              onChange(composeDim(n, unit));
+            }}
+            className="fc-num fc-dim-num"
+          />
+        </div>
       )}
     </div>
   );
@@ -876,6 +949,7 @@ function CanvasNode({
   hidePills,
   onResize,
   syncDims,
+  snapStep,
   isDragging,
   onText,
 }) {
@@ -948,22 +1022,25 @@ function CanvasNode({
     const onMove = (ev) => {
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
+      // Snap the RESULTING dimension to the nearest `snapStep` multiple, so the
+      // element lands on the grid regardless of where the drag started. step 1
+      // = no snapping. Floor of 20px is enforced after snapping.
+      const step = Math.max(1, snapStep || 1);
+      const snap = (v) => Math.max(20, Math.round(v / step) * step);
       // Honest behavior: grabbing an edge means "I want this exact size, stop
       // auto-flexing." So we zero flex-grow/shrink so the explicit dimension
       // actually takes effect instead of being overridden by the flex algorithm.
       const patch = { flexGrow: 0, flexShrink: 0 };
       if (axis === "x" || axis === "xy" || syncDims) {
-        patch.width = Math.max(20, Math.round(startW + dx));
+        patch.width = snap(startW + dx);
       }
       if (axis === "y" || axis === "xy" || syncDims) {
-        patch.height = Math.max(20, Math.round(startH + dy));
+        patch.height = snap(startH + dy);
       }
       // With sync on, a single edge drives both dims to the same value so the
       // element stays square — we key off whichever axis was grabbed.
       if (syncDims) {
-        const v = axis === "y"
-          ? Math.max(20, Math.round(startH + dy))
-          : Math.max(20, Math.round(startW + dx));
+        const v = axis === "y" ? snap(startH + dy) : snap(startW + dx);
         patch.width = v;
         patch.height = v;
       }
@@ -1033,6 +1110,7 @@ function CanvasNode({
         hidePills={hidePills}
         onResize={onResize}
         syncDims={syncDims}
+        snapStep={snapStep}
         isDragging={isDragging}
         onText={onText}
       />
@@ -1202,6 +1280,7 @@ function CanvasNode({
               hidePills={hidePills}
               onResize={onResize}
               syncDims={syncDims}
+              snapStep={snapStep}
               isDragging={isDragging}
               onText={onText}
             />
@@ -1473,6 +1552,7 @@ function FlexCraft() {
   const [showLines, setShowLines] = useState(false);
   const [hidePills, setHidePills] = useState(false);
   const [syncDims, setSyncDims] = useState(false);
+  const [snapStep, setSnapStep] = useState(5); // resize grid snap (px); 1 = off
   const [drawerHeight, setDrawerHeight] = useState(170);
   const [leftWidth, setLeftWidth] = useState(210);
   const [rightWidth, setRightWidth] = useState(290);
@@ -2067,6 +2147,19 @@ function FlexCraft() {
           </div>
         ))}
       </div>
+      <div className="fc-palette-head" style={{ marginTop: 18 }}>
+        Resize snap
+      </div>
+      <div className="fc-snap-section">
+        <Slider
+          label="grid step"
+          value={snapStep}
+          min={1}
+          max={50}
+          suffix={snapStep <= 1 ? "px (off)" : "px"}
+          onChange={(v) => setSnapStep(v)}
+        />
+      </div>
       <div className="fc-palette-note">
         Drag onto the canvas (desktop) or <b>tap</b> to drop into the selected
         container. Drag existing elements to the glowing gaps to reorder.
@@ -2469,6 +2562,7 @@ function FlexCraft() {
           hidePills={hidePills}
           onResize={onResize}
           syncDims={syncDims}
+          snapStep={snapStep}
           isDragging={isDragging}
           onText={onText}
         />
@@ -2888,6 +2982,7 @@ const css = `
 .fc-keycap.is-binding{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); animation:fc-pulse 1s ease-in-out infinite; }
 @keyframes fc-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.5; } }
 .fc-shortcut-list{ display:flex; flex-direction:column; gap:5px; margin-top:8px; }
+.fc-snap-section{ margin-top:4px; }
 .fc-shortcut-mini{ display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--mut); transition:color 120ms; }
 .fc-shortcut-mini.is-on{ color:var(--accent); }
 .fc-keycap-static{ cursor:default; padding:2px 7px; font-size:10px; min-width:22px; text-align:center; transition:background 120ms, color 120ms, border-color 120ms; }
@@ -3094,6 +3189,17 @@ const css = `
 .fc-seg-chev-l{ left:-2px; }
 .fc-seg-chev-r{ right:-2px; }
 .fc-num{ width:100%; background:var(--ink); border:1px solid var(--line); color:var(--txt); font-family:inherit; font-size:12px; padding:7px 9px; border-radius:5px; }
+.fc-unit-select{
+  background:var(--accent-soft); border:1px solid var(--line); color:var(--accent);
+  font-family:'Space Mono',monospace; font-size:10px; padding:2px 4px; border-radius:4px;
+  cursor:pointer; max-width:108px;
+}
+.fc-unit-select:focus{ outline:none; border-color:var(--accent); }
+.fc-dim-value{ display:flex; align-items:center; gap:8px; }
+.fc-dim-value .fc-range{ flex:1; min-width:0; }
+.fc-dim-num{ width:64px; flex-shrink:0; padding:5px 6px; font-size:11px; }
+/* hide native number spinners on the dim number field */
+.fc-dim-num::-webkit-outer-spin-button, .fc-dim-num::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
 .fc-mini-toggle{ background:var(--accent-soft); border:1px solid var(--line); color:var(--mut); font-family:inherit; font-size:9px; padding:2px 7px; border-radius:3px; cursor:pointer; }
 .fc-mini-toggle.is-active{ color:var(--accent); }
 

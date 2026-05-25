@@ -312,6 +312,9 @@ function CanvasNode({
   onDropMove,
   dragState,
   showBoxModel,
+  hidePills,
+  onResize,
+  syncDims,
 }) {
   const isSelected = node.id === selectedId;
   const isContainer = node.styles.display === "flex";
@@ -322,6 +325,59 @@ function CanvasNode({
   const overlayOn = showBoxModel && isSelected;
   const marginVal = typeof node.styles.margin === "number" ? node.styles.margin : 0;
   const paddingVal = typeof node.styles.padding === "number" ? node.styles.padding : 0;
+
+  // Ref to the node's DOM element so a resize drag can measure its actual
+  // rendered size as the starting point (flex may have sized it, not us).
+  const elRef = React.useRef(null);
+
+  // Begin an edge-resize drag. `axis` is "x" (width) or "y" (height).
+  // We use POINTER events (not HTML5 drag) so this works on touch and never
+  // collides with the reorder drag system, which is drag-event based.
+  const startResize = (axis) => (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = elRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startW = rect.width;
+    const startH = rect.height;
+
+    const onMove = (ev) => {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      // Honest behavior: grabbing an edge means "I want this exact size, stop
+      // auto-flexing." So we zero flex-grow/shrink so the explicit dimension
+      // actually takes effect instead of being overridden by the flex algorithm.
+      const patch = { flexGrow: 0, flexShrink: 0 };
+      if (axis === "x" || syncDims) {
+        patch.width = Math.max(20, Math.round(startW + dx));
+      }
+      if (axis === "y" || syncDims) {
+        patch.height = Math.max(20, Math.round(startH + dy));
+      }
+      // With sync on, a single edge drives both dims to the same value so the
+      // element stays square — we key off whichever axis was grabbed.
+      if (syncDims) {
+        const v = axis === "x"
+          ? Math.max(20, Math.round(startW + dx))
+          : Math.max(20, Math.round(startH + dy));
+        patch.width = v;
+        patch.height = v;
+      }
+      onResize(node.id, patch);
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  // Only show resize handles on the selected, non-root element.
+  const showHandles = isSelected && !isRoot && typeof onResize === "function";
 
   const dragProps = isRoot
     ? {}
@@ -380,6 +436,9 @@ function CanvasNode({
             onDropMove={onDropMove}
             dragState={dragState}
             showBoxModel={showBoxModel}
+            hidePills={hidePills}
+            onResize={onResize}
+            syncDims={syncDims}
           />
         );
       }
@@ -397,11 +456,15 @@ function CanvasNode({
       className={
         "fc-node" +
         (isSelected ? " is-selected" : "") +
-        (isContainer ? " is-container" : "")
+        (isContainer ? " is-container" : "") +
+        (overlayOn ? " fc-bm-active" : "")
       }
       style={{ ...node.styles, position: "relative" }}
+      ref={elRef}
     >
-      {/* Box-model overlays (selected element only, when toggle is on). */}
+      {/* Box-model overlays (selected element only, when toggle is on).
+          Bands are opaque + high z-index so they read clearly over the node's
+          own background and selection wash — devtools-style. */}
       {overlayOn && marginVal > 0 && (
         <div
           className="fc-bm-margin"
@@ -412,13 +475,13 @@ function CanvasNode({
             right: -marginVal,
             bottom: -marginVal,
             borderStyle: "solid",
-            borderColor: "rgba(246,173,85,0.45)",
+            borderColor: "rgba(246,173,85,0.85)",
             borderTopWidth: marginVal,
             borderRightWidth: marginVal,
             borderBottomWidth: marginVal,
             borderLeftWidth: marginVal,
             pointerEvents: "none",
-            zIndex: 1,
+            zIndex: 20,
           }}
         >
           <span className="fc-bm-tag fc-bm-tag-margin">margin {marginVal}</span>
@@ -431,22 +494,48 @@ function CanvasNode({
             position: "absolute",
             inset: 0,
             borderStyle: "solid",
-            borderColor: "rgba(104,211,145,0.40)",
+            borderColor: "rgba(104,211,145,0.80)",
             borderTopWidth: paddingVal,
             borderRightWidth: paddingVal,
             borderBottomWidth: paddingVal,
             borderLeftWidth: paddingVal,
             pointerEvents: "none",
-            zIndex: 1,
+            zIndex: 21,
           }}
         >
           <span className="fc-bm-tag fc-bm-tag-padding">padding {paddingVal}</span>
         </div>
       )}
-      <span className="fc-node-tag">
-        {node.label}
-        {isContainer ? ` · ${node.styles.flexDirection}` : ""}
-      </span>
+      {!hidePills && (
+        <span className="fc-node-tag">
+          {node.label}
+          {isContainer ? ` · ${node.styles.flexDirection}` : ""}
+        </span>
+      )}
+      {/* Resize handles: right edge (width), bottom edge (height), and corner
+          (both). Pointer-driven; sit above content via z-index. */}
+      {showHandles && (
+        <>
+          <div
+            className="fc-resize fc-resize-r"
+            onPointerDown={startResize("x")}
+            onClick={(e) => e.stopPropagation()}
+            title={syncDims ? "Drag to resize (synced)" : "Drag to set width"}
+          />
+          <div
+            className="fc-resize fc-resize-b"
+            onPointerDown={startResize("y")}
+            onClick={(e) => e.stopPropagation()}
+            title={syncDims ? "Drag to resize (synced)" : "Drag to set height"}
+          />
+          <div
+            className="fc-resize fc-resize-br"
+            onPointerDown={startResize("x")}
+            onClick={(e) => e.stopPropagation()}
+            title="Drag to resize"
+          />
+        </>
+      )}
       {isContainer
         ? renderChildrenWithZones()
         : node.children.map((c) => (
@@ -462,6 +551,9 @@ function CanvasNode({
               onDropMove={onDropMove}
               dragState={dragState}
               showBoxModel={showBoxModel}
+              hidePills={hidePills}
+              onResize={onResize}
+              syncDims={syncDims}
             />
           ))}
     </div>
@@ -531,6 +623,8 @@ function FlexCraft() {
   const [theme, setTheme] = useState("dark");
   const [mobilePane, setMobilePane] = useState("canvas"); // canvas|add|style|code
   const [showBoxModel, setShowBoxModel] = useState(false);
+  const [hidePills, setHidePills] = useState(false);
+  const [syncDims, setSyncDims] = useState(false);
   const dragState = useRef(null);
 
   // commit a new tree, pushing the old one onto the undo stack
@@ -591,6 +685,33 @@ function FlexCraft() {
     },
     [selectedId, commit]
   );
+
+  // Live resize from edge handles. A drag fires many pointermove events; if each
+  // pushed onto the undo stack we'd get hundreds of micro-steps. So we coalesce:
+  // the FIRST update of a drag snapshots history, the rest just replace present.
+  // `resizeActive` tracks whether we're mid-drag; it resets on pointerup.
+  const resizeActive = useRef(false);
+  useEffect(() => {
+    const end = () => {
+      resizeActive.current = false;
+    };
+    window.addEventListener("pointerup", end);
+    return () => window.removeEventListener("pointerup", end);
+  }, []);
+
+  const onResize = useCallback((id, patch) => {
+    setHistory((h) => {
+      const next = updateStyles(h.present, id, patch);
+      if (next === h.present) return h;
+      if (!resizeActive.current) {
+        // First move of this drag → snapshot the pre-drag tree onto history.
+        resizeActive.current = true;
+        return { past: [...h.past, h.present], present: next, future: [] };
+      }
+      // Subsequent moves → replace present in place, no new history entry.
+      return { ...h, present: next };
+    });
+  }, []);
 
   // Reset a single property to its factory default for this element's type.
   // If the property isn't part of the factory defaults, fall back to "auto".
@@ -980,6 +1101,9 @@ function FlexCraft() {
           onDropMove={onDropMove}
           dragState={dragState}
           showBoxModel={showBoxModel}
+          hidePills={hidePills}
+          onResize={onResize}
+          syncDims={syncDims}
         />
       </div>
     </>
@@ -1018,6 +1142,20 @@ function FlexCraft() {
             title="Show box model (padding / margin) on selected element"
           >
             ▣
+          </button>
+          <button
+            className={"fc-tool-btn" + (hidePills ? " is-on" : "")}
+            onClick={() => setHidePills((v) => !v)}
+            title={hidePills ? "Show name pills" : "Minimize name pills"}
+          >
+            🏷
+          </button>
+          <button
+            className={"fc-tool-btn" + (syncDims ? " is-on" : "")}
+            onClick={() => setSyncDims((v) => !v)}
+            title={syncDims ? "Resize: width & height synced (square)" : "Resize: sync width & height"}
+          >
+            ⊞
           </button>
           <button
             className="fc-tool-btn"
@@ -1170,6 +1308,9 @@ const css = `
 }
 .fc-node.is-container{ outline:1px dashed var(--accent); outline-offset:0; background:var(--accent-soft); min-width:0; min-height:0; }
 .fc-node.is-selected{ outline:2px solid var(--accent) !important; outline-offset:1px; background:var(--accent-soft); }
+/* When the box-model overlay is on, drop the node's own fill so the green/amber
+   bands read cleanly instead of blending into the selection wash. */
+.fc-node.fc-bm-active{ background:transparent !important; }
 .fc-node-tag{
   position:absolute; top:-9px; left:6px; font-size:9px; letter-spacing:0.5px;
   color:var(--ink); background:var(--accent); padding:1px 6px; border-radius:3px;
@@ -1177,6 +1318,14 @@ const css = `
 }
 .fc-dropzone{ border-radius:3px; transition:background 80ms, box-shadow 80ms; }
 .fc-dropzone.is-active{ background:var(--accent); box-shadow:0 0 12px var(--accent); }
+
+/* ---- resize handles (selected element only) ---- */
+.fc-resize{ position:absolute; z-index:30; background:var(--accent); opacity:0; transition:opacity 100ms; touch-action:none; }
+.fc-node.is-selected > .fc-resize{ opacity:0.55; }
+.fc-node.is-selected > .fc-resize:hover{ opacity:1; }
+.fc-resize-r{ top:0; right:-3px; width:6px; height:100%; cursor:ew-resize; border-radius:3px; }
+.fc-resize-b{ left:0; bottom:-3px; height:6px; width:100%; cursor:ns-resize; border-radius:3px; }
+.fc-resize-br{ right:-4px; bottom:-4px; width:11px; height:11px; cursor:nwse-resize; border-radius:2px; }
 
 /* ---- code drawer ---- */
 .fc-code-drawer{ border-top:1px solid var(--line); background:var(--panel); max-height:190px; display:flex; flex-direction:column; flex-shrink:0; }

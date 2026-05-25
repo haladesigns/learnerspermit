@@ -687,6 +687,7 @@ function CanvasNode({
   hidePills,
   onResize,
   syncDims,
+  isDragging,
 }) {
   const isSelected = node.id === selectedId;
   const isContainer = node.styles.display === "flex";
@@ -772,9 +773,38 @@ function CanvasNode({
       };
 
   const renderChildrenWithZones = () => {
-    const zones = [];
     const dir = node.styles.flexDirection || "row";
     const horizontal = dir.startsWith("row");
+
+    // When NOT dragging, render children directly — no interleaved dropzones —
+    // so `gap` spacing is exactly what the user set (zones would otherwise sit
+    // between items and take their own share of the gap, inflating it). Zones
+    // only exist during a drag, when we need drop targets.
+    const childEls = node.children.map((child) => (
+      <CanvasNode
+        key={child.id}
+        node={child}
+        isRoot={false}
+        selectedId={selectedId}
+        onSelect={onSelect}
+        dropTarget={dropTarget}
+        setDropTarget={setDropTarget}
+        onDropNew={onDropNew}
+        onDropMove={onDropMove}
+        dragState={dragState}
+        showBoxModel={showBoxModel}
+        showLines={showLines}
+        hidePills={hidePills}
+        onResize={onResize}
+        syncDims={syncDims}
+        isDragging={isDragging}
+      />
+    ));
+
+    if (!isDragging) return childEls;
+
+    // Dragging: interleave drop zones (zone, child, zone, child, …, zone).
+    const zones = [];
     for (let i = 0; i <= node.children.length; i++) {
       const active =
         dropTarget && dropTarget.parentId === node.id && dropTarget.index === i;
@@ -783,6 +813,7 @@ function CanvasNode({
           key={`z${i}`}
           horizontal={horizontal}
           active={active}
+          dragging={isDragging}
           onDragOver={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -799,27 +830,7 @@ function CanvasNode({
           }}
         />
       );
-      if (i < node.children.length) {
-        zones.push(
-          <CanvasNode
-            key={node.children[i].id}
-            node={node.children[i]}
-            isRoot={false}
-            selectedId={selectedId}
-            onSelect={onSelect}
-            dropTarget={dropTarget}
-            setDropTarget={setDropTarget}
-            onDropNew={onDropNew}
-            onDropMove={onDropMove}
-            dragState={dragState}
-            showBoxModel={showBoxModel}
-            showLines={showLines}
-            hidePills={hidePills}
-            onResize={onResize}
-            syncDims={syncDims}
-          />
-        );
-      }
+      if (i < node.children.length) zones.push(childEls[i]);
     }
     return zones;
   };
@@ -937,6 +948,7 @@ function CanvasNode({
               hidePills={hidePills}
               onResize={onResize}
               syncDims={syncDims}
+              isDragging={isDragging}
             />
           ))
         : node.text
@@ -946,19 +958,31 @@ function CanvasNode({
   );
 }
 
-function DropZone({ horizontal, active, onDragOver, onDrop }) {
+function DropZone({ horizontal, active, dragging, onDragOver, onDrop }) {
+  // Zero-size in normal flow so it never inflates the layout — the canvas then
+  // renders TRUE flexbox (gap:0 is genuinely 0, no phantom 8px between items).
+  // Only while a drag is in progress do the zones expand into catchable targets.
+  const size = dragging
+    ? {
+        width: horizontal ? 8 : "auto",
+        minWidth: horizontal ? 8 : undefined,
+        height: horizontal ? "auto" : 8,
+        minHeight: horizontal ? 40 : 8,
+      }
+    : {
+        // collapsed: take no space, but stay in the DOM as a drop target. A hair
+        // of size (0) with negative margins keeps siblings flush.
+        width: 0,
+        height: 0,
+        minWidth: 0,
+        minHeight: 0,
+      };
   return (
     <div
       onDragOver={onDragOver}
       onDrop={onDrop}
       className={"fc-dropzone" + (active ? " is-active" : "")}
-      style={{
-        width: horizontal ? 8 : "auto",
-        minWidth: horizontal ? 8 : undefined,
-        height: horizontal ? "auto" : 8,
-        minHeight: horizontal ? 40 : 8,
-        alignSelf: "stretch",
-      }}
+      style={{ ...size, alignSelf: "stretch", flex: "0 0 auto" }}
     />
   );
 }
@@ -1013,7 +1037,28 @@ function FlexCraft() {
   const [hidePills, setHidePills] = useState(false);
   const [syncDims, setSyncDims] = useState(false);
   const [drawerHeight, setDrawerHeight] = useState(170);
+  const [isDragging, setIsDragging] = useState(false);
+  const [rapidAdd, setRapidAdd] = useState(false);
   const dragState = useRef(null);
+
+  // Track drag in progress at the window level (drag events bubble, so one pair
+  // of listeners catches every drag regardless of which element started it).
+  // Drives dropzone sizing: zones are zero-size normally and only expand while
+  // dragging — so the canvas renders TRUE flexbox (gap:0 is really 0) and the
+  // 8px dropzones no longer inflate the layout. (Bug found via devtools: the
+  // "gap" that wouldn't go to zero was actually the fixed-size div.fc-dropzone.)
+  useEffect(() => {
+    const start = () => setIsDragging(true);
+    const stop = () => setIsDragging(false);
+    window.addEventListener("dragstart", start);
+    window.addEventListener("dragend", stop);
+    window.addEventListener("drop", stop);
+    return () => {
+      window.removeEventListener("dragstart", start);
+      window.removeEventListener("dragend", stop);
+      window.removeEventListener("drop", stop);
+    };
+  }, []);
 
   // commit a new tree, pushing the old one onto the undo stack
   const commit = useCallback((producer) => {
@@ -1148,9 +1193,10 @@ function FlexCraft() {
     (parentId, idx, factory) => {
       const node = factory();
       commit((t) => insertNode(t, parentId, idx, node));
-      setSelectedId(node.id);
+      // Rapid-add: keep the container (parent) selected for continuous drops.
+      setSelectedId(rapidAdd ? parentId : node.id);
     },
-    [commit]
+    [commit, rapidAdd]
   );
 
   const onDropMove = useCallback(
@@ -1190,13 +1236,15 @@ function FlexCraft() {
   };
   const convertToContainer = () => selected && setStyle(makeContainer().styles);
 
-  // tap palette item on mobile (no drag): append to root or selected container
+  // tap palette item: append to selected container (or root). In RAPID-ADD mode
+  // we keep the CONTAINER selected instead of selecting the new child, so you
+  // can fire off additions continuously without re-clicking the container.
   const addToCanvas = (factory) => {
     const target =
       selected && selected.styles.display === "flex" ? selected : tree;
     const node = factory();
     commit((t) => insertNode(t, target.id, target.children.length, node));
-    setSelectedId(node.id);
+    setSelectedId(rapidAdd ? target.id : node.id);
     setMobilePane("canvas");
   };
 
@@ -1238,6 +1286,27 @@ function FlexCraft() {
           </div>
         </div>
       ))}
+      {/* Rapid-add: when on, adding keeps the container selected so you can
+          append items continuously instead of re-selecting each time. Only
+          meaningful when a container (or root) is the active add target. */}
+      {(isContainer || !selected) && (
+        <button
+          className={"fc-rapid-toggle" + (rapidAdd ? " is-on" : "")}
+          onClick={() => setRapidAdd((v) => !v)}
+          title="Keep the container selected after adding, for rapid additions"
+        >
+          <span className="fc-rapid-pin">{rapidAdd ? "⊙" : "○"}</span>
+          <span>
+            Rapid add{" "}
+            <b>{rapidAdd ? "ON" : "OFF"}</b>
+            {rapidAdd && (
+              <span className="fc-rapid-target">
+                → {(selected && selected.styles.display === "flex" ? selected.label : "Root")}
+              </span>
+            )}
+          </span>
+        </button>
+      )}
       <div className="fc-palette-head" style={{ marginTop: 18 }}>
         Layers
       </div>
@@ -1533,6 +1602,7 @@ function FlexCraft() {
           hidePills={hidePills}
           onResize={onResize}
           syncDims={syncDims}
+          isDragging={isDragging}
         />
       </div>
     </>
@@ -1732,6 +1802,17 @@ const css = `
 .fc-palette-icon{ color:var(--accent); font-size:16px; }
 .fc-palette-name{ font-weight:700; }
 .fc-palette-hint{ color:var(--mut); font-size:10px; }
+.fc-rapid-toggle{
+  display:flex; align-items:center; gap:8px; width:100%; text-align:left;
+  padding:8px 10px; margin-top:2px; border-radius:6px; cursor:pointer;
+  background:var(--panel2); border:1px solid var(--line); color:var(--mut);
+  font-family:inherit; font-size:10.5px;
+}
+.fc-rapid-toggle:hover{ border-color:var(--accent); }
+.fc-rapid-toggle.is-on{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+.fc-rapid-toggle b{ font-weight:700; }
+.fc-rapid-pin{ font-size:13px; line-height:1; }
+.fc-rapid-target{ display:block; font-size:9.5px; opacity:0.85; margin-top:1px; }
 .fc-layers{ display:flex; flex-direction:column; gap:2px; }
 .fc-layer{
   display:flex; align-items:center; gap:7px; padding:6px 8px; text-align:left;

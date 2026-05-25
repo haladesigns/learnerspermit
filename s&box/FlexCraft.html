@@ -1015,6 +1015,123 @@ function LayerRow({ node, depth, selectedId, onSelect }) {
   );
 }
 
+// Display string for a keybinding descriptor (e.g. "⌃ Ctrl", "⇧ Shift", "G").
+function keyLabel(tipKey) {
+  if (tipKey.kind === "modifier") {
+    const map = { Control: "⌃ Ctrl", Shift: "⇧ Shift", Alt: "⌥ Alt", Meta: "⌘ Meta" };
+    return map[tipKey.value] || tipKey.value;
+  }
+  return tipKey.value.length === 1 ? tipKey.value.toUpperCase() : tipKey.value;
+}
+
+// ============================================================================
+//  Hover tooltip — live readout of the element under the cursor
+// ============================================================================
+function HoverTooltip({ info, treeRootId }) {
+  const { node, rect, x, y } = info;
+  const isContainer = node.styles.display === "flex";
+  const isRoot = node.id === treeRootId;
+  const role = isRoot ? "root container" : isContainer ? "container" : "item";
+
+  // Round measured size to whole px for a clean readout.
+  const w = Math.round(rect.width);
+  const h = Math.round(rect.height);
+
+  // Explicit-vs-auto: is each dimension a set px value, or computed by flex/auto?
+  // Knowing this explains WHY a box is the size it is (you set it vs flex did).
+  const wFixed = typeof node.styles.width === "number";
+  const hFixed = typeof node.styles.height === "number";
+  const sizeMode =
+    wFixed && hFixed ? "fixed w+h" : wFixed ? "fixed w" : hFixed ? "fixed h" : "auto size";
+
+  // Wrapped-line count: not a style — measured from how children laid out, same
+  // as the flex-line overlay. Reuse groupIntoLines on the live child rects.
+  let lineCount = 0;
+  if (isContainer && node.children.length > 0 && typeof document !== "undefined") {
+    const el = document.querySelector(`[data-node-id="${node.id}"]`);
+    if (el) {
+      const horizontal = (node.styles.flexDirection || "row").startsWith("row");
+      const cRect = el.getBoundingClientRect();
+      const kids = Array.from(el.children).filter(
+        (c) => c.classList && c.classList.contains("fc-node")
+      );
+      lineCount = groupIntoLines(
+        kids.map((k) => k.getBoundingClientRect()),
+        cRect,
+        horizontal
+      ).length;
+    }
+  }
+
+  // Compact spacing readout (only show what's set/relevant).
+  const pad = node.styles.padding;
+  const mar = node.styles.margin;
+  const gap = node.styles.gap;
+  const wraps = node.styles.flexWrap && node.styles.flexWrap !== "nowrap";
+
+  // Flex story: container axes, or item grow/shrink/basis + align-self.
+  const containerBits = isContainer
+    ? [
+        node.styles.flexDirection,
+        `justify:${(node.styles.justifyContent || "flex-start").replace("flex-", "")}`,
+        `align:${(node.styles.alignItems || "stretch").replace("flex-", "")}`,
+        wraps ? node.styles.flexWrap : null,
+        // align-content only matters on multi-line (wrapping) containers.
+        wraps ? `content:${(node.styles.alignContent || "stretch").replace("flex-", "")}` : null,
+      ].filter(Boolean)
+    : [];
+  const itemBits = !isContainer
+    ? [
+        `flex: ${node.styles.flexGrow ?? 0} ${node.styles.flexShrink ?? 1} ${node.styles.flexBasis ?? "auto"}`,
+        node.styles.alignSelf && node.styles.alignSelf !== "auto"
+          ? `self:${node.styles.alignSelf.replace("flex-", "")}`
+          : null,
+      ].filter(Boolean)
+    : [];
+
+  // Position near cursor, flipping away from the right/bottom edges so the card
+  // never clips off-screen. Offsets keep it clear of the pointer itself.
+  const vw = typeof window !== "undefined" ? window.innerWidth : 1200;
+  const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+  const flipX = x > vw - 240;
+  const flipY = y > vh - 180;
+  const style = {
+    position: "fixed",
+    left: flipX ? undefined : x + 16,
+    right: flipX ? vw - x + 16 : undefined,
+    top: flipY ? undefined : y + 16,
+    bottom: flipY ? vh - y + 16 : undefined,
+    zIndex: 9999,
+    pointerEvents: "none",
+  };
+
+  return (
+    <div className="fc-tooltip" style={style}>
+      <div className="fc-tip-head">
+        <span className="fc-tip-dims">{w} × {h}</span>
+        <span className="fc-tip-role">{role}</span>
+      </div>
+      <div className="fc-tip-sel">{node.label + " · ." + node.tag + "-" + node.id}</div>
+      <div className="fc-tip-mode">{sizeMode}</div>
+      {containerBits.length > 0 && (
+        <div className="fc-tip-row">{containerBits.join("  ·  ")}</div>
+      )}
+      {itemBits.length > 0 && (
+        <div className="fc-tip-row">{itemBits.join("  ·  ")}</div>
+      )}
+      <div className="fc-tip-box">
+        {typeof pad === "number" && <span>pad {pad}</span>}
+        {typeof mar === "number" && mar > 0 && <span>mar {mar}</span>}
+        {isContainer && typeof gap === "number" && <span>gap {gap}</span>}
+        {isContainer && <span>{node.children.length} child{node.children.length === 1 ? "" : "ren"}</span>}
+        {isContainer && wraps && lineCount > 0 && (
+          <span>{lineCount} line{lineCount === 1 ? "" : "s"}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ============================================================================
 //  Main app
 // ============================================================================
@@ -1037,7 +1154,19 @@ function FlexCraft() {
   const [hidePills, setHidePills] = useState(false);
   const [syncDims, setSyncDims] = useState(false);
   const [drawerHeight, setDrawerHeight] = useState(170);
+  const [leftWidth, setLeftWidth] = useState(210);
+  const [rightWidth, setRightWidth] = useState(290);
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(true); // hover readout, on by default
+  const [hoverInfo, setHoverInfo] = useState(null); // { node, rect, x, y }
+  // Keybinding for the hover tooltip. `tipKey` is a descriptor:
+  //   { kind:'modifier'|'key', value:'Control'|'Shift'|'Alt'|'Meta'|<key> }
+  // Pressing the bound key TOGGLES the tooltip on/off, exactly like clicking the
+  // toolbar button. (Modifiers toggle on keydown too — a tap of Ctrl flips it.)
+  const [tipKey, setTipKey] = useState({ kind: "modifier", value: "Control" });
+  const [bindingKey, setBindingKey] = useState(false); // "press a key…" capture mode
   const [rapidAdd, setRapidAdd] = useState(false);
   const dragState = useRef(null);
 
@@ -1102,6 +1231,60 @@ function FlexCraft() {
     return () => window.removeEventListener("keydown", onKey);
   }, [undo, redo]);
 
+  // Tooltip keybinding. Two modes:
+  //  · capture mode (bindingKey): the next keypress becomes the new binding.
+  //  · normal mode: pressing the bound key toggles the tooltip on/off, same as
+  //    the toolbar button. Modifiers count as a "press" on their own keydown.
+  const MOD_NAMES = { Control: "Control", Shift: "Shift", Alt: "Alt", Meta: "Meta" };
+  useEffect(() => {
+    const onDown = (e) => {
+      // Capture mode: record whatever was pressed, then exit capture.
+      if (bindingKey) {
+        e.preventDefault();
+        if (MOD_NAMES[e.key]) {
+          setTipKey({ kind: "modifier", value: MOD_NAMES[e.key] });
+        } else if (e.key === "Escape") {
+          // Escape cancels rebinding without changing the current key.
+        } else {
+          setTipKey({ kind: "key", value: e.key.length === 1 ? e.key.toLowerCase() : e.key });
+        }
+        setBindingKey(false);
+        return;
+      }
+      // Normal mode: did the bound key just go down? Ignore auto-repeat so a
+      // held key doesn't flap the toggle.
+      if (e.repeat) return;
+      const tipMatches =
+        tipKey.kind === "modifier"
+          ? MOD_NAMES[e.key] === tipKey.value
+          : (e.key.length === 1 ? e.key.toLowerCase() : e.key) === tipKey.value;
+      if (tipMatches) {
+        // Don't preventDefault for bare modifiers (would swallow other combos);
+        // only for our own regular-key binding.
+        if (tipKey.kind === "key") e.preventDefault();
+        setShowTooltip((v) => !v);
+        return; // tooltip key wins if it happens to collide with a letter below
+      }
+
+      // Fixed letter shortcuts for the overlay toggles. Suppressed when typing
+      // in a field (number inputs etc.) or while modifier combos are held (so we
+      // don't hijack browser shortcuts like Ctrl-L). Bare lowercase letters only.
+      const tag = (e.target && e.target.tagName) || "";
+      const typing = tag === "INPUT" || tag === "TEXTAREA" || (e.target && e.target.isContentEditable);
+      if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+      switch (e.key.toLowerCase()) {
+        case "b": setShowBoxModel((v) => !v); break;   // box model
+        case "l": setShowLines((v) => !v); break;      // flex lines
+        case "p": setHidePills((v) => !v); break;      // name pills
+        case "r": setSyncDims((v) => !v); break;       // sync width/height
+        default: break;
+      }
+    };
+    window.addEventListener("keydown", onDown);
+    return () => window.removeEventListener("keydown", onDown);
+  }, [tipKey, bindingKey]);
+
+
   const selected = useMemo(
     () => (selectedId ? findNode(tree, selectedId) : null),
     [tree, selectedId]
@@ -1165,7 +1348,43 @@ function FlexCraft() {
     window.addEventListener("pointerup", onUp);
   }, [drawerHeight]);
 
+  // Side-panel width resizers. The left panel's grip is on its RIGHT edge, so
+  // dragging right (+dx) grows it. The right panel's grip is on its LEFT edge,
+  // so dragging left (−dx) grows it — hence the inverted sign. Clamped to sane
+  // bounds; overflow inside the panel is fine (user explicitly OK'd it).
+  const startLeftResize = useCallback((e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = leftWidth;
+    const onMove = (ev) => {
+      const dx = ev.clientX - startX;
+      setLeftWidth(Math.min(420, Math.max(120, Math.round(startW + dx))));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }, [leftWidth]);
 
+  const startRightResize = useCallback((e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = rightWidth;
+    const onMove = (ev) => {
+      const dx = ev.clientX - startX;
+      setRightWidth(Math.min(460, Math.max(160, Math.round(startW - dx))));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }, [rightWidth]);
+
+  // Reset a single property to its factory default for this element's type.
   // If the property isn't part of the factory defaults, fall back to "auto".
   const resetProp = useCallback(
     (key) => {
@@ -1321,6 +1540,35 @@ function FlexCraft() {
           }}
         />
       </div>
+      <div className="fc-palette-head" style={{ marginTop: 18 }}>
+        Shortcuts
+      </div>
+      <div className="fc-shortcut-row">
+        <div className="fc-shortcut-label">
+          Hover info
+          <span className="fc-shortcut-sub">press to toggle</span>
+        </div>
+        <button
+          className={"fc-keycap" + (bindingKey ? " is-binding" : "")}
+          onClick={() => setBindingKey((v) => !v)}
+          title="Click, then press a key to rebind"
+        >
+          {bindingKey ? "press a key…" : keyLabel(tipKey)}
+        </button>
+      </div>
+      <div className="fc-shortcut-list">
+        {[
+          { k: "B", label: "Box model" },
+          { k: "L", label: "Flex lines" },
+          { k: "P", label: "Name pills" },
+          { k: "R", label: "Sync W/H" },
+        ].map((s) => (
+          <div className="fc-shortcut-mini" key={s.k}>
+            <span className="fc-keycap fc-keycap-static">{s.k}</span>
+            <span>{s.label}</span>
+          </div>
+        ))}
+      </div>
       <div className="fc-palette-note">
         Drag onto the canvas (desktop) or <b>tap</b> to drop into the selected
         container. Drag existing elements to the glowing gaps to reorder.
@@ -1344,6 +1592,32 @@ function FlexCraft() {
     const r = el.getBoundingClientRect();
     return { w: r.width, h: r.height };
   })();
+
+  // Hover readout: on mouse move over the canvas, find the nearest node element
+  // under the cursor, measure it, and stash its tree node + rect + pointer pos.
+  // Suppressed during a drag (tooltip would just be in the way). Cleared on leave.
+  const onCanvasHover = useCallback(
+    (e) => {
+      if (!showTooltip || isDragging) {
+        if (hoverInfo) setHoverInfo(null);
+        return;
+      }
+      const elt = e.target.closest && e.target.closest("[data-node-id]");
+      if (!elt) {
+        if (hoverInfo) setHoverInfo(null);
+        return;
+      }
+      const id = elt.getAttribute("data-node-id");
+      const node = findNode(tree, id);
+      if (!node) return;
+      const rect = elt.getBoundingClientRect();
+      setHoverInfo({ node, rect, x: e.clientX, y: e.clientY });
+    },
+    [showTooltip, isDragging, hoverInfo, tree]
+  );
+  const onCanvasLeave = useCallback(() => {
+    if (hoverInfo) setHoverInfo(null);
+  }, [hoverInfo]);
 
   const PropsPanel = !selected ? (
     <div className="fc-empty">
@@ -1586,7 +1860,12 @@ function FlexCraft() {
           </div>
         )}
       </div>
-      <div className="fc-canvas-scroll" onClick={() => setSelectedId(null)}>
+      <div
+        className="fc-canvas-scroll"
+        onClick={() => setSelectedId(null)}
+        onMouseMove={onCanvasHover}
+        onMouseLeave={onCanvasLeave}
+      >
         <CanvasNode
           node={tree}
           isRoot
@@ -1605,6 +1884,7 @@ function FlexCraft() {
           isDragging={isDragging}
         />
       </div>
+      {showTooltip && hoverInfo && <HoverTooltip info={hoverInfo} treeRootId={tree.id} />}
     </>
   );
 
@@ -1664,6 +1944,13 @@ function FlexCraft() {
             ⊞
           </button>
           <button
+            className={"fc-tool-btn" + (showTooltip ? " is-on" : "")}
+            onClick={() => setShowTooltip((v) => !v)}
+            title={showTooltip ? "Hide hover info" : "Show hover info (dimensions & metadata)"}
+          >
+            ⓘ
+          </button>
+          <button
             className="fc-tool-btn"
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             title="Toggle theme"
@@ -1675,7 +1962,34 @@ function FlexCraft() {
 
       {/* ---- body: desktop = 3 panes; mobile = one pane at a time ---- */}
       <div className="fc-body">
-        <aside className="fc-palette fc-desktop-only">{PalettePanel}</aside>
+        {leftCollapsed ? (
+          <button
+            className="fc-rail fc-rail-left fc-desktop-only"
+            onClick={() => setLeftCollapsed(false)}
+            title="Expand elements panel"
+          >
+            ›
+          </button>
+        ) : (
+          <aside
+            className="fc-palette fc-desktop-only"
+            style={{ width: leftWidth }}
+          >
+            <button
+              className="fc-panel-collapse fc-collapse-left"
+              onClick={() => setLeftCollapsed(true)}
+              title="Collapse panel"
+            >
+              ‹
+            </button>
+            {PalettePanel}
+            <div
+              className="fc-panel-grip fc-panel-grip-right"
+              onPointerDown={startLeftResize}
+              title="Drag to resize panel"
+            />
+          </aside>
+        )}
 
         <main className="fc-canvas-wrap">
           {/* mobile shows whichever pane is active; desktop always canvas+code */}
@@ -1705,7 +2019,34 @@ function FlexCraft() {
           </div>
         </main>
 
-        <aside className="fc-props fc-desktop-only">{PropsPanel}</aside>
+        {rightCollapsed ? (
+          <button
+            className="fc-rail fc-rail-right fc-desktop-only"
+            onClick={() => setRightCollapsed(false)}
+            title="Expand properties panel"
+          >
+            ‹
+          </button>
+        ) : (
+          <aside
+            className="fc-props fc-desktop-only"
+            style={{ width: rightWidth }}
+          >
+            <div
+              className="fc-panel-grip fc-panel-grip-left"
+              onPointerDown={startRightResize}
+              title="Drag to resize panel"
+            />
+            <button
+              className="fc-panel-collapse fc-collapse-right"
+              onClick={() => setRightCollapsed(true)}
+              title="Collapse panel"
+            >
+              ›
+            </button>
+            {PropsPanel}
+          </aside>
+        )}
       </div>
 
       {/* ---- mobile bottom tab bar ---- */}
@@ -1787,12 +2128,45 @@ const css = `
 
 /* ---- body layout ---- */
 .fc-body{ flex:1; display:flex; min-height:0; }
-.fc-palette{ width:210px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--line); overflow-y:auto; overflow-x:hidden; }
-.fc-props{ width:290px; flex-shrink:0; background:var(--panel); border-left:1px solid var(--line); overflow-y:auto; overflow-x:hidden; }
+.fc-palette{ flex-shrink:0; background:var(--panel); border-right:1px solid var(--line); overflow-y:auto; overflow-x:hidden; position:relative; }
+.fc-props{ flex-shrink:0; background:var(--panel); border-left:1px solid var(--line); overflow-y:auto; overflow-x:hidden; position:relative; }
+/* collapsed rail — thin clickable strip that re-expands the panel */
+.fc-rail{
+  width:20px; flex-shrink:0; background:var(--panel); border:none; cursor:pointer;
+  color:var(--mut); font-size:15px; display:flex; align-items:flex-start;
+  justify-content:center; padding-top:14px; font-family:inherit;
+}
+.fc-rail:hover{ color:var(--accent); background:var(--panel2); }
+.fc-rail-left{ border-right:1px solid var(--line); }
+.fc-rail-right{ border-left:1px solid var(--line); }
+/* collapse button pinned to the panel's inner-top corner */
+.fc-panel-collapse{
+  position:absolute; top:8px; z-index:5; width:18px; height:18px; border-radius:4px;
+  background:var(--panel2); border:1px solid var(--line); color:var(--mut);
+  cursor:pointer; font-size:11px; line-height:1; padding:0; display:flex;
+  align-items:center; justify-content:center;
+}
+.fc-panel-collapse:hover{ border-color:var(--accent); color:var(--accent); }
+.fc-collapse-left{ right:8px; }
+.fc-collapse-right{ left:8px; }
+/* draggable width grip on the panel's inner edge */
+.fc-panel-grip{
+  position:absolute; top:0; bottom:0; width:14px; cursor:ew-resize; z-index:6;
+  touch-action:none; background:transparent;
+}
+/* slim visible line centered in the wide (invisible) hit area, so the grab
+   target is forgiving while the indicator stays thin */
+.fc-panel-grip::before{
+  content:""; position:absolute; top:0; bottom:0; left:50%; width:2px;
+  transform:translateX(-50%); background:transparent; transition:background 100ms;
+}
+.fc-panel-grip:hover::before{ background:var(--accent); }
+.fc-panel-grip-right{ right:-7px; }
+.fc-panel-grip-left{ left:-7px; }
 .fc-canvas-wrap{ flex:1; min-width:0; display:flex; flex-direction:column; }
 .fc-desktop-canvas{ flex:1; display:flex; flex-direction:column; min-height:0; }
 
-.fc-palette-inner{ padding:14px; display:flex; flex-direction:column; gap:9px; height:100%; }
+.fc-palette-inner{ padding:14px; padding-top:30px; display:flex; flex-direction:column; gap:9px; height:100%; }
 .fc-palette-head{ font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--mut); }
 .fc-palette-item{
   display:flex; gap:10px; align-items:center; padding:10px 12px; background:var(--panel2);
@@ -1823,6 +2197,21 @@ const css = `
 .fc-layer.is-active{ background:var(--accent-soft); color:var(--accent); }
 .fc-layer-icon{ color:var(--accent); }
 .fc-palette-note{ margin-top:auto; font-size:10.5px; line-height:1.6; color:var(--mut); border-top:1px solid var(--line); padding-top:12px; }
+.fc-shortcut-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 0; }
+.fc-shortcut-label{ display:flex; flex-direction:column; font-size:11px; color:var(--txt); }
+.fc-shortcut-sub{ font-size:9px; color:var(--mut); margin-top:1px; }
+.fc-keycap{
+  font-family:'Space Mono',monospace; font-size:10.5px; color:var(--txt);
+  background:var(--panel2); border:1px solid var(--line); border-bottom-width:2px;
+  border-radius:5px; padding:4px 9px; cursor:pointer; white-space:nowrap;
+}
+.fc-keycap:hover{ border-color:var(--accent); color:var(--accent); }
+.fc-keycap.is-binding{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); animation:fc-pulse 1s ease-in-out infinite; }
+@keyframes fc-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.5; } }
+.fc-shortcut-list{ display:flex; flex-direction:column; gap:5px; margin-top:8px; }
+.fc-shortcut-mini{ display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--mut); }
+.fc-keycap-static{ cursor:default; padding:2px 7px; font-size:10px; min-width:22px; text-align:center; }
+.fc-keycap-static:hover{ border-color:var(--line); color:var(--txt); }
 
 /* ---- canvas ---- */
 .fc-canvas-head{ padding:11px 16px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:14px; background:var(--panel); }
@@ -1880,7 +2269,7 @@ const css = `
 .fc-code{ margin:0; padding:12px 16px; overflow:auto; font-size:11px; line-height:1.5; color:var(--txt); font-family:inherit; flex:1; }
 
 /* ---- props ---- */
-.fc-props-inner{ padding:18px; min-width:0; max-width:100%; box-sizing:border-box; }
+.fc-props-inner{ padding:18px; padding-top:32px; min-width:0; max-width:100%; box-sizing:border-box; }
 .fc-empty{ color:var(--mut); text-align:center; margin-top:60px; line-height:1.6; padding:20px; }
 .fc-empty-mark{ font-size:34px; color:var(--accent); margin-bottom:8px; }
 .fc-prop-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--line); }
@@ -1946,6 +2335,21 @@ const css = `
   color:#04122e; background:rgba(120,170,255,0.95); padding:1px 6px; border-radius:3px;
   font-family:'Space Mono',monospace;
 }
+
+/* ---- hover tooltip ---- */
+.fc-tooltip{
+  background:var(--panel2); border:1px solid var(--accent);
+  border-radius:7px; padding:8px 10px; min-width:140px; max-width:230px;
+  box-shadow:0 6px 24px rgba(0,0,0,0.5); font-family:'Space Mono',monospace;
+  font-size:10.5px; line-height:1.5; color:var(--txt);
+}
+.fc-tip-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:3px; }
+.fc-tip-dims{ color:var(--accent); font-weight:700; font-size:12px; }
+.fc-tip-role{ font-size:9px; text-transform:uppercase; letter-spacing:0.8px; color:var(--mut); }
+.fc-tip-sel{ color:var(--mut); font-size:9.5px; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fc-tip-mode{ color:var(--accent); font-size:9px; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:5px; opacity:0.85; }
+.fc-tip-row{ color:var(--txt); margin-bottom:3px; }
+.fc-tip-box{ display:flex; flex-wrap:wrap; gap:4px 8px; margin-top:4px; padding-top:5px; border-top:1px solid var(--line); color:var(--mut); font-size:9.5px; }
 .fc-seg-wrap{ position:relative; display:flex; align-items:center; min-width:0; max-width:100%; }
 .fc-segmented{
   display:flex; flex-wrap:nowrap; gap:4px; background:var(--ink); padding:3px;

@@ -258,9 +258,130 @@ function exportHtmlSegments(tree) {
   return segs;
 }
 
-// ============================================================================
-//  Control primitives
-// ============================================================================
+// ---- standalone site export ------------------------------------------------
+// Wrap the exported HTML body + CSS into ONE runnable .html document: font
+// import, a minimal reset so it renders the same outside the tool, the layout
+// CSS inlined in a <style>, and the exported markup in the <body>. No build
+// step, no framework — double-click and it renders.
+function buildStandaloneSite(htmlText, cssText) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlexCraft layout</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; padding: 24px; font-family: 'Space Mono', ui-monospace, monospace; background: #0e1014; color: #e7e9ee; }
+/* --- your layout --- */
+${cssText}
+</style>
+</head>
+<body>
+${htmlText}
+</body>
+</html>
+`;
+}
+
+// ---- import: HTML(+CSS) → editable tree ------------------------------------
+// Inverse of the exporters. Scoped to FlexCraft-shaped docs: a class on each
+// element, flat `.class { ... }` rules. Unknown properties are collected and
+// reported, not stored. Returns { tree, count, skippedProps, error }.
+const KEBAB_TO_CAMEL = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+const KNOWN_STYLE_KEYS = new Set([
+  "display", "flexDirection", "justifyContent", "alignItems", "alignContent",
+  "flexWrap", "gap", "flexGrow", "flexShrink", "flexBasis", "alignSelf",
+  "order", "width", "height", "minHeight", "padding", "margin",
+]);
+function importValue(key, raw) {
+  const v = raw.trim();
+  const pxMatch = /^(-?\d+(?:\.\d+)?)px$/.exec(v);
+  if (pxMatch) return Number(pxMatch[1]);
+  if (/^-?\d+(?:\.\d+)?$/.test(v)) return Number(v);
+  return v;
+}
+function parseCssRules(cssStr) {
+  const map = {};
+  const skipped = [];
+  if (!cssStr) return { map, skipped };
+  const clean = cssStr.replace(/\/\*[\s\S]*?\*\//g, "");
+  const ruleRe = /\.([A-Za-z0-9_-]+)\s*\{([^}]*)\}/g;
+  let m;
+  while ((m = ruleRe.exec(clean))) {
+    const cls = m[1];
+    const styles = {};
+    m[2].split(";").forEach((d) => {
+      const idx = d.indexOf(":");
+      if (idx === -1) return;
+      const prop = d.slice(0, idx).trim();
+      const val = d.slice(idx + 1).trim();
+      if (!prop || !val) return;
+      const camel = KEBAB_TO_CAMEL(prop);
+      if (KNOWN_STYLE_KEYS.has(camel)) styles[camel] = importValue(camel, val);
+      else skipped.push(prop);
+    });
+    map[cls] = { ...(map[cls] || {}), ...styles };
+  }
+  return { map, skipped };
+}
+function parseImport(htmlStr, cssStr) {
+  if (typeof DOMParser === "undefined")
+    return { tree: null, error: "DOMParser unavailable" };
+  if (!htmlStr || !htmlStr.trim())
+    return { tree: null, error: "No HTML content found" };
+
+  const dom = new DOMParser().parseFromString(htmlStr, "text/html");
+  let css = cssStr || "";
+  if (!css) {
+    css = Array.from(dom.querySelectorAll("style")).map((s) => s.textContent || "").join("\n");
+  }
+  const { map: classStyles, skipped } = parseCssRules(css);
+  const skippedProps = [...skipped];
+
+  const body = dom.body;
+  if (!body || !body.children.length)
+    return { tree: null, error: "No <body> elements to import" };
+
+  let count = 0;
+  const build = (el) => {
+    count += 1;
+    const firstClass = (el.getAttribute("class") || "").split(/\s+/)[0] || "";
+    const styles = { ...(classStyles[firstClass] || {}) };
+    const inline = el.getAttribute("style");
+    if (inline) {
+      inline.split(";").forEach((d) => {
+        const idx = d.indexOf(":");
+        if (idx === -1) return;
+        const camel = KEBAB_TO_CAMEL(d.slice(0, idx).trim());
+        const val = d.slice(idx + 1).trim();
+        if (!val) return;
+        if (KNOWN_STYLE_KEYS.has(camel)) styles[camel] = importValue(camel, val);
+        else skippedProps.push(d.slice(0, idx).trim());
+      });
+    }
+    const childEls = Array.from(el.children);
+    const node = {
+      id: uid(),
+      tag: "div",
+      label: styles.display === "flex" ? "Flex container" : "Box",
+      styles,
+      children: childEls.map(build),
+    };
+    if (!childEls.length) {
+      const txt = (el.textContent || "").trim();
+      if (txt) node.text = txt;
+    }
+    return node;
+  };
+
+  const rootEl = Array.from(body.children).find((c) => c.tagName === "DIV") || body.children[0];
+  const tree = build(rootEl);
+  tree.label = "Root";
+  return { tree, count, skippedProps, error: null };
+}
+
 // Shared label row. Shows a "↺" reset button only when the value is non-default
 // (modified !== undefined && true) and an onReset handler is provided.
 function FieldLabel({ label, modified, onReset, children }) {
@@ -1256,6 +1377,7 @@ function FlexCraft() {
   const [bindingKey, setBindingKey] = useState(false); // "press a key…" capture mode
   const [rapidAdd, setRapidAdd] = useState(false);
   const dragState = useRef(null);
+  const importInputRef = useRef(null);
 
   // Track drag in progress at the window level (drag events bubble, so one pair
   // of listeners catches every drag regardless of which element started it).
@@ -1416,8 +1538,82 @@ function FlexCraft() {
     });
   }, []);
 
-  // Drag the drawer grip to resize the code panel. Dragging UP (negative dy)
-  // grows it; clamped to a sane min/max so it can't vanish or eat the canvas.
+  // ---- site export (A: download one runnable .html · C: copy full document) -
+  const [siteMsg, setSiteMsg] = useState(null); // transient feedback for export/import
+  const flashMsg = useCallback((m) => {
+    setSiteMsg(m);
+    setTimeout(() => setSiteMsg(null), 3500);
+  }, []);
+
+  const exportSite = useCallback(() => {
+    const doc = buildStandaloneSite(exportHtml(tree), exportCss(tree));
+    // (A) try a Blob download; (C) always also offer it via copy as fallback.
+    try {
+      const blob = new Blob([doc], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "flexcraft-layout.html";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      flashMsg("Downloaded flexcraft-layout.html");
+    } catch (err) {
+      // Sandbox blocked the download → fall back to clipboard.
+      navigator.clipboard?.writeText(doc);
+      flashMsg("Download blocked — copied full HTML to clipboard instead");
+    }
+  }, [tree, flashMsg]);
+
+  const copySite = useCallback(() => {
+    const doc = buildStandaloneSite(exportHtml(tree), exportCss(tree));
+    navigator.clipboard?.writeText(doc);
+    flashMsg("Copied full runnable HTML to clipboard");
+  }, [tree, flashMsg]);
+
+  // ---- import (FlexCraft-shaped HTML, or HTML + CSS) ------------------------
+  // Honest scope: this reliably round-trips OUR exports (flat class→rule CSS,
+  // class on each element). Foreign files import what's understood and report
+  // what was skipped, rather than crashing or silently mangling.
+  const importFiles = useCallback(
+    (htmlStr, cssStr) => {
+      const result = parseImport(htmlStr, cssStr);
+      if (!result.tree) {
+        flashMsg(result.error || "Couldn't parse that file");
+        return;
+      }
+      commit(() => result.tree);
+      setSelectedId(null);
+      const skipped = result.skippedProps.length
+        ? ` · skipped ${result.skippedProps.length} unsupported prop${result.skippedProps.length === 1 ? "" : "s"}: ${[...new Set(result.skippedProps)].slice(0, 5).join(", ")}`
+        : "";
+      flashMsg(`Imported ${result.count} element${result.count === 1 ? "" : "s"}${skipped}`);
+    },
+    [commit, flashMsg]
+  );
+
+  const onImportPick = useCallback(
+    (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      const htmlFile = files.find((f) => /\.html?$/i.test(f.name)) || files[0];
+      const cssFile = files.find((f) => /\.css$/i.test(f.name));
+      const readFile = (f) =>
+        new Promise((res) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.onerror = () => res("");
+          r.readAsText(f);
+        });
+      Promise.all([htmlFile ? readFile(htmlFile) : "", cssFile ? readFile(cssFile) : ""]).then(
+        ([h, c]) => importFiles(h, c)
+      );
+      e.target.value = ""; // allow re-importing the same file
+    },
+    [importFiles]
+  );
+
   const startDrawerResize = useCallback((e) => {
     e.preventDefault();
     const startY = e.clientY;
@@ -1980,6 +2176,7 @@ function FlexCraft() {
   return (
     <div className={"fc-app fc-theme-" + theme}>
       <style>{css}</style>
+      {siteMsg && <div className="fc-toast">{siteMsg}</div>}
 
       {/* ---- top toolbar ---- */}
       <header className="fc-toolbar">
@@ -2039,6 +2236,37 @@ function FlexCraft() {
           >
             ⓘ
           </button>
+          <span className="fc-tool-sep" />
+          <button
+            className="fc-tool-btn fc-tool-text"
+            onClick={() => importInputRef.current && importInputRef.current.click()}
+            title="Import a FlexCraft-exported .html (or .html + .css)"
+          >
+            ↑ Import
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".html,.htm,.css"
+            multiple
+            style={{ display: "none" }}
+            onChange={onImportPick}
+          />
+          <button
+            className="fc-tool-btn fc-tool-text"
+            onClick={exportSite}
+            title="Download a runnable .html of this layout"
+          >
+            ↓ Export
+          </button>
+          <button
+            className="fc-tool-btn"
+            onClick={copySite}
+            title="Copy the full runnable HTML document to clipboard"
+          >
+            ⧉
+          </button>
+          <span className="fc-tool-sep" />
           <button
             className="fc-tool-btn"
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
@@ -2214,6 +2442,15 @@ const css = `
 .fc-tool-btn:disabled{ opacity:0.35; cursor:default; }
 .fc-tool-btn:not(:disabled):hover{ border-color:var(--accent); color:var(--accent); }
 .fc-tool-btn.is-on{ background:var(--accent); color:var(--ink); border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft), 0 0 8px var(--accent-soft); }
+.fc-tool-text{ width:auto; padding:0 10px; font-size:11px; white-space:nowrap; }
+.fc-tool-sep{ width:1px; align-self:stretch; margin:4px 4px; background:var(--line); }
+.fc-toast{
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
+  background:var(--accent); color:var(--ink); font-family:'Space Mono',monospace;
+  font-size:12px; font-weight:700; padding:9px 16px; border-radius:8px;
+  box-shadow:0 6px 24px rgba(0,0,0,0.5); z-index:10000; max-width:80vw;
+  text-align:center;
+}
 
 /* ---- body layout ---- */
 .fc-body{ flex:1; display:flex; min-height:0; }

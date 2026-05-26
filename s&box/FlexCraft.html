@@ -152,6 +152,17 @@ function updateStyles(tree, id, patch) {
     return { ...n, styles };
   });
 }
+// Apply the same patch to every node whose id is in `ids` (a Set), in one pass.
+// Used by multi-select editing so N elements update in a single atomic commit.
+// Mirrors updateStyles' undefined-means-delete semantics.
+function updateStylesMany(tree, ids, patch) {
+  return mapTree(tree, (n) => {
+    if (!ids.has(n.id)) return n;
+    const styles = { ...n.styles, ...patch };
+    for (const k in patch) if (patch[k] === undefined) delete styles[k];
+    return { ...n, styles };
+  });
+}
 function findNode(tree, id) {
   if (tree.id === id) return tree;
   for (const c of tree.children) {
@@ -180,11 +191,52 @@ function removeNode(tree, id) {
   };
   return [walk(tree), removed];
 }
+// Remove every node whose id is in `ids` (a Set), in a single walk. If an
+// ancestor and its descendant are both selected, the descendant simply
+// disappears with the ancestor — pruning a subtree we never recurse into is a
+// harmless no-op. Root is never removable (callers exclude tree.id).
+function removeNodes(tree, ids) {
+  const walk = (node) => {
+    const kept = [];
+    for (const c of node.children) {
+      if (ids.has(c.id)) continue; // prune this child (and its whole subtree)
+      kept.push(walk(c));
+    }
+    return { ...node, children: kept };
+  };
+  return walk(tree);
+}
+// For CUT: gather the selected nodes to lift out, in document order, dropping
+// any that are DESCENDANTS of another selected node (the ancestor guard — if
+// you selected a container and something inside it, the inside one rides along
+// with the container, so we don't buffer it separately and double-paste it).
+// Returns { nodes: [...top-level selected in order], ids: Set(their ids) }.
+function collectForCut(tree, selectedIds) {
+  const out = [];
+  const walk = (node, hasSelectedAncestor) => {
+    for (const c of node.children) {
+      const sel = selectedIds.has(c.id);
+      if (sel && !hasSelectedAncestor) out.push(c); // top-level selected
+      walk(c, hasSelectedAncestor || sel);
+    }
+  };
+  walk(tree, false);
+  return { nodes: out, ids: new Set(out.map((n) => n.id)) };
+}
 function insertNode(tree, parentId, idx, node) {
   return mapTree(tree, (n) => {
     if (n.id !== parentId) return n;
     const children = [...n.children];
     children.splice(idx, 0, node);
+    return { ...n, children };
+  });
+}
+// Insert several nodes at once, in order, starting at idx. Used by paste.
+function insertNodes(tree, parentId, idx, nodes) {
+  return mapTree(tree, (n) => {
+    if (n.id !== parentId) return n;
+    const children = [...n.children];
+    children.splice(idx, 0, ...nodes);
     return { ...n, children };
   });
 }
@@ -938,28 +990,41 @@ function CanvasNode({
   node,
   isRoot,
   selectedId,
+  selectedIds,
   onSelect,
   dropTarget,
   setDropTarget,
   onDropNew,
   onDropMove,
+  onDropMoveMulti,
   dragState,
   showBoxModel,
   showLines,
   hidePills,
   onResize,
+  onResizeMany,
   syncDims,
+  syncSelection,
   snapStep,
   isDragging,
+  pasteMode,
+  pasteInto,
+  copiedIds,
   onText,
 }) {
-  const isSelected = node.id === selectedId;
+  // isPrimary  = THE anchor (props panel, resize handles, overlays).
+  // isSelected = in the selection set (primary or a secondary member). Falls
+  //              back to the primary check if no set is threaded (defensive).
+  const isPrimary = node.id === selectedId;
+  const isSelected = selectedIds ? selectedIds.has(node.id) : isPrimary;
+  // Copied original (purple outline) — set on the source node(s) during a copy.
+  const isCopied = copiedIds ? copiedIds.has(node.id) : false;
   const isContainer = node.styles.display === "flex";
 
   // Box-model overlay: show padding (green) and margin (amber) bands on the
   // selected element when the toggle is on. We draw each band as a border on an
   // absolutely-positioned layer — a border's per-side thickness IS the band.
-  const overlayOn = showBoxModel && isSelected;
+  const overlayOn = showBoxModel && isPrimary;
   const marginVal = typeof node.styles.margin === "number" ? node.styles.margin : 0;
   const paddingVal = typeof node.styles.padding === "number" ? node.styles.padding : 0;
 
@@ -1005,9 +1070,15 @@ function CanvasNode({
     setEditing(false);
   };
 
-  // Begin an edge-resize drag. `axis` is "x" (width) or "y" (height).
-  // We use POINTER events (not HTML5 drag) so this works on touch and never
-  // collides with the reorder drag system, which is drag-event based.
+  // Begin an edge-resize drag. `axis` is "x" (width), "y" (height), or "xy".
+  // POINTER events (not HTML5 drag) so this works on touch and never collides
+  // with the reorder drag system.
+  //
+  // Multi-resize (syncSelection + 2 selected): the handle lives on the anchor,
+  // but the drag drives EVERY selected element by the SAME DELTA on the dragged
+  // axis. Each element keeps its own size — we snapshot each one's start size at
+  // drag start and add the shared dx/dy. Snap-step applies per element so they
+  // all land on the grid.
   const startResize = (axis) => (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1016,56 +1087,114 @@ function CanvasNode({
     const rect = el.getBoundingClientRect();
     const startX = e.clientX;
     const startY = e.clientY;
-    const startW = rect.width;
-    const startH = rect.height;
+    // ADOPT the element's CURRENT rendered size as the baseline. Rounding to an
+    // integer (not snapping to the grid) means grabbing the handle does NOT make
+    // the box jump — it stays exactly where it visually is. We snap the DELTA
+    // below, so the box only moves once you've actually dragged.
+    const startW = Math.round(rect.width);
+    const startH = Math.round(rect.height);
+
+    // Decide multi vs single ONCE, at drag start. For multi, snapshot each
+    // selected element's start size from the live DOM (flex may have sized it).
+    const ids =
+      syncSelection && selectedIds && selectedIds.size > 1
+        ? [...selectedIds]
+        : [node.id];
+    const isMulti = ids.length > 1;
+    const starts = {};
+    if (isMulti && typeof document !== "undefined") {
+      for (const id of ids) {
+        const d = document.querySelector(`[data-node-id="${id}"]`);
+        const r = d ? d.getBoundingClientRect() : { width: startW, height: startH };
+        starts[id] = { w: Math.round(r.width), h: Math.round(r.height) };
+      }
+    }
+
+    const wantW = axis === "x" || axis === "xy" || syncDims;
+    const wantH = axis === "y" || axis === "xy" || syncDims;
 
     const onMove = (ev) => {
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
-      // Snap the RESULTING dimension to the nearest `snapStep` multiple, so the
-      // element lands on the grid regardless of where the drag started. step 1
-      // = no snapping. Floor of 20px is enforced after snapping.
+      // Snap the DELTA (not the resulting size) to the nearest step, then add it
+      // to the adopted start. So at dx=0 the size is exactly the adopted size
+      // (no jump), and it grows/shrinks in clean step increments from there.
+      // step 1 = no snapping. 20px floor enforced after.
       const step = Math.max(1, snapStep || 1);
-      const snap = (v) => Math.max(20, Math.round(v / step) * step);
-      // Honest behavior: grabbing an edge means "I want this exact size, stop
-      // auto-flexing." So we zero flex-grow/shrink so the explicit dimension
-      // actually takes effect instead of being overridden by the flex algorithm.
-      const patch = { flexGrow: 0, flexShrink: 0 };
-      if (axis === "x" || axis === "xy" || syncDims) {
-        patch.width = snap(startW + dx);
+      const snapDelta = (d) => Math.round(d / step) * step;
+      const sized = (start, d) => Math.max(20, start + snapDelta(d));
+
+      if (!isMulti) {
+        // Grabbing an edge means "I want this exact size, stop auto-flexing."
+        // Committing the adopted size is what kills the flex-handoff jump: the
+        // pixel value we set equals the size the box already had.
+        const patch = { flexGrow: 0, flexShrink: 0 };
+        if (wantW) patch.width = sized(startW, dx);
+        if (wantH) patch.height = sized(startH, dy);
+        if (syncDims) {
+          // square-lock: one edge drives both dims to the same value
+          const v = axis === "y" ? sized(startH, dy) : sized(startW, dx);
+          patch.width = v;
+          patch.height = v;
+        }
+        onResize(node.id, patch);
+      } else {
+        // Same-delta across the whole selection, dragged axis only.
+        const updates = ids.map((id) => {
+          const s = starts[id];
+          const patch = { flexGrow: 0, flexShrink: 0 };
+          if (wantW) patch.width = sized(s.w, dx);
+          if (wantH) patch.height = sized(s.h, dy);
+          return { id, patch };
+        });
+        onResizeMany(updates);
       }
-      if (axis === "y" || axis === "xy" || syncDims) {
-        patch.height = snap(startH + dy);
-      }
-      // With sync on, a single edge drives both dims to the same value so the
-      // element stays square — we key off whichever axis was grabbed.
-      if (syncDims) {
-        const v = axis === "y" ? snap(startH + dy) : snap(startW + dx);
-        patch.width = v;
-        patch.height = v;
-      }
-      onResize(node.id, patch);
-      // Live readout: show the dimension(s) actually changing for this drag.
-      const showW = axis === "x" || axis === "xy" || syncDims;
-      const showH = axis === "y" || axis === "xy" || syncDims;
+      // Live readout. Multi shows the shared delta; single shows resulting size.
       const parts = [];
-      if (showW) parts.push(`W ${patch.width}`);
-      if (showH) parts.push(`H ${patch.height}`);
-      setResizeTip({ x: ev.clientX, y: ev.clientY, text: parts.join("  ×  ") });
+      if (isMulti) {
+        if (wantW) parts.push(`ΔW ${dx >= 0 ? "+" : ""}${snapDelta(dx)}`);
+        if (wantH) parts.push(`ΔH ${dy >= 0 ? "+" : ""}${snapDelta(dy)}`);
+        parts.push(`· ${ids.length} items`);
+      } else {
+        if (wantW) parts.push(`W ${sized(startW, dx)}`);
+        if (wantH) parts.push(`H ${sized(startH, dy)}`);
+      }
+      setResizeTip({ x: ev.clientX, y: ev.clientY, text: parts.join("  ") });
     };
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       setResizeTip(null);
     };
+    // BASELINE FREEZE (kills the flex-reflow jump): before any movement, commit
+    // each involved box's adopted size + zeroed flex on the dragged axis. Pinning
+    // explicit sizes up front means the container's flex algorithm settles ONCE
+    // here, at grab time, instead of lurching on the first pointermove when
+    // sizes/flex change. The values equal what's already on screen, so this is
+    // visually neutral for the dragged boxes; it just locks the layout so the
+    // drag is smooth. Only the axis being dragged is pinned (don't freeze height
+    // on a width-only drag).
+    const basePatch = (w, h) => {
+      const p = { flexGrow: 0, flexShrink: 0 };
+      if (wantW) p.width = w;
+      if (wantH) p.height = h;
+      return p;
+    };
+    if (isMulti) {
+      onResizeMany(ids.map((id) => ({ id, patch: basePatch(starts[id].w, starts[id].h) })));
+    } else {
+      onResize(node.id, basePatch(startW, startH));
+    }
+
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
   };
 
-  // Only show resize handles on the selected, non-root element.
-  const showHandles = isSelected && !isRoot && typeof onResize === "function";
-  // Flex-line overlay only makes sense on a selected CONTAINER with items.
-  const linesOn = showLines && isSelected && isContainer && node.children.length > 0;
+  // Resize handles + line overlay live on the PRIMARY (anchor) only. With sync
+  // on, the anchor's drag drives all selected; the handles still sit on it.
+  const showHandles = isPrimary && !isRoot && typeof onResize === "function";
+  // Flex-line overlay only makes sense on the PRIMARY container with items.
+  const linesOn = showLines && isPrimary && isContainer && node.children.length > 0;
   // Gap bands ride along with the box-model overlay (not the lines toggle), so
   // padding/margin/gap all appear together when ▣ is on.
   const gapOn = overlayOn && isContainer && node.children.length > 1;
@@ -1076,7 +1205,14 @@ function CanvasNode({
         draggable: true,
         onDragStart: (e) => {
           e.stopPropagation();
-          dragState.current = { kind: "move", id: node.id };
+          // If this node is part of a multi-selection, drag the WHOLE selection;
+          // otherwise just this node. (We don't change the selection here — you
+          // can grab any selected member and they all move together.)
+          if (selectedIds && selectedIds.size > 1 && selectedIds.has(node.id)) {
+            dragState.current = { kind: "moveMulti", ids: [...selectedIds] };
+          } else {
+            dragState.current = { kind: "move", id: node.id };
+          }
           e.dataTransfer.effectAllowed = "move";
         },
         onDragEnd: () => {
@@ -1099,26 +1235,35 @@ function CanvasNode({
         node={child}
         isRoot={false}
         selectedId={selectedId}
+        selectedIds={selectedIds}
         onSelect={onSelect}
         dropTarget={dropTarget}
         setDropTarget={setDropTarget}
         onDropNew={onDropNew}
         onDropMove={onDropMove}
+        onDropMoveMulti={onDropMoveMulti}
         dragState={dragState}
         showBoxModel={showBoxModel}
         showLines={showLines}
         hidePills={hidePills}
         onResize={onResize}
+        onResizeMany={onResizeMany}
         syncDims={syncDims}
+        syncSelection={syncSelection}
         snapStep={snapStep}
         isDragging={isDragging}
+        pasteMode={pasteMode}
+        pasteInto={pasteInto}
+        copiedIds={copiedIds}
         onText={onText}
       />
     ));
 
-    if (!isDragging) return childEls;
+    if (!isDragging && !pasteMode) return childEls;
 
-    // Dragging: interleave drop zones (zone, child, zone, child, …, zone).
+    // Dragging OR paste mode: interleave drop zones (zone, child, …, zone). In
+    // paste mode the zones are CLICKABLE paste targets; while dragging they're
+    // drop targets. Both reuse the same DropZone strips.
     const zones = [];
     for (let i = 0; i <= node.children.length; i++) {
       const active =
@@ -1129,6 +1274,16 @@ function CanvasNode({
           horizontal={horizontal}
           active={active}
           dragging={isDragging}
+          pasteMode={pasteMode}
+          onClick={
+            pasteMode
+              ? (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  pasteInto(node.id, i);
+                }
+              : undefined
+          }
           onDragOver={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1141,6 +1296,7 @@ function CanvasNode({
             if (!ds) return;
             if (ds.kind === "new") onDropNew(node.id, i, ds.factory);
             else if (ds.kind === "move") onDropMove(node.id, i, ds.id);
+            else if (ds.kind === "moveMulti") onDropMoveMulti(node.id, i, ds.ids);
             setDropTarget(null);
           }}
         />
@@ -1155,20 +1311,24 @@ function CanvasNode({
       {...dragProps}
       onClick={(e) => {
         e.stopPropagation();
-        onSelect(node.id);
+        // Shift-click toggles this node in/out of the multi-selection; a plain
+        // click collapses to just this node.
+        onSelect(node.id, e.shiftKey);
       }}
       onDoubleClick={(e) => {
         // Double-click a leaf box → edit its text inline. Containers ignore it
         // (their "content" is their children, not text).
         if (isLeaf) {
           e.stopPropagation();
-          onSelect(node.id);
+          onSelect(node.id, false);
           setEditing(true);
         }
       }}
       className={
         "fc-node" +
         (isSelected ? " is-selected" : "") +
+        (isSelected && !isPrimary ? " is-secondary" : "") +
+        (isCopied ? " is-copied" : "") +
         (isContainer ? " is-container" : "") +
         (overlayOn ? " fc-bm-active" : "")
       }
@@ -1269,19 +1429,26 @@ function CanvasNode({
               node={c}
               isRoot={false}
               selectedId={selectedId}
+              selectedIds={selectedIds}
               onSelect={onSelect}
               dropTarget={dropTarget}
               setDropTarget={setDropTarget}
               onDropNew={onDropNew}
               onDropMove={onDropMove}
+              onDropMoveMulti={onDropMoveMulti}
               dragState={dragState}
               showBoxModel={showBoxModel}
               showLines={showLines}
               hidePills={hidePills}
               onResize={onResize}
+              onResizeMany={onResizeMany}
               syncDims={syncDims}
+              syncSelection={syncSelection}
               snapStep={snapStep}
               isDragging={isDragging}
+              pasteMode={pasteMode}
+              pasteInto={pasteInto}
+              copiedIds={copiedIds}
               onText={onText}
             />
           ))
@@ -1307,11 +1474,12 @@ function CanvasNode({
   );
 }
 
-function DropZone({ horizontal, active, dragging, onDragOver, onDrop }) {
+function DropZone({ horizontal, active, dragging, pasteMode, onClick, onDragOver, onDrop }) {
   // Zero-size in normal flow so it never inflates the layout — the canvas then
   // renders TRUE flexbox (gap:0 is genuinely 0, no phantom 8px between items).
-  // Only while a drag is in progress do the zones expand into catchable targets.
-  const size = dragging
+  // Zones expand into catchable targets during a drag OR in paste mode.
+  const expanded = dragging || pasteMode;
+  const size = expanded
     ? {
         width: horizontal ? 8 : "auto",
         minWidth: horizontal ? 8 : undefined,
@@ -1319,8 +1487,7 @@ function DropZone({ horizontal, active, dragging, onDragOver, onDrop }) {
         minHeight: horizontal ? 40 : 8,
       }
     : {
-        // collapsed: take no space, but stay in the DOM as a drop target. A hair
-        // of size (0) with negative margins keeps siblings flush.
+        // collapsed: take no space, but stay in the DOM as a drop target.
         width: 0,
         height: 0,
         minWidth: 0,
@@ -1330,7 +1497,12 @@ function DropZone({ horizontal, active, dragging, onDragOver, onDrop }) {
     <div
       onDragOver={onDragOver}
       onDrop={onDrop}
-      className={"fc-dropzone" + (active ? " is-active" : "")}
+      onClick={onClick}
+      className={
+        "fc-dropzone" +
+        (active ? " is-active" : "") +
+        (pasteMode ? " is-paste" : "")
+      }
       style={{ ...size, alignSelf: "stretch", flex: "0 0 auto" }}
     />
   );
@@ -1339,14 +1511,20 @@ function DropZone({ horizontal, active, dragging, onDragOver, onDrop }) {
 // ============================================================================
 //  Layer tree (mini outline so you can select hard-to-click nodes)
 // ============================================================================
-function LayerRow({ node, depth, selectedId, onSelect }) {
+function LayerRow({ node, depth, selectedId, selectedIds, onSelect }) {
   const isContainer = node.styles.display === "flex";
+  const isPrimary = node.id === selectedId;
+  const inSelection = selectedIds ? selectedIds.has(node.id) : isPrimary;
   return (
     <>
       <button
-        className={"fc-layer" + (node.id === selectedId ? " is-active" : "")}
+        className={
+          "fc-layer" +
+          (isPrimary ? " is-active" : "") +
+          (inSelection && !isPrimary ? " is-multi" : "")
+        }
         style={{ paddingLeft: 8 + depth * 14 }}
-        onClick={() => onSelect(node.id)}
+        onClick={(e) => onSelect(node.id, e.shiftKey)}
       >
         <span className="fc-layer-icon">{isContainer ? "▦" : "▢"}</span>
         {node.label}
@@ -1357,6 +1535,7 @@ function LayerRow({ node, depth, selectedId, onSelect }) {
           node={c}
           depth={depth + 1}
           selectedId={selectedId}
+          selectedIds={selectedIds}
           onSelect={onSelect}
         />
       ))}
@@ -1541,7 +1720,15 @@ function FlexCraft() {
   }));
   const tree = history.present;
 
+  // SELECTION MODEL (multi-select).
+  //   selectedId  = the PRIMARY selection: anchor whose properties show in the
+  //                 panel and which owns the resize handles. Single value, so
+  //                 existing single-select call sites keep working.
+  //   selectedIds = the full selection SET (always includes selectedId when
+  //                 non-null). Shift-click toggles membership; plain click
+  //                 collapses to a single element.
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [dropTarget, setDropTarget] = useState(null);
   const [tab, setTab] = useState("css"); // code drawer: css | html
   const [codeEditing, setCodeEditing] = useState(false); // freeform whole-panel edit
@@ -1552,6 +1739,31 @@ function FlexCraft() {
   const [showLines, setShowLines] = useState(false);
   const [hidePills, setHidePills] = useState(false);
   const [syncDims, setSyncDims] = useState(false);
+  // Multi-resize toggle (distinct from syncDims, the per-element square-lock).
+  // When ON and 2+ selected, dragging the anchor's handle applies the SAME
+  // DELTA to every selected element on the dragged axis. Toolbar button shows
+  // only with a multi-selection.
+  const [syncSelection, setSyncSelection] = useState(false);
+  // Cut & paste (move-once). When non-null, we're in PASTE MODE: the buffered
+  // nodes have been lifted OUT of the tree, every flex container's child-slots
+  // light up, and clicking one drops the buffer there. Shape: { nodes: [...] }.
+  const [cutBuffer, setCutBuffer] = useState(null);
+  // Copy & paste (clone, repeatable). When non-null, we're in COPY paste mode:
+  // the buffered nodes STAY in the tree (their originals get a purple "copied"
+  // outline), every flex slot lights up, and clicking one stamps a FRESH CLONE
+  // (new ids). The buffer persists so you can keep stamping until Esc.
+  // Shape: { nodes: [...], ids: Set }. Only one of cut/copy is ever active.
+  const [copyBuffer, setCopyBuffer] = useState(null);
+  // The keyboard 'r' shortcut lives in an effect that captures its closure once;
+  // toggleSquareLock (defined later) depends on changing state, so we route the
+  // shortcut through a ref that's refreshed every render to avoid a stale call.
+  const squareLockRef = useRef(null);
+  // Same ref pattern for cut & escape: the keydown effect captures its closure
+  // once, but these depend on changing state (selection, cutBuffer), so route
+  // through refs refreshed each render to avoid stale calls.
+  const cutRef = useRef(null);
+  const copyRef = useRef(null);
+  const escapeRef = useRef(null);
   const [snapStep, setSnapStep] = useState(5); // resize grid snap (px); 1 = off
   const [drawerHeight, setDrawerHeight] = useState(170);
   const [leftWidth, setLeftWidth] = useState(210);
@@ -1619,13 +1831,54 @@ function FlexCraft() {
     });
   }, []);
 
-  // keyboard: cmd/ctrl-z, shift for redo
+  // keyboard: cmd/ctrl-z (redo with shift); ctrl-x cut; Escape cancels paste
+  // mode if active, else clears the selection.
   useEffect(() => {
     const onKey = (e) => {
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key.toLowerCase() === "z") {
         e.preventDefault();
         e.shiftKey ? redo() : undo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "x") {
+        // Don't hijack cut while typing — let the field's native cut work.
+        const tag = (e.target && e.target.tagName) || "";
+        const typing =
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          (e.target && e.target.isContentEditable);
+        if (!typing) {
+          e.preventDefault();
+          cutRef.current && cutRef.current();
+        }
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "c") {
+        // Don't hijack copy while typing — let the field's native copy work.
+        const tag = (e.target && e.target.tagName) || "";
+        const typing =
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          (e.target && e.target.isContentEditable);
+        // Also yield if the user has a real text selection (copying text, not nodes).
+        const hasTextSel =
+          typeof window !== "undefined" &&
+          window.getSelection &&
+          String(window.getSelection()).length > 0;
+        if (!typing && !hasTextSel) {
+          e.preventDefault();
+          copyRef.current && copyRef.current();
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        const tag = (e.target && e.target.tagName) || "";
+        const typing =
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          (e.target && e.target.isContentEditable);
+        if (!typing) escapeRef.current && escapeRef.current();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -1686,7 +1939,7 @@ function FlexCraft() {
         case "b": setShowBoxModel((v) => !v); break;   // box model
         case "l": setShowLines((v) => !v); break;      // flex lines
         case "p": setHidePills((v) => !v); break;      // name pills
-        case "r": setSyncDims((v) => !v); break;       // sync width/height
+        case "s": squareLockRef.current && squareLockRef.current(); break; // square-lock (Sync W/H)
         default: break;
       }
     };
@@ -1704,12 +1957,72 @@ function FlexCraft() {
     [tree, selectedId]
   );
 
+  // The full set of selected nodes (resolved from ids → live nodes). Filtered
+  // through findNode so stale ids (e.g. a deleted node) silently drop out.
+  const selectedNodes = useMemo(
+    () => [...selectedIds].map((id) => findNode(tree, id)).filter(Boolean),
+    [tree, selectedIds]
+  );
+  const multi = selectedNodes.length > 1;
+
+  // Unified selection entry point. Every click (canvas OR layers) routes here.
+  //   additive = false (plain click): collapse selection to just this node.
+  //   additive = true  (shift-click): toggle this node's membership.
+  // The primary (selectedId) is the anchor: on toggle-add it becomes the
+  // clicked node; on toggle-remove it falls back to any remaining member.
+  const selectNode = useCallback((id, additive = false) => {
+    if (!additive) {
+      setSelectedId(id);
+      setSelectedIds(id ? new Set([id]) : new Set());
+      return;
+    }
+    if (!id) return;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        setSelectedId((cur) =>
+          cur === id ? (next.size ? [...next][0] : null) : cur
+        );
+      } else {
+        next.add(id);
+        setSelectedId(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedId(null);
+    setSelectedIds(new Set());
+  }, []);
+
+  // Write a style patch to EVERY selected element in one atomic commit. Single
+  // selection → identical to old behavior; multiple → patch lands on all.
   const setStyle = useCallback(
     (patch) => {
-      if (!selectedId) return;
-      commit((t) => updateStyles(t, selectedId, patch));
+      if (!selectedIds.size) return;
+      commit((t) => updateStylesMany(t, selectedIds, patch));
     },
-    [selectedId, commit]
+    [selectedIds, commit]
+  );
+
+  // Shared-value reader for the props panel. Returns the common value of style
+  // `key` across all selected nodes, or `undefined` if they DIFFER (so the
+  // control renders blank rather than lying). `fallback` is used when a node
+  // hasn't set the key (mirrors the `?? default` the panel used). Single
+  // selection → just that node's value, so existing behavior is unchanged.
+  const sv = useCallback(
+    (key, fallback) => {
+      if (!selectedNodes.length) return fallback;
+      const read = (n) => (n.styles[key] !== undefined ? n.styles[key] : fallback);
+      const first = read(selectedNodes[0]);
+      for (let i = 1; i < selectedNodes.length; i++) {
+        if (read(selectedNodes[i]) !== first) return undefined;
+      }
+      return first;
+    },
+    [selectedNodes]
   );
 
   // Live resize from edge handles. A drag fires many pointermove events; if each
@@ -1735,6 +2048,24 @@ function FlexCraft() {
         return { past: [...h.past, h.present], present: next, future: [] };
       }
       // Subsequent moves → replace present in place, no new history entry.
+      return { ...h, present: next };
+    });
+  }, []);
+
+  // Multi-element resize commit. `updates` is [{id, patch}, …] — each element
+  // gets its OWN patch (its own start size + the shared delta), applied in one
+  // pass. Same drag-coalescing as onResize, so a multi-resize drag is a single
+  // undo step regardless of element count or number of pointermoves.
+  const onResizeMany = useCallback((updates) => {
+    if (!updates.length) return;
+    setHistory((h) => {
+      let next = h.present;
+      for (const { id, patch } of updates) next = updateStyles(next, id, patch);
+      if (next === h.present) return h;
+      if (!resizeActive.current) {
+        resizeActive.current = true;
+        return { past: [...h.past, h.present], present: next, future: [] };
+      }
       return { ...h, present: next };
     });
   }, []);
@@ -1799,13 +2130,13 @@ function FlexCraft() {
       return false;
     }
     commit(() => r.tree);                        // (b) one atomic commit
-    setSelectedId(null);
+    clearSelection();
     const skipped = r.skippedProps.length
       ? ` · skipped ${[...new Set(r.skippedProps)].slice(0, 4).join(", ")}`
       : "";
     flashMsg(`Rebuilt ${r.count} element${r.count === 1 ? "" : "s"} from HTML${skipped}`);
     return true;
-  }, [commit, flashMsg, tree]);
+  }, [commit, flashMsg, tree, clearSelection]);
 
   // Produce the output (download or copy) from a given tree.
   const doExport = useCallback((mode, srcTree) => {
@@ -1872,13 +2203,13 @@ function FlexCraft() {
         return;
       }
       commit(() => result.tree);
-      setSelectedId(null);
+      clearSelection();
       const skipped = result.skippedProps.length
         ? ` · skipped ${result.skippedProps.length} unsupported prop${result.skippedProps.length === 1 ? "" : "s"}: ${[...new Set(result.skippedProps)].slice(0, 5).join(", ")}`
         : "";
       flashMsg(`Imported ${result.count} element${result.count === 1 ? "" : "s"}${skipped}`);
     },
-    [commit, flashMsg]
+    [commit, flashMsg, clearSelection]
   );
 
   const onImportPick = useCallback(
@@ -1989,9 +2320,9 @@ function FlexCraft() {
       const node = factory();
       commit((t) => insertNode(t, parentId, idx, node));
       // Rapid-add: keep the container (parent) selected for continuous drops.
-      setSelectedId(rapidAdd ? parentId : node.id);
+      selectNode(rapidAdd ? parentId : node.id);
     },
-    [commit, rapidAdd]
+    [commit, rapidAdd, selectNode]
   );
 
   const onDropMove = useCallback(
@@ -2010,14 +2341,51 @@ function FlexCraft() {
           removed
         );
       });
+      // Keep the moved item selected after the reorder (it keeps its id). If it
+      // wasn't selected before the drag, this selects it now — so a move always
+      // leaves the thing you moved selected, ready for the next action.
+      selectNode(id);
+    },
+    [commit, selectNode]
+  );
+
+  // Move a MULTI-selection in one drop (dragging any selected member moves them
+  // all). Top-level selected nodes only (ancestor guard via collectForCut), and
+  // we refuse to drop INTO any dragged node's own subtree (would orphan it).
+  // Removed and re-inserted in document order at the slot, as one undo step.
+  const onDropMoveMulti = useCallback(
+    (parentId, idx, ids) => {
+      commit((t) => {
+        const idSet = new Set(ids);
+        const { nodes } = collectForCut(t, idSet);
+        if (!nodes.length) return t;
+        // Can't drop into the subtree of any node being moved.
+        for (const n of nodes) if (findNode(n, parentId)) return t;
+        const topIds = new Set(nodes.map((n) => n.id));
+        const without = removeNodes(t, topIds);
+        const parent = findNode(without, parentId);
+        if (!parent) return t;
+        return insertNodes(
+          without,
+          parentId,
+          Math.min(idx, parent.children.length),
+          nodes
+        );
+      });
+      // Re-select the moved nodes (they keep their ids).
+      setSelectedId(ids[0]);
+      setSelectedIds(new Set(ids));
     },
     [commit]
   );
 
+  // Delete every selected element (header ✕ and the Del key both call this).
+  // Root is never deletable, so strip it first; one atomic commit → one undo.
   const deleteSelected = () => {
-    if (!selectedId || selectedId === tree.id) return;
-    commit((t) => removeNode(t, selectedId)[0]);
-    setSelectedId(null);
+    const ids = new Set([...selectedIds].filter((id) => id && id !== tree.id));
+    if (!ids.size) return;
+    commit((t) => removeNodes(t, ids));
+    clearSelection();
   };
   const duplicateSelected = () => {
     if (!selectedId || selectedId === tree.id) return;
@@ -2027,9 +2395,140 @@ function FlexCraft() {
       newId = id;
       return next;
     });
-    if (newId) setSelectedId(newId);
+    if (newId) selectNode(newId);
   };
   const convertToContainer = () => selected && setStyle(makeContainer().styles);
+
+  // CUT (move-once). Lift the selected element(s) OUT of the tree into the cut
+  // buffer and enter paste mode. The ancestor guard (collectForCut) drops any
+  // selected node contained in another selected node, so we never buffer — and
+  // later double-paste — a child that's already inside a buffered container.
+  // Root can't be cut. One commit removes them (so it's a single undo step).
+  const cutSelection = useCallback(() => {
+    if (!selectedIds.size) return;
+    const ids = new Set([...selectedIds].filter((id) => id && id !== tree.id));
+    if (!ids.size) return;
+    const { nodes, ids: topIds } = collectForCut(tree, ids);
+    if (!nodes.length) return;
+    commit((t) => removeNodes(t, topIds));
+    clearSelection();
+    setCutBuffer({ nodes });
+  }, [selectedIds, tree, commit, clearSelection]);
+
+  // COPY (clone, repeatable). Buffer a CLONE of the selected element(s) — the
+  // originals stay in the tree (and get a purple "copied" outline). Same
+  // ancestor guard as cut. Doesn't touch the tree, so no commit here. We store
+  // the source ids too, so the canvas can mark the copied originals.
+  const copySelection = useCallback(() => {
+    if (!selectedIds.size) return;
+    const ids = new Set([...selectedIds].filter((id) => id && id !== tree.id));
+    if (!ids.size) return;
+    const { nodes, ids: topIds } = collectForCut(tree, ids);
+    if (!nodes.length) return;
+    setCutBuffer(null); // cut and copy are mutually exclusive
+    setCopyBuffer({ nodes, ids: topIds });
+  }, [selectedIds, tree]);
+
+  // PASTE: drop into container `parentId` at slot `idx`, in order.
+  //  · CUT  → move the buffered nodes (keep ids), exit paste mode.
+  //  · COPY → stamp FRESH CLONES (new ids); the copy buffer PERSISTS so you can
+  //           keep stamping. Each stamp is its own undo step.
+  const pasteInto = useCallback(
+    (parentId, idx) => {
+      if (cutBuffer && cutBuffer.nodes.length) {
+        const nodes = cutBuffer.nodes;
+        commit((t) => insertNodes(t, parentId, idx, nodes));
+        setCutBuffer(null);
+        const ids = nodes.map((n) => n.id);
+        setSelectedId(ids[0]);
+        setSelectedIds(new Set(ids));
+        return;
+      }
+      if (copyBuffer && copyBuffer.nodes.length) {
+        // Fresh clones each paste (new ids), so repeated stamps don't collide.
+        const clones = copyBuffer.nodes.map((n) => cloneWithNewIds(n));
+        commit((t) => insertNodes(t, parentId, idx, clones));
+        // Keep the copy buffer so you can paste again; select the new stamps.
+        const ids = clones.map((n) => n.id);
+        setSelectedId(ids[0]);
+        setSelectedIds(new Set(ids));
+      }
+    },
+    [cutBuffer, copyBuffer, commit]
+  );
+
+  // Cancel/clear paste mode WITHOUT placing.
+  //  · CUT  → the nodes were lifted out, so re-insert at root end (nothing lost).
+  //  · COPY → just drop the buffer (originals never left the tree).
+  const cancelCut = useCallback(() => {
+    if (cutBuffer) {
+      const nodes = cutBuffer.nodes;
+      setCutBuffer(null);
+      commit((t) => insertNodes(t, t.id, t.children.length, nodes));
+      const ids = nodes.map((n) => n.id);
+      setSelectedId(ids[0]);
+      setSelectedIds(new Set(ids));
+      return;
+    }
+    if (copyBuffer) setCopyBuffer(null); // originals stay put; just clear buffer
+  }, [cutBuffer, copyBuffer, commit]);
+
+  // Toggle the ⊞ square-lock. Flipping it ON immediately squares the selection:
+  // the ANCHOR's larger rendered dimension (width vs height) becomes the square
+  // size, and every selected element jumps to that one size. With a single
+  // selection, that element squares to its own larger dimension. We commit the
+  // explicit width/height + zero flex so the square actually holds against the
+  // flex algorithm — one atomic undo step. Turning it OFF just stops enforcing;
+  // sizes are left as-is (undo covers any revert you want).
+  const toggleSquareLock = useCallback(() => {
+    const next = !syncDims;
+    if (next && selectedId && typeof document !== "undefined") {
+      const anchorEl = document.querySelector(`[data-node-id="${selectedId}"]`);
+      if (anchorEl) {
+        const r = anchorEl.getBoundingClientRect();
+        const sq = Math.max(20, Math.round(Math.max(r.width, r.height)));
+        const ids = selectedIds.size ? selectedIds : new Set([selectedId]);
+        commit((t) =>
+          updateStylesMany(t, ids, {
+            width: sq,
+            height: sq,
+            flexGrow: 0,
+            flexShrink: 0,
+          })
+        );
+      }
+    }
+    setSyncDims(next);
+  }, [syncDims, selectedId, selectedIds, commit]);
+  // Refresh the ref each render so the keyboard shortcut calls the current one.
+  squareLockRef.current = toggleSquareLock;
+  cutRef.current = cutSelection;
+  copyRef.current = copySelection;
+  // Escape priority: cancel paste mode if active, otherwise clear the selection.
+  escapeRef.current = () => {
+    if (cutBuffer || copyBuffer) cancelCut(); // cancelCut handles both buffers
+    else clearSelection();
+  };
+
+  // Del / Backspace deletes the whole selection. Placed AFTER deleteSelected so
+  // we can reference it without a temporal-dead-zone error. Guarded so the keys
+  // work normally while typing in a field or editing a box's text inline.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const tag = (e.target && e.target.tagName) || "";
+      const typing =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        (e.target && e.target.isContentEditable);
+      if (typing) return;
+      if (!selectedIds.size) return;
+      e.preventDefault();
+      deleteSelected();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedIds, deleteSelected]);
 
   // tap palette item: append to selected container (or root). In RAPID-ADD mode
   // we keep the CONTAINER selected instead of selecting the new child, so you
@@ -2039,7 +2538,7 @@ function FlexCraft() {
       selected && selected.styles.display === "flex" ? selected : tree;
     const node = factory();
     commit((t) => insertNode(t, target.id, target.children.length, node));
-    setSelectedId(rapidAdd ? target.id : node.id);
+    selectNode(rapidAdd ? target.id : node.id);
     setMobilePane("canvas");
   };
 
@@ -2056,6 +2555,19 @@ function FlexCraft() {
   const isFlexItem =
     selected && selectedParent && selectedParent.styles.display === "flex";
   const isContainer = selected && selected.styles.display === "flex";
+
+  // Multi-select panel gating. Container section shows only when EVERY selected
+  // node is a flex container; item section only when every selected node is a
+  // flex item. Box-model controls always apply.
+  const allContainers =
+    selectedNodes.length > 0 &&
+    selectedNodes.every((n) => n.styles.display === "flex");
+  const allFlexItems =
+    selectedNodes.length > 0 &&
+    selectedNodes.every((n) => {
+      const p = findParent(tree, n.id);
+      return p && p.styles.display === "flex";
+    });
 
   // ---- sub-renders (shared between desktop panes and mobile tabs) ----------
   const PalettePanel = (
@@ -2112,8 +2624,9 @@ function FlexCraft() {
           node={tree}
           depth={0}
           selectedId={selectedId}
-          onSelect={(id) => {
-            setSelectedId(id);
+          selectedIds={selectedIds}
+          onSelect={(id, additive) => {
+            selectNode(id, additive);
             setMobilePane("style");
           }}
         />
@@ -2139,7 +2652,7 @@ function FlexCraft() {
           { k: "B", label: "Box model", on: showBoxModel },
           { k: "L", label: "Flex lines", on: showLines },
           { k: "P", label: "Name pills", on: hidePills },
-          { k: "R", label: "Sync W/H", on: syncDims },
+          { k: "S", label: "Sync W/H", on: syncDims },
         ].map((s) => (
           <div className={"fc-shortcut-mini" + (s.on ? " is-on" : "")} key={s.k}>
             <span className={"fc-keycap fc-keycap-static" + (s.on ? " is-on" : "")}>{s.k}</span>
@@ -2219,9 +2732,13 @@ function FlexCraft() {
     <div className="fc-props-inner">
       <div className="fc-prop-head">
         <div>
-          <div className="fc-prop-title">{selected.label}</div>
+          <div className="fc-prop-title">
+            {multi ? `${selectedNodes.length} elements selected` : selected.label}
+          </div>
           <code className="fc-prop-id">
-            .{selected.tag}-{selected.id}
+            {multi
+              ? (allContainers ? "all containers" : "mixed — shared props")
+              : `.${selected.tag}-${selected.id}`}
           </code>
         </div>
         <div className="fc-prop-actions">
@@ -2230,6 +2747,12 @@ function FlexCraft() {
           </button>
           {selected.id !== tree.id && (
             <>
+              <button className="fc-icon-btn" title="Cut (Ctrl+X) — then click a slot to paste" onClick={cutSelection}>
+                ✂
+              </button>
+              <button className="fc-icon-btn" title="Copy (Ctrl+C) — then click slots to stamp copies" onClick={copySelection}>
+                ⧉⧉
+              </button>
               <button className="fc-icon-btn" title="Duplicate" onClick={duplicateSelected}>
                 ⧉
               </button>
@@ -2241,14 +2764,14 @@ function FlexCraft() {
         </div>
       </div>
 
-      {isContainer ? (
+      {(multi ? allContainers : isContainer) ? (
         <section>
           <div className="fc-section-label">
             Container <span className="fc-tag-pill">display: flex</span>
           </div>
           <Segmented
             label="flex-direction"
-            value={selected.styles.flexDirection}
+            value={sv("flexDirection")}
             options={[
               { value: "row", label: "→ row" },
               { value: "row-reverse", label: "← rev" },
@@ -2260,7 +2783,7 @@ function FlexCraft() {
           />
           <Segmented
             label="justify-content (main axis)"
-            value={selected.styles.justifyContent}
+            value={sv("justifyContent")}
             options={[
               { value: "flex-start", label: "start" },
               { value: "center", label: "center" },
@@ -2274,7 +2797,7 @@ function FlexCraft() {
           />
           <Segmented
             label="align-items (cross axis)"
-            value={selected.styles.alignItems}
+            value={sv("alignItems")}
             options={[
               { value: "stretch", label: "stretch" },
               { value: "flex-start", label: "start" },
@@ -2287,7 +2810,7 @@ function FlexCraft() {
           />
           <Segmented
             label="flex-wrap"
-            value={selected.styles.flexWrap}
+            value={sv("flexWrap")}
             options={["nowrap", "wrap", "wrap-reverse"]}
             onChange={(v) => setStyle({ flexWrap: v })}
             {...rp("flexWrap")}
@@ -2295,10 +2818,10 @@ function FlexCraft() {
           {/* align-content only has an effect on multi-line (wrapping) flex
               containers — it distributes the LINES along the cross axis. Hidden
               when nowrap so the control isn't a no-op. */}
-          {selected.styles.flexWrap && selected.styles.flexWrap !== "nowrap" && (
+          {sv("flexWrap") && sv("flexWrap") !== "nowrap" && (
             <Segmented
               label="align-content (wrapped lines)"
-              value={selected.styles.alignContent ?? "stretch"}
+              value={sv("alignContent", "stretch")}
               options={[
                 { value: "stretch", label: "stretch" },
                 { value: "flex-start", label: "start" },
@@ -2314,12 +2837,18 @@ function FlexCraft() {
           )}
           <Slider
             label="gap"
-            value={selected.styles.gap ?? 0}
+            value={sv("gap", 0)}
             min={0}
             max={64}
             onChange={(v) => setStyle({ gap: v })}
             {...rp("gap")}
           />
+        </section>
+      ) : multi ? (
+        <section>
+          <div className="fc-section-label">
+            Mixed selection — editing shared item properties below
+          </div>
         </section>
       ) : (
         <section>
@@ -2330,14 +2859,14 @@ function FlexCraft() {
         </section>
       )}
 
-      {isFlexItem && (
+      {(multi ? allFlexItems : isFlexItem) && (
         <section style={{ marginTop: 22 }}>
           <div className="fc-section-label">
             As a flex item <span className="fc-tag-pill">parent is flex</span>
           </div>
           <Slider
             label="flex-grow"
-            value={selected.styles.flexGrow ?? 0}
+            value={sv("flexGrow", 0)}
             min={0}
             max={5}
             suffix=""
@@ -2346,7 +2875,7 @@ function FlexCraft() {
           />
           <Slider
             label="flex-shrink"
-            value={selected.styles.flexShrink ?? 1}
+            value={sv("flexShrink", 1)}
             min={0}
             max={5}
             suffix=""
@@ -2355,7 +2884,7 @@ function FlexCraft() {
           />
           <Segmented
             label="align-self"
-            value={selected.styles.alignSelf ?? "auto"}
+            value={sv("alignSelf", "auto")}
             options={[
               { value: "auto", label: "auto" },
               { value: "flex-start", label: "start" },
@@ -2373,21 +2902,21 @@ function FlexCraft() {
         <div className="fc-section-label">Box model</div>
         <DimInput
           label="width"
-          value={selected.styles.width}
+          value={sv("width")}
           onChange={(v) => setStyle({ width: v })}
           measuredDefault={measuredSize.w}
           {...rp("width")}
         />
         <DimInput
           label="height"
-          value={selected.styles.height}
+          value={sv("height")}
           onChange={(v) => setStyle({ height: v })}
           measuredDefault={measuredSize.h}
           {...rp("height")}
         />
         <Slider
           label="padding"
-          value={selected.styles.padding ?? 0}
+          value={sv("padding", 0)}
           min={0}
           max={80}
           onChange={(v) => setStyle({ padding: v })}
@@ -2395,7 +2924,7 @@ function FlexCraft() {
         />
         <Slider
           label="margin"
-          value={selected.styles.margin ?? 0}
+          value={sv("margin", 0)}
           min={0}
           max={80}
           onChange={(v) => setStyle({ margin: v })}
@@ -2403,7 +2932,7 @@ function FlexCraft() {
         />
         <Slider
           label="border width"
-          value={selected.styles.borderWidth ?? 0}
+          value={sv("borderWidth", 0)}
           min={0}
           max={12}
           onChange={(v) => {
@@ -2421,11 +2950,11 @@ function FlexCraft() {
           }}
           {...rp("borderWidth")}
         />
-        {(selected.styles.borderWidth ?? 0) > 0 && (
+        {(sv("borderWidth", 0) ?? 0) > 0 && (
           <>
             <Segmented
               label="border style"
-              value={selected.styles.borderStyle || "solid"}
+              value={sv("borderStyle", "solid")}
               options={[
                 { value: "solid", label: "solid" },
                 { value: "dashed", label: "dashed" },
@@ -2541,9 +3070,22 @@ function FlexCraft() {
           <span className="fc-legend-item"><span className="fc-legend-sw sw-gap" />gap</span>
         </div>
       </div>
+      {(cutBuffer || copyBuffer) && (
+        <div className={"fc-paste-banner" + (copyBuffer ? " is-copy" : "")}>
+          {(() => {
+            const buf = cutBuffer || copyBuffer;
+            const n = buf.nodes.length;
+            const what = n === 1 ? "the item" : `${n} items`;
+            return copyBuffer
+              ? `Copy mode — click slots to stamp ${what} (paste as many as you like)`
+              : `Paste mode — click a highlighted slot to place ${what}`;
+          })()}
+          <span className="fc-paste-esc">Esc to {copyBuffer ? "clear" : "cancel"}</span>
+        </div>
+      )}
       <div
         className="fc-canvas-scroll"
-        onClick={() => setSelectedId(null)}
+        onClick={() => (cutBuffer || copyBuffer ? cancelCut() : clearSelection())}
         onMouseMove={onCanvasHover}
         onMouseLeave={onCanvasLeave}
       >
@@ -2551,19 +3093,26 @@ function FlexCraft() {
           node={tree}
           isRoot
           selectedId={selectedId}
-          onSelect={setSelectedId}
+          selectedIds={selectedIds}
+          onSelect={selectNode}
           dropTarget={dropTarget}
           setDropTarget={setDropTarget}
           onDropNew={onDropNew}
           onDropMove={onDropMove}
+          onDropMoveMulti={onDropMoveMulti}
           dragState={dragState}
           showBoxModel={showBoxModel}
           showLines={showLines}
           hidePills={hidePills}
           onResize={onResize}
+          onResizeMany={onResizeMany}
           syncDims={syncDims}
+          syncSelection={syncSelection}
           snapStep={snapStep}
           isDragging={isDragging}
+          pasteMode={!!cutBuffer || !!copyBuffer}
+          pasteInto={pasteInto}
+          copiedIds={copyBuffer ? copyBuffer.ids : null}
           onText={onText}
         />
       </div>
@@ -2644,11 +3193,27 @@ function FlexCraft() {
           </button>
           <button
             className={"fc-tool-btn" + (syncDims ? " is-on" : "")}
-            onClick={() => setSyncDims((v) => !v)}
+            onClick={() => toggleSquareLock()}
             title={syncDims ? "Resize: width & height synced (square)" : "Resize: sync width & height"}
           >
             ⊞
           </button>
+          {/* Sync sizes: only meaningful with a multi-selection. Dragging one
+              element's handle resizes every selected element by the same delta.
+              Distinct from ⊞ (per-element square-lock). */}
+          {multi && (
+            <button
+              className={"fc-tool-btn fc-tool-sync" + (syncSelection ? " is-on" : "")}
+              onClick={() => setSyncSelection((v) => !v)}
+              title={
+                syncSelection
+                  ? "Sync sizes: ON — dragging one handle resizes all selected by the same amount"
+                  : "Sync sizes: resize all selected together (same delta)"
+              }
+            >
+              ⇹
+            </button>
+          )}
           <button
             className={"fc-tool-btn" + (showTooltip ? " is-on" : "")}
             onClick={() => setShowTooltip((v) => !v)}
@@ -2821,12 +3386,14 @@ const css = `
 .fc-theme-dark {
   --ink:#0d0f14; --panel:#14171f; --panel2:#1b1f2a; --line:rgba(255,255,255,0.08);
   --txt:#e6e8ee; --mut:#8b91a3; --accent:#e8b04b; --accent-soft:rgba(232,176,75,0.12);
+  --copy:#a78bfa; --copy-soft:rgba(167,139,250,0.14);
   --node:rgba(255,255,255,0.05); --node-line:rgba(255,255,255,0.12);
   --dot:rgba(255,255,255,0.05); --track:#2a2f3c;
 }
 .fc-theme-light {
   --ink:#f3f1ea; --panel:#ffffff; --panel2:#f0ede3; --line:rgba(0,0,0,0.1);
   --txt:#1d1f26; --mut:#6c7180; --accent:#b8741a; --accent-soft:rgba(184,116,26,0.12);
+  --copy:#7c3aed; --copy-soft:rgba(124,58,237,0.12);
   --node:rgba(0,0,0,0.03); --node-line:rgba(0,0,0,0.14);
   --dot:rgba(0,0,0,0.06); --track:#d8d4c8;
 }
@@ -2862,6 +3429,10 @@ const css = `
 .fc-tool-btn:disabled{ opacity:0.35; cursor:default; }
 .fc-tool-btn:not(:disabled):hover{ border-color:var(--accent); color:var(--accent); }
 .fc-tool-btn.is-on{ background:var(--accent); color:var(--ink); border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft), 0 0 8px var(--accent-soft); }
+/* Sync-sizes button: a slightly heavier ring when active so it reads as a
+   different mode from the ⊞ square-lock next to it. */
+.fc-tool-sync{ font-weight:700; }
+.fc-tool-sync.is-on{ box-shadow:0 0 0 2px var(--accent), 0 0 10px var(--accent-soft); }
 .fc-tool-text{ width:auto; padding:0 10px; font-size:11px; white-space:nowrap; }
 .fc-tool-sep{ width:1px; align-self:stretch; margin:4px 4px; background:var(--line); }
 .fc-toast{
@@ -2968,6 +3539,9 @@ const css = `
 }
 .fc-layer:hover{ background:var(--node); color:var(--txt); }
 .fc-layer.is-active{ background:var(--accent-soft); color:var(--accent); }
+/* Anchor uses is-active (filled); other selected members use is-multi (accent
+   text + inset bar, no fill) so the anchor still stands out in the layers list. */
+.fc-layer.is-multi{ color:var(--accent); box-shadow:inset 2px 0 0 var(--accent); }
 .fc-layer-icon{ color:var(--accent); }
 .fc-palette-note{ margin-top:auto; font-size:10.5px; line-height:1.6; color:var(--mut); border-top:1px solid var(--line); padding-top:12px; }
 .fc-shortcut-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 0; }
@@ -2992,6 +3566,17 @@ const css = `
 
 /* ---- canvas ---- */
 .fc-canvas-head{ padding:11px 16px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:14px; background:var(--panel); }
+.fc-paste-banner{
+  padding:8px 16px; background:var(--accent-soft); color:var(--accent);
+  font-size:12px; font-weight:600; display:flex; align-items:center; gap:12px;
+  border-bottom:1px solid var(--accent);
+}
+.fc-paste-esc{
+  margin-left:auto; font-size:10.5px; font-weight:500; color:var(--mut);
+  border:1px solid var(--line); border-radius:4px; padding:2px 7px;
+}
+/* Copy variant of the banner: purple to match the copied-original outlines. */
+.fc-paste-banner.is-copy{ background:var(--copy-soft); color:var(--copy); border-bottom-color:var(--copy); }
 .fc-canvas-title{ font-family:'Fraunces',Georgia,serif; font-size:15px; }
 .fc-canvas-hint{ font-size:10.5px; color:var(--mut); }
 .fc-canvas-scroll{
@@ -3005,6 +3590,14 @@ const css = `
 }
 .fc-node.is-container{ outline:1px dashed var(--accent); outline-offset:0; background:var(--accent-soft); min-width:0; min-height:0; }
 .fc-node.is-selected{ outline:2px solid var(--accent) !important; outline-offset:1px; background:var(--accent-soft); }
+/* Multi-select secondary members: anchor keeps the solid outline above; other
+   selected elements get a dashed outline so you can tell which one owns the
+   props panel / resize handles. */
+.fc-node.is-secondary{ outline:2px dashed var(--accent) !important; outline-offset:1px; background:var(--accent-soft); }
+/* Copied originals: purple outline marking what's on the copy clipboard. Uses
+   !important to win over the selection outlines, since copied items are usually
+   also still selected at the moment of copying. */
+.fc-node.is-copied{ outline:2px solid var(--copy) !important; outline-offset:1px; box-shadow:0 0 10px var(--copy-soft); }
 /* When the box-model overlay is on, drop the node's own fill so the green/amber
    bands read cleanly instead of blending into the selection wash. */
 .fc-node.fc-bm-active{ background:transparent !important; }
@@ -3024,6 +3617,14 @@ const css = `
 }
 .fc-dropzone{ border-radius:3px; transition:background 80ms, box-shadow 80ms; }
 .fc-dropzone.is-active{ background:var(--accent); box-shadow:0 0 12px var(--accent); }
+/* Paste mode: every valid slot glows softly and is clickable; hover emphasizes
+   the one you're about to drop into. Cursor is a pointer to read as a target. */
+.fc-dropzone.is-paste{
+  background:var(--accent-soft);
+  box-shadow:0 0 0 1px var(--accent) inset, 0 0 8px var(--accent-soft);
+  cursor:pointer;
+}
+.fc-dropzone.is-paste:hover{ background:var(--accent); box-shadow:0 0 14px var(--accent); }
 
 /* ---- resize handles (selected element only) ---- */
 .fc-resize{ position:absolute; z-index:30; background:var(--accent); opacity:0; transition:opacity 100ms; touch-action:none; }

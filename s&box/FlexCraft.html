@@ -614,8 +614,28 @@ function Slider({ label, value, min, max, step = 1, suffix = "px", onChange, mod
   );
 }
 
-// width / height / flex-basis can be a number(px) or the keyword "auto".
-// Unit metadata for width/height. Numeric units carry a slider range + step;
+// A props-panel section with a click-to-collapse header. Collapse state is owned
+// by the parent (a Set of collapsed section ids) so it persists across re-renders
+// for the session. `title` may be a string or arbitrary nodes (e.g. a label with
+// a pill). `first` skips the top margin so the first section sits flush.
+function CollapsibleSection({ id, title, collapsed, onToggle, first, children }) {
+  const isCollapsed = collapsed.has(id);
+  return (
+    <section className="fc-card" style={first ? undefined : { marginTop: 12 }}>
+      <button
+        className="fc-section-head"
+        onClick={() => onToggle(id)}
+        aria-expanded={!isCollapsed}
+      >
+        <span className={"fc-section-caret" + (isCollapsed ? " is-collapsed" : "")}>▾</span>
+        <span className="fc-section-label fc-section-label-inline">{title}</span>
+      </button>
+      {!isCollapsed && <div className="fc-section-body">{children}</div>}
+    </section>
+  );
+}
+
+
 // keyword units (auto + intrinsic sizing) have no magnitude, so no slider.
 const DIM_UNITS = {
   px:  { numeric: true,  min: 0, max: 800, step: 1,   label: "px" },
@@ -1029,6 +1049,7 @@ function CanvasNode({
   pasteInto,
   copiedIds,
   onText,
+  onDelete,
 }) {
   // isPrimary  = THE anchor (props panel, resize handles, overlays).
   // isSelected = in the selection set (primary or a secondary member). Falls
@@ -1066,9 +1087,9 @@ function CanvasNode({
   const [editing, setEditing] = React.useState(false);
   const textRef = React.useRef(null);
   // A "leaf box" holds editable text rather than children. The distinction that
-  // matters here is NOT the broad isContainer (which now includes block) — a
-  // plain block box with no children is still a text leaf. Only a FLEX container,
-  // or any node that actually has children, is treated as a layout node.
+  // matters is NOT the broad isContainer (which includes block) — a plain block
+  // box with no children is still a text leaf. Only a FLEX container, or any
+  // node that actually has children, is a layout node.
   const isLeaf = !isFlexContainer && node.children.length === 0;
 
   // When entering edit mode, focus the span and select all its text so typing
@@ -1158,22 +1179,37 @@ function CanvasNode({
         // Committing the adopted size is what kills the flex-handoff jump: the
         // pixel value we set equals the size the box already had.
         const patch = { flexGrow: 0, flexShrink: 0 };
-        if (wantW) patch.width = sized(startW, dx);
-        if (wantH) patch.height = sized(startH, dy);
         if (syncDims) {
-          // square-lock: one edge drives both dims to the same value
-          const v = axis === "y" ? sized(startH, dy) : sized(startW, dx);
-          patch.width = v;
-          patch.height = v;
+          // Square-lock: the dragged axis's snapped delta drives BOTH dims, each
+          // applied to its OWN start. At delta 0 the box keeps its real W and H
+          // (no collapse-to-smaller-axis jump); as you drag, both change by the
+          // same amount, so a square stays square and a rectangle keeps its ratio
+          // of change. (Earlier this forced both dims to one axis's absolute size,
+          // which slammed a tall/thin box to ~20×20 on the first move.)
+          const d = axis === "y" ? dy : dx;
+          patch.width = sized(startW, d);
+          patch.height = sized(startH, d);
+        } else {
+          if (wantW) patch.width = sized(startW, dx);
+          if (wantH) patch.height = sized(startH, dy);
         }
         onResize(node.id, patch);
       } else {
-        // Same-delta across the whole selection, dragged axis only.
+        // Same-delta across the whole selection, dragged axis only — or BOTH
+        // axes (square-lock) when syncDims is also on. Each box scales from its
+        // OWN measured start, so none collapse to the 20px floor unless actually
+        // dragged there.
         const updates = ids.map((id) => {
           const s = starts[id];
           const patch = { flexGrow: 0, flexShrink: 0 };
-          if (wantW) patch.width = sized(s.w, dx);
-          if (wantH) patch.height = sized(s.h, dy);
+          if (syncDims) {
+            const d = axis === "y" ? dy : dx;
+            patch.width = sized(s.w, d);
+            patch.height = sized(s.h, d);
+          } else {
+            if (wantW) patch.width = sized(s.w, dx);
+            if (wantH) patch.height = sized(s.h, dy);
+          }
           return { id, patch };
         });
         onResizeMany(updates);
@@ -1288,6 +1324,7 @@ function CanvasNode({
         pasteInto={pasteInto}
         copiedIds={copiedIds}
         onText={onText}
+        onDelete={onDelete}
       />
     ));
 
@@ -1416,7 +1453,7 @@ function CanvasNode({
       {linesOn && <FlexLineOverlay containerRef={elRef} node={node} />}
       {!hidePills && (
         <span className="fc-node-tag">
-          {node.label}
+          {`${node.tag}-${node.id}`}
           {isFlexContainer ? ` · ${node.styles.flexDirection}` : ""}
         </span>
       )}
@@ -1451,6 +1488,20 @@ function CanvasNode({
         >
           {resizeTip.text}
         </span>
+      )}
+      {/* Hover delete: a small ✕ in the top-right, shown only when hovering this
+          box (CSS handles visibility + suppressing ancestor X's). Deletes THIS
+          node regardless of selection. Never on the root. pointerDown stops a
+          drag from starting; click stops the box's select handler. */}
+      {!isRoot && typeof onDelete === "function" && (
+        <button
+          className="fc-del"
+          title="Delete this element"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); onDelete(node.id); }}
+        >
+          ✕
+        </button>
       )}
       {isFlexContainer || node.children.length > 0
         ? renderChildrenWithZones()
@@ -1522,9 +1573,19 @@ function LayerRow({ node, depth, selectedId, selectedIds, onSelect }) {
   const icon = isHidden ? "◌" : isContainer ? "▦" : "▢";
   const isPrimary = node.id === selectedId;
   const inSelection = selectedIds ? selectedIds.has(node.id) : isPrimary;
+  // When this row becomes the primary selection, scroll it into view in the
+  // (now scrollable) layers well. `block:"nearest"` means it only scrolls if the
+  // row is actually off-screen — no jump when it's already visible.
+  const rowRef = React.useRef(null);
+  React.useEffect(() => {
+    if (isPrimary && rowRef.current) {
+      rowRef.current.scrollIntoView({ block: "nearest" });
+    }
+  }, [isPrimary]);
   return (
     <>
       <button
+        ref={rowRef}
         className={
           "fc-layer" +
           (isPrimary ? " is-active" : "") +
@@ -1534,7 +1595,7 @@ function LayerRow({ node, depth, selectedId, selectedIds, onSelect }) {
         onClick={(e) => onSelect(node.id, e.shiftKey)}
       >
         <span className="fc-layer-icon">{icon}</span>
-        {node.label}
+        {`${node.tag}-${node.id}`}
       </button>
       {node.children.map((c) => (
         <LayerRow
@@ -1762,6 +1823,16 @@ function FlexCraft() {
   // DELTA to every selected element on the dragged axis. Toolbar button shows
   // only with a multi-selection.
   const [syncSelection, setSyncSelection] = useState(false);
+  // Which props-panel sections are collapsed (by id). Session-only — resets on
+  // reload. A Set so toggling is cheap and order doesn't matter.
+  const [collapsedSections, setCollapsedSections] = useState(() => new Set());
+  const toggleSection = useCallback((id) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
   // Cut & paste (move-once). When non-null, we're in PASTE MODE: the buffered
   // nodes have been lifted OUT of the tree, every flex container's child-slots
   // light up, and clicking one drops the buffer there. Shape: { nodes: [...] }.
@@ -1958,6 +2029,7 @@ function FlexCraft() {
         case "l": setShowLines((v) => !v); break;      // flex lines
         case "p": setHidePills((v) => !v); break;      // name pills
         case "s": squareLockRef.current && squareLockRef.current(); break; // square-lock (Sync W/H)
+        case "r": setSyncSelection((v) => !v); break; // resize all selected together
         default: break;
       }
     };
@@ -2048,8 +2120,20 @@ function FlexCraft() {
   // the FIRST update of a drag snapshots history, the rest just replace present.
   // `resizeActive` tracks whether we're mid-drag; it resets on pointerup.
   const resizeActive = useRef(false);
+  // A resize drag that ends over the canvas background synthesizes a `click`,
+  // which would otherwise bubble to the canvas's deselect handler and wipe the
+  // selection (very visible after a MULTI-resize). This guard records "a resize
+  // just ended" so the very next canvas click is ignored, then self-clears.
+  const justResized = useRef(false);
   useEffect(() => {
     const end = () => {
+      if (resizeActive.current) {
+        justResized.current = true;
+        // Only the immediately-following synthesized click should be swallowed.
+        // Clear on the next frame so a later genuine background click still
+        // deselects as normal.
+        requestAnimationFrame(() => { justResized.current = false; });
+      }
       resizeActive.current = false;
     };
     window.addEventListener("pointerup", end);
@@ -2405,6 +2489,19 @@ function FlexCraft() {
     commit((t) => removeNodes(t, ids));
     clearSelection();
   };
+  // Delete ONE specific node (the hover-X affordance), independent of selection.
+  // Never deletes the root. If the deleted node was selected, clear selection.
+  const deleteNodeById = useCallback((id) => {
+    if (!id || id === tree.id) return;
+    commit((t) => removeNodes(t, new Set([id])));
+    setSelectedIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setSelectedId((cur) => (cur === id ? null : cur));
+  }, [tree, commit]);
   const duplicateSelected = () => {
     if (!selectedId || selectedId === tree.id) return;
     let newId = null;
@@ -2599,6 +2696,10 @@ function FlexCraft() {
   const isContainer =
     selDisplay === "flex" || selDisplay === "block" || selDisplay === "inline-block";
   const isFlexContainer = selDisplay === "flex";
+  // A text leaf holds text rather than children — the only place text color is
+  // meaningful. Mirrors the canvas leaf rule: not a flex container, no children.
+  const selIsTextLeaf =
+    selected && !isFlexContainer && selected.children.length === 0;
 
   // Multi-select panel gating. Flex section shows only when EVERY selected node
   // is a flex container; item section only when every selected node's parent is
@@ -2697,8 +2798,15 @@ function FlexCraft() {
           { k: "L", label: "Flex lines", on: showLines },
           { k: "P", label: "Name pills", on: hidePills },
           { k: "S", label: "Sync W/H", on: syncDims },
+          // Resize-together only does anything with 2+ selected (the toolbar
+          // button is multi-only too). Always listed so the vocabulary is
+          // visible; dimmed when it can't act yet.
+          { k: "R", label: "Resize together", on: syncSelection, dim: !multi },
         ].map((s) => (
-          <div className={"fc-shortcut-mini" + (s.on ? " is-on" : "")} key={s.k}>
+          <div
+            className={"fc-shortcut-mini" + (s.on ? " is-on" : "") + (s.dim ? " is-dim" : "")}
+            key={s.k}
+          >
             <span className={"fc-keycap fc-keycap-static" + (s.on ? " is-on" : "")}>{s.k}</span>
             <span>{s.label}</span>
           </div>
@@ -2812,8 +2920,7 @@ function FlexCraft() {
         </div>
       </div>
 
-      <section>
-        <div className="fc-section-label">Layout</div>
+      <CollapsibleSection id="layout" title="Layout" collapsed={collapsedSections} onToggle={toggleSection} first>
         <Segmented
           label="display"
           value={sv("display", "block")}
@@ -2843,13 +2950,15 @@ function FlexCraft() {
             })()}
           </div>
         )}
-      </section>
+      </CollapsibleSection>
 
       {(multi ? allFlexContainers : isFlexContainer) ? (
-        <section style={{ marginTop: 22 }}>
-          <div className="fc-section-label">
-            Flex container <span className="fc-tag-pill">display: flex</span>
-          </div>
+        <CollapsibleSection
+          id="flex-container"
+          title={<>Flex container <span className="fc-tag-pill">display: flex</span></>}
+          collapsed={collapsedSections}
+          onToggle={toggleSection}
+        >
           <Segmented
             label="flex-direction"
             value={sv("flexDirection")}
@@ -2924,7 +3033,7 @@ function FlexCraft() {
             onChange={(v) => setStyle({ gap: v })}
             {...rp("gap")}
           />
-        </section>
+        </CollapsibleSection>
       ) : multi ? (
         <section style={{ marginTop: 22 }}>
           <div className="fc-section-label">
@@ -2934,10 +3043,12 @@ function FlexCraft() {
       ) : null}
 
       {(multi ? allFlexItems : isFlexItem) && (
-        <section style={{ marginTop: 22 }}>
-          <div className="fc-section-label">
-            As a flex item <span className="fc-tag-pill">parent is flex</span>
-          </div>
+        <CollapsibleSection
+          id="flex-item"
+          title={<>As a flex item <span className="fc-tag-pill">parent is flex</span></>}
+          collapsed={collapsedSections}
+          onToggle={toggleSection}
+        >
           <Slider
             label="flex-grow"
             value={sv("flexGrow", 0)}
@@ -2969,11 +3080,10 @@ function FlexCraft() {
             onChange={(v) => setStyle({ alignSelf: v })}
             {...rp("alignSelf")}
           />
-        </section>
+        </CollapsibleSection>
       )}
 
-      <section style={{ marginTop: 22 }}>
-        <div className="fc-section-label">Box model</div>
+      <CollapsibleSection id="box-model" title="Box model" collapsed={collapsedSections} onToggle={toggleSection}>
         <DimInput
           label="width"
           value={sv("width")}
@@ -3050,7 +3160,75 @@ function FlexCraft() {
             </FieldLabel>
           </>
         )}
-      </section>
+      </CollapsibleSection>
+
+      <CollapsibleSection id="appearance" title="Appearance" collapsed={collapsedSections} onToggle={toggleSection}>
+
+        {/* Background. A <input type=color> can't represent "no color", so we
+            keep an explicit on/off: off → backgroundColor:undefined (transparent
+            stays reachable); on → reveal the swatch, seeding a default fill. */}
+        <FieldLabel label="background" {...rp("backgroundColor")}>
+          <button
+            className={"fc-toggle-pill" + (sv("backgroundColor") ? " is-on" : "")}
+            onClick={() =>
+              setStyle({
+                backgroundColor: sv("backgroundColor")
+                  ? undefined
+                  : (selected.styles.backgroundColor || "#3a4254"),
+              })
+            }
+          >
+            {sv("backgroundColor") ? "on" : "off (transparent)"}
+          </button>
+        </FieldLabel>
+        {sv("backgroundColor") && (
+          <div className="fc-color-row" style={{ marginTop: 6 }}>
+            <input
+              type="color"
+              className="fc-color-swatch"
+              value={toHexColor(sv("backgroundColor") || "#3a4254")}
+              onChange={(e) => setStyle({ backgroundColor: e.target.value })}
+            />
+            <code className="fc-color-val">{sv("backgroundColor") || "#3a4254"}</code>
+          </div>
+        )}
+
+        <Slider
+          label="border radius"
+          value={sv("borderRadius", 0)}
+          min={0}
+          max={60}
+          onChange={(v) => setStyle({ borderRadius: v === 0 ? undefined : v })}
+          {...rp("borderRadius")}
+        />
+
+        <Slider
+          label="opacity"
+          value={sv("opacity", 1)}
+          min={0}
+          max={1}
+          step={0.05}
+          suffix=""
+          onChange={(v) => setStyle({ opacity: v === 1 ? undefined : v })}
+          {...rp("opacity")}
+        />
+
+        {/* Text color only matters on a single text leaf (a box that holds text,
+            not children). Hidden for containers and multi-selections. */}
+        {!multi && selIsTextLeaf && (
+          <FieldLabel label="text color" {...rp("color")}>
+            <div className="fc-color-row">
+              <input
+                type="color"
+                className="fc-color-swatch"
+                value={toHexColor(selected.styles.color || "#e6e8ee")}
+                onChange={(e) => setStyle({ color: e.target.value })}
+              />
+              <code className="fc-color-val">{selected.styles.color || "default"}</code>
+            </div>
+          </FieldLabel>
+        )}
+      </CollapsibleSection>
     </div>
   );
 
@@ -3159,7 +3337,12 @@ function FlexCraft() {
       )}
       <div
         className="fc-canvas-scroll"
-        onClick={() => (cutBuffer || copyBuffer ? cancelCut() : clearSelection())}
+        onClick={() => {
+          // Swallow the synthesized click that follows a resize drag, so a
+          // drag-to-resize never doubles as a background "deselect" click.
+          if (justResized.current) { justResized.current = false; return; }
+          return cutBuffer || copyBuffer ? cancelCut() : clearSelection();
+        }}
         onMouseMove={onCanvasHover}
         onMouseLeave={onCanvasLeave}
       >
@@ -3188,6 +3371,7 @@ function FlexCraft() {
           pasteInto={pasteInto}
           copiedIds={copyBuffer ? copyBuffer.ids : null}
           onText={onText}
+          onDelete={deleteNodeById}
         />
       </div>
       {showTooltip && hoverInfo && <HoverTooltip info={hoverInfo} treeRootId={tree.id} />}
@@ -3465,7 +3649,10 @@ const css = `
   --dot:rgba(255,255,255,0.05); --track:#2a2f3c;
 }
 .fc-theme-light {
-  --ink:#f3f1ea; --panel:#ffffff; --panel2:#f0ede3; --line:rgba(0,0,0,0.1);
+  /* --panel was pure #ffffff, which glared against the warm cream --ink/--panel2.
+     Softened to a warm off-white so the main surfaces read as paper, not screen.
+     --panel2 nudged slightly darker to keep the two surfaces visibly distinct. */
+  --ink:#f3f1ea; --panel:#faf8f3; --panel2:#ece8dd; --line:rgba(0,0,0,0.1);
   --txt:#1d1f26; --mut:#6c7180; --accent:#b8741a; --accent-soft:rgba(184,116,26,0.12);
   --copy:#7c3aed; --copy-soft:rgba(124,58,237,0.12);
   --node:rgba(0,0,0,0.03); --node-line:rgba(0,0,0,0.14);
@@ -3603,9 +3790,24 @@ const css = `
 .fc-rapid-toggle:hover{ border-color:var(--accent); }
 .fc-rapid-toggle.is-on{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
 .fc-rapid-toggle b{ font-weight:700; }
+/* Compact on/off pill used by the background control (and reusable for any
+   binary "enabled?" toggle inside a field row). */
+.fc-toggle-pill{
+  padding:3px 9px; border-radius:5px; cursor:pointer; font-family:inherit;
+  font-size:10px; background:var(--panel2); border:1px solid var(--line);
+  color:var(--mut);
+}
+.fc-toggle-pill:hover{ border-color:var(--accent); }
+.fc-toggle-pill.is-on{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
 .fc-rapid-pin{ font-size:13px; line-height:1; }
 .fc-rapid-target{ display:block; font-size:9.5px; opacity:0.85; margin-top:1px; }
-.fc-layers{ display:flex; flex-direction:column; gap:2px; }
+.fc-layers{
+  display:flex; flex-direction:column; gap:2px;
+  /* Bordered, fixed-height well: shows ~6 rows (≈26px each) then scrolls, so a
+     deep tree never pushes the rest of the panel off-screen. */
+  max-height:164px; overflow-y:auto; padding:4px;
+  border:1px solid var(--line); border-radius:6px; background:var(--ink);
+}
 .fc-layer{
   display:flex; align-items:center; gap:7px; padding:6px 8px; text-align:left;
   background:transparent; border:none; color:var(--mut); cursor:pointer;
@@ -3633,6 +3835,7 @@ const css = `
 .fc-snap-section{ margin-top:4px; }
 .fc-shortcut-mini{ display:flex; align-items:center; gap:8px; font-size:10.5px; color:var(--mut); transition:color 120ms; }
 .fc-shortcut-mini.is-on{ color:var(--accent); }
+.fc-shortcut-mini.is-dim{ opacity:0.4; }
 .fc-keycap-static{ cursor:default; padding:2px 7px; font-size:10px; min-width:22px; text-align:center; transition:background 120ms, color 120ms, border-color 120ms; }
 .fc-keycap-static:hover{ border-color:var(--line); color:var(--txt); }
 .fc-keycap-static.is-on{ background:var(--accent); color:var(--ink); border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
@@ -3712,6 +3915,25 @@ const css = `
   font-size:11px; font-weight:700; padding:3px 8px; border-radius:5px;
   white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,0.45);
 }
+/* Hover delete-X. Sits in the box's top-right corner, hidden until the box is
+   hovered. Colors are a deliberate INVERSE of the theme surface for contrast:
+   white circle + black glyph in dark mode, black circle + white glyph in light.
+   z-index above resize handles so it's always clickable. */
+.fc-del{
+  position:absolute; top:4px; right:4px; z-index:40;
+  width:16px; height:16px; border-radius:50%; padding:0;
+  display:none; align-items:center; justify-content:center;
+  font-size:9px; line-height:1; cursor:pointer;
+  border:1px solid var(--line); box-shadow:0 1px 4px rgba(0,0,0,0.35);
+}
+.fc-theme-dark .fc-del{ background:#ffffff; color:#000000; }
+.fc-theme-light .fc-del{ background:#000000; color:#ffffff; }
+.fc-del:hover{ transform:scale(1.12); }
+/* Show the X only on the box directly hovered. The :has() rule hides an
+   ancestor's X when a descendant box is hovered, so nesting never stacks
+   multiple X's. */
+.fc-node:hover > .fc-del{ display:inline-flex; }
+.fc-node:has(.fc-node:hover) > .fc-del{ display:none; }
 
 /* ---- code drawer ---- */
 .fc-code-drawer{ border-top:1px solid var(--line); background:var(--panel); display:flex; flex-direction:column; flex-shrink:0; position:relative; }
@@ -3770,6 +3992,30 @@ const css = `
 .fc-icon-btn:hover{ border-color:var(--accent); color:var(--accent); }
 .fc-icon-btn.is-danger:hover{ border-color:#ff6b6b; color:#ff6b6b; }
 .fc-section-label{ font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:var(--mut); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+/* Collapsible section, styled as a card: bordered, rounded, with a tinted
+   header bar that separates from the body. The header is a full-width clickable
+   button with a rotating caret. */
+.fc-card{
+  border:1px solid var(--line); border-radius:8px; overflow:hidden;
+  background:var(--panel);
+}
+.fc-section-head{
+  display:flex; align-items:center; gap:8px; width:100%; text-align:left;
+  background:var(--panel2); border:none; cursor:pointer; padding:10px 12px;
+  margin:0; font-family:inherit;
+}
+.fc-section-head:hover{ background:var(--accent-soft); }
+.fc-section-label-inline{ margin-bottom:0; }
+/* Body carries the separator line on top, so it only shows when expanded —
+   no :has() needed. */
+.fc-section-body{ padding:14px 12px; border-top:1px solid var(--line); }
+.fc-section-caret{
+  color:var(--mut); font-size:10px; line-height:1; transition:transform 120ms;
+  display:inline-block;
+}
+.fc-section-caret.is-collapsed{ transform:rotate(-90deg); }
+.fc-section-head:hover .fc-section-caret,
+.fc-section-head:hover .fc-section-label-inline{ color:var(--accent); }
 .fc-tag-pill{ font-size:9px; color:var(--accent); background:var(--accent-soft); padding:1px 6px; border-radius:3px; text-transform:none; }
 .fc-display-hint{ font-size:11px; line-height:1.5; color:var(--mut); background:var(--panel2); border-left:2px solid var(--line); padding:8px 10px; border-radius:0 5px 5px 0; margin-top:4px; }
 
@@ -3870,13 +4116,6 @@ const css = `
   cursor:pointer; max-width:108px;
 }
 .fc-unit-select:focus{ outline:none; border-color:var(--accent); }
-/* The open option list is OS-rendered and inherits the select's colors. The
-   trigger's background is a TRANSLUCENT accent wash, which composites over the
-   browser default to a washed-out cream — hard to read in dark mode. Give the
-   options an explicit OPAQUE themed background + high-contrast text so the list
-   is legible in both themes. */
-.fc-unit-select option{ background:var(--panel); color:var(--txt); }
-.fc-unit-select optgroup{ background:var(--panel); color:var(--mut); font-style:normal; }
 .fc-dim-value{ display:flex; align-items:center; gap:8px; }
 .fc-dim-value .fc-range{ flex:1; min-width:0; }
 .fc-dim-num{ width:64px; flex-shrink:0; padding:5px 6px; font-size:11px; }

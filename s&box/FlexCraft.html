@@ -259,10 +259,28 @@ function styleToCss(styles) {
     .map(([k, v]) => `  ${camelToKebab(k)}: ${cssValue(k, v)};`)
     .join("\n");
 }
+// Flex-only properties. They live in the model even when a node isn't flex (so
+// display toggling is lossless), but they're inert in the browser and confusing
+// in exported CSS — so strip them from OUTPUT when the node isn't a flex
+// container. The model is untouched; only the export is filtered.
+const FLEX_ONLY_PROPS = [
+  "flexDirection",
+  "justifyContent",
+  "alignItems",
+  "alignContent",
+  "flexWrap",
+  "gap",
+];
+function exportStyles(node) {
+  if ((node.styles.display ?? "block") === "flex") return node.styles;
+  const out = { ...node.styles };
+  for (const k of FLEX_ONLY_PROPS) delete out[k];
+  return out;
+}
 function exportCss(tree) {
   const rules = [];
   const walk = (node) => {
-    const body = styleToCss(node.styles);
+    const body = styleToCss(exportStyles(node));
     if (body.trim()) rules.push(`.${node.tag}-${node.id} {\n${body}\n}`);
     node.children.forEach(walk);
   };
@@ -289,7 +307,7 @@ function exportHtml(tree) {
 function exportCssSegments(tree) {
   const segs = [];
   const walk = (node) => {
-    const body = styleToCss(node.styles);
+    const body = styleToCss(exportStyles(node));
     if (body.trim()) segs.push({ id: node.id, text: `.${node.tag}-${node.id} {\n${body}\n}` });
     node.children.forEach(walk);
   };
@@ -1019,7 +1037,14 @@ function CanvasNode({
   const isSelected = selectedIds ? selectedIds.has(node.id) : isPrimary;
   // Copied original (purple outline) — set on the source node(s) during a copy.
   const isCopied = copiedIds ? copiedIds.has(node.id) : false;
-  const isContainer = node.styles.display === "flex";
+  // Option C: two distinct questions.
+  //   isFlexContainer — does this node lay its children out with flexbox?
+  //                     (gates flex-only UI: direction pill, line/gap overlays)
+  //   isContainer     — can this node hold children / accept drops at all?
+  //                     flex, block, inline-block all can; `none` renders nothing.
+  const display = node.styles.display ?? "block"; // leaf boxes carry no display key → CSS default is block
+  const isFlexContainer = display === "flex";
+  const isContainer = display === "flex" || display === "block" || display === "inline-block";
 
   // Box-model overlay: show padding (green) and margin (amber) bands on the
   // selected element when the toggle is on. We draw each band as a border on an
@@ -1040,7 +1065,11 @@ function CanvasNode({
   // would fight the cursor — we read it once when editing ends).
   const [editing, setEditing] = React.useState(false);
   const textRef = React.useRef(null);
-  const isLeaf = !isContainer && node.children.length === 0;
+  // A "leaf box" holds editable text rather than children. The distinction that
+  // matters here is NOT the broad isContainer (which now includes block) — a
+  // plain block box with no children is still a text leaf. Only a FLEX container,
+  // or any node that actually has children, is treated as a layout node.
+  const isLeaf = !isFlexContainer && node.children.length === 0;
 
   // When entering edit mode, focus the span and select all its text so typing
   // replaces it (and the caret is placed correctly).
@@ -1193,11 +1222,12 @@ function CanvasNode({
   // Resize handles + line overlay live on the PRIMARY (anchor) only. With sync
   // on, the anchor's drag drives all selected; the handles still sit on it.
   const showHandles = isPrimary && !isRoot && typeof onResize === "function";
-  // Flex-line overlay only makes sense on the PRIMARY container with items.
-  const linesOn = showLines && isPrimary && isContainer && node.children.length > 0;
+  // Flex-line overlay only makes sense on the PRIMARY flex container with items.
+  const linesOn = showLines && isPrimary && isFlexContainer && node.children.length > 0;
   // Gap bands ride along with the box-model overlay (not the lines toggle), so
-  // padding/margin/gap all appear together when ▣ is on.
-  const gapOn = overlayOn && isContainer && node.children.length > 1;
+  // padding/margin/gap all appear together when ▣ is on. gap is inert under
+  // block, so this is flex-only too.
+  const gapOn = overlayOn && isFlexContainer && node.children.length > 1;
 
   const dragProps = isRoot || editing
     ? {}
@@ -1222,8 +1252,10 @@ function CanvasNode({
       };
 
   const renderChildrenWithZones = () => {
+    // flexDirection is inert under `block` (children stack vertically), so we
+    // only honor it when we're actually a flex container.
     const dir = node.styles.flexDirection || "row";
-    const horizontal = dir.startsWith("row");
+    const horizontal = isFlexContainer && dir.startsWith("row");
 
     // When NOT dragging, render children directly — no interleaved dropzones —
     // so `gap` spacing is exactly what the user set (zones would otherwise sit
@@ -1385,7 +1417,7 @@ function CanvasNode({
       {!hidePills && (
         <span className="fc-node-tag">
           {node.label}
-          {isContainer ? ` · ${node.styles.flexDirection}` : ""}
+          {isFlexContainer ? ` · ${node.styles.flexDirection}` : ""}
         </span>
       )}
       {/* Resize handles: right edge (width), bottom edge (height), and corner
@@ -1420,38 +1452,8 @@ function CanvasNode({
           {resizeTip.text}
         </span>
       )}
-      {isContainer
+      {isFlexContainer || node.children.length > 0
         ? renderChildrenWithZones()
-        : node.children.length
-        ? node.children.map((c) => (
-            <CanvasNode
-              key={c.id}
-              node={c}
-              isRoot={false}
-              selectedId={selectedId}
-              selectedIds={selectedIds}
-              onSelect={onSelect}
-              dropTarget={dropTarget}
-              setDropTarget={setDropTarget}
-              onDropNew={onDropNew}
-              onDropMove={onDropMove}
-              onDropMoveMulti={onDropMoveMulti}
-              dragState={dragState}
-              showBoxModel={showBoxModel}
-              showLines={showLines}
-              hidePills={hidePills}
-              onResize={onResize}
-              onResizeMany={onResizeMany}
-              syncDims={syncDims}
-              syncSelection={syncSelection}
-              snapStep={snapStep}
-              isDragging={isDragging}
-              pasteMode={pasteMode}
-              pasteInto={pasteInto}
-              copiedIds={copiedIds}
-              onText={onText}
-            />
-          ))
         : (node.text || editing)
         ? <span
             ref={textRef}
@@ -1512,7 +1514,12 @@ function DropZone({ horizontal, active, dragging, pasteMode, onClick, onDragOver
 //  Layer tree (mini outline so you can select hard-to-click nodes)
 // ============================================================================
 function LayerRow({ node, depth, selectedId, selectedIds, onSelect }) {
-  const isContainer = node.styles.display === "flex";
+  const display = node.styles.display ?? "block";
+  const isHidden = display === "none";
+  const isContainer = display === "flex" || display === "block" || display === "inline-block";
+  // ▦ holds children · ▢ leaf box · ◌ display:none (invisible on canvas — the
+  // tree is the only way to reselect it and turn it back on).
+  const icon = isHidden ? "◌" : isContainer ? "▦" : "▢";
   const isPrimary = node.id === selectedId;
   const inSelection = selectedIds ? selectedIds.has(node.id) : isPrimary;
   return (
@@ -1523,10 +1530,10 @@ function LayerRow({ node, depth, selectedId, selectedIds, onSelect }) {
           (isPrimary ? " is-active" : "") +
           (inSelection && !isPrimary ? " is-multi" : "")
         }
-        style={{ paddingLeft: 8 + depth * 14 }}
+        style={{ paddingLeft: 8 + depth * 14, opacity: isHidden ? 0.5 : 1 }}
         onClick={(e) => onSelect(node.id, e.shiftKey)}
       >
-        <span className="fc-layer-icon">{isContainer ? "▦" : "▢"}</span>
+        <span className="fc-layer-icon">{icon}</span>
         {node.label}
       </button>
       {node.children.map((c) => (
@@ -1604,10 +1611,20 @@ function CodeView({ segments, selectedId, joiner }) {
 //  Hover tooltip — live readout of the element under the cursor
 // ============================================================================
 function HoverTooltip({ info, treeRootId }) {
-  const { node, rect, x, y } = info;
-  const isContainer = node.styles.display === "flex";
+  const { node, rect, x, y, parentIsFlex } = info;
+  const display = node.styles.display ?? "block";
+  const isFlexContainer = display === "flex";
+  const isContainer = display === "flex" || display === "block" || display === "inline-block";
   const isRoot = node.id === treeRootId;
-  const role = isRoot ? "root container" : isContainer ? "container" : "item";
+  // Four roles: distinguish a flex container from a plain (block) container, so
+  // the readout teaches WHICH layout mode is in play, not just "has children".
+  const role = isRoot
+    ? "root container"
+    : isFlexContainer
+    ? "flex container"
+    : isContainer
+    ? "container"
+    : "item";
 
   // Round measured size to whole px for a clean readout.
   const w = Math.round(rect.width);
@@ -1623,7 +1640,7 @@ function HoverTooltip({ info, treeRootId }) {
   // Wrapped-line count: not a style — measured from how children laid out, same
   // as the flex-line overlay. Reuse groupIntoLines on the live child rects.
   let lineCount = 0;
-  if (isContainer && node.children.length > 0 && typeof document !== "undefined") {
+  if (isFlexContainer && node.children.length > 0 && typeof document !== "undefined") {
     const el = document.querySelector(`[data-node-id="${node.id}"]`);
     if (el) {
       const horizontal = (node.styles.flexDirection || "row").startsWith("row");
@@ -1645,8 +1662,9 @@ function HoverTooltip({ info, treeRootId }) {
   const gap = node.styles.gap;
   const wraps = node.styles.flexWrap && node.styles.flexWrap !== "nowrap";
 
-  // Flex story: container axes, or item grow/shrink/basis + align-self.
-  const containerBits = isContainer
+  // Flex story: container axes (only if THIS is a flex container), or item
+  // grow/shrink/basis + align-self (only meaningful if the PARENT is flex).
+  const containerBits = isFlexContainer
     ? [
         node.styles.flexDirection,
         `justify:${(node.styles.justifyContent || "flex-start").replace("flex-", "")}`,
@@ -1656,7 +1674,7 @@ function HoverTooltip({ info, treeRootId }) {
         wraps ? `content:${(node.styles.alignContent || "stretch").replace("flex-", "")}` : null,
       ].filter(Boolean)
     : [];
-  const itemBits = !isContainer
+  const itemBits = parentIsFlex
     ? [
         `flex: ${node.styles.flexGrow ?? 0} ${node.styles.flexShrink ?? 1} ${node.styles.flexBasis ?? "auto"}`,
         node.styles.alignSelf && node.styles.alignSelf !== "auto"
@@ -1698,9 +1716,9 @@ function HoverTooltip({ info, treeRootId }) {
       <div className="fc-tip-box">
         {typeof pad === "number" && <span>pad {pad}</span>}
         {typeof mar === "number" && mar > 0 && <span>mar {mar}</span>}
-        {isContainer && typeof gap === "number" && <span>gap {gap}</span>}
+        {isFlexContainer && typeof gap === "number" && <span>gap {gap}</span>}
         {isContainer && <span>{node.children.length} child{node.children.length === 1 ? "" : "ren"}</span>}
-        {isContainer && wraps && lineCount > 0 && (
+        {isFlexContainer && wraps && lineCount > 0 && (
           <span>{lineCount} line{lineCount === 1 ? "" : "s"}</span>
         )}
       </div>
@@ -2397,7 +2415,27 @@ function FlexCraft() {
     });
     if (newId) selectNode(newId);
   };
-  const convertToContainer = () => selected && setStyle(makeContainer().styles);
+  // Change `display` for the whole selection. Switching TO flex needs the flex
+  // sub-properties present or the flex controls bind to `undefined`. Since one
+  // shared patch hits every selected node uniformly, we only seed keys that are
+  // absent from EVERY selected node — so any node that already customized e.g.
+  // flexDirection keeps it, and we never clobber existing values. (Inert props
+  // stay parked; we never delete them, so toggling is lossless.)
+  const setDisplay = (value) => {
+    if (!selectedNodes.length) return;
+    if (value === "flex") {
+      const defaults = makeContainer().styles;
+      const patch = {};
+      for (const [k, v] of Object.entries(defaults)) {
+        if (k === "display") { patch[k] = v; continue; }
+        const noneHaveIt = selectedNodes.every((n) => n.styles[k] === undefined);
+        if (noneHaveIt) patch[k] = v;
+      }
+      setStyle(patch);
+    } else {
+      setStyle({ display: value });
+    }
+  };
 
   // CUT (move-once). Lift the selected element(s) OUT of the tree into the cut
   // buffer and enter paste mode. The ancestor guard (collectForCut) drops any
@@ -2534,8 +2572,9 @@ function FlexCraft() {
   // we keep the CONTAINER selected instead of selecting the new child, so you
   // can fire off additions continuously without re-clicking the container.
   const addToCanvas = (factory) => {
-    const target =
-      selected && selected.styles.display === "flex" ? selected : tree;
+    const d = selected ? (selected.styles.display ?? "block") : null;
+    const selIsContainer = d === "flex" || d === "block" || d === "inline-block";
+    const target = selIsContainer ? selected : tree;
     const node = factory();
     commit((t) => insertNode(t, target.id, target.children.length, node));
     selectNode(rapidAdd ? target.id : node.id);
@@ -2554,12 +2593,17 @@ function FlexCraft() {
 
   const isFlexItem =
     selected && selectedParent && selectedParent.styles.display === "flex";
-  const isContainer = selected && selected.styles.display === "flex";
+  // isContainer — accepts children/drops (flex, block, inline-block).
+  // isFlexContainer — gates the flex-only controls.
+  const selDisplay = selected ? (selected.styles.display ?? "block") : null;
+  const isContainer =
+    selDisplay === "flex" || selDisplay === "block" || selDisplay === "inline-block";
+  const isFlexContainer = selDisplay === "flex";
 
-  // Multi-select panel gating. Container section shows only when EVERY selected
-  // node is a flex container; item section only when every selected node is a
-  // flex item. Box-model controls always apply.
-  const allContainers =
+  // Multi-select panel gating. Flex section shows only when EVERY selected node
+  // is a flex container; item section only when every selected node's parent is
+  // flex. Box-model + the display selector always apply.
+  const allFlexContainers =
     selectedNodes.length > 0 &&
     selectedNodes.every((n) => n.styles.display === "flex");
   const allFlexItems =
@@ -2610,7 +2654,7 @@ function FlexCraft() {
             <b>{rapidAdd ? "ON" : "OFF"}</b>
             {rapidAdd && (
               <span className="fc-rapid-target">
-                → {(selected && selected.styles.display === "flex" ? selected.label : "Root")}
+                → {(isContainer ? selected.label : "Root")}
               </span>
             )}
           </span>
@@ -2715,7 +2759,11 @@ function FlexCraft() {
       const node = findNode(tree, id);
       if (!node) return;
       const rect = elt.getBoundingClientRect();
-      setHoverInfo({ node, rect, x: e.clientX, y: e.clientY });
+      // Flex-item props only mean anything when the PARENT is a flex container.
+      // Resolve here (we have the tree) so the tooltip can gate itemBits.
+      const hp = findParent(tree, id);
+      const parentIsFlex = !!hp && hp.styles.display === "flex";
+      setHoverInfo({ node, rect, x: e.clientX, y: e.clientY, parentIsFlex });
     },
     [showTooltip, isDragging, hoverInfo, tree]
   );
@@ -2737,7 +2785,7 @@ function FlexCraft() {
           </div>
           <code className="fc-prop-id">
             {multi
-              ? (allContainers ? "all containers" : "mixed — shared props")
+              ? (allFlexContainers ? "all flex containers" : "mixed — shared props")
               : `.${selected.tag}-${selected.id}`}
           </code>
         </div>
@@ -2764,10 +2812,43 @@ function FlexCraft() {
         </div>
       </div>
 
-      {(multi ? allContainers : isContainer) ? (
-        <section>
+      <section>
+        <div className="fc-section-label">Layout</div>
+        <Segmented
+          label="display"
+          value={sv("display", "block")}
+          options={[
+            { value: "flex", label: "flex" },
+            { value: "block", label: "block" },
+            { value: "inline-block", label: "inline" },
+            { value: "none", label: "none" },
+          ]}
+          onChange={setDisplay}
+        />
+        {/* Spell out the consequence of each non-flex choice — in a teaching
+            tool the flex knobs disappearing shouldn't be a silent mystery.
+            Only shown for a single, non-flex selection (multi/mixed would be
+            ambiguous to caption). */}
+        {!multi && !isFlexContainer && (
+          <div className="fc-display-hint">
+            {(() => {
+              const d = selected.styles.display ?? "block";
+              if (d === "block")
+                return "Children stack vertically, each filling the width. Flex controls are off.";
+              if (d === "inline-block")
+                return "Sits inline with its siblings, sized to its content. Flex controls are off.";
+              if (d === "none")
+                return "Removed from layout — invisible on the canvas. Reselect it from the Layers tree to bring it back.";
+              return "";
+            })()}
+          </div>
+        )}
+      </section>
+
+      {(multi ? allFlexContainers : isFlexContainer) ? (
+        <section style={{ marginTop: 22 }}>
           <div className="fc-section-label">
-            Container <span className="fc-tag-pill">display: flex</span>
+            Flex container <span className="fc-tag-pill">display: flex</span>
           </div>
           <Segmented
             label="flex-direction"
@@ -2845,19 +2926,12 @@ function FlexCraft() {
           />
         </section>
       ) : multi ? (
-        <section>
+        <section style={{ marginTop: 22 }}>
           <div className="fc-section-label">
             Mixed selection — editing shared item properties below
           </div>
         </section>
-      ) : (
-        <section>
-          <div className="fc-section-label">This element is a leaf box</div>
-          <button className="fc-convert-btn" onClick={convertToContainer}>
-            ▦ Make it a flex container
-          </button>
-        </section>
-      )}
+      ) : null}
 
       {(multi ? allFlexItems : isFlexItem) && (
         <section style={{ marginTop: 22 }}>
@@ -3697,7 +3771,7 @@ const css = `
 .fc-icon-btn.is-danger:hover{ border-color:#ff6b6b; color:#ff6b6b; }
 .fc-section-label{ font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:var(--mut); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
 .fc-tag-pill{ font-size:9px; color:var(--accent); background:var(--accent-soft); padding:1px 6px; border-radius:3px; text-transform:none; }
-.fc-convert-btn{ width:100%; background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent); font-family:inherit; font-size:12px; padding:10px; border-radius:6px; cursor:pointer; }
+.fc-display-hint{ font-size:11px; line-height:1.5; color:var(--mut); background:var(--panel2); border-left:2px solid var(--line); padding:8px 10px; border-radius:0 5px 5px 0; margin-top:4px; }
 
 .fc-field{ margin-bottom:16px; min-width:0; max-width:100%; }
 .fc-field-label{ display:flex; justify-content:space-between; align-items:center; font-size:10.5px; color:var(--mut); margin-bottom:7px; }
@@ -3796,6 +3870,13 @@ const css = `
   cursor:pointer; max-width:108px;
 }
 .fc-unit-select:focus{ outline:none; border-color:var(--accent); }
+/* The open option list is OS-rendered and inherits the select's colors. The
+   trigger's background is a TRANSLUCENT accent wash, which composites over the
+   browser default to a washed-out cream — hard to read in dark mode. Give the
+   options an explicit OPAQUE themed background + high-contrast text so the list
+   is legible in both themes. */
+.fc-unit-select option{ background:var(--panel); color:var(--txt); }
+.fc-unit-select optgroup{ background:var(--panel); color:var(--mut); font-style:normal; }
 .fc-dim-value{ display:flex; align-items:center; gap:8px; }
 .fc-dim-value .fc-range{ flex:1; min-width:0; }
 .fc-dim-num{ width:64px; flex-shrink:0; padding:5px 6px; font-size:11px; }

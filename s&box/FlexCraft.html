@@ -132,7 +132,13 @@ const cloneWithNewIds = (node) => ({
 const initialTree = () => {
   const root = makeContainer();
   root.label = "Root";
-  root.styles.minHeight = 300;
+  // No height default in the model: the root is content-driven like any other
+  // element, so changes you make (height, align-items, etc.) show pure
+  // cause-and-effect with nothing invisible propping it up. A *visual-only*
+  // 100x100 floor lives in CSS (.fc-node.is-root-floor) so an emptied canvas
+  // stays
+  // big enough to drop into — that floor is editor scaffolding, never written
+  // to the node's styles or the export.
   root.children = [makeBox(), makeBox(), makeBox()];
   return root;
 };
@@ -249,6 +255,45 @@ function duplicateNode(tree, id) {
   return [insertNode(tree, parent.id, idx + 1, clone), clone.id];
 }
 
+// Auto-numbering pass: for any container with styles.autoNumber === true,
+// rewrite each child's `text` field to its DOM-order index plus the container's
+// `autoNumberStart` (default 0). Pure — returns a new tree without mutating the
+// input. Called from `commit` as a post-pass so every mutation path (add, remove,
+// reorder, paste, undo/redo) goes through it in one place. Children that are
+// themselves containers also get a number written; their own children are
+// handled by the recursive walk.
+function applyAutoNumbering(tree) {
+  const walk = (node) => {
+    const auto = node.styles && node.styles.autoNumber;
+    if (!auto) {
+      // No numbering at this level. Recurse so any descendant container that
+      // IS auto-numbering still gets processed.
+      if (!node.children.length) return node;
+      const newChildren = node.children.map(walk);
+      // Avoid creating a new object if nothing changed downstream (preserves
+      // referential equality, helps React skip re-renders).
+      const same = newChildren.every((c, i) => c === node.children[i]);
+      return same ? node : { ...node, children: newChildren };
+    }
+    const start = Number.isFinite(node.styles.autoNumberStart)
+      ? node.styles.autoNumberStart
+      : 0;
+    const newChildren = node.children.map((child, i) => {
+      const wantText = String(start + i);
+      // Recurse first so a numbered child's own subtree is processed, then
+      // rewrite this child's text on top.
+      const processed = walk(child);
+      if (processed.text === wantText) return processed;
+      return { ...processed, text: wantText };
+    });
+    // Same optimisation as the non-auto branch: only allocate a new node if
+    // anything actually changed downstream.
+    const same = newChildren.every((c, i) => c === node.children[i]);
+    return same ? node : { ...node, children: newChildren };
+  };
+  return walk(tree);
+}
+
 // ---- CSS export ------------------------------------------------------------
 const camelToKebab = (s) => s.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
 const UNITLESS = ["flexGrow", "flexShrink", "order", "opacity"];
@@ -270,10 +315,24 @@ const FLEX_ONLY_PROPS = [
   "alignContent",
   "flexWrap",
   "gap",
+  "rowGap",
+  "columnGap",
 ];
+// Tool-only metadata. Stored in node.styles for convenience (uses the existing
+// per-node style storage and undo/redo paths) but NOT real CSS properties — must
+// never be emitted to the exported CSS. If you add panel-state-y flags, put them
+// here.
+// TODO: Round-tripping these on import currently doesn't happen. If we ever
+// want it, the cheap path is a CSS comment marker on the container's rule
+// (e.g. /* fc: autonumber 0 */) parsed back out by parseCssRules. The principled
+// path is to drop autoNumber entirely in favor of real CSS counters
+// (counter-reset/counter-increment/content: counter(name)), which would also
+// make the exported page behave like the editor without baked text.
+const TOOL_ONLY_PROPS = ["autoNumber", "autoNumberStart"];
 function exportStyles(node) {
-  if ((node.styles.display ?? "block") === "flex") return node.styles;
   const out = { ...node.styles };
+  for (const k of TOOL_ONLY_PROPS) delete out[k];
+  if ((node.styles.display ?? "block") === "flex") return out;
   for (const k of FLEX_ONLY_PROPS) delete out[k];
   return out;
 }
@@ -367,7 +426,7 @@ ${htmlText}
 const KEBAB_TO_CAMEL = (s) => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 const KNOWN_STYLE_KEYS = new Set([
   "display", "flexDirection", "justifyContent", "alignItems", "alignContent",
-  "flexWrap", "gap", "flexGrow", "flexShrink", "flexBasis", "alignSelf",
+  "flexWrap", "gap", "rowGap", "columnGap", "flexGrow", "flexShrink", "flexBasis", "alignSelf",
   "order", "width", "height", "minHeight", "padding", "margin",
   "borderWidth", "borderStyle", "borderColor",
 ]);
@@ -1050,6 +1109,7 @@ function CanvasNode({
   copiedIds,
   onText,
   onDelete,
+  parentAutoNumber,
 }) {
   // isPrimary  = THE anchor (props panel, resize handles, overlays).
   // isSelected = in the selection set (primary or a secondary member). Falls
@@ -1258,6 +1318,15 @@ function CanvasNode({
   // Resize handles + line overlay live on the PRIMARY (anchor) only. With sync
   // on, the anchor's drag drives all selected; the handles still sit on it.
   const showHandles = isPrimary && !isRoot && typeof onResize === "function";
+  // Root visual floor (100x100) applies only while the user hasn't set an
+  // explicit height/min-height — so once you start studying height behavior,
+  // the scaffolding gets out of the way and you see the real value, including
+  // values below 100px. Width is never floored beyond this since the root is
+  // full-width by default anyway.
+  const rootFloor =
+    isRoot &&
+    node.styles.height === undefined &&
+    node.styles.minHeight === undefined;
   // Flex-line overlay only makes sense on the PRIMARY flex container with items.
   const linesOn = showLines && isPrimary && isFlexContainer && node.children.length > 0;
   // Gap bands ride along with the box-model overlay (not the lines toggle), so
@@ -1297,6 +1366,9 @@ function CanvasNode({
     // so `gap` spacing is exactly what the user set (zones would otherwise sit
     // between items and take their own share of the gap, inflating it). Zones
     // only exist during a drag, when we need drop targets.
+    // childAutoNumber: my children should be treated as auto-numbered if THIS
+    // node has the autoNumber flag on (computed once per render, not per child).
+    const childAutoNumber = !!node.styles.autoNumber;
     const childEls = node.children.map((child) => (
       <CanvasNode
         key={child.id}
@@ -1325,6 +1397,7 @@ function CanvasNode({
         copiedIds={copiedIds}
         onText={onText}
         onDelete={onDelete}
+        parentAutoNumber={childAutoNumber}
       />
     ));
 
@@ -1386,8 +1459,11 @@ function CanvasNode({
       }}
       onDoubleClick={(e) => {
         // Double-click a leaf box → edit its text inline. Containers ignore it
-        // (their "content" is their children, not text).
-        if (isLeaf) {
+        // (their "content" is their children, not text). Also disabled when the
+        // PARENT is auto-numbering this item — text is computed from position,
+        // so manual edits have nowhere to live (the cursor would be reverted on
+        // the next commit anyway).
+        if (isLeaf && !parentAutoNumber) {
           e.stopPropagation();
           onSelect(node.id, false);
           setEditing(true);
@@ -1395,6 +1471,7 @@ function CanvasNode({
       }}
       className={
         "fc-node" +
+        (rootFloor ? " is-root-floor" : "") +
         (isSelected ? " is-selected" : "") +
         (isSelected && !isPrimary ? " is-secondary" : "") +
         (isCopied ? " is-copied" : "") +
@@ -1503,12 +1580,25 @@ function CanvasNode({
           ✕
         </button>
       )}
+      {/* Empty-container hint: a centered "drop here" ghost shown only on the
+          ROOT when it has zero children and we're not mid-drag (the dropzones
+          take over during a drag). Scoped to the root because every leaf box is
+          technically an empty block container too — showing it on all of them
+          would spam the canvas. Purely a canvas affordance — never exported. */}
+      {isRoot && node.children.length === 0 && !isDragging && !pasteMode && (
+        <div className="fc-empty-hint" aria-hidden="true">
+          <span className="fc-empty-plus">+</span>
+          <span className="fc-empty-text">
+            Empty container — drag from the palette to add items
+          </span>
+        </div>
+      )}
       {isFlexContainer || node.children.length > 0
         ? renderChildrenWithZones()
         : (node.text || editing)
         ? <span
             ref={textRef}
-            className={"fc-node-text" + (editing ? " is-editing" : "")}
+            className={"fc-node-text" + (editing ? " is-editing" : "") + (parentAutoNumber ? " is-locked" : "")}
             contentEditable={editing}
             suppressContentEditableWarning
             onBlur={commitText}
@@ -1519,6 +1609,7 @@ function CanvasNode({
               e.stopPropagation(); // keep keystrokes out of global shortcuts
             }}
             onClick={(e) => { if (editing) e.stopPropagation(); }}
+            title={parentAutoNumber ? "Auto-numbered — toggle off in container's Item labels panel to edit" : undefined}
           >
             {node.text}
           </span>
@@ -1808,6 +1899,12 @@ function FlexCraft() {
   //                 collapses to a single element.
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
+  // Marquee (rubber-band) selection. `marquee` holds the live rectangle in
+  // VIEWPORT coords ({x0,y0,x1,y1}) while dragging, or null. The press-arm-drag
+  // lifecycle is tracked in marqueeRef (mutable, doesn't trigger re-renders);
+  // only the drawn rectangle lives in state.
+  const [marquee, setMarquee] = useState(null);
+  const marqueeRef = useRef(null);
   const [dropTarget, setDropTarget] = useState(null);
   const [tab, setTab] = useState("css"); // code drawer: css | html
   const [codeEditing, setCodeEditing] = useState(false); // freeform whole-panel edit
@@ -1891,11 +1988,15 @@ function FlexCraft() {
     };
   }, []);
 
-  // commit a new tree, pushing the old one onto the undo stack
+  // commit a new tree, pushing the old one onto the undo stack. Every mutation
+  // path flows through here, so we use it as the single hook for the auto-number
+  // post-pass: rewrite child text on any container whose autoNumber flag is on.
+  // Add, remove, reorder, paste, undo, redo — all are covered by this one line.
   const commit = useCallback((producer) => {
     setHistory((h) => {
-      const next =
+      const raw =
         typeof producer === "function" ? producer(h.present) : producer;
+      const next = applyAutoNumbering(raw);
       if (next === h.present) return h;
       return { past: [...h.past, h.present], present: next, future: [] };
     });
@@ -2139,6 +2240,118 @@ function FlexCraft() {
     window.addEventListener("pointerup", end);
     return () => window.removeEventListener("pointerup", end);
   }, []);
+
+  // ---- Marquee (rubber-band) selection -------------------------------------
+  // Press on empty canvas, drag past a small threshold → a rectangle is drawn;
+  // on release, every DIRECT CHILD OF THE ROOT whose box intersects the
+  // rectangle is selected (touch semantics, per design). Shift adds to the
+  // current selection instead of replacing. Below-threshold presses fall
+  // through to the normal background click → deselect.
+  const MARQUEE_THRESHOLD = 4; // px the pointer must move before it's a marquee
+  const justMarqueed = useRef(false); // swallow the synthesized trailing click
+
+  const onCanvasPointerDown = useCallback((e) => {
+    // Only start on a genuine background press: left button, and NOT on a node
+    // or any interactive affordance (handles/buttons stopPropagation, but the
+    // node body doesn't, so guard explicitly via the data-node-id lookup).
+    if (e.button !== 0) return;
+    if (cutBuffer || copyBuffer) return; // paste mode owns clicks
+    const onNode = e.target.closest && e.target.closest("[data-node-id]");
+    // The root itself carries data-node-id; a press on the root's own padding
+    // (background) SHOULD start a marquee, but a press on a child node should
+    // not. So: arm only if the nearest node is the root (or nothing).
+    if (onNode && onNode.getAttribute("data-node-id") !== tree.id) return;
+    marqueeRef.current = {
+      x0: e.clientX,
+      y0: e.clientY,
+      armed: false,
+      shift: e.shiftKey,
+      // The canvas-scroll element that received this press. CanvasPanel is
+      // rendered TWICE (mobile + desktop panes); the hidden one is display:none
+      // and measures as a zero rect. Scoping queries to THIS container — the one
+      // the pointer is actually in — guarantees we measure the visible boxes.
+      container: e.currentTarget,
+    };
+  }, [cutBuffer, copyBuffer, tree.id]);
+
+  const onCanvasPointerMove = useCallback((e) => {
+    const m = marqueeRef.current;
+    if (!m) return;
+    if (!m.armed) {
+      const moved =
+        Math.abs(e.clientX - m.x0) + Math.abs(e.clientY - m.y0);
+      if (moved < MARQUEE_THRESHOLD) return; // still just a click, not a drag
+      m.armed = true;
+    }
+    // Record the live end-point on the ref too, so pointerUp can finalize from
+    // the ref alone (no reading React state inside an event handler).
+    m.x1 = e.clientX;
+    m.y1 = e.clientY;
+    setMarquee({ x0: m.x0, y0: m.y0, x1: e.clientX, y1: e.clientY });
+  }, []);
+
+  const onCanvasPointerUp = useCallback(() => {
+    const m = marqueeRef.current;
+    marqueeRef.current = null;
+    setMarquee(null); // clear the drawn rectangle either way
+    if (!m || !m.armed) return; // below-threshold → trailing click handles deselect
+
+    const left = Math.min(m.x0, m.x1);
+    const right = Math.max(m.x0, m.x1);
+    const top = Math.min(m.y0, m.y1);
+    const bottom = Math.max(m.y0, m.y1);
+    // Scope to the container that received the press, not document — there's a
+    // hidden (display:none) duplicate canvas in the mobile pane whose nodes
+    // measure as zero rects and would win a document-wide querySelector.
+    const scope = m.container || document;
+    const hits = [];
+    for (const child of tree.children) {
+      const el = scope.querySelector(`[data-node-id="${child.id}"]`);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      // A zero-size rect means we somehow grabbed a hidden/unlaid-out element
+      // (e.g. the display:none mobile-pane duplicate). Real visible boxes always
+      // have a non-zero rect, so skip these defensively.
+      if (r.width === 0 && r.height === 0) continue;
+      // Touch/intersect: any overlap counts (per design choice).
+      const overlaps =
+        r.left < right && r.right > left && r.top < bottom && r.bottom > top;
+      if (overlaps) hits.push(child.id);
+    }
+    if (hits.length) {
+      if (m.shift) {
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          hits.forEach((id) => next.add(id));
+          return next;
+        });
+      } else {
+        setSelectedIds(new Set(hits));
+      }
+      setSelectedId(hits[hits.length - 1]);
+    } else if (!m.shift) {
+      // Empty marquee, no shift → clear (matches click-on-empty behavior).
+      setSelectedId(null);
+      setSelectedIds(new Set());
+    }
+    // Swallow the click the browser synthesizes at drag end so the canvas
+    // deselect handler doesn't wipe what we just selected.
+    justMarqueed.current = true;
+    requestAnimationFrame(() => { justMarqueed.current = false; });
+  }, [tree.children]);
+
+  // Safety net: if a marquee drag ends with the pointer OUTSIDE the canvas
+  // (released over the props panel, off-window, etc.), the canvas's own
+  // pointerup never fires and the rectangle would stick. A window listener
+  // finalizes from the ref in that case. Depends on the same finalizer logic,
+  // so we route through onCanvasPointerUp.
+  useEffect(() => {
+    const onWinUp = () => {
+      if (marqueeRef.current) onCanvasPointerUp();
+    };
+    window.addEventListener("pointerup", onWinUp);
+    return () => window.removeEventListener("pointerup", onWinUp);
+  }, [onCanvasPointerUp]);
 
   const onResize = useCallback((id, patch) => {
     setHistory((h) => {
@@ -2953,6 +3166,7 @@ function FlexCraft() {
       </CollapsibleSection>
 
       {(multi ? allFlexContainers : isFlexContainer) ? (
+        <>
         <CollapsibleSection
           id="flex-container"
           title={<>Flex container <span className="fc-tag-pill">display: flex</span></>}
@@ -3025,15 +3239,143 @@ function FlexCraft() {
               {...rp("alignContent")}
             />
           )}
-          <Slider
-            label="gap"
-            value={sv("gap", 0)}
-            min={0}
-            max={64}
-            onChange={(v) => setStyle({ gap: v })}
-            {...rp("gap")}
-          />
+          {/* gap: single slider by default; user can split into row-gap +
+              column-gap, which is what wrapping grids of cards usually want
+              (tight columns, looser rows, etc.). The split state lives in the
+              style data itself: presence of rowGap/columnGap means split, so
+              export/import round-trips without any extra UI flag. */}
+          {(() => {
+            // Split-mode detection: any selected container has row-gap or
+            // column-gap set. We check selectedNodes directly rather than via
+            // sv() because sv() returns undefined when multi-selected items
+            // disagree on a value, which would misread two split-but-differing
+            // containers as "not split".
+            const isSplit = selectedNodes.some(
+              (n) => n.styles.rowGap !== undefined || n.styles.columnGap !== undefined
+            );
+            if (!isSplit) {
+              return (
+                <Slider
+                  label={
+                    <span>
+                      gap{" "}
+                      <button
+                        type="button"
+                        className="fc-inline-btn"
+                        title="Split into row-gap and column-gap"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const cur = sv("gap", 0) ?? 0;
+                          setStyle({ gap: undefined, rowGap: cur, columnGap: cur });
+                        }}
+                      >
+                        ↹ split
+                      </button>
+                    </span>
+                  }
+                  value={sv("gap", 0)}
+                  min={0}
+                  max={64}
+                  onChange={(v) => setStyle({ gap: v })}
+                  {...rp("gap")}
+                />
+              );
+            }
+            // SPLIT mode: two sliders, plus a link button to collapse back.
+            return (
+              <>
+                <Slider
+                  label={
+                    <span>
+                      row-gap{" "}
+                      <button
+                        type="button"
+                        className="fc-inline-btn"
+                        title="Link row and column gap back into a single value"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          // Collapse to single gap, using row-gap as the kept value.
+                          const r = sv("rowGap", 0) ?? 0;
+                          setStyle({ rowGap: undefined, columnGap: undefined, gap: r });
+                        }}
+                      >
+                        🔗 link
+                      </button>
+                    </span>
+                  }
+                  value={sv("rowGap", 0)}
+                  min={0}
+                  max={64}
+                  onChange={(v) => setStyle({ rowGap: v })}
+                  {...rp("rowGap")}
+                />
+                <Slider
+                  label="column-gap"
+                  value={sv("columnGap", 0)}
+                  min={0}
+                  max={64}
+                  onChange={(v) => setStyle({ columnGap: v })}
+                  {...rp("columnGap")}
+                />
+              </>
+            );
+          })()}
         </CollapsibleSection>
+        {/* Item labels: per-container, opt-in. When the toggle is on, child
+            `text` fields are computed by index from `autoNumberStart` and
+            rewritten on every commit (add, remove, reorder, undo, redo) via
+            applyAutoNumbering. The number input is disabled when the toggle
+            is off because the start value has no effect until numbering is on.
+            Not exposed for multi-selection (each container has its own state). */}
+        {!multi && (
+          <CollapsibleSection
+            id="item-labels"
+            title="Item labels"
+            collapsed={collapsedSections}
+            onToggle={toggleSection}
+          >
+            <FieldLabel label="auto-number items" {...rp("autoNumber")}>
+              <button
+                type="button"
+                className={
+                  "fc-mini-toggle" + (selected.styles.autoNumber ? " is-active" : "")
+                }
+                onClick={() => setStyle({ autoNumber: !selected.styles.autoNumber })}
+              >
+                {selected.styles.autoNumber ? "on" : "off"}
+              </button>
+            </FieldLabel>
+            <div className="fc-field">
+              <FieldLabel label="start at" {...rp("autoNumberStart")}>
+                <input
+                  type="number"
+                  className="fc-num fc-order-num"
+                  value={
+                    Number.isFinite(selected.styles.autoNumberStart)
+                      ? selected.styles.autoNumberStart
+                      : 0
+                  }
+                  step={1}
+                  disabled={!selected.styles.autoNumber}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const n = raw === "" || raw === "-" ? 0 : Number(raw);
+                    setStyle({ autoNumberStart: Number.isFinite(n) ? n : 0 });
+                  }}
+                />
+              </FieldLabel>
+            </div>
+            {selected.styles.autoNumber && (
+              <div className="fc-display-hint">
+                Children's text is computed from position. Double-click editing
+                is locked until you turn this off.
+              </div>
+            )}
+          </CollapsibleSection>
+        )}
+        </>
       ) : multi ? (
         <section style={{ marginTop: 22 }}>
           <div className="fc-section-label">
@@ -3067,6 +3409,26 @@ function FlexCraft() {
             onChange={(v) => setStyle({ flexShrink: v })}
             {...rp("flexShrink")}
           />
+          {/* order: integer, signed, default 0. Lets items be reordered visually
+              without touching DOM order; negative values come earlier than the
+              default-order items. Kept as a plain number input rather than a
+              slider because order is discrete and the useful range is open. */}
+          <div className="fc-field">
+            <FieldLabel label="order" {...rp("order")}>
+              <input
+                type="number"
+                className="fc-num fc-order-num"
+                value={sv("order", 0) ?? 0}
+                step={1}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  // Empty input → clear to default 0 (consistent with the spec default).
+                  const n = raw === "" || raw === "-" ? 0 : Number(raw);
+                  setStyle({ order: Number.isFinite(n) ? n : 0 });
+                }}
+              />
+            </FieldLabel>
+          </div>
           <Segmented
             label="align-self"
             value={sv("alignSelf", "auto")}
@@ -3336,13 +3698,17 @@ function FlexCraft() {
         </div>
       )}
       <div
-        className="fc-canvas-scroll"
+        className={"fc-canvas-scroll" + (marquee ? " is-marqueeing" : "")}
         onClick={() => {
-          // Swallow the synthesized click that follows a resize drag, so a
-          // drag-to-resize never doubles as a background "deselect" click.
+          // Swallow the synthesized click that follows a resize drag OR a
+          // marquee drag, so neither doubles as a background "deselect" click.
           if (justResized.current) { justResized.current = false; return; }
+          if (justMarqueed.current) { justMarqueed.current = false; return; }
           return cutBuffer || copyBuffer ? cancelCut() : clearSelection();
         }}
+        onPointerDown={onCanvasPointerDown}
+        onPointerMove={onCanvasPointerMove}
+        onPointerUp={onCanvasPointerUp}
         onMouseMove={onCanvasHover}
         onMouseLeave={onCanvasLeave}
       >
@@ -3373,6 +3739,21 @@ function FlexCraft() {
           onText={onText}
           onDelete={deleteNodeById}
         />
+        {/* Marquee rectangle. Drawn in VIEWPORT coords (position:fixed) so it
+            matches the clientX/clientY we store and needs no scroll-offset math.
+            pointer-events:none so it never intercepts the drag it's visualizing. */}
+        {marquee && (
+          <div
+            className="fc-marquee"
+            style={{
+              position: "fixed",
+              left: Math.min(marquee.x0, marquee.x1),
+              top: Math.min(marquee.y0, marquee.y1),
+              width: Math.abs(marquee.x1 - marquee.x0),
+              height: Math.abs(marquee.y1 - marquee.y0),
+            }}
+          />
+        )}
       </div>
       {showTooltip && hoverInfo && <HoverTooltip info={hoverInfo} treeRootId={tree.id} />}
     </>
@@ -3860,12 +4241,43 @@ const css = `
   flex:1; overflow:auto; padding:26px;
   background:radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0) 0 0 / 22px 22px;
 }
+/* While a marquee is being dragged, suppress text/element selection so the
+   drag doesn't accidentally highlight box labels or the empty-state hint. */
+.fc-canvas-scroll.is-marqueeing{ user-select:none; }
+/* Rubber-band selection rectangle. Viewport-positioned (set inline), thin
+   accent border over a faint accent wash — matches the selection outline look.
+   Non-interactive so it never blocks the drag it represents. */
+.fc-marquee{
+  z-index:9998; pointer-events:none; border:1px solid var(--accent);
+  background:var(--accent-soft); border-radius:2px;
+  box-shadow:0 0 0 1px var(--accent-soft);
+}
 
 .fc-node{
   border-radius:4px; transition:background 120ms, outline-color 120ms;
   outline:1px solid var(--node-line); background:var(--node); min-width:40px; min-height:40px; cursor:grab;
 }
 .fc-node.is-container{ outline:1px dashed var(--accent); outline-offset:0; background:var(--accent-soft); min-width:0; min-height:0; }
+/* Root gets a visual-only 100x100 floor so an emptied canvas stays big enough
+   to drop into. This is editor scaffolding — it's NOT in the node's styles and
+   never appears in the export; the model treats the root as content-driven like
+   any other element. Declared after .is-container so its min-height wins. The
+   class is dropped (in JS) once the user sets an explicit height/min-height, so
+   it never masks the real value you're studying. */
+.fc-node.is-root-floor{ min-width:100px; min-height:100px; }
+/* Empty-container ghost: a centered "drop here" affordance shown only when a
+   container has no children (replaced by live dropzones during a drag). */
+.fc-empty-hint{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:6px; pointer-events:none;
+  color:var(--mut); opacity:0.7; padding:12px; text-align:center;
+}
+.fc-empty-plus{
+  font-size:22px; line-height:1; width:34px; height:34px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  border:1.5px dashed var(--accent); color:var(--accent); opacity:0.8;
+}
+.fc-empty-text{ font-size:10.5px; font-family:'Space Mono',monospace; max-width:220px; }
 .fc-node.is-selected{ outline:2px solid var(--accent) !important; outline-offset:1px; background:var(--accent-soft); }
 /* Multi-select secondary members: anchor keeps the solid outline above; other
    selected elements get a dashed outline so you can tell which one owns the
@@ -3891,6 +4303,13 @@ const css = `
   pointer-events:auto; user-select:text; cursor:text; color:var(--txt);
   outline:2px solid var(--accent); outline-offset:2px; border-radius:3px;
   background:var(--ink); padding:1px 4px; white-space:normal; min-width:1ch;
+}
+/* Auto-numbered text: visibly locked (dimmed, italic) and shows a help cursor
+   on hover so the user discovers why it won't take edits. Pointer-events stays
+   inherited from the base rule (none) — the title attribute is enough for
+   discoverability without making the lock interactive. */
+.fc-node-text.is-locked{
+  opacity:0.6; font-style:italic;
 }
 .fc-dropzone{ border-radius:3px; transition:background 80ms, box-shadow 80ms; }
 .fc-dropzone.is-active{ background:var(--accent); box-shadow:0 0 12px var(--accent); }
@@ -4027,6 +4446,12 @@ const css = `
   font-size:11px; line-height:1; padding:0; opacity:0.85;
 }
 .fc-reset-dot:hover{ opacity:1; transform:rotate(-45deg); transition:transform 120ms; }
+.fc-inline-btn{
+  background:var(--panel2); border:1px solid var(--line); color:var(--mut);
+  font-family:inherit; font-size:9px; line-height:1; padding:2px 6px;
+  border-radius:3px; cursor:pointer; margin-left:6px;
+}
+.fc-inline-btn:hover{ color:var(--accent); border-color:var(--accent); }
 .fc-field-val{ color:var(--accent); }
 .fc-bm-tag{
   position:absolute; font-size:8.5px; font-weight:700; padding:1px 4px; border-radius:2px;
@@ -4121,6 +4546,7 @@ const css = `
 .fc-dim-num{ width:64px; flex-shrink:0; padding:5px 6px; font-size:11px; }
 /* hide native number spinners on the dim number field */
 .fc-dim-num::-webkit-outer-spin-button, .fc-dim-num::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+.fc-order-num{ width:72px; flex-shrink:0; padding:5px 6px; font-size:11px; text-align:right; }
 .fc-mini-toggle{ background:var(--accent-soft); border:1px solid var(--line); color:var(--mut); font-family:inherit; font-size:9px; padding:2px 7px; border-radius:3px; cursor:pointer; }
 .fc-mini-toggle.is-active{ color:var(--accent); }
 

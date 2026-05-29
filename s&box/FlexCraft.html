@@ -3186,6 +3186,13 @@ function FlexCraft() {
             {...rp("flexDirection")}
           />
           <Segmented
+            label="flex-wrap"
+            value={sv("flexWrap")}
+            options={["nowrap", "wrap", "wrap-reverse"]}
+            onChange={(v) => setStyle({ flexWrap: v })}
+            {...rp("flexWrap")}
+          />
+          <Segmented
             label="justify-content (main axis)"
             value={sv("justifyContent")}
             options={[
@@ -3211,13 +3218,6 @@ function FlexCraft() {
             ]}
             onChange={(v) => setStyle({ alignItems: v })}
             {...rp("alignItems")}
-          />
-          <Segmented
-            label="flex-wrap"
-            value={sv("flexWrap")}
-            options={["nowrap", "wrap", "wrap-reverse"]}
-            onChange={(v) => setStyle({ flexWrap: v })}
-            {...rp("flexWrap")}
           />
           {/* align-content only has an effect on multi-line (wrapping) flex
               containers — it distributes the LINES along the cross axis. Hidden

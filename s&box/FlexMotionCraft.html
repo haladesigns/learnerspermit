@@ -42,34 +42,48 @@ const { useState, useRef, useCallback, useMemo, useEffect, useReducer } = React;
 
 // ── EASING PRESETS ──────────────────────────────────────────────────────────
 const EASINGS = [
-  { value: "linear",                   label: "linear" },
-  { value: "ease",                     label: "ease" },
-  { value: "ease-in",                  label: "ease-in" },
-  { value: "ease-out",                 label: "ease-out" },
-  { value: "ease-in-out",              label: "ease-in-out" },
+  { value: "linear",                        label: "linear" },
+  { value: "ease",                          label: "ease" },
+  { value: "ease-in",                       label: "ease-in" },
+  { value: "ease-out",                      label: "ease-out" },
+  { value: "ease-in-out",                   label: "ease-in-out" },
   { value: "cubic-bezier(0.34,1.56,0.64,1)", label: "spring" },
-  { value: "cubic-bezier(0.87,0,0.13,1)",    label: "sharp" },
-  { value: "steps(4,end)",             label: "steps(4)" },
+  { value: "cubic-bezier(0.87,0,0.13,1)",   label: "sharp" },
+  { value: "steps(4,end)",                  label: "steps(4)" },
+  { value: "__steps_custom__",              label: "steps (custom)…" },
+  { value: "__cubic_custom__",              label: "cubic-bezier (custom)…" },
 ];
+
+// Cubic-bezier curve data for the EasingCurve visualizer
+const EASING_CURVES = {
+  "linear":       [[0,0],[0.33,0.33],[0.66,0.66],[1,1]],
+  "ease":         [[0,0],[0.25,0.1],[0.25,1],[1,1]],
+  "ease-in":      [[0,0],[0.42,0],[1,1],[1,1]],
+  "ease-out":     [[0,0],[0,0],[0.58,1],[1,1]],
+  "ease-in-out":  [[0,0],[0.42,0],[0.58,1],[1,1]],
+  "cubic-bezier(0.34,1.56,0.64,1)": [[0,0],[0.34,1.56],[0.64,1],[1,1]],
+  "cubic-bezier(0.87,0,0.13,1)":    [[0,0],[0.87,0],[0.13,1],[1,1]],
+};
 
 // ── PROPERTY DEFINITIONS ─────────────────────────────────────────────────────
 // Each property has a type that determines what sub-controls appear.
 // Types: color | opacity | px | transform | shadow | filter | text
 const PROP_DEFS = {
-  "opacity":          { type:"opacity",   default:"1" },
-  "transform":        { type:"transform", default:"none" },
-  "background-color": { type:"color",     default:"#ffffff" },
-  "color":            { type:"color",     default:"#000000" },
-  "border-color":     { type:"color",     default:"#000000" },
-  "width":            { type:"px",        default:"100",  min:0,   max:2000 },
-  "height":           { type:"px",        default:"100",  min:0,   max:2000 },
-  "padding":          { type:"px",        default:"0",    min:0,   max:200  },
-  "margin":           { type:"px",        default:"0",    min:-200,max:200  },
-  "border-radius":    { type:"px",        default:"0",    min:0,   max:200  },
-  "box-shadow":       { type:"shadow",    default:"0px 0px 0px 0px #000000" },
-  "font-size":        { type:"px",        default:"16",   min:1,   max:200  },
-  "letter-spacing":   { type:"px",        default:"0",    min:-10, max:50   },
-  "filter":           { type:"filter",    default:"none" },
+  "all":            { type:"text",      default:"" },          // CSS "all" keyword shorthand
+  "opacity":        { type:"opacity",   default:"1" },
+  "transform":      { type:"transform", default:"none" },
+  "background-color":{ type:"color",   default:"#ffffff" },
+  "color":          { type:"color",     default:"#000000" },
+  "border-color":   { type:"color",     default:"#000000" },
+  "width":          { type:"px",        default:"100",  min:0,   max:2000 },
+  "height":         { type:"px",        default:"100",  min:0,   max:2000 },
+  "padding":        { type:"px",        default:"0",    min:0,   max:200  },
+  "margin":         { type:"px",        default:"0",    min:-200,max:200  },
+  "border-radius":  { type:"px",        default:"0",    min:0,   max:200  },
+  "box-shadow":     { type:"shadow",    default:"0px 0px 0px 0px #000000" },
+  "font-size":      { type:"px",        default:"16",   min:1,   max:200  },
+  "letter-spacing": { type:"px",        default:"0",    min:-10, max:50   },
+  "filter":         { type:"filter",    default:"none" },
 };
 const ANIMATABLE_PROPS = Object.keys(PROP_DEFS);
 
@@ -165,6 +179,7 @@ function buildAugmentedCss(originalCss, transitions, keyframeAnims) {
   for (const rules of Object.values(transitions)) {
     const ruleArr = Array.isArray(rules) ? rules : (rules ? [rules] : []);
     for (const t of ruleArr) {
+      if (t.disabled) continue;  // rule is disabled — skip CSS emission
       if (!t.property) continue;
       const sel = t.selector && t.selector.trim() ? t.selector.trim() : null;
       if (!sel) continue;
@@ -219,6 +234,7 @@ function buildAugmentedCss(originalCss, transitions, keyframeAnims) {
 
   // Keyframe animations
   for (const anim of Object.values(keyframeAnims)) {
+    if (anim.disabled) continue;  // disabled — skip
     if (!anim.name || anim.stops.length < 2) continue;
     out += `\n@keyframes ${anim.name} {\n`;
     for (const stop of anim.stops) {
@@ -230,7 +246,15 @@ function buildAugmentedCss(originalCss, transitions, keyframeAnims) {
     }
     out += `}\n`;
     if (anim.selector) {
-      out += `${anim.selector} {\n  animation: ${anim.name} ${anim.duration}ms ${anim.easing} ${anim.iterationCount || 1} ${anim.fillMode || "both"};\n}\n`;
+      const dir      = anim.direction  || "normal";
+      const fill     = anim.fillMode   || "both";
+      const iter     = anim.iterationCount || 1;
+      const play     = anim.playState  || "running";
+      const shorthand = anim.name + " " + anim.duration + "ms " + anim.easing
+        + " " + iter + " " + dir + " " + fill;
+      out += anim.selector + " {\n  animation: " + shorthand + ";\n";
+      if (play === "paused") out += "  animation-play-state: paused;\n";
+      out += "}\n";
     }
   }
 
@@ -403,48 +427,78 @@ function PropValueEditor({ property, value, onChange }) {
   }
 
   if (def.type === "transform") {
-    // Parse current transform value into components
     const parseTransform = (v) => {
-      const r = { translateX:"0", translateY:"0", rotate:"0", scaleX:"1", scaleY:"1" };
+      const r = { translateX:"0", translateY:"0", rotate:"0", rotateX:"0", rotateY:"0",
+                  scaleX:"1", scaleY:"1", skewX:"0", skewY:"0" };
       if (!v || v === "none") return r;
-      const tx = v.match(/translateX\(([\d.-]+[^)]*)\)/); if (tx) r.translateX = tx[1];
-      const ty = v.match(/translateY\(([\d.-]+[^)]*)\)/); if (ty) r.translateY = ty[1];
-      const rot = v.match(/rotate\(([\d.-]+[^)]*)\)/); if (rot) r.rotate = rot[1];
-      const sx = v.match(/scaleX\(([\d.]+)\)/); if (sx) r.scaleX = sx[1];
-      const sy = v.match(/scaleY\(([\d.]+)\)/); if (sy) r.scaleY = sy[1];
+      const tx  = v.match(/translateX\(([\d.-]+[^)]*)\)/);   if (tx)  r.translateX = tx[1];
+      const ty  = v.match(/translateY\(([\d.-]+[^)]*)\)/);   if (ty)  r.translateY = ty[1];
+      const rot = v.match(/(?<!rotate[XY])rotate\(([\d.-]+[^)]*)\)/); if (rot) r.rotate = rot[1];
+      const rx  = v.match(/rotateX\(([\d.-]+[^)]*)\)/);      if (rx)  r.rotateX = rx[1];
+      const ry  = v.match(/rotateY\(([\d.-]+[^)]*)\)/);      if (ry)  r.rotateY = ry[1];
+      const sx  = v.match(/scaleX\(([\d.]+)\)/);             if (sx)  r.scaleX = sx[1];
+      const sy  = v.match(/scaleY\(([\d.]+)\)/);             if (sy)  r.scaleY = sy[1];
+      const skx = v.match(/skewX\(([\d.-]+[^)]*)\)/);        if (skx) r.skewX = skx[1];
+      const sky = v.match(/skewY\(([\d.-]+[^)]*)\)/);        if (sky) r.skewY = sky[1];
       return r;
     };
-    const buildTransform = (parts) => {
+    const buildTransform = (p) => {
       const bits = [];
-      if (parts.translateX !== "0" && parts.translateX !== "0px") bits.push(`translateX(${parts.translateX})`);
-      if (parts.translateY !== "0" && parts.translateY !== "0px") bits.push(`translateY(${parts.translateY})`);
-      if (parts.rotate !== "0" && parts.rotate !== "0deg") bits.push(`rotate(${parts.rotate})`);
-      if (parts.scaleX !== "1") bits.push(`scaleX(${parts.scaleX})`);
-      if (parts.scaleY !== "1") bits.push(`scaleY(${parts.scaleY})`);
+      if (p.translateX !== "0" && p.translateX !== "0px") bits.push("translateX(" + p.translateX + ")");
+      if (p.translateY !== "0" && p.translateY !== "0px") bits.push("translateY(" + p.translateY + ")");
+      if (p.rotate  !== "0" && p.rotate  !== "0deg") bits.push("rotate("  + p.rotate  + ")");
+      if (p.rotateX !== "0" && p.rotateX !== "0deg") bits.push("rotateX(" + p.rotateX + ")");
+      if (p.rotateY !== "0" && p.rotateY !== "0deg") bits.push("rotateY(" + p.rotateY + ")");
+      if (p.scaleX !== "1") bits.push("scaleX(" + p.scaleX + ")");
+      if (p.scaleY !== "1") bits.push("scaleY(" + p.scaleY + ")");
+      if (p.skewX !== "0" && p.skewX !== "0deg") bits.push("skewX(" + p.skewX + ")");
+      if (p.skewY !== "0" && p.skewY !== "0deg") bits.push("skewY(" + p.skewY + ")");
       return bits.length ? bits.join(" ") : "none";
     };
-    const parts = parseTransform(value);
+    const parts  = parseTransform(value);
     const update = (key, val) => onChange(buildTransform({ ...parts, [key]: val }));
-    return (
-      <div className="mc-transform-grid">
-        {[
-          { key:"translateX", label:"X", unit:"px", min:-500, max:500 },
-          { key:"translateY", label:"Y", unit:"px", min:-500, max:500 },
-          { key:"rotate",     label:"rotate", unit:"deg", min:-360, max:360 },
-          { key:"scaleX",     label:"scaleX", unit:"", min:0, max:5, step:0.05 },
-          { key:"scaleY",     label:"scaleY", unit:"", min:0, max:5, step:0.05 },
-        ].map(f => (
+
+    const TRANSLATE_FIELDS = [
+      { key:"translateX", label:"X",       unit:"px",  min:-500, max:500,  step:1    },
+      { key:"translateY", label:"Y",       unit:"px",  min:-500, max:500,  step:1    },
+    ];
+    const ROTATE_FIELDS = [
+      { key:"rotate",  label:"rotate Z", unit:"deg", min:-360, max:360,  step:1    },
+      { key:"rotateX", label:"rotate X", unit:"deg", min:-360, max:360,  step:1    },
+      { key:"rotateY", label:"rotate Y", unit:"deg", min:-360, max:360,  step:1    },
+    ];
+    const SCALE_FIELDS = [
+      { key:"scaleX", label:"scale X", unit:"",    min:0,    max:5,    step:0.05 },
+      { key:"scaleY", label:"scale Y", unit:"",    min:0,    max:5,    step:0.05 },
+    ];
+    const SKEW_FIELDS = [
+      { key:"skewX", label:"skew X",  unit:"deg", min:-180, max:180,  step:1    },
+      { key:"skewY", label:"skew Y",  unit:"deg", min:-180, max:180,  step:1    },
+    ];
+
+    const renderGroup = (label, fields) => (
+      <div className="mc-transform-group">
+        <div className="mc-transform-group-label">{label}</div>
+        {fields.map(f => (
           <div key={f.key} className="mc-transform-row">
             <span className="mc-transform-label">{f.label}</span>
             <input type="range" className="mc-range" style={{flex:1}}
-              min={f.min} max={f.max} step={f.step || 1}
+              min={f.min} max={f.max} step={f.step}
               value={parseFloat(parts[f.key]) || 0}
               onChange={e => update(f.key, e.target.value + f.unit)} />
-            <span className="mc-field-val" style={{minWidth:40, textAlign:"right"}}>
+            <span className="mc-field-val" style={{minWidth:44, textAlign:"right"}}>
               {parseFloat(parts[f.key]) || 0}{f.unit}
             </span>
           </div>
         ))}
+      </div>
+    );
+    return (
+      <div className="mc-transform-grid">
+        {renderGroup("translate", TRANSLATE_FIELDS)}
+        {renderGroup("rotate", ROTATE_FIELDS)}
+        {renderGroup("scale", SCALE_FIELDS)}
+        {renderGroup("skew", SKEW_FIELDS)}
       </div>
     );
   }
@@ -534,6 +588,116 @@ function PropValueEditor({ property, value, onChange }) {
   );
 }
 
+// ── EASING SELECTOR ──────────────────────────────────────────────────────────
+// Smart easing picker: shows cubic-bezier 4-point input or steps config
+// when the user picks those options. Wraps the plain <Select> for all others.
+function EasingSelector({ value, onChange }) {
+  // Determine which mode we are in
+  const isCustomCubic = value && value.startsWith("cubic-bezier") &&
+    !EASINGS.some(e => e.value === value && e.value !== "__cubic_custom__");
+  const isCustomSteps = value && value.startsWith("steps") &&
+    value !== "steps(4,end)";
+  const isPreset = !isCustomCubic && !isCustomSteps;
+
+  // Dropdown value — map back to sentinel if custom
+  const dropdownVal = isCustomCubic ? "__cubic_custom__"
+    : isCustomSteps ? "__steps_custom__"
+    : value;
+
+  // Parse cubic-bezier points from current value
+  const parseCBParts = (v) => {
+    const m = v && v.match(/cubic-bezier\(([\d.-]+),([\d.-]+),([\d.-]+),([\d.-]+)\)/);
+    return m ? [m[1], m[2], m[3], m[4]] : ["0.25","0.1","0.25","1"];
+  };
+  const [cbParts, setCbParts] = React.useState(() => parseCBParts(value));
+
+  // Parse steps from current value
+  const parseStepsParts = (v) => {
+    const m = v && v.match(/steps\((\d+),(\w+)\)/);
+    return m ? { count: m[1], dir: m[2] } : { count: "4", dir: "end" };
+  };
+  const [stepsParts, setStepsParts] = React.useState(() => parseStepsParts(value));
+
+  const handleDropdown = (v) => {
+    if (v === "__cubic_custom__") {
+      onChange("cubic-bezier(" + cbParts.join(",") + ")");
+    } else if (v === "__steps_custom__") {
+      onChange("steps(" + stepsParts.count + "," + stepsParts.dir + ")");
+    } else {
+      onChange(v);
+    }
+  };
+
+  const updateCb = (idx, val) => {
+    const next = [...cbParts];
+    next[idx] = val;
+    setCbParts(next);
+    onChange("cubic-bezier(" + next.join(",") + ")");
+  };
+
+  const updateSteps = (k, v) => {
+    const next = { ...stepsParts, [k]: v };
+    setStepsParts(next);
+    onChange("steps(" + next.count + "," + next.dir + ")");
+  };
+
+  return (
+    <div>
+      <select className="mc-select" value={dropdownVal} onChange={e => handleDropdown(e.target.value)}>
+        {EASINGS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+
+      {(isCustomCubic || dropdownVal === "__cubic_custom__") && (
+        <div className="mc-cb-editor">
+          <div className="mc-cb-title">cubic-bezier(x1, y1, x2, y2)</div>
+          <div className="mc-cb-grid">
+            {["x1","y1","x2","y2"].map((lbl, i) => (
+              <div key={lbl} className="mc-cb-field">
+                <label className="mc-cb-label">{lbl}</label>
+                <input type="number" className="mc-text-input mc-cb-input"
+                  min={-2} max={2} step={0.01}
+                  value={cbParts[i]}
+                  onChange={e => updateCb(i, e.target.value)} />
+                <input type="range" className="mc-range"
+                  min={-2} max={2} step={0.01}
+                  value={parseFloat(cbParts[i]) || 0}
+                  onChange={e => updateCb(i, e.target.value)} />
+              </div>
+            ))}
+          </div>
+          <div className="mc-cb-preview">
+            <EasingCurve easing={"cubic-bezier(" + cbParts.join(",") + ")"} />
+            <div className="mc-cb-value">cubic-bezier({cbParts.join(", ")})</div>
+          </div>
+        </div>
+      )}
+
+      {(isCustomSteps || dropdownVal === "__steps_custom__") && (
+        <div className="mc-cb-editor">
+          <div className="mc-cb-title">steps(count, direction)</div>
+          <div className="mc-steps-grid">
+            <div className="mc-cb-field">
+              <label className="mc-cb-label">count</label>
+              <input type="number" className="mc-text-input mc-cb-input"
+                min={1} max={20} step={1}
+                value={stepsParts.count}
+                onChange={e => updateSteps("count", e.target.value)} />
+            </div>
+            <div className="mc-cb-field">
+              <label className="mc-cb-label">direction</label>
+              <select className="mc-select" value={stepsParts.dir}
+                onChange={e => updateSteps("dir", e.target.value)}>
+                {["start","end","none","both"].map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="mc-cb-value">steps({stepsParts.count}, {stepsParts.dir})</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── SINGLE TRANSITION RULE EDITOR ─────────────────────────────────────────────
 // Trigger options for the transition — what CSS state causes the change
 const TRIGGERS = [
@@ -548,7 +712,9 @@ const TRIGGERS = [
 ];
 
 function TransitionRuleEditor({ rule, uniqueSelectors, onUpdate, onRemove, onCopy }) {
-  const [open, setOpen] = useState(true);
+  // open state lives in the rule object so it survives navigation away and back
+  const open    = rule.open !== false;  // default open
+  const setOpen = (val) => onUpdate({ ...rule, open: typeof val === "function" ? val(open) : val });
   const RULE_DEFAULTS = { property:"opacity", duration:300, easing:"ease", delay:0,
     baseValue:"", targetValue:"", trigger:":hover", customTrigger:"" };
 
@@ -562,15 +728,34 @@ function TransitionRuleEditor({ rule, uniqueSelectors, onUpdate, onRemove, onCop
 
   const summary = `${rule.selector || "?"} · ${rule.property || "?"} · ${trigger}`;
 
+  const isDisabled = !!rule.disabled;
+  const isLocked   = !!rule.locked;
+
   return (
-    <div className="mc-anim-card" style={{marginBottom:10}}>
+    <div className={"mc-anim-card" + (isDisabled ? " mc-rule-disabled" : "") + (isLocked ? " mc-rule-locked" : "")} style={{marginBottom:10}}>
       {/* ── Header with minimize toggle ── */}
       <div className="mc-anim-card-hd" onClick={() => setOpen(o => !o)} style={{cursor:"pointer"}}>
         <span className="mc-anim-arrow">{open ? "▼" : "▶"}</span>
-        <span className="mc-anim-name">{summary}</span>
+        <span className="mc-anim-name" style={{opacity: isDisabled ? 0.4 : 1}}>{summary}</span>
+        {/* disable toggle */}
+        <button className={"mc-rule-icon-btn" + (isDisabled ? " is-on" : "")}
+          title={isDisabled ? "Enable rule" : "Disable rule"}
+          onClick={e => { e.stopPropagation(); set({ disabled: !isDisabled }); }}>
+          {isDisabled ? "○" : "●"}
+        </button>
+        {/* lock toggle */}
+        <button className={"mc-rule-icon-btn" + (isLocked ? " is-locked" : "")}
+          title={isLocked ? "Unlock rule" : "Lock rule (prevents deletion)"}
+          onClick={e => { e.stopPropagation(); set({ locked: !isLocked }); }}>
+          {isLocked ? "🔒" : "🔓"}
+        </button>
+        {/* copy */}
         <button className="mc-rule-copy-btn" title="Copy rule"
           onClick={e => { e.stopPropagation(); onCopy(rule); }}>⧉</button>
-        <button className="mc-anim-del" onClick={e => { e.stopPropagation(); onRemove(); }}>✕</button>
+        {/* delete — blocked when locked */}
+        <button className="mc-anim-del" title={isLocked ? "Unlock first to delete" : "Delete rule"}
+          style={{opacity: isLocked ? 0.3 : 1, cursor: isLocked ? "not-allowed" : "pointer"}}
+          onClick={e => { e.stopPropagation(); if (!isLocked) onRemove(); }}>✕</button>
       </div>
 
       {open && (
@@ -645,10 +830,7 @@ function TransitionRuleEditor({ rule, uniqueSelectors, onUpdate, onRemove, onCop
               <button className="mc-reset-btn" onClick={() => reset("easing")}>↺</button>
             </span>
           }>
-            <select className="mc-select" value={rule.easing}
-              onChange={e => set({ easing: e.target.value })}>
-              {EASINGS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            <EasingSelector value={rule.easing} onChange={v => set({ easing: v })} />
           </FieldLabel>
 
           <div className="mc-field">
@@ -769,17 +951,13 @@ function TransitionsPanel({ selected, transitions, onChange, elements, clipboard
 
 // ── EASING CURVE PREVIEW ─────────────────────────────────────────────────────
 function EasingCurve({ easing }) {
-  // Parse cubic-bezier or draw preset shapes
-  const curves = {
-    "linear":       [[0,0],[0.33,0.33],[0.66,0.66],[1,1]],
-    "ease":         [[0,0],[0.25,0.1],[0.25,1],[1,1]],
-    "ease-in":      [[0,0],[0.42,0],[1,1],[1,1]],
-    "ease-out":     [[0,0],[0,0],[0.58,1],[1,1]],
-    "ease-in-out":  [[0,0],[0.42,0],[0.58,1],[1,1]],
-    "cubic-bezier(0.34,1.56,0.64,1)": [[0,0],[0.34,1.56],[0.64,1],[1,1]],
-    "cubic-bezier(0.87,0,0.13,1)":    [[0,0],[0.87,0],[0.13,1],[1,1]],
+  // Parse custom cubic-bezier string into control points, fallback to presets
+  const parseCubic = (str) => {
+    const m = str && str.match(/cubic-bezier\(([\d.-]+),([\d.-]+),([\d.-]+),([\d.-]+)\)/);
+    if (m) return [[0,0],[parseFloat(m[1]),parseFloat(m[2])],[parseFloat(m[3]),parseFloat(m[4])],[1,1]];
+    return null;
   };
-  const pts = curves[easing] || curves["ease"];
+  const pts = parseCubic(easing) || EASING_CURVES[easing] || EASING_CURVES["ease"];
   const W = 80, H = 80, PAD = 8;
   const x = t => PAD + t * (W - PAD*2);
   const y = t => H - PAD - t * (H - PAD*2);
@@ -799,7 +977,7 @@ function EasingCurve({ easing }) {
 }
 
 // ── KEYFRAMES PANEL ──────────────────────────────────────────────────────────
-function KeyframesPanel({ selected, keyframeAnims, onAdd, onUpdate, onRemove, elements }) {
+function KeyframesPanel({ selected, keyframeAnims, onAdd, onUpdate, onRemove, elements, kfClipboard, setKfClipboard }) {
   const myAnims = Object.values(keyframeAnims).filter(a => a.elementUid === (selected && selected.uid));
 
   const addAnim = () => {
@@ -809,10 +987,31 @@ function KeyframesPanel({ selected, keyframeAnims, onAdd, onUpdate, onRemove, el
       id, name, elementUid: selected.uid,
       selector: selected.className ? `.${selected.className.trim().split(/\s+/)[0]}` : selected.tag,
       duration: 600, easing: "ease-in-out", iterationCount: 1, fillMode: "both",
+      disabled: false, locked: false,
       stops: [
         { offset: 0,   props: { opacity: "0", transform: "translateY(10px)" } },
         { offset: 100, props: { opacity: "1", transform: "translateY(0)" } },
       ],
+    });
+  };
+
+  const copyAnim = (anim) => {
+    const { id, ...rest } = anim;
+    setKfClipboard(rest);
+  };
+
+  const pasteAnim = () => {
+    if (!kfClipboard) return;
+    const newId = uid();
+    const autoSel = selected.className
+      ? `.${selected.className.trim().split(/\s+/)[0]}`
+      : selected.tag;
+    onAdd(newId, {
+      ...kfClipboard,
+      id: newId,
+      name: `${kfClipboard.name}-copy`,
+      elementUid: selected.uid,
+      selector: autoSel,
     });
   };
 
@@ -823,22 +1022,35 @@ function KeyframesPanel({ selected, keyframeAnims, onAdd, onUpdate, onRemove, el
       <div className="mc-panel-intro">
         Keyframes on <code className="mc-code-inline">{selected.label}</code>
       </div>
-      <button className="mc-add-btn" onClick={addAnim}>+ Add animation</button>
+      <div className="mc-trans-actions">
+        <button className="mc-add-btn mc-add-btn-inline" onClick={addAnim}>+ Add animation</button>
+        {kfClipboard && (
+          <button className="mc-paste-btn" onClick={pasteAnim}
+            title={`Paste: ${kfClipboard.name}`}>
+            ⧉ Paste · <span className="mc-paste-hint">{kfClipboard.name}</span>
+          </button>
+        )}
+      </div>
 
       {myAnims.map(anim => (
-        <KeyframeEditor key={anim.id} anim={anim} onUpdate={onUpdate} onRemove={onRemove} animElements={elements} />
+        <KeyframeEditor key={anim.id} anim={anim} onUpdate={onUpdate} onRemove={onRemove}
+          animElements={elements} onCopy={copyAnim} />
       ))}
 
       {myAnims.length === 0 && (
-        <div className="mc-hint">No animations yet. Click "Add animation" to start.</div>
+        <div className="mc-hint">No animations yet. Click "+ Add animation" to start.</div>
       )}
     </div>
   );
 }
 
-function KeyframeEditor({ anim, onUpdate, onRemove, animElements }) {
-  const [open, setOpen] = useState(true);
+function KeyframeEditor({ anim, onUpdate, onRemove, animElements, onCopy }) {
+  // open state lives in the anim object so it survives navigation away and back
+  const open    = anim.open !== false;  // default open
+  const setOpen = (val) => onUpdate(anim.id, { ...anim, open: typeof val === "function" ? val(open) : val });
   const set = patch => onUpdate(anim.id, { ...anim, ...patch });
+  const isDisabled = !!anim.disabled;
+  const isLocked   = !!anim.locked;
   const setStop = (idx, patch) => {
     const stops = anim.stops.map((s, i) => i === idx ? { ...s, ...patch } : s);
     set({ stops });
@@ -868,11 +1080,27 @@ function KeyframeEditor({ anim, onUpdate, onRemove, animElements }) {
   };
 
   return (
-    <div className="mc-anim-card">
+    <div className={"mc-anim-card" + (isDisabled ? " mc-rule-disabled" : "") + (isLocked ? " mc-rule-locked" : "")}>
       <div className="mc-anim-card-hd" onClick={() => setOpen(o => !o)}>
         <span className="mc-anim-arrow">{open ? "▼" : "▶"}</span>
-        <span className="mc-anim-name">{anim.name}</span>
-        <button className="mc-anim-del" onClick={e => { e.stopPropagation(); onRemove(anim.id); }}>✕</button>
+        <span className="mc-anim-name" style={{opacity: isDisabled ? 0.4 : 1}}>{anim.name}</span>
+        <button className={"mc-rule-icon-btn" + (isDisabled ? " is-on" : "")}
+          title={isDisabled ? "Enable" : "Disable"}
+          onClick={e => { e.stopPropagation(); set({ disabled: !isDisabled }); }}>
+          {isDisabled ? "○" : "●"}
+        </button>
+        <button className={"mc-rule-icon-btn" + (isLocked ? " is-locked" : "")}
+          title={isLocked ? "Unlock" : "Lock (prevents deletion)"}
+          onClick={e => { e.stopPropagation(); set({ locked: !isLocked }); }}>
+          {isLocked ? "🔒" : "🔓"}
+        </button>
+        {onCopy && (
+          <button className="mc-rule-copy-btn" title="Copy animation"
+            onClick={e => { e.stopPropagation(); onCopy(anim); }}>⧉</button>
+        )}
+        <button className="mc-anim-del" title={isLocked ? "Unlock first to delete" : "Delete"}
+          style={{opacity: isLocked ? 0.3 : 1, cursor: isLocked ? "not-allowed" : "pointer"}}
+          onClick={e => { e.stopPropagation(); if (!isLocked) onRemove(anim.id); }}>✕</button>
       </div>
       {open && (
         <div className="mc-anim-body">
@@ -889,7 +1117,7 @@ function KeyframeEditor({ anim, onUpdate, onRemove, animElements }) {
           <Slider label="duration" value={anim.duration} min={100} max={5000} step={100} suffix="ms"
             onChange={v => set({ duration: v })} />
 
-          <Select label="easing" value={anim.easing} options={EASINGS} onChange={v => set({ easing: v })} />
+          <FieldLabel label="easing"><EasingSelector value={anim.easing} onChange={v => set({ easing: v })} /></FieldLabel>
 
           <FieldLabel label="iterations">
             <div style={{ display:"flex", gap:6 }}>
@@ -906,8 +1134,21 @@ function KeyframeEditor({ anim, onUpdate, onRemove, animElements }) {
             </div>
           </FieldLabel>
 
+          <Select label="direction" value={anim.direction || "normal"}
+            options={[
+              {value:"normal",           label:"normal"},
+              {value:"reverse",          label:"reverse"},
+              {value:"alternate",        label:"alternate"},
+              {value:"alternate-reverse",label:"alternate-reverse"},
+            ]}
+            onChange={v => set({ direction: v })} />
+
           <Select label="fill mode" value={anim.fillMode} options={["none","forwards","backwards","both"]}
             onChange={v => set({ fillMode: v })} />
+
+          <Select label="play state" value={anim.playState || "running"}
+            options={[{value:"running",label:"running"},{value:"paused",label:"paused"}]}
+            onChange={v => set({ playState: v })} />
 
           <div className="mc-stops-head">
             <span>stops</span>
@@ -1022,10 +1263,13 @@ function SvgPanel({ selected, svgAttrs, onChange }) {
 
 // ── PREVIEW CANVAS ────────────────────────────────────────────────────────────
 function PreviewCanvas({ htmlStr, cssStr, augmentedCss, playing, iframeRef, canvasBg, canvasOpacity }) {
-  const doc = useMemo(() => {
+
+  // ── Structural doc: HTML + base CSS + injected script ──────────────────────
+  // This is the FULL document. Only changes when the HTML structure, base CSS,
+  // background, or opacity change — NOT when augmentedCss changes.
+  // Rebuilding this reloads the iframe; we avoid that for CSS-only edits.
+  const structuralDoc = useMemo(() => {
     if (!htmlStr) return "";
-    // Injected script: handles incoming mc-select highlights AND fires
-    // mc-click back to parent when user clicks an element in the preview.
     const highlightScript = `<script>
 (function() {
   function applyHighlight(cls) {
@@ -1035,14 +1279,25 @@ function PreviewCanvas({ htmlStr, cssStr, augmentedCss, playing, iframeRef, canv
     var el = document.querySelector('.' + cls);
     if (el) { el.setAttribute('data-mc-selected','1'); el.style.outline='2px solid #e8b04b'; el.style.outlineOffset='2px'; }
   }
-  // Listen for selection from parent
+  var _paused = false;
+  function setPauseAll(p) {
+    _paused = p;
+    var style = document.getElementById('mc-pause-style');
+    if (!style) { style = document.createElement('style'); style.id = 'mc-pause-style'; document.head.appendChild(style); }
+    style.textContent = p ? '* { animation-play-state: paused !important; }' : '';
+  }
   window.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'mc-select') applyHighlight(e.data.className);
+    if (e.data && e.data.type === 'mc-playpause') setPauseAll(!_paused);
+    // Live CSS patch — update the MotionCraft additions <style> tag without reloading
+    if (e.data && e.data.type === 'mc-css') {
+      var s = document.getElementById('mc-additions-style');
+      if (!s) { s = document.createElement('style'); s.id = 'mc-additions-style'; document.head.appendChild(s); }
+      s.textContent = e.data.css || '';
+    }
   });
-  // Fire click events back to parent so clicking in preview selects in tree
   document.addEventListener('click', function(e) {
     var el = e.target;
-    // Walk up to find an element with a class that looks like a FlexCraft node
     while (el && el !== document.body) {
       if (el.className && typeof el.className === 'string' && el.className.trim()) {
         window.parent.postMessage({ type: 'mc-click', className: el.className.trim() }, '*');
@@ -1055,19 +1310,57 @@ function PreviewCanvas({ htmlStr, cssStr, augmentedCss, playing, iframeRef, canv
 })();
 <\/script>`;
     var bgStyle = "background: " + (canvasBg || "transparent") + " !important; opacity: " + (canvasOpacity !== undefined ? canvasOpacity : 1) + ";";
-    return "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>\n<style>\n*, *::before, *::after { box-sizing: border-box; }\n" + (cssStr || "") + "\n" + (augmentedCss ? "/* ── MotionCraft additions ── */\n" + augmentedCss : "") + "\n/* ── MotionCraft preview overrides ── */\nhtml, body { margin: 0; padding: 16px; " + bgStyle + " }\n</style></head><body>" + htmlStr + highlightScript + "</body></html>";
-  }, [htmlStr, cssStr, augmentedCss, canvasBg, canvasOpacity]);
+    // augmentedCss is intentionally NOT inlined here — it gets injected live via postMessage.
+    // We include an empty <style id="mc-additions-style"> as the target slot.
+    return "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>\n<style>\n*, *::before, *::after { box-sizing: border-box; }\n" + (cssStr || "") + "\n/* ── MotionCraft preview overrides ── */\nhtml, body { margin: 0; padding: 16px; " + bgStyle + " }\n</style>\n<style id=\"mc-additions-style\"></style></head><body>" + htmlStr + highlightScript + "</body></html>";
+  }, [htmlStr, cssStr, canvasBg, canvasOpacity]); // ← augmentedCss deliberately excluded
 
+  // ── Load structural doc into iframe ────────────────────────────────────────
   useEffect(() => {
     if (!iframeRef.current) return;
-    iframeRef.current.srcdoc = doc;
-  }, [doc]);
+    iframeRef.current.srcdoc = structuralDoc;
+  }, [structuralDoc]);
 
+  // ── Replay: reload structural doc then re-inject CSS ───────────────────────
   useEffect(() => {
     if (!playing || !iframeRef.current) return;
     iframeRef.current.srcdoc = "";
-    requestAnimationFrame(() => { if (iframeRef.current) iframeRef.current.srcdoc = doc; });
+    requestAnimationFrame(() => { if (iframeRef.current) iframeRef.current.srcdoc = structuralDoc; });
   }, [playing]);
+
+  // ── After every iframe load: re-inject CSS + re-apply highlight ────────────
+  // Runs after both full reloads and replay. Hooks must all be before early return.
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    const onLoad = () => {
+      // Small delay so the injected script's message listener is registered
+      setTimeout(() => {
+        try {
+          // Re-inject the MotionCraft CSS additions
+          const css = iframe._mcAugmentedCss || "";
+          iframe.contentWindow.postMessage({ type: "mc-css", css }, "*");
+          // Re-apply selection highlight
+          const sel = iframe._mcSelectedClass || null;
+          if (sel) iframe.contentWindow.postMessage({ type: "mc-select", className: sel }, "*");
+        } catch(e) {}
+      }, 60);
+    };
+    iframe.addEventListener("load", onLoad);
+    return () => iframe.removeEventListener("load", onLoad);
+  }, [iframeRef]);
+
+  // ── Live CSS injection: patch additions without reloading ──────────────────
+  // When augmentedCss changes, push it straight into the iframe via postMessage.
+  // This is the key change — no srcdoc reset, no highlight loss.
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    iframe._mcAugmentedCss = augmentedCss; // store for post-reload re-injection
+    try {
+      iframe.contentWindow.postMessage({ type: "mc-css", css: augmentedCss || "" }, "*");
+    } catch(e) {}
+  }, [augmentedCss]);
 
   if (!htmlStr) return (
     <div className="mc-canvas-empty">
@@ -1191,6 +1484,118 @@ function CssCodeView({ cssText, selectedClass, onEdit, onLoadRules, motionMarker
   );
 }
 
+
+// ── HELP MODAL ────────────────────────────────────────────────────────────────
+const HELP_SECTIONS = [
+  {
+    title: "Transitions",
+    items: [
+      { term: "transition", def: "Smoothly animates a CSS property change from one value to another over time. Requires a trigger (like :hover) to fire." },
+      { term: "property",   def: "The CSS property to animate, e.g. opacity, transform, background-color. Use 'all' to animate every changing property at once." },
+      { term: "duration",   def: "How long the transition takes to complete, in milliseconds. 300ms feels snappy; 1000ms+ feels cinematic." },
+      { term: "easing",     def: "The speed curve of the animation. 'ease' starts slow, speeds up, slows down. 'linear' is constant. 'ease-in' accelerates into the change; 'ease-out' decelerates." },
+      { term: "delay",      def: "Wait time before the transition starts. Useful for staggering multiple animations." },
+      { term: "trigger",    def: "What causes the transition to fire. :hover = mouse over; :focus = keyboard focus; :active = click-held; class triggers = toggled by JavaScript." },
+      { term: "base value", def: "The property value in the normal (resting) state. The element starts here." },
+      { term: "target value", def: "The property value when the trigger is active. The element transitions to here." },
+    ]
+  },
+  {
+    title: "Keyframe Animations",
+    items: [
+      { term: "@keyframes", def: "A named sequence of CSS states at specific points in time (0% to 100%). The animation interpolates between them." },
+      { term: "stop / offset", def: "A point in the animation timeline (0–100%). Each stop defines what CSS properties look like at that moment." },
+      { term: "iteration count", def: "How many times the animation repeats. Use 'infinite' for a looping animation." },
+      { term: "direction",  def: "normal = plays forward. reverse = plays backward. alternate = ping-pong (forward then back). alternate-reverse = ping-pong starting backward." },
+      { term: "fill mode",  def: "What styles apply before/after the animation runs. 'forwards' holds the end state. 'backwards' applies the start state during delay. 'both' does both." },
+      { term: "play state", def: "running = animation plays. paused = animation freezes. Useful for hover-to-pause effects." },
+      { term: "delay",      def: "How long to wait before the animation starts. Multiple animations can be staggered using different delays." },
+    ]
+  },
+  {
+    title: "Transform",
+    items: [
+      { term: "translateX / Y", def: "Moves an element horizontally (X) or vertically (Y) without affecting page layout. Positive X = right; positive Y = down." },
+      { term: "rotate",    def: "Rotates an element clockwise around its center. Positive degrees = clockwise; negative = counter-clockwise." },
+      { term: "rotateX / Y", def: "3D rotation around the horizontal (X) or vertical (Y) axis. Creates a flip effect. Requires perspective on the parent to look 3D." },
+      { term: "scaleX / Y", def: "Resizes an element. 1 = original size. 2 = double. 0.5 = half. Negative values mirror/flip." },
+      { term: "skewX / Y",  def: "Tilts an element along an axis, creating a slant effect. skewX tilts left/right; skewY tilts up/down." },
+    ]
+  },
+  {
+    title: "Easing Functions",
+    items: [
+      { term: "linear",       def: "Constant speed from start to finish. Good for continuous loops and mechanical motion." },
+      { term: "ease",         def: "Default. Starts slow, speeds up, slows down at end. Most natural-feeling for UI." },
+      { term: "ease-in",      def: "Starts slow, accelerates. Good for elements leaving the screen (they build momentum)." },
+      { term: "ease-out",     def: "Starts fast, decelerates. Good for elements entering the screen (they come to a gentle stop)." },
+      { term: "ease-in-out",  def: "Slow start and end, fast middle. Ideal for balanced animations." },
+      { term: "cubic-bezier", def: "Custom speed curve defined by 4 control points (x1, y1, x2, y2). Use the custom editor to design your own. Values can exceed 0–1 to create overshoot (spring) effects." },
+      { term: "steps()",      def: "Jumps between states instantly without interpolation. steps(4, end) = 4 discrete jumps. Good for sprite animations and typewriter effects." },
+    ]
+  },
+  {
+    title: "SVG Attributes",
+    items: [
+      { term: "fill",             def: "The interior color of an SVG shape." },
+      { term: "stroke",           def: "The outline color of an SVG shape." },
+      { term: "stroke-width",     def: "Thickness of the outline." },
+      { term: "stroke-dasharray", def: "Makes the stroke dashed. A single value sets dash + gap length equally." },
+      { term: "stroke-dashoffset", def: "Shifts the start of the dash pattern. Animating from a large value to 0 creates a 'drawing itself' effect." },
+      { term: "opacity",          def: "Transparency of the entire SVG element (0 = invisible, 1 = fully visible)." },
+      { term: "r / rx / ry",      def: "Radius controls for circles and ellipses. r = circle radius; rx/ry = ellipse radii." },
+    ]
+  },
+  {
+    title: "Rule Controls",
+    items: [
+      { term: "● / ○ (enable/disable)", def: "Toggle a rule on or off without deleting it. Disabled rules are skipped in the CSS output but kept in the project." },
+      { term: "🔒 / 🔓 (lock/unlock)", def: "Lock a rule to prevent accidental deletion. Locked rules must be unlocked before they can be removed." },
+      { term: "⧉ (copy)",   def: "Copies the rule to a clipboard. Switch to a different element and click Paste to apply a clone there." },
+      { term: "Paste",       def: "Pastes the clipboard rule onto the currently selected element. The selector is automatically updated; all other settings carry over including disabled/locked state." },
+      { term: "Esc",         def: "Clears the clipboard (both transition rules and keyframe animations)." },
+      { term: "↩ / ↪ (undo/redo)", def: "Steps backward and forward through your edit history. Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z) also work." },
+    ]
+  },
+];
+
+function HelpModal({ onClose }) {
+  const [activeSection, setActiveSection] = React.useState(0);
+  return (
+    <div className="mc-help-overlay" onClick={onClose}>
+      <div className="mc-help-modal" onClick={e => e.stopPropagation()}>
+        <div className="mc-help-header">
+          <span className="mc-help-title">◈ FlexMotionCraft — Reference</span>
+          <button className="mc-help-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="mc-help-body">
+          <div className="mc-help-nav">
+            {HELP_SECTIONS.map((s, i) => (
+              <button key={i}
+                className={"mc-help-nav-btn" + (activeSection === i ? " is-active" : "")}
+                onClick={() => setActiveSection(i)}>
+                {s.title}
+              </button>
+            ))}
+          </div>
+          <div className="mc-help-content">
+            <div className="mc-help-section-title">{HELP_SECTIONS[activeSection].title}</div>
+            {HELP_SECTIONS[activeSection].items.map((item, i) => (
+              <div key={i} className="mc-help-item">
+                <code className="mc-help-term">{item.term}</code>
+                <p className="mc-help-def">{item.def}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mc-help-footer">
+          Click outside or ✕ to close · Use Esc to clear clipboard
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── MAIN APP ──────────────────────────────────────────────────────────────────
 function MotionCraft() {
   const [theme, setTheme]       = useState("dark");
@@ -1243,9 +1648,12 @@ function MotionCraft() {
   const [playing, setPlaying]   = useState(0);
   const [showImport, setShowImport] = useState(true);
   const [exported, setExported] = useState(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Rule clipboard for copy/paste across elements
   const [ruleClipboard, setRuleClipboard] = useState(null);
+  // Keyframe animation clipboard
+  const [kfClipboard, setKfClipboard] = useState(null);
 
   // Canvas background color and opacity controls
   const [canvasBg,      setCanvasBg]      = useState("transparent");
@@ -1380,15 +1788,19 @@ function MotionCraft() {
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
       if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); redo(); }
       if (e.key === "Escape" && ruleClipboard) { setRuleClipboard(null); }
+      if (e.key === "Escape" && kfClipboard) { setKfClipboard(null); }
+      if (e.key === "Escape") { setShowHelp(false); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [undo, redo, ruleClipboard]);
 
-  // Send selection highlight into iframe whenever selected element changes
+  // Send selection highlight into iframe whenever selected element changes.
+  // Also store the class on the iframe node so onLoad can re-apply it after replays.
   useEffect(() => {
     if (!iframeRef.current) return;
     const sel = selected ? selected.className.trim().split(/\s+/)[0] : null;
+    iframeRef.current._mcSelectedClass = sel;
     try {
       iframeRef.current.contentWindow.postMessage({ type: "mc-select", className: sel }, "*");
     } catch(e) {}
@@ -1443,12 +1855,16 @@ function MotionCraft() {
           <button className="mc-tool-btn" title="Export augmented CSS" onClick={exportFiles}
             style={exported ? { background:"var(--accent)", color:"var(--ink)" } : {}}
           >{exported ? "✓" : "⬇"}</button>
+          <button className="mc-tool-btn" title="Help / Reference" onClick={() => setShowHelp(true)}>?</button>
           <button className="mc-tool-btn" title="Toggle light/dark"
             onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
             {theme === "dark" ? "☀" : "☾"}
           </button>
         </div>
       </div>
+
+      {/* HELP MODAL */}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
       {/* IMPORT OVERLAY */}
       {showImport && (
@@ -1508,8 +1924,18 @@ function MotionCraft() {
               />
               <span className="mc-canvas-ctrl-val">{Math.round(canvasOpacity * 100)}%</span>
             </div>
-            <button className="mc-play-btn" onClick={() => setPlaying(p => p + 1)}
-              title="Replay animations">▶ Play</button>
+            <div style={{display:"flex",gap:6}}>
+              <button className="mc-play-btn" onClick={() => setPlaying(p => p + 1)}
+                title="Replay animations">▶ Play</button>
+              <button className="mc-play-btn mc-pause-btn"
+                title="Toggle pause all animations in preview"
+                onClick={() => {
+                  try {
+                    const iw = iframeRef.current && iframeRef.current.contentWindow;
+                    if (iw) iw.postMessage({ type: "mc-playpause" }, "*");
+                  } catch(e) {}
+                }}>⏸ Pause</button>
+            </div>
           </div>
           <div className="mc-canvas-wrap">
             <PreviewCanvas
@@ -1597,7 +2023,8 @@ function MotionCraft() {
             )}
             {rightTab === "keyframes" && (
               <KeyframesPanel selected={selected} keyframeAnims={keyframeAnims}
-                onAdd={addKeyframe} onUpdate={updateKeyframe} onRemove={removeKeyframe} elements={elements} />
+                onAdd={addKeyframe} onUpdate={updateKeyframe} onRemove={removeKeyframe} elements={elements}
+                kfClipboard={kfClipboard} setKfClipboard={setKfClipboard} />
             )}
             {rightTab === "svg" && (
               <SvgPanel selected={selected} svgAttrs={svgAttrs} onChange={setSvgAttr} />
@@ -1911,6 +2338,70 @@ const css = `
 
 .mc-tool-btn:disabled { opacity:0.3; cursor:default; pointer-events:none; }
 
+/* ── RULE STATES: disabled + locked ── */
+.mc-rule-disabled { opacity:0.6; }
+.mc-rule-disabled .mc-anim-card-hd { border-left:3px solid var(--mut); }
+.mc-rule-locked   .mc-anim-card-hd { border-left:3px solid var(--accent); }
+.mc-rule-icon-btn {
+  background:transparent; border:1px solid var(--line); color:var(--mut);
+  font-size:11px; padding:2px 5px; border-radius:3px; cursor:pointer; flex-shrink:0;
+  transition: color 100ms, border-color 100ms;
+}
+.mc-rule-icon-btn:hover { border-color:var(--accent); color:var(--accent); }
+.mc-rule-icon-btn.is-on { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+.mc-rule-icon-btn.is-locked { background:rgba(232,176,75,0.2); border-color:var(--accent); }
+
+/* ── HELP MODAL ── */
+.mc-help-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200;
+  display:flex; align-items:center; justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.mc-help-modal {
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  width:680px; max-width:92vw; max-height:82vh; display:flex; flex-direction:column;
+  overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.5);
+}
+.mc-help-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px; border-bottom:1px solid var(--line); flex-shrink:0;
+}
+.mc-help-title {
+  font-family:'Fraunces',Georgia,serif; font-size:16px; color:var(--txt);
+}
+.mc-help-close {
+  background:transparent; border:none; color:var(--mut); cursor:pointer;
+  font-size:16px; padding:4px 8px; border-radius:4px;
+}
+.mc-help-close:hover { color:var(--txt); }
+.mc-help-body { display:flex; flex:1; min-height:0; overflow:hidden; }
+.mc-help-nav {
+  width:160px; flex-shrink:0; border-right:1px solid var(--line);
+  display:flex; flex-direction:column; padding:8px 0; overflow-y:auto;
+}
+.mc-help-nav-btn {
+  text-align:left; background:transparent; border:none; color:var(--mut);
+  font-family:inherit; font-size:11px; padding:8px 16px; cursor:pointer;
+  border-right:2px solid transparent; transition: color 100ms, background 100ms;
+}
+.mc-help-nav-btn:hover { color:var(--txt); background:var(--node); }
+.mc-help-nav-btn.is-active { color:var(--accent); border-right-color:var(--accent); background:var(--accent-soft); }
+.mc-help-content { flex:1; overflow-y:auto; padding:16px 20px; }
+.mc-help-section-title {
+  font-family:'Fraunces',Georgia,serif; font-size:14px; color:var(--accent);
+  margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid var(--accent-soft);
+}
+.mc-help-item { margin-bottom:16px; }
+.mc-help-term {
+  display:inline-block; background:var(--accent-soft); color:var(--accent);
+  padding:2px 8px; border-radius:4px; font-size:11px; margin-bottom:5px;
+}
+.mc-help-def { font-size:11.5px; color:var(--mut); line-height:1.7; margin:0; }
+.mc-help-footer {
+  padding:10px 20px; border-top:1px solid var(--line); flex-shrink:0;
+  font-size:10px; color:var(--mut); text-align:center;
+}
+
 /* ── RULE COPY / PASTE ── */
 .mc-trans-actions { display:flex; gap:8px; align-items:center; margin-bottom:14px; }
 .mc-add-btn-inline {
@@ -1944,6 +2435,35 @@ const css = `
 .mc-state-arrow {
   font-size:16px; color:var(--accent); align-self:center; flex-shrink:0; padding-top:14px;
 }
+
+/* ── TRANSFORM GROUPS ── */
+.mc-transform-group { margin-bottom:10px; }
+.mc-transform-group-label {
+  font-size:9px; text-transform:uppercase; letter-spacing:1.5px;
+  color:var(--accent); margin-bottom:4px; padding-bottom:3px;
+  border-bottom:1px solid var(--accent-soft);
+}
+
+/* ── CUBIC-BEZIER / STEPS CUSTOM EDITOR ── */
+.mc-cb-editor {
+  background:var(--ink); border:1px solid var(--line); border-radius:6px;
+  padding:10px; margin-top:8px;
+}
+.mc-cb-title {
+  font-size:9.5px; color:var(--accent); text-transform:uppercase;
+  letter-spacing:1px; margin-bottom:8px;
+}
+.mc-cb-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+.mc-steps-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+.mc-cb-field { display:flex; flex-direction:column; gap:4px; }
+.mc-cb-label { font-size:10px; color:var(--mut); }
+.mc-cb-input { padding:4px 6px !important; }
+.mc-cb-preview { display:flex; align-items:center; gap:10px; }
+.mc-cb-value  { font-size:9.5px; color:var(--mut); font-family:inherit; }
+
+/* ── PAUSE BUTTON ── */
+.mc-pause-btn { background:var(--panel2) !important; color:var(--mut) !important; }
+.mc-pause-btn:hover { opacity:0.85; background:var(--track) !important; }
 
 /* ── PROP VALUE EDITOR ── */
 .mc-prop-value-row { display:flex; align-items:center; gap:8px; }

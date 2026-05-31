@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>FlexMotionCraft — animation & transition designer</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0d0f14; }
+  #root { height: 100%; }
+  #boot {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, monospace; color: #8b91a3; font-size: 13px; text-align: center;
+    padding: 24px; line-height: 1.6;
+  }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<div id="boot">Loading FlexMotionCraft&hellip;<br/><span style="font-size:11px">(needs internet on first load to fetch React from CDN)</span></div>
+
+<script type="text/babel" data-presets="react">
+document.getElementById('boot').remove();
+const { useState, useRef, useCallback, useMemo, useEffect, useReducer } = React;
+
+/* ============================================================================
+   FlexMotionCraft — animation, transition & SVG attribute designer
+   ----------------------------------------------------------------------------
+   Companion tool to FlexCraft. Takes FlexCraft's HTML + CSS output (or any
+   HTML + CSS pair) and layers transitions, keyframe animations, and SVG
+   attribute animation on top. Exports the original HTML unchanged + an
+   augmented CSS file.
+
+   Data model per element:
+     { id, tag, className, label, depth, svgAttrs:{} }
+   Animations stored separately:
+     transitions: { [elementId]: { property, duration, easing, delay } }
+     keyframes:   { [animId]: { name, elementId, stops:[{offset,props:{}}] } }
+   ============================================================================ */
+
+// ── EASING PRESETS ──────────────────────────────────────────────────────────
+const EASINGS = [
+  { value: "linear",                   label: "linear" },
+  { value: "ease",                     label: "ease" },
+  { value: "ease-in",                  label: "ease-in" },
+  { value: "ease-out",                 label: "ease-out" },
+  { value: "ease-in-out",              label: "ease-in-out" },
+  { value: "cubic-bezier(0.34,1.56,0.64,1)", label: "spring" },
+  { value: "cubic-bezier(0.87,0,0.13,1)",    label: "sharp" },
+  { value: "steps(4,end)",             label: "steps(4)" },
+];
+
+// ── PROPERTY DEFINITIONS ─────────────────────────────────────────────────────
+// Each property has a type that determines what sub-controls appear.
+// Types: color | opacity | px | transform | shadow | filter | text
+const PROP_DEFS = {
+  "opacity":          { type:"opacity",   default:"1" },
+  "transform":        { type:"transform", default:"none" },
+  "background-color": { type:"color",     default:"#ffffff" },
+  "color":            { type:"color",     default:"#000000" },
+  "border-color":     { type:"color",     default:"#000000" },
+  "width":            { type:"px",        default:"100",  min:0,   max:2000 },
+  "height":           { type:"px",        default:"100",  min:0,   max:2000 },
+  "padding":          { type:"px",        default:"0",    min:0,   max:200  },
+  "margin":           { type:"px",        default:"0",    min:-200,max:200  },
+  "border-radius":    { type:"px",        default:"0",    min:0,   max:200  },
+  "box-shadow":       { type:"shadow",    default:"0px 0px 0px 0px #000000" },
+  "font-size":        { type:"px",        default:"16",   min:1,   max:200  },
+  "letter-spacing":   { type:"px",        default:"0",    min:-10, max:50   },
+  "filter":           { type:"filter",    default:"none" },
+};
+const ANIMATABLE_PROPS = Object.keys(PROP_DEFS);
+
+const SVG_ANIMATABLE = [
+  "fill","stroke","stroke-width","stroke-dasharray","stroke-dashoffset",
+  "opacity","r","cx","cy","x","y","width","height","rx","ry",
+];
+
+// ── HTML PARSER ─────────────────────────────────────────────────────────────
+
+// Detect whether a file is a combined HTML document (has <style> in <head>)
+// vs bare markup. Returns { isCombined, bodyHtml, extractedCss }.
+function splitCombinedHtml(rawStr) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(rawStr, "text/html");
+
+  // Collect all <style> blocks from <head>
+  const styleEls = Array.from(doc.head.querySelectorAll("style"));
+  const extractedCss = styleEls.map(s => s.textContent).join("\n").trim();
+  const isCombined = styleEls.length > 0;
+
+  // Body inner HTML is the markup we animate
+  const bodyHtml = doc.body.innerHTML.trim();
+
+  return { isCombined, bodyHtml, extractedCss };
+}
+
+function parseHtmlElements(bodyHtml) {
+  const parser = new DOMParser();
+  // Wrap bare markup in a full doc so DOMParser is happy
+  const doc = parser.parseFromString(`<html><body>${bodyHtml}</body></html>`, "text/html");
+  const elements = [];
+  let seq = 0;
+
+  function walk(node, depth) {
+    if (node.nodeType !== 1) return; // elements only
+    const tag = node.tagName.toLowerCase();
+    if (["html","head","body","script","style","meta","link","title"].includes(tag)) {
+      Array.from(node.children).forEach(c => walk(c, depth));
+      return;
+    }
+    const className = node.className || "";
+    const id = node.id || "";
+    const label = id
+      ? `#${id}`
+      : className
+        ? `.${className.trim().split(/\s+/)[0]}`
+        : tag;
+
+    elements.push({
+      uid: `el-${seq++}`,
+      tag,
+      className,
+      elId: id,
+      label,
+      depth,
+      isSvg: tag === "svg" || (node.namespaceURI && node.namespaceURI.includes("svg")),
+      isSvgChild: !!(node.closest && node.closest("svg")),
+    });
+    Array.from(node.children).forEach(c => walk(c, depth + 1));
+  }
+
+  const body = doc.body;
+  Array.from(body.children).forEach(c => walk(c, 0));
+  return elements;
+}
+
+// ── CSS PARSER ───────────────────────────────────────────────────────────────
+function parseCssRules(cssStr) {
+  // Returns array of { selector, declarations }
+  const clean = cssStr.replace(/\/\*[\s\S]*?\*\//g, "");
+  const rules = [];
+  const re = /([^{]+)\{([^}]*)\}/g;
+  let m;
+  while ((m = re.exec(clean)) !== null) {
+    const selector = m[1].trim();
+    if (selector.startsWith("@")) continue; // skip @keyframes etc for now
+    rules.push({ selector, declarations: m[2].trim() });
+  }
+  return rules;
+}
+
+// ── CSS EXPORT ───────────────────────────────────────────────────────────────
+function buildAugmentedCss(originalCss, transitions, keyframeAnims) {
+  let out = originalCss.trimEnd() + "\n\n/* ── MotionCraft additions ── */\n";
+
+  // Group transition rules by selector.
+  // Each rule: { selector, property, baseValue, targetValue, trigger, duration, easing, delay }
+  const transBySel    = {}; // selector → [transition shorthand strings]
+  const baseBySel     = {}; // selector → { prop: baseValue }
+  const targetBySel   = {}; // triggerSelector → { prop: targetValue }
+
+  for (const rules of Object.values(transitions)) {
+    const ruleArr = Array.isArray(rules) ? rules : (rules ? [rules] : []);
+    for (const t of ruleArr) {
+      if (!t.property) continue;
+      const sel = t.selector && t.selector.trim() ? t.selector.trim() : null;
+      if (!sel) continue;
+
+      // transition declaration on the base selector
+      if (!transBySel[sel]) transBySel[sel] = [];
+      const tVal = t.property + " " + (t.duration||300) + "ms " + (t.easing||"ease")
+        + (t.delay ? " " + t.delay + "ms" : "");
+      transBySel[sel].push(tVal);
+
+      // base value on plain selector
+      const baseV = t.baseValue || t.value || "";
+      const propDefault = PROP_DEFS[t.property]?.default ?? "";
+      if (baseV && baseV !== "" && baseV !== propDefault) {
+        if (!baseBySel[sel]) baseBySel[sel] = {};
+        baseBySel[sel][t.property] = baseV;
+      }
+
+      // target value on trigger selector
+      const targetV = t.targetValue || "";
+      if (targetV && targetV !== "" && targetV !== propDefault) {
+        const trigger = t.trigger === " custom"
+          ? (t.customTrigger || ":hover") : (t.trigger || ":hover");
+        // Trigger is either a pseudo-class (:hover) or a sibling class (.is-open)
+        const triggerSel = trigger.startsWith(".")
+          ? sel + trigger        // .div-n3.is-open
+          : sel + trigger;       // .div-n3:hover
+        if (!targetBySel[triggerSel]) targetBySel[triggerSel] = {};
+        targetBySel[triggerSel][t.property] = targetV;
+      }
+    }
+  }
+
+  // Emit transition declarations
+  for (const [sel, vals] of Object.entries(transBySel)) {
+    out += "\n" + sel + " {\n  transition: " + vals.join(", ") + ";\n}\n";
+  }
+  // Emit base state values
+  for (const [sel, props] of Object.entries(baseBySel)) {
+    if (!Object.keys(props).length) continue;
+    out += "\n" + sel + " {\n";
+    for (const [p, v] of Object.entries(props)) out += "  " + p + ": " + v + ";\n";
+    out += "}\n";
+  }
+  // Emit trigger state values
+  for (const [trigSel, props] of Object.entries(targetBySel)) {
+    if (!Object.keys(props).length) continue;
+    out += "\n" + trigSel + " {\n";
+    for (const [p, v] of Object.entries(props)) out += "  " + p + ": " + v + ";\n";
+    out += "}\n";
+  }
+
+  // Keyframe animations
+  for (const anim of Object.values(keyframeAnims)) {
+    if (!anim.name || anim.stops.length < 2) continue;
+    out += `\n@keyframes ${anim.name} {\n`;
+    for (const stop of anim.stops) {
+      out += `  ${stop.offset}% {\n`;
+      for (const [prop, val] of Object.entries(stop.props)) {
+        if (val) out += `    ${prop}: ${val};\n`;
+      }
+      out += `  }\n`;
+    }
+    out += `}\n`;
+    if (anim.selector) {
+      out += `${anim.selector} {\n  animation: ${anim.name} ${anim.duration}ms ${anim.easing} ${anim.iterationCount || 1} ${anim.fillMode || "both"};\n}\n`;
+    }
+  }
+
+  return out;
+}
+
+// ── UID ──────────────────────────────────────────────────────────────────────
+let _seq = 1;
+const uid = () => `mc${_seq++}`;
+
+// ── CONTROL PRIMITIVES ───────────────────────────────────────────────────────
+function FieldLabel({ label, children }) {
+  return (
+    <div className="mc-field">
+      <div className="mc-field-label">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function Seg({ value, options, onChange }) {
+  return (
+    <div className="mc-segmented">
+      {options.map(o => {
+        const v = typeof o === "string" ? o : o.value;
+        const l = typeof o === "string" ? o : o.label;
+        return (
+          <button key={v}
+            className={"mc-seg-btn" + (value === v ? " is-active" : "")}
+            onClick={() => onChange(v)}
+          >{l}</button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Slider that uses input[range] but does NOT jump on mousedown —
+// value only commits on change (drag), not on the initial click.
+function Slider({ label, value, min, max, step = 1, suffix = "", onChange }) {
+  const [dragging, setDragging] = useState(false);
+  const [local, setLocal] = useState(value);
+
+  useEffect(() => { if (!dragging) setLocal(value); }, [value, dragging]);
+
+  return (
+    <FieldLabel label={<>{label} <span className="mc-field-val">{local}{suffix}</span></>}>
+      <input type="range" className="mc-range"
+        min={min} max={max} step={step}
+        value={local}
+        onMouseDown={() => setDragging(true)}
+        onChange={e => { setLocal(Number(e.target.value)); }}
+        onMouseUp={e => { setDragging(false); onChange(Number(e.target.value)); }}
+        onTouchEnd={e => { setDragging(false); onChange(Number(local)); }}
+      />
+    </FieldLabel>
+  );
+}
+
+function Select({ label, value, options, onChange }) {
+  return (
+    <FieldLabel label={label}>
+      <select className="mc-select" value={value} onChange={e => onChange(e.target.value)}>
+        {options.map(o => {
+          const v = typeof o === "string" ? o : o.value;
+          const l = typeof o === "string" ? o : o.label;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </FieldLabel>
+  );
+}
+
+function TextInput({ label, value, onChange, placeholder }) {
+  return (
+    <FieldLabel label={label}>
+      <input className="mc-text-input" type="text"
+        value={value} placeholder={placeholder || ""}
+        onChange={e => onChange(e.target.value)}
+      />
+    </FieldLabel>
+  );
+}
+
+function CollapsibleSection({ title, id, collapsed, onToggle, children, first }) {
+  const isCollapsed = collapsed.has(id);
+  return (
+    <div className={"mc-section" + (first ? " mc-section-first" : "")}>
+      <button className="mc-section-hd" onClick={() => onToggle(id)}>
+        <span className="mc-section-arrow">{isCollapsed ? "▶" : "▼"}</span>
+        {title}
+      </button>
+      {!isCollapsed && <div className="mc-section-body">{children}</div>}
+    </div>
+  );
+}
+
+// ── ELEMENT TREE ─────────────────────────────────────────────────────────────
+function ElementTree({ elements, selectedUid, onSelect }) {
+  if (!elements.length) return (
+    <div className="mc-empty">
+      <div className="mc-empty-icon">⬆</div>
+      <p>Import HTML + CSS files<br/>to begin</p>
+    </div>
+  );
+  return (
+    <div className="mc-tree">
+      {elements.map(el => (
+        <button key={el.uid}
+          className={"mc-tree-row" + (selectedUid === el.uid ? " is-active" : "")}
+          style={{ paddingLeft: 10 + el.depth * 14 }}
+          onClick={() => onSelect(el.uid)}
+        >
+          <span className="mc-tree-icon">
+            {el.isSvg ? "◈" : el.isSvgChild ? "◇" : el.tag === "div" ? "▦" : "▢"}
+          </span>
+          <span className="mc-tree-tag">{el.tag}</span>
+          <span className="mc-tree-label">{el.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── PROPERTY VALUE EDITOR ────────────────────────────────────────────────────
+// Shows property-appropriate sub-controls based on PROP_DEFS type.
+function PropValueEditor({ property, value, onChange }) {
+  const def = PROP_DEFS[property] || { type:"text", default:"" };
+
+  if (def.type === "color") {
+    const hex = value && value.match(/^#[0-9a-fA-F]{3,6}$/) ? value : def.default;
+    return (
+      <div className="mc-prop-value-row">
+        <input type="color" className="mc-canvas-color" value={hex}
+          onChange={e => onChange(e.target.value)} />
+        <input className="mc-text-input" style={{flex:1}} value={value}
+          onChange={e => onChange(e.target.value)} placeholder={def.default} />
+      </div>
+    );
+  }
+
+  if (def.type === "opacity") {
+    const num = parseFloat(value) || 1;
+    return (
+      <div>
+        <div className="mc-prop-value-row">
+          <span className="mc-field-val" style={{minWidth:30}}>{num}</span>
+          <input type="range" className="mc-range" style={{flex:1}}
+            min={0} max={1} step={0.05} value={num}
+            onChange={e => onChange(e.target.value)} />
+        </div>
+      </div>
+    );
+  }
+
+  if (def.type === "px") {
+    const num = parseInt(value) || parseInt(def.default) || 0;
+    return (
+      <div>
+        <div className="mc-prop-value-row">
+          <span className="mc-field-val" style={{minWidth:40}}>{num}px</span>
+          <input type="range" className="mc-range" style={{flex:1}}
+            min={def.min} max={def.max} step={1} value={num}
+            onChange={e => onChange(e.target.value + "px")} />
+        </div>
+        <input className="mc-text-input" style={{marginTop:4}} value={value}
+          onChange={e => onChange(e.target.value)} placeholder={def.default + "px"} />
+      </div>
+    );
+  }
+
+  if (def.type === "transform") {
+    // Parse current transform value into components
+    const parseTransform = (v) => {
+      const r = { translateX:"0", translateY:"0", rotate:"0", scaleX:"1", scaleY:"1" };
+      if (!v || v === "none") return r;
+      const tx = v.match(/translateX\(([\d.-]+[^)]*)\)/); if (tx) r.translateX = tx[1];
+      const ty = v.match(/translateY\(([\d.-]+[^)]*)\)/); if (ty) r.translateY = ty[1];
+      const rot = v.match(/rotate\(([\d.-]+[^)]*)\)/); if (rot) r.rotate = rot[1];
+      const sx = v.match(/scaleX\(([\d.]+)\)/); if (sx) r.scaleX = sx[1];
+      const sy = v.match(/scaleY\(([\d.]+)\)/); if (sy) r.scaleY = sy[1];
+      return r;
+    };
+    const buildTransform = (parts) => {
+      const bits = [];
+      if (parts.translateX !== "0" && parts.translateX !== "0px") bits.push(`translateX(${parts.translateX})`);
+      if (parts.translateY !== "0" && parts.translateY !== "0px") bits.push(`translateY(${parts.translateY})`);
+      if (parts.rotate !== "0" && parts.rotate !== "0deg") bits.push(`rotate(${parts.rotate})`);
+      if (parts.scaleX !== "1") bits.push(`scaleX(${parts.scaleX})`);
+      if (parts.scaleY !== "1") bits.push(`scaleY(${parts.scaleY})`);
+      return bits.length ? bits.join(" ") : "none";
+    };
+    const parts = parseTransform(value);
+    const update = (key, val) => onChange(buildTransform({ ...parts, [key]: val }));
+    return (
+      <div className="mc-transform-grid">
+        {[
+          { key:"translateX", label:"X", unit:"px", min:-500, max:500 },
+          { key:"translateY", label:"Y", unit:"px", min:-500, max:500 },
+          { key:"rotate",     label:"rotate", unit:"deg", min:-360, max:360 },
+          { key:"scaleX",     label:"scaleX", unit:"", min:0, max:5, step:0.05 },
+          { key:"scaleY",     label:"scaleY", unit:"", min:0, max:5, step:0.05 },
+        ].map(f => (
+          <div key={f.key} className="mc-transform-row">
+            <span className="mc-transform-label">{f.label}</span>
+            <input type="range" className="mc-range" style={{flex:1}}
+              min={f.min} max={f.max} step={f.step || 1}
+              value={parseFloat(parts[f.key]) || 0}
+              onChange={e => update(f.key, e.target.value + f.unit)} />
+            <span className="mc-field-val" style={{minWidth:40, textAlign:"right"}}>
+              {parseFloat(parts[f.key]) || 0}{f.unit}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (def.type === "shadow") {
+    // Simple shadow: offsetX offsetY blur spread color
+    const parseShadow = (v) => {
+      if (!v || v === "none") return { x:0, y:0, blur:0, spread:0, color:"#000000" };
+      const m = v.match(/([-\d.]+)px\s+([-\d.]+)px\s+([\d.]+)px\s+([\d.]+)px\s+(#[0-9a-fA-F]+)/);
+      return m ? { x:Number(m[1]), y:Number(m[2]), blur:Number(m[3]), spread:Number(m[4]), color:m[5] } : { x:0, y:0, blur:0, spread:0, color:"#000000" };
+    };
+    const s = parseShadow(value);
+    const update = (k, v) => {
+      const n = { ...s, [k]: v };
+      onChange(`${n.x}px ${n.y}px ${n.blur}px ${n.spread}px ${n.color}`);
+    };
+    return (
+      <div className="mc-transform-grid">
+        {[
+          { key:"x",      label:"X",      min:-100, max:100 },
+          { key:"y",      label:"Y",      min:-100, max:100 },
+          { key:"blur",   label:"blur",   min:0,    max:100 },
+          { key:"spread", label:"spread", min:-50,  max:100 },
+        ].map(f => (
+          <div key={f.key} className="mc-transform-row">
+            <span className="mc-transform-label">{f.label}</span>
+            <input type="range" className="mc-range" style={{flex:1}}
+              min={f.min} max={f.max} step={1} value={s[f.key]}
+              onChange={e => update(f.key, Number(e.target.value))} />
+            <span className="mc-field-val" style={{minWidth:30, textAlign:"right"}}>{s[f.key]}</span>
+          </div>
+        ))}
+        <div className="mc-transform-row">
+          <span className="mc-transform-label">color</span>
+          <input type="color" className="mc-canvas-color" value={s.color}
+            onChange={e => update("color", e.target.value)} />
+        </div>
+      </div>
+    );
+  }
+
+  if (def.type === "filter") {
+    // blur | brightness | contrast | saturate
+    const parseFilter = (v) => {
+      const r = { blur:0, brightness:100, contrast:100, saturate:100 };
+      if (!v || v === "none") return r;
+      const bl = v.match(/blur\(([\d.]+)px\)/); if (bl) r.blur = parseFloat(bl[1]);
+      const br = v.match(/brightness\(([\d.]+)%\)/); if (br) r.brightness = parseFloat(br[1]);
+      const co = v.match(/contrast\(([\d.]+)%\)/); if (co) r.contrast = parseFloat(co[1]);
+      const sa = v.match(/saturate\(([\d.]+)%\)/); if (sa) r.saturate = parseFloat(sa[1]);
+      return r;
+    };
+    const buildFilter = (p) => {
+      const bits = [];
+      if (p.blur > 0) bits.push(`blur(${p.blur}px)`);
+      if (p.brightness !== 100) bits.push(`brightness(${p.brightness}%)`);
+      if (p.contrast !== 100) bits.push(`contrast(${p.contrast}%)`);
+      if (p.saturate !== 100) bits.push(`saturate(${p.saturate}%)`);
+      return bits.length ? bits.join(" ") : "none";
+    };
+    const f = parseFilter(value);
+    const update = (k, v) => onChange(buildFilter({ ...f, [k]: v }));
+    return (
+      <div className="mc-transform-grid">
+        {[
+          { key:"blur",       label:"blur",       min:0,   max:40,  unit:"px" },
+          { key:"brightness", label:"brightness", min:0,   max:200, unit:"%" },
+          { key:"contrast",   label:"contrast",   min:0,   max:200, unit:"%" },
+          { key:"saturate",   label:"saturate",   min:0,   max:200, unit:"%" },
+        ].map(f2 => (
+          <div key={f2.key} className="mc-transform-row">
+            <span className="mc-transform-label">{f2.label}</span>
+            <input type="range" className="mc-range" style={{flex:1}}
+              min={f2.min} max={f2.max} step={1} value={f[f2.key]}
+              onChange={e => update(f2.key, Number(e.target.value))} />
+            <span className="mc-field-val" style={{minWidth:40, textAlign:"right"}}>{f[f2.key]}{f2.unit}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Fallback: plain text input
+  return (
+    <input className="mc-text-input" value={value}
+      onChange={e => onChange(e.target.value)} placeholder={def.default} />
+  );
+}
+
+// ── SINGLE TRANSITION RULE EDITOR ─────────────────────────────────────────────
+// Trigger options for the transition — what CSS state causes the change
+const TRIGGERS = [
+  { value: ":hover",   label: ":hover" },
+  { value: ":focus",   label: ":focus" },
+  { value: ":active",  label: ":active" },
+  { value: ":checked", label: ":checked" },
+  { value: ".is-open", label: ".is-open (class)" },
+  { value: ".is-active", label: ".is-active (class)" },
+  { value: ".is-visible", label: ".is-visible (class)" },
+  { value: " custom",  label: "custom…" },
+];
+
+function TransitionRuleEditor({ rule, uniqueSelectors, onUpdate, onRemove, onCopy }) {
+  const [open, setOpen] = useState(true);
+  const RULE_DEFAULTS = { property:"opacity", duration:300, easing:"ease", delay:0,
+    baseValue:"", targetValue:"", trigger:":hover", customTrigger:"" };
+
+  const set = patch => onUpdate({ ...rule, ...patch });
+  const reset = key => set({ [key]: RULE_DEFAULTS[key] });
+
+  // Effective trigger string
+  const trigger = rule.trigger === " custom"
+    ? (rule.customTrigger || ":hover")
+    : (rule.trigger || ":hover");
+
+  const summary = `${rule.selector || "?"} · ${rule.property || "?"} · ${trigger}`;
+
+  return (
+    <div className="mc-anim-card" style={{marginBottom:10}}>
+      {/* ── Header with minimize toggle ── */}
+      <div className="mc-anim-card-hd" onClick={() => setOpen(o => !o)} style={{cursor:"pointer"}}>
+        <span className="mc-anim-arrow">{open ? "▼" : "▶"}</span>
+        <span className="mc-anim-name">{summary}</span>
+        <button className="mc-rule-copy-btn" title="Copy rule"
+          onClick={e => { e.stopPropagation(); onCopy(rule); }}>⧉</button>
+        <button className="mc-anim-del" onClick={e => { e.stopPropagation(); onRemove(); }}>✕</button>
+      </div>
+
+      {open && (
+        <div className="mc-anim-body">
+
+          {/* SELECTOR */}
+          <FieldLabel label="selector">
+            <select className="mc-select" value={rule.selector}
+              onChange={e => set({ selector: e.target.value })}>
+              {uniqueSelectors.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </FieldLabel>
+
+          {/* PROPERTY */}
+          <FieldLabel label={
+            <span className="mc-field-row">
+              <span>property</span>
+              <button className="mc-reset-btn" onClick={() => reset("property")}>↺</button>
+            </span>
+          }>
+            <select className="mc-select" value={rule.property}
+              onChange={e => set({ property: e.target.value, baseValue:"", targetValue:"" })}>
+              {ANIMATABLE_PROPS.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </FieldLabel>
+
+          {/* TWO-STATE: base → target */}
+          <div className="mc-two-state">
+            <div className="mc-state-col">
+              <div className="mc-state-label">base value</div>
+              <PropValueEditor property={rule.property} value={rule.baseValue || ""}
+                onChange={v => set({ baseValue: v })} />
+            </div>
+            <div className="mc-state-arrow">→</div>
+            <div className="mc-state-col">
+              <div className="mc-state-label">target value</div>
+              <PropValueEditor property={rule.property} value={rule.targetValue || ""}
+                onChange={v => set({ targetValue: v })} />
+            </div>
+          </div>
+
+          {/* TRIGGER */}
+          <FieldLabel label="trigger">
+            <select className="mc-select" value={rule.trigger || ":hover"}
+              onChange={e => set({ trigger: e.target.value })}>
+              {TRIGGERS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </FieldLabel>
+          {rule.trigger === " custom" && (
+            <FieldLabel label="custom trigger selector">
+              <input className="mc-text-input" value={rule.customTrigger || ""}
+                placeholder=".my-class or :focus-within"
+                onChange={e => set({ customTrigger: e.target.value })} />
+            </FieldLabel>
+          )}
+
+          {/* TIMING */}
+          <div className="mc-field">
+            <div className="mc-field-label">
+              <span className="mc-field-row">duration
+                <span className="mc-field-val" style={{marginLeft:6}}>{rule.duration}ms</span>
+              </span>
+              <button className="mc-reset-btn" onClick={() => reset("duration")}>↺</button>
+            </div>
+            <input type="range" className="mc-range" min={50} max={3000} step={50}
+              value={rule.duration} onChange={e => set({ duration: Number(e.target.value) })} />
+          </div>
+
+          <FieldLabel label={
+            <span className="mc-field-row">
+              <span>easing</span>
+              <button className="mc-reset-btn" onClick={() => reset("easing")}>↺</button>
+            </span>
+          }>
+            <select className="mc-select" value={rule.easing}
+              onChange={e => set({ easing: e.target.value })}>
+              {EASINGS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </FieldLabel>
+
+          <div className="mc-field">
+            <div className="mc-field-label">
+              <span className="mc-field-row">delay
+                <span className="mc-field-val" style={{marginLeft:6}}>{rule.delay}ms</span>
+              </span>
+              <button className="mc-reset-btn" onClick={() => reset("delay")}>↺</button>
+            </div>
+            <input type="range" className="mc-range" min={0} max={2000} step={50}
+              value={rule.delay} onChange={e => set({ delay: Number(e.target.value) })} />
+          </div>
+
+          <div className="mc-easing-preview">
+            <div className="mc-easing-label">easing curve</div>
+            <EasingCurve easing={rule.easing} />
+          </div>
+
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── TRANSITIONS PANEL ────────────────────────────────────────────────────────
+// transitions[elementUid] is now an ARRAY of rule objects:
+//   { id, selector, property, value, duration, easing, delay }
+// The ADD button appends a new rule. Each rule is independently editable.
+// Clicking a MotionCraft CSS line loads it back into a new rule.
+function TransitionsPanel({ selected, transitions, onChange, elements, clipboard, setClipboard }) {
+  if (!selected) return <div className="mc-empty"><p>Select an element to add transitions</p></div>;
+
+  const uid = selected.uid;
+  const autoSelector = selected.className
+    ? `.${selected.className.trim().split(/\s+/)[0]}`
+    : selected.elId ? `#${selected.elId}` : selected.tag;
+
+  // clipboard state lifted to main app — see ruleClipboard
+
+  // rules is always an array
+  const rules = Array.isArray(transitions[uid]) ? transitions[uid]
+    : transitions[uid] ? [transitions[uid]]   // migrate old single-object format
+    : [];
+
+  const setRules = newRules => onChange(uid, newRules);
+
+  const addRule = () => {
+    setRules([...rules, {
+      id: `r${Date.now()}`,
+      selector: autoSelector, property: "opacity",
+      value: "",   // blank until user sets it — prevents premature :hover emission
+      duration: 300, easing: "ease", delay: 0,
+    }]);
+  };
+
+  // Copy: save the rule to clipboard (strip id so paste always gets a fresh one)
+  const copyRule = (rule) => {
+    const { id, ...rest } = rule;
+    setClipboard(rest);
+  };
+
+  // Paste: append a clone with a fresh id, selector swapped to current element
+  const pasteRule = () => {
+    if (!clipboard) return;
+    setRules([...rules, {
+      ...clipboard,
+      id: `r${Date.now()}`,
+      selector: autoSelector,  // default to current element — user can change it
+    }]);
+  };
+
+  const updateRule = (idx, patch) => {
+    setRules(rules.map((r, i) => i === idx ? { ...r, ...patch } : r));
+  };
+
+  const removeRule = idx => setRules(rules.filter((_, i) => i !== idx));
+
+  // Build unique selector options from the element tree
+  const seen = new Set();
+  const uniqueSelectors = elements.map(el => {
+    const sel = el.className ? `.${el.className.trim().split(/\s+/)[0]}`
+      : el.elId ? `#${el.elId}` : el.tag;
+    return { value: sel, label: `${el.tag} ${sel}` };
+  }).filter(o => seen.has(o.value) ? false : seen.add(o.value));
+
+  return (
+    <div>
+      <div className="mc-panel-intro">
+        Transitions on <code className="mc-code-inline">{selected.label}</code>
+      </div>
+
+      <div className="mc-trans-actions">
+        <button className="mc-add-btn mc-add-btn-inline" onClick={addRule}>+ Add rule</button>
+        {clipboard && (
+          <button className="mc-paste-btn" onClick={pasteRule}
+            title={`Paste: ${clipboard.property} (${clipboard.duration}ms ${clipboard.easing})`}>
+            ⧉ Paste · <span className="mc-paste-hint">{clipboard.property}</span>
+          </button>
+        )}
+      </div>
+
+      {rules.length === 0 && (
+        <div className="mc-hint">No rules yet. Click "+ Add rule" to start.</div>
+      )}
+
+      {rules.map((rule, idx) => (
+        <TransitionRuleEditor key={rule.id || idx}
+          rule={rule}
+          uniqueSelectors={uniqueSelectors}
+          onUpdate={patch => updateRule(idx, patch)}
+          onRemove={() => removeRule(idx)}
+          onCopy={copyRule}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── EASING CURVE PREVIEW ─────────────────────────────────────────────────────
+function EasingCurve({ easing }) {
+  // Parse cubic-bezier or draw preset shapes
+  const curves = {
+    "linear":       [[0,0],[0.33,0.33],[0.66,0.66],[1,1]],
+    "ease":         [[0,0],[0.25,0.1],[0.25,1],[1,1]],
+    "ease-in":      [[0,0],[0.42,0],[1,1],[1,1]],
+    "ease-out":     [[0,0],[0,0],[0.58,1],[1,1]],
+    "ease-in-out":  [[0,0],[0.42,0],[0.58,1],[1,1]],
+    "cubic-bezier(0.34,1.56,0.64,1)": [[0,0],[0.34,1.56],[0.64,1],[1,1]],
+    "cubic-bezier(0.87,0,0.13,1)":    [[0,0],[0.87,0],[0.13,1],[1,1]],
+  };
+  const pts = curves[easing] || curves["ease"];
+  const W = 80, H = 80, PAD = 8;
+  const x = t => PAD + t * (W - PAD*2);
+  const y = t => H - PAD - t * (H - PAD*2);
+  const p0 = pts[0], p1 = pts[1], p2 = pts[2], p3 = pts[3];
+  const d = `M${x(p0[0])},${y(p0[1])} C${x(p1[0])},${y(p1[1])} ${x(p2[0])},${y(p2[1])} ${x(p3[0])},${y(p3[1])}`;
+
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="mc-curve-svg">
+      <line x1={PAD} y1={H-PAD} x2={W-PAD} y2={PAD} stroke="var(--line)" strokeWidth="1" strokeDasharray="2,2"/>
+      <line x1={x(p0[0])} y1={y(p0[1])} x2={x(p1[0])} y2={y(p1[1])} stroke="var(--accent-soft)" strokeWidth="1"/>
+      <line x1={x(p3[0])} y1={y(p3[1])} x2={x(p2[0])} y2={y(p2[1])} stroke="var(--accent-soft)" strokeWidth="1"/>
+      <path d={d} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx={x(p1[0])} cy={y(p1[1])} r="2.5" fill="var(--accent)"/>
+      <circle cx={x(p2[0])} cy={y(p2[1])} r="2.5" fill="var(--accent)"/>
+    </svg>
+  );
+}
+
+// ── KEYFRAMES PANEL ──────────────────────────────────────────────────────────
+function KeyframesPanel({ selected, keyframeAnims, onAdd, onUpdate, onRemove, elements }) {
+  const myAnims = Object.values(keyframeAnims).filter(a => a.elementUid === (selected && selected.uid));
+
+  const addAnim = () => {
+    const id = uid();
+    const name = `anim-${id}`;
+    onAdd(id, {
+      id, name, elementUid: selected.uid,
+      selector: selected.className ? `.${selected.className.trim().split(/\s+/)[0]}` : selected.tag,
+      duration: 600, easing: "ease-in-out", iterationCount: 1, fillMode: "both",
+      stops: [
+        { offset: 0,   props: { opacity: "0", transform: "translateY(10px)" } },
+        { offset: 100, props: { opacity: "1", transform: "translateY(0)" } },
+      ],
+    });
+  };
+
+  if (!selected) return <div className="mc-empty"><p>Select an element to add keyframe animations</p></div>;
+
+  return (
+    <div>
+      <div className="mc-panel-intro">
+        Keyframes on <code className="mc-code-inline">{selected.label}</code>
+      </div>
+      <button className="mc-add-btn" onClick={addAnim}>+ Add animation</button>
+
+      {myAnims.map(anim => (
+        <KeyframeEditor key={anim.id} anim={anim} onUpdate={onUpdate} onRemove={onRemove} animElements={elements} />
+      ))}
+
+      {myAnims.length === 0 && (
+        <div className="mc-hint">No animations yet. Click "Add animation" to start.</div>
+      )}
+    </div>
+  );
+}
+
+function KeyframeEditor({ anim, onUpdate, onRemove, animElements }) {
+  const [open, setOpen] = useState(true);
+  const set = patch => onUpdate(anim.id, { ...anim, ...patch });
+  const setStop = (idx, patch) => {
+    const stops = anim.stops.map((s, i) => i === idx ? { ...s, ...patch } : s);
+    set({ stops });
+  };
+  const setStopProp = (idx, prop, val) => {
+    const stops = anim.stops.map((s, i) =>
+      i === idx ? { ...s, props: { ...s.props, [prop]: val } } : s
+    );
+    set({ stops });
+  };
+  const addStop = () => {
+    const offsets = anim.stops.map(s => s.offset);
+    // Find biggest gap and insert in middle
+    let bestGap = 0, bestIdx = 0;
+    for (let i = 0; i < offsets.length - 1; i++) {
+      const gap = offsets[i+1] - offsets[i];
+      if (gap > bestGap) { bestGap = gap; bestIdx = i; }
+    }
+    const newOffset = Math.round((offsets[bestIdx] + offsets[bestIdx+1]) / 2);
+    const stops = [...anim.stops];
+    stops.splice(bestIdx + 1, 0, { offset: newOffset, props: {} });
+    set({ stops });
+  };
+  const removeStop = idx => {
+    if (anim.stops.length <= 2) return;
+    set({ stops: anim.stops.filter((_, i) => i !== idx) });
+  };
+
+  return (
+    <div className="mc-anim-card">
+      <div className="mc-anim-card-hd" onClick={() => setOpen(o => !o)}>
+        <span className="mc-anim-arrow">{open ? "▼" : "▶"}</span>
+        <span className="mc-anim-name">{anim.name}</span>
+        <button className="mc-anim-del" onClick={e => { e.stopPropagation(); onRemove(anim.id); }}>✕</button>
+      </div>
+      {open && (
+        <div className="mc-anim-body">
+          <TextInput label="name" value={anim.name} onChange={v => set({ name: v })} />
+          <FieldLabel label="selector">
+            <select className="mc-select" value={anim.selector} onChange={e => set({ selector: e.target.value })}>
+              {(animElements || []).map(el => {
+                const sel = el.className ? `.${el.className.trim().split(/\s+/)[0]}` : el.elId ? `#${el.elId}` : el.tag;
+                return <option key={sel} value={sel}>{el.tag} {sel}</option>;
+              })}
+            </select>
+          </FieldLabel>
+
+          <Slider label="duration" value={anim.duration} min={100} max={5000} step={100} suffix="ms"
+            onChange={v => set({ duration: v })} />
+
+          <Select label="easing" value={anim.easing} options={EASINGS} onChange={v => set({ easing: v })} />
+
+          <FieldLabel label="iterations">
+            <div style={{ display:"flex", gap:6 }}>
+              <input className="mc-text-input" style={{ width:60 }}
+                type="number" min={1} max={99}
+                value={anim.iterationCount === "infinite" ? "" : anim.iterationCount}
+                placeholder="1"
+                onChange={e => set({ iterationCount: Number(e.target.value) || 1 })}
+              />
+              <button
+                className={"mc-pill-btn" + (anim.iterationCount === "infinite" ? " is-on" : "")}
+                onClick={() => set({ iterationCount: anim.iterationCount === "infinite" ? 1 : "infinite" })}
+              >∞</button>
+            </div>
+          </FieldLabel>
+
+          <Select label="fill mode" value={anim.fillMode} options={["none","forwards","backwards","both"]}
+            onChange={v => set({ fillMode: v })} />
+
+          <div className="mc-stops-head">
+            <span>stops</span>
+            <button className="mc-add-stop-btn" onClick={addStop}>+ stop</button>
+          </div>
+
+          {anim.stops.map((stop, idx) => (
+            <StopEditor key={idx} stop={stop} idx={idx}
+              onSetOffset={v => setStop(idx, { offset: v })}
+              onSetProp={(prop, val) => setStopProp(idx, prop, val)}
+              onRemove={() => removeStop(idx)}
+              canRemove={anim.stops.length > 2}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StopEditor({ stop, idx, onSetOffset, onSetProp, onRemove, canRemove }) {
+  const [propInput, setPropInput] = useState("");
+  const [valInput, setValInput] = useState("");
+
+  const addProp = () => {
+    if (!propInput.trim()) return;
+    onSetProp(propInput.trim(), valInput.trim());
+    setPropInput(""); setValInput("");
+  };
+
+  return (
+    <div className="mc-stop">
+      <div className="mc-stop-hd">
+        <span className="mc-stop-pct">{stop.offset}%</span>
+        <input type="range" className="mc-range mc-stop-range"
+          min={0} max={100} value={stop.offset}
+          onChange={e => onSetOffset(Number(e.target.value))}
+        />
+        {canRemove && <button className="mc-stop-del" onClick={onRemove}>✕</button>}
+      </div>
+      <div className="mc-stop-props">
+        {Object.entries(stop.props).map(([prop, val]) => (
+          <div key={prop} className="mc-stop-prop-row">
+            <code className="mc-prop-name">{prop}</code>
+            <input className="mc-text-input mc-prop-val"
+              value={val}
+              onChange={e => onSetProp(prop, e.target.value)}
+            />
+            <button className="mc-stop-del" onClick={() => {
+              const props = { ...stop.props };
+              delete props[prop];
+              Object.keys(props).forEach(k => onSetProp(k, props[k]));
+              onSetProp(prop, undefined);
+            }}>✕</button>
+          </div>
+        ))}
+        <div className="mc-add-prop-row">
+          <select className="mc-select mc-prop-sel"
+            value={propInput}
+            onChange={e => setPropInput(e.target.value)}
+          >
+            <option value="">property…</option>
+            {ANIMATABLE_PROPS.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <input className="mc-text-input mc-prop-val"
+            placeholder="value…"
+            value={valInput}
+            onChange={e => setValInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && addProp()}
+          />
+          <button className="mc-add-prop-btn" onClick={addProp}>+</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── SVG PANEL ────────────────────────────────────────────────────────────────
+function SvgPanel({ selected, svgAttrs, onChange }) {
+  if (!selected) return <div className="mc-empty"><p>Select an SVG element to edit its attributes</p></div>;
+  if (!selected.isSvg && !selected.isSvgChild) return (
+    <div className="mc-empty"><p>Selected element is not SVG.<br/>Select an SVG or SVG child element.</p></div>
+  );
+
+  const attrs = svgAttrs[selected.uid] || {};
+  const set = (prop, val) => onChange(selected.uid, { ...attrs, [prop]: val });
+
+  return (
+    <div>
+      <div className="mc-panel-intro">
+        SVG attrs on <code className="mc-code-inline">{selected.label}</code>
+      </div>
+      <div className="mc-svg-grid">
+        {SVG_ANIMATABLE.map(prop => (
+          <div key={prop} className="mc-svg-row">
+            <code className="mc-prop-name">{prop}</code>
+            <input className="mc-text-input mc-svg-val"
+              placeholder="—"
+              value={attrs[prop] || ""}
+              onChange={e => set(prop, e.target.value)}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="mc-hint" style={{ marginTop: 16 }}>
+        SVG attributes set here override the imported values and appear in the exported CSS.
+        Animatable via keyframes — target the selector above.
+      </div>
+    </div>
+  );
+}
+
+// ── PREVIEW CANVAS ────────────────────────────────────────────────────────────
+function PreviewCanvas({ htmlStr, cssStr, augmentedCss, playing, iframeRef, canvasBg, canvasOpacity }) {
+  const doc = useMemo(() => {
+    if (!htmlStr) return "";
+    // Injected script: handles incoming mc-select highlights AND fires
+    // mc-click back to parent when user clicks an element in the preview.
+    const highlightScript = `<script>
+(function() {
+  function applyHighlight(cls) {
+    var prev = document.querySelector('[data-mc-selected]');
+    if (prev) { prev.removeAttribute('data-mc-selected'); prev.style.outline=''; prev.style.outlineOffset=''; }
+    if (!cls) return;
+    var el = document.querySelector('.' + cls);
+    if (el) { el.setAttribute('data-mc-selected','1'); el.style.outline='2px solid #e8b04b'; el.style.outlineOffset='2px'; }
+  }
+  // Listen for selection from parent
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'mc-select') applyHighlight(e.data.className);
+  });
+  // Fire click events back to parent so clicking in preview selects in tree
+  document.addEventListener('click', function(e) {
+    var el = e.target;
+    // Walk up to find an element with a class that looks like a FlexCraft node
+    while (el && el !== document.body) {
+      if (el.className && typeof el.className === 'string' && el.className.trim()) {
+        window.parent.postMessage({ type: 'mc-click', className: el.className.trim() }, '*');
+        applyHighlight(el.className.trim().split(' ')[0]);
+        break;
+      }
+      el = el.parentElement;
+    }
+  });
+})();
+<\/script>`;
+    var bgStyle = "background: " + (canvasBg || "transparent") + " !important; opacity: " + (canvasOpacity !== undefined ? canvasOpacity : 1) + ";";
+    return "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>\n<style>\n*, *::before, *::after { box-sizing: border-box; }\n" + (cssStr || "") + "\n" + (augmentedCss ? "/* ── MotionCraft additions ── */\n" + augmentedCss : "") + "\n/* ── MotionCraft preview overrides ── */\nhtml, body { margin: 0; padding: 16px; " + bgStyle + " }\n</style></head><body>" + htmlStr + highlightScript + "</body></html>";
+  }, [htmlStr, cssStr, augmentedCss, canvasBg, canvasOpacity]);
+
+  useEffect(() => {
+    if (!iframeRef.current) return;
+    iframeRef.current.srcdoc = doc;
+  }, [doc]);
+
+  useEffect(() => {
+    if (!playing || !iframeRef.current) return;
+    iframeRef.current.srcdoc = "";
+    requestAnimationFrame(() => { if (iframeRef.current) iframeRef.current.srcdoc = doc; });
+  }, [playing]);
+
+  if (!htmlStr) return (
+    <div className="mc-canvas-empty">
+      <div className="mc-canvas-empty-icon">◈</div>
+      <p>Import a FlexCraft export or HTML+CSS pair to preview</p>
+    </div>
+  );
+
+  return (
+    <iframe ref={iframeRef} className="mc-iframe" sandbox="allow-same-origin allow-scripts" title="preview" />
+  );
+}
+
+// ── FILE IMPORT ───────────────────────────────────────────────────────────────
+function FileDropZone({ label, accept, onLoad }) {
+  const [over, setOver] = useState(false);
+  const inputRef = useRef(null);
+
+  const read = file => {
+    const r = new FileReader();
+    r.onload = e => onLoad(e.target.result, file.name);
+    r.readAsText(file);
+  };
+
+  return (
+    <div
+      className={"mc-dropzone" + (over ? " is-over" : "")}
+      onDragOver={e => { e.preventDefault(); setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={e => { e.preventDefault(); setOver(false); const f = e.dataTransfer.files[0]; if (f) read(f); }}
+      onClick={() => inputRef.current.click()}
+    >
+      <input ref={inputRef} type="file" accept={accept} style={{ display:"none" }}
+        onChange={e => { const f = e.target.files[0]; if (f) read(f); }} />
+      <span className="mc-dz-icon">⬆</span>
+      <span className="mc-dz-label">{label}</span>
+    </div>
+  );
+}
+
+// ── CSS CODE VIEW (segments + highlight + scroll) ────────────────────────────
+// Builds segments from the CSS text: one segment per rule block, keyed by
+// the first class name in the selector so it matches element className.
+function buildCssSegments(cssText) {
+  if (!cssText) return [];
+  const segments = [];
+  const re = /([^{]+\{[^}]*\})/g;
+  let m;
+  while ((m = re.exec(cssText)) !== null) {
+    const block = m[1];
+    // Extract first class name from selector e.g. ".div-n3" → "div-n3"
+    const selMatch = block.match(/\.([^\s,{:]+)/);
+    const key = selMatch ? selMatch[1] : null;
+    segments.push({ key, text: block.trim() });
+  }
+  return segments;
+}
+
+// Parse a transition rule text block back into rule objects for loading into UI
+function parseTransitionBlock(blockText) {
+  const rules = [];
+  const selMatch = blockText.match(/^([^{]+)\{/);
+  const selector = selMatch ? selMatch[1].trim() : "";
+  const transMatch = blockText.match(/transition:\s*([^;]+);/);
+  if (!transMatch) return rules;
+  // Each comma-separated transition shorthand: property duration easing delay
+  const parts = transMatch[1].split(",").map(s => s.trim()).filter(Boolean);
+  for (const part of parts) {
+    const tokens = part.split(/\s+/);
+    const property = tokens[0] || "opacity";
+    const duration = parseInt(tokens[1]) || 300;
+    const easing   = tokens[2] || "ease";
+    const delay    = parseInt(tokens[3]) || 0;
+    if (ANIMATABLE_PROPS.includes(property)) {
+      rules.push({ id: "r" + Date.now() + Math.random(),
+        selector, property, value: PROP_DEFS[property]?.default || "",
+        duration, easing, delay });
+    }
+  }
+  return rules;
+}
+
+function CssCodeView({ cssText, selectedClass, onEdit, onLoadRules, motionMarker }) {
+  const hlRef = useRef(null);
+  const segments = useMemo(() => buildCssSegments(cssText), [cssText]);
+
+  useEffect(() => {
+    if (hlRef.current) hlRef.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [selectedClass]);
+
+  // Determine which segments are MotionCraft-added (after the marker)
+  let afterMarker = false;
+
+  return (
+    <pre className="mc-css-code mc-css-code-view" onDoubleClick={onEdit}
+      title="Double-click to edit">
+      <code>
+        {segments.length === 0 && <span className="mc-css-mut">{"/* nothing yet */"}</span>}
+        {segments.map((seg, i) => {
+          if (seg.text.includes("MotionCraft additions")) afterMarker = true;
+          const isSel = seg.key && selectedClass && selectedClass.split(/\s+/).includes(seg.key);
+          const isMC  = afterMarker && seg.text.includes("transition:");
+          return (
+            <React.Fragment key={i}>
+              {i > 0 && "\n\n"}
+              <span ref={isSel ? hlRef : null}
+                className={(isSel ? "mc-css-hl" : "") + (isMC ? " mc-css-mc-rule" : "")}
+                title={isMC ? "Click to load into UI" : undefined}
+                onClick={isMC && onLoadRules ? () => {
+                  const rules = parseTransitionBlock(seg.text);
+                  if (rules.length) onLoadRules(rules);
+                } : undefined}
+              >
+                {seg.text}
+              </span>
+            </React.Fragment>
+          );
+        })}
+      </code>
+    </pre>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+function MotionCraft() {
+  const [theme, setTheme]       = useState("dark");
+  const [htmlStr, setHtmlStr]   = useState("");
+  const [cssStr, setCssStr]     = useState("");
+  const [htmlName, setHtmlName] = useState("");
+  const [cssName, setCssName]   = useState("");
+  const [elements, setElements] = useState([]);
+  const [selectedUid, setSelectedUid] = useState(null);
+  const [rightTab, setRightTab] = useState("transitions");
+  // ── Undo/redo history stack ──────────────────────────────────────────────
+  // Each entry is a snapshot of { transitions, keyframeAnims, svgAttrs }.
+  // past = array of previous snapshots, future = array of undone snapshots.
+  const [past,   setPast]   = useState([]);
+  const [future, setFuture] = useState([]);
+
+  const [transitions, setTransitions]     = useState({});
+  const [keyframeAnims, setKeyframeAnims] = useState({});
+  const [svgAttrs, setSvgAttrs]           = useState({});
+
+  // Snapshot current state before a mutation
+  const snapshot = useCallback(() => {
+    setPast(p => [...p, { transitions, keyframeAnims, svgAttrs }]);
+    setFuture([]); // new change clears redo stack
+  }, [transitions, keyframeAnims, svgAttrs]);
+
+  const undo = useCallback(() => {
+    setPast(p => {
+      if (p.length === 0) return p;
+      const prev = p[p.length - 1];
+      setFuture(f => [{ transitions, keyframeAnims, svgAttrs }, ...f]);
+      setTransitions(prev.transitions);
+      setKeyframeAnims(prev.keyframeAnims);
+      setSvgAttrs(prev.svgAttrs);
+      return p.slice(0, -1);
+    });
+  }, [transitions, keyframeAnims, svgAttrs]);
+
+  const redo = useCallback(() => {
+    setFuture(f => {
+      if (f.length === 0) return f;
+      const next = f[0];
+      setPast(p => [...p, { transitions, keyframeAnims, svgAttrs }]);
+      setTransitions(next.transitions);
+      setKeyframeAnims(next.keyframeAnims);
+      setSvgAttrs(next.svgAttrs);
+      return f.slice(1);
+    });
+  }, [transitions, keyframeAnims, svgAttrs]);
+  const [playing, setPlaying]   = useState(0);
+  const [showImport, setShowImport] = useState(true);
+  const [exported, setExported] = useState(null);
+
+  // Rule clipboard for copy/paste across elements
+  const [ruleClipboard, setRuleClipboard] = useState(null);
+
+  // Canvas background color and opacity controls
+  const [canvasBg,      setCanvasBg]      = useState("transparent");
+  const [canvasOpacity, setCanvasOpacity] = useState(1);
+
+  // Panel widths — resizable via grip drags
+  const [leftWidth,  setLeftWidth]  = useState(200);
+  const [rightWidth, setRightWidth] = useState(280);
+
+  // CSS editing state
+  const [cssEditing, setCssEditing] = useState(false);
+  const [cssDraft,   setCssDraft]   = useState("");
+
+  const selected = useMemo(() =>
+    elements.find(e => e.uid === selectedUid) || null,
+  [elements, selectedUid]);
+
+  // The class name of the selected element — used to highlight its CSS block
+  const selectedClass = selected ? selected.className : null;
+
+  const loadHtml = (str, name) => {
+    const { isCombined, bodyHtml, extractedCss } = splitCombinedHtml(str);
+    setHtmlStr(bodyHtml);
+    setHtmlName(name);
+    setElements(parseHtmlElements(bodyHtml));
+    setSelectedUid(null);
+    if (isCombined && extractedCss) {
+      setCssStr(extractedCss);
+      setCssName(name.replace(/\.html?$/, ".css"));
+    }
+    setShowImport(false);
+  };
+
+  const loadCss = (str, name) => {
+    setCssStr(str);
+    setCssName(name);
+    setShowImport(false);
+  };
+
+  const augmentedCss = useMemo(() =>
+    buildAugmentedCss(cssStr, transitions, keyframeAnims),
+  [cssStr, transitions, keyframeAnims]);
+
+  const exportFiles = () => {
+    const blob = new Blob([augmentedCss], { type: "text/css" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = cssName ? cssName.replace(/\.css$/, "") + ".motion.css" : "styles.motion.css";
+    a.click();
+    URL.revokeObjectURL(url);
+    setExported(true);
+    setTimeout(() => setExported(null), 2000);
+  };
+
+  // ── Panel resize grips ───────────────────────────────────────────────────
+  // Use refs for start values so the closure never goes stale mid-drag.
+  // setLeftWidth/setRightWidth are stable (React guarantee) so safe to close over.
+  const leftWidthRef  = useRef(leftWidth);
+  const rightWidthRef = useRef(rightWidth);
+  useEffect(() => { leftWidthRef.current  = leftWidth;  }, [leftWidth]);
+  useEffect(() => { rightWidthRef.current = rightWidth; }, [rightWidth]);
+
+  // Suppress text selection across the whole page during any drag
+  const lockSelect   = () => { document.body.style.userSelect = "none"; };
+  const unlockSelect = () => { document.body.style.userSelect = ""; document.body.style.cursor = ""; };
+
+  const startLeftResize = useCallback((e) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId); // keep events even over iframe
+    lockSelect();
+    const startX = e.clientX;
+    const startW = leftWidthRef.current;
+    const onMove = ev => setLeftWidth(Math.min(420, Math.max(140, Math.round(startW + (ev.clientX - startX)))));
+    const onUp   = () => { unlockSelect(); window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup",   onUp);
+  }, []);
+
+  const startRightResize = useCallback((e) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId); // keep events even over iframe
+    lockSelect();
+    const startX = e.clientX;
+    const startW = rightWidthRef.current;
+    const onMove = ev => setRightWidth(Math.min(520, Math.max(200, Math.round(startW - (ev.clientX - startX)))));
+    const onUp   = () => { unlockSelect(); window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup",   onUp);
+  }, []);
+
+  // ── CSS panel vertical resize ─────────────────────────────────────────────
+  const [cssHeight, setCssHeight] = useState(200);
+  const cssHeightRef = useRef(200);
+  useEffect(() => { cssHeightRef.current = cssHeight; }, [cssHeight]);
+
+  const startCssResize = useCallback((e) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId); // keep events even over iframe
+    lockSelect();
+    document.body.style.cursor = "ns-resize";
+    const startY = e.clientY;
+    const startH = cssHeightRef.current;
+    const onMove = ev => setCssHeight(Math.min(600, Math.max(80, Math.round(startH - (ev.clientY - startY)))));
+    const onUp   = () => { unlockSelect(); window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup",   onUp);
+  }, []);
+
+  // ── CSS edit ──────────────────────────────────────────────────────────────
+  const beginCssEdit  = () => { setCssDraft(augmentedCss); setCssEditing(true); };
+  const cancelCssEdit = () => setCssEditing(false);
+  const applyCssEdit  = () => {
+    // Split draft back into base CSS and MotionCraft additions
+    const marker = "/* ── MotionCraft additions ── */";
+    const idx = cssDraft.indexOf(marker);
+    if (idx !== -1) {
+      setCssStr(cssDraft.slice(0, idx).trim());
+    } else {
+      setCssStr(cssDraft.trim());
+    }
+    setCssEditing(false);
+  };
+
+  // ── Highlight selected element in preview via postMessage ─────────────────
+  // We inject a tiny script into the iframe that listens for a class name and
+  // outlines the matching element. Uses allow-scripts sandbox permission.
+  const iframeRef = useRef(null);
+  // Keyboard shortcuts: undo/redo + Escape clears rule clipboard
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); redo(); }
+      if (e.key === "Escape" && ruleClipboard) { setRuleClipboard(null); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [undo, redo, ruleClipboard]);
+
+  // Send selection highlight into iframe whenever selected element changes
+  useEffect(() => {
+    if (!iframeRef.current) return;
+    const sel = selected ? selected.className.trim().split(/\s+/)[0] : null;
+    try {
+      iframeRef.current.contentWindow.postMessage({ type: "mc-select", className: sel }, "*");
+    } catch(e) {}
+  }, [selected]);
+
+  // Listen for clicks from inside the iframe — select matching element in tree
+  useEffect(() => {
+    const handler = (e) => {
+      if (!e.data || e.data.type !== "mc-click") return;
+      const cls = e.data.className;
+      if (!cls) return;
+      // Find element in tree whose className contains any of the clicked classes
+      const clickedClasses = cls.split(/\s+/);
+      const match = elements.find(el =>
+        el.className && clickedClasses.some(c => el.className.split(/\s+/).includes(c))
+      );
+      if (match) setSelectedUid(match.uid);
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [elements]);
+
+  const setTransition  = (uid, t)     => { snapshot(); setTransitions(prev => ({ ...prev, [uid]: t })); };
+  const addKeyframe    = (id, anim)   => { snapshot(); setKeyframeAnims(prev => ({ ...prev, [id]: anim })); };
+  const updateKeyframe = (id, anim)   => { snapshot(); setKeyframeAnims(prev => ({ ...prev, [id]: anim })); };
+  const removeKeyframe = id           => { snapshot(); setKeyframeAnims(prev => { const n = {...prev}; delete n[id]; return n; }); };
+  const setSvgAttr     = (uid, attrs) => { snapshot(); setSvgAttrs(prev => ({ ...prev, [uid]: attrs })); };
+
+  return (
+    <div className={"mc-app mc-theme-" + theme}>
+      {/* TOOLBAR */}
+      <div className="mc-toolbar">
+        <div className="mc-brand">
+          <span className="mc-brand-mark">◈</span>
+          <span className="mc-brand-name">FlexMotionCraft</span>
+          <span className="mc-brand-sub">animation designer</span>
+        </div>
+        <div className="mc-toolbar-center">
+          {(htmlStr || cssStr) && (
+            <div className="mc-file-pills">
+              {htmlStr && <span className="mc-file-pill mc-pill-html">{htmlName || "document.html"}</span>}
+              {cssStr  && <span className="mc-file-pill mc-pill-css">{cssName  || "styles.css"}</span>}
+            </div>
+          )}
+        </div>
+        <div className="mc-toolbar-actions">
+          <button className="mc-tool-btn" title="Import files" onClick={() => setShowImport(s => !s)}>⬆</button>
+          <button className="mc-tool-btn" title="Undo (Ctrl+Z)" onClick={undo} disabled={past.length === 0}>↩</button>
+          <button className="mc-tool-btn" title="Redo (Ctrl+Y)" onClick={redo} disabled={future.length === 0}>↪</button>
+          <button className="mc-tool-btn" title="Play / replay animations"
+            onClick={() => setPlaying(p => p + 1)}>▶</button>
+          <button className="mc-tool-btn" title="Export augmented CSS" onClick={exportFiles}
+            style={exported ? { background:"var(--accent)", color:"var(--ink)" } : {}}
+          >{exported ? "✓" : "⬇"}</button>
+          <button className="mc-tool-btn" title="Toggle light/dark"
+            onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
+            {theme === "dark" ? "☀" : "☾"}
+          </button>
+        </div>
+      </div>
+
+      {/* IMPORT OVERLAY */}
+      {showImport && (
+        <div className="mc-import-overlay">
+          <div className="mc-import-card">
+            <div className="mc-import-title">Import files</div>
+            <div className="mc-import-callout">
+              ✦ Drop your <strong>FlexCraft export</strong> (.html) — CSS is extracted automatically.
+            </div>
+            <div className="mc-import-row">
+              <FileDropZone label="HTML file (or FlexCraft export)" accept=".html,.htm" onLoad={loadHtml} />
+              <FileDropZone label="CSS file (optional — if separate)" accept=".css" onLoad={loadCss} />
+            </div>
+            <div className="mc-import-hint">
+              FlexCraft exports one combined .html file — just drop that.<br/>
+              For other projects, drop HTML + CSS separately.
+            </div>
+            {(htmlStr || cssStr) && (
+              <button className="mc-import-close" onClick={() => setShowImport(false)}>
+                Continue →
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* BODY */}
+      <div className="mc-body">
+
+        {/* LEFT — element tree, resizable */}
+        <div className="mc-left" style={{ width: leftWidth }}>
+          <div className="mc-panel-head">Elements</div>
+          <ElementTree elements={elements} selectedUid={selectedUid} onSelect={setSelectedUid} />
+          {/* right-edge grip */}
+          <div className="mc-panel-grip mc-grip-right" onPointerDown={startLeftResize} title="Drag to resize" />
+        </div>
+
+        {/* CENTER — preview canvas */}
+        <div className="mc-center">
+          <div className="mc-canvas-toolbar">
+            <span className="mc-canvas-title">Preview</span>
+            <div className="mc-canvas-controls">
+              <label className="mc-canvas-ctrl-label" title="Canvas background color">bg</label>
+              <input type="color" className="mc-canvas-color"
+                value={canvasBg === "transparent" ? "#1b1f2a" : canvasBg}
+                onChange={e => setCanvasBg(e.target.value)}
+              />
+              <button className="mc-canvas-transp"
+                title="Toggle transparent background"
+                onClick={() => setCanvasBg(c => c === "transparent" ? "#1b1f2a" : "transparent")}
+              >{canvasBg === "transparent" ? "⬜ transparent" : "◼ color"}</button>
+              <label className="mc-canvas-ctrl-label">opacity</label>
+              <input type="range" className="mc-range mc-canvas-opacity"
+                min={0} max={1} step={0.05} value={canvasOpacity}
+                onChange={e => setCanvasOpacity(Number(e.target.value))}
+                title={"Opacity: " + canvasOpacity}
+              />
+              <span className="mc-canvas-ctrl-val">{Math.round(canvasOpacity * 100)}%</span>
+            </div>
+            <button className="mc-play-btn" onClick={() => setPlaying(p => p + 1)}
+              title="Replay animations">▶ Play</button>
+          </div>
+          <div className="mc-canvas-wrap">
+            <PreviewCanvas
+              htmlStr={htmlStr} cssStr={cssStr}
+              augmentedCss={augmentedCss}
+              playing={playing}
+              iframeRef={iframeRef}
+              selectedClass={selectedClass}
+              canvasBg={canvasBg}
+              canvasOpacity={canvasOpacity}
+            />
+          </div>
+
+          {/* CSS PANEL — lives in center, vertically resizable */}
+          <div className="mc-css-preview" style={{ height: cssHeight }}>
+            <div className="mc-drawer-grip" onPointerDown={startCssResize} title="Drag to resize">
+              <div className="mc-drawer-grip-bar" />
+            </div>
+            <div className="mc-css-preview-hd">
+              <span>Generated CSS</span>
+              <div style={{ display:"flex", gap:5 }}>
+                {cssEditing ? (
+                  <>
+                    <span className="mc-edit-note">⌘↵ apply · esc cancel</span>
+                    <button className="mc-copy-btn" onClick={cancelCssEdit}>cancel</button>
+                    <button className="mc-copy-btn mc-copy-primary" onClick={applyCssEdit}>apply</button>
+                  </>
+                ) : (
+                  <>
+                    <button className="mc-copy-btn" onClick={() => navigator.clipboard?.writeText(augmentedCss)}>copy</button>
+                    <button className="mc-copy-btn" onClick={beginCssEdit} title="Edit CSS directly">✎ edit</button>
+                  </>
+                )}
+              </div>
+            </div>
+            {cssEditing ? (
+              <textarea className="mc-css-edit"
+                value={cssDraft}
+                autoFocus
+                spellCheck={false}
+                onChange={e => setCssDraft(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Escape") { e.preventDefault(); cancelCssEdit(); }
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); applyCssEdit(); }
+                  e.stopPropagation();
+                }}
+              />
+            ) : (
+              <CssCodeView
+                cssText={augmentedCss}
+                selectedClass={selectedClass}
+                onEdit={beginCssEdit}
+                onLoadRules={rules => {
+                  if (!selected) return;
+                  const cur = Array.isArray(transitions[selected.uid]) ? transitions[selected.uid] : [];
+                  setTransition(selected.uid, [...cur, ...rules]);
+                  setRightTab("transitions");
+                }}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT — designer, resizable */}
+        <div className="mc-right" style={{ width: rightWidth }}>
+          {/* left-edge grip */}
+          <div className="mc-panel-grip mc-grip-left" onPointerDown={startRightResize} title="Drag to resize" />
+
+          <div className="mc-right-tabs">
+            {[
+              { k: "transitions", label: "Transitions" },
+              { k: "keyframes",   label: "Keyframes" },
+              { k: "svg",         label: "SVG" },
+            ].map(t => (
+              <button key={t.k}
+                className={"mc-rtab" + (rightTab === t.k ? " is-active" : "")}
+                onClick={() => setRightTab(t.k)}
+              >{t.label}</button>
+            ))}
+          </div>
+
+          <div className="mc-right-body">
+            {rightTab === "transitions" && (
+              <TransitionsPanel selected={selected} transitions={transitions} onChange={setTransition} elements={elements} clipboard={ruleClipboard} setClipboard={setRuleClipboard} />
+            )}
+            {rightTab === "keyframes" && (
+              <KeyframesPanel selected={selected} keyframeAnims={keyframeAnims}
+                onAdd={addKeyframe} onUpdate={updateKeyframe} onRemove={removeKeyframe} elements={elements} />
+            )}
+            {rightTab === "svg" && (
+              <SvgPanel selected={selected} svgAttrs={svgAttrs} onChange={setSvgAttr} />
+            )}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ── STYLES ────────────────────────────────────────────────────────────────────
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.mc-theme-dark {
+  --ink:#0d0f14; --panel:#14171f; --panel2:#1b1f2a; --line:rgba(255,255,255,0.08);
+  --txt:#e6e8ee; --mut:#8b91a3; --accent:#e8b04b; --accent-soft:rgba(232,176,75,0.12);
+  --node:rgba(255,255,255,0.05); --track:#2a2f3c;
+}
+.mc-theme-light {
+  --ink:#f3f1ea; --panel:#faf8f3; --panel2:#ece8dd; --line:rgba(0,0,0,0.1);
+  --txt:#1d1f26; --mut:#6c7180; --accent:#b8741a; --accent-soft:rgba(184,116,26,0.12);
+  --node:rgba(0,0,0,0.03); --track:#d8d4c8;
+}
+
+.mc-app {
+  display:flex; flex-direction:column; height:100vh; min-height:560px;
+  font-family:'Space Mono',ui-monospace,monospace; font-size:12px;
+  color:var(--txt); background:var(--ink); overflow:hidden;
+  transition: background 200ms, color 200ms;
+}
+
+/* ── TOOLBAR ── */
+.mc-toolbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 14px; background:var(--panel); border-bottom:1px solid var(--line);
+  flex-shrink:0; gap:12px;
+}
+.mc-brand { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.mc-brand-mark { font-size:20px; color:var(--accent); }
+.mc-brand-name { font-family:'Fraunces',Georgia,serif; font-size:15px; letter-spacing:1px; }
+.mc-brand-sub { font-size:10px; color:var(--mut); letter-spacing:0.5px; }
+.mc-toolbar-center { flex:1; display:flex; justify-content:center; min-width:0; }
+.mc-file-pills { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+.mc-file-pill {
+  font-size:10px; padding:2px 8px; border-radius:3px; white-space:nowrap;
+}
+.mc-pill-html { background:rgba(74,144,226,0.15); color:#6ab0ff; border:1px solid rgba(74,144,226,0.25); }
+.mc-pill-css  { background:var(--accent-soft); color:var(--accent); border:1px solid rgba(232,176,75,0.25); }
+.mc-toolbar-actions { display:flex; gap:6px; flex-shrink:0; }
+.mc-tool-btn {
+  width:30px; height:30px; border-radius:6px; cursor:pointer; font-size:13px;
+  background:var(--panel2); border:1px solid var(--line); color:var(--txt);
+  transition: border-color 120ms, color 120ms, background 120ms;
+}
+.mc-tool-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ── IMPORT OVERLAY ── */
+.mc-import-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.65); display:flex;
+  align-items:center; justify-content:center; z-index:100;
+  backdrop-filter:blur(4px);
+}
+.mc-import-card {
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  padding:28px; width:480px; max-width:90vw;
+}
+.mc-import-title {
+  font-family:'Fraunces',Georgia,serif; font-size:17px; margin-bottom:20px;
+}
+.mc-import-callout {
+  background:var(--accent-soft); border:1px solid var(--accent); border-radius:6px;
+  padding:9px 12px; font-size:11px; color:var(--accent); margin-bottom:16px; line-height:1.5;
+}
+.mc-import-row { display:flex; gap:12px; margin-bottom:16px; }
+.mc-dropzone {
+  flex:1; border:1px dashed var(--line); border-radius:8px;
+  padding:20px 12px; display:flex; flex-direction:column; align-items:center;
+  gap:8px; cursor:pointer; transition: border-color 120ms, background 120ms;
+}
+.mc-dropzone:hover, .mc-dropzone.is-over {
+  border-color:var(--accent); background:var(--accent-soft);
+}
+.mc-dz-icon { font-size:22px; color:var(--accent); }
+.mc-dz-label { font-size:11px; color:var(--mut); text-align:center; }
+.mc-import-hint { font-size:11px; color:var(--mut); line-height:1.6; text-align:center; margin-bottom:16px; }
+.mc-import-close {
+  width:100%; padding:10px; background:var(--accent); color:var(--ink);
+  border:none; border-radius:6px; cursor:pointer; font-family:inherit;
+  font-size:12px; font-weight:700;
+}
+
+/* ── BODY ── */
+.mc-body { flex:1; display:flex; min-height:0; }
+
+/* ── LEFT PANEL ── */
+.mc-left {
+  flex-shrink:0; background:var(--panel);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.mc-panel-head {
+  font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--mut);
+  padding:10px 12px 8px; border-bottom:1px solid var(--line); flex-shrink:0;
+}
+.mc-tree { flex:1; overflow-y:auto; padding:4px 0; }
+.mc-tree-row {
+  display:flex; align-items:center; gap:6px; width:100%; text-align:left;
+  border:none; background:transparent; color:var(--mut); cursor:pointer;
+  font-family:inherit; font-size:11px; padding:5px 10px; border-radius:0;
+  transition: background 80ms, color 80ms;
+}
+.mc-tree-row:hover { background:var(--node); color:var(--txt); }
+.mc-tree-row.is-active { background:var(--accent-soft); color:var(--accent); }
+.mc-tree-icon { color:var(--accent); font-size:10px; flex-shrink:0; }
+.mc-tree-tag { color:var(--mut); font-size:10px; flex-shrink:0; }
+.mc-tree-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* ── CENTER ── */
+.mc-center { flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; }
+.mc-canvas-toolbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 14px; background:var(--panel); border-bottom:1px solid var(--line); flex-shrink:0;
+}
+.mc-canvas-title { font-family:'Fraunces',Georgia,serif; font-size:13px; }
+.mc-play-btn {
+  padding:4px 14px; background:var(--accent); color:var(--ink); border:none;
+  border-radius:5px; cursor:pointer; font-family:inherit; font-size:11px; font-weight:700;
+  transition: opacity 120ms;
+}
+.mc-play-btn:hover { opacity:0.85; }
+.mc-canvas-wrap { flex:1; min-height:0; background:var(--panel2); overflow:hidden; position:relative; }
+.mc-iframe { width:100%; height:100%; border:none; display:block; }
+.mc-canvas-empty {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100%; color:var(--mut); text-align:center; line-height:1.7;
+}
+.mc-canvas-empty-icon { font-size:36px; color:var(--accent); margin-bottom:10px; }
+
+/* ── RIGHT PANEL ── */
+.mc-right {
+  flex-shrink:0; background:var(--panel);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.mc-right-tabs {
+  display:flex; border-bottom:1px solid var(--line); flex-shrink:0;
+}
+.mc-rtab {
+  flex:1; padding:9px 4px; background:transparent; border:none; border-bottom:2px solid transparent;
+  color:var(--mut); font-family:inherit; font-size:11px; cursor:pointer;
+  transition: color 120ms, border-color 120ms;
+}
+.mc-rtab:hover { color:var(--txt); }
+.mc-rtab.is-active { color:var(--accent); border-bottom-color:var(--accent); }
+.mc-right-body { flex:1; overflow-y:auto; padding:14px; min-height:0; }
+
+/* ── CSS PREVIEW (bottom of right) ── */
+.mc-css-preview {
+  border-top:2px solid var(--line); flex-shrink:0;
+  display:flex; flex-direction:column; min-height:80px;
+}
+.mc-css-preview-hd {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:6px 12px; border-bottom:1px solid var(--line); flex-shrink:0;
+  font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--mut);
+}
+.mc-copy-btn {
+  background:transparent; border:1px solid var(--line); color:var(--mut);
+  font-family:inherit; font-size:10px; padding:2px 8px; border-radius:3px; cursor:pointer;
+}
+.mc-copy-btn:hover { border-color:var(--accent); color:var(--accent); }
+.mc-css-code {
+  margin:0; padding:10px 12px; overflow:auto; font-size:10px; line-height:1.6;
+  color:var(--txt); font-family:inherit; flex:1;
+}
+
+/* ── CONTROLS ── */
+.mc-field { margin-bottom:14px; }
+.mc-field-label { font-size:10.5px; color:var(--mut); margin-bottom:6px; display:flex; justify-content:space-between; }
+.mc-field-val { color:var(--accent); }
+.mc-range {
+  -webkit-appearance:none; appearance:none; width:100%; height:4px;
+  border-radius:4px; background:var(--track); cursor:pointer;
+}
+.mc-range::-webkit-slider-thumb {
+  -webkit-appearance:none; width:14px; height:14px; border-radius:50%;
+  background:var(--accent); cursor:pointer; box-shadow:0 0 0 3px var(--accent-soft);
+}
+.mc-range::-moz-range-thumb {
+  width:14px; height:14px; border:none; border-radius:50%;
+  background:var(--accent); cursor:pointer;
+}
+.mc-select {
+  width:100%; background:var(--ink); border:1px solid var(--line); color:var(--txt);
+  font-family:inherit; font-size:11px; padding:6px 8px; border-radius:5px; cursor:pointer;
+}
+.mc-text-input {
+  width:100%; background:var(--ink); border:1px solid var(--line); color:var(--txt);
+  font-family:inherit; font-size:11px; padding:6px 8px; border-radius:5px;
+}
+.mc-text-input:focus, .mc-select:focus {
+  outline:none; border-color:var(--accent);
+}
+.mc-segmented { display:flex; gap:3px; background:var(--ink); padding:3px; border-radius:6px; }
+.mc-seg-btn {
+  flex:1; background:transparent; border:none; color:var(--mut);
+  font-family:inherit; font-size:10px; padding:5px 4px; border-radius:4px; cursor:pointer;
+}
+.mc-seg-btn.is-active { background:var(--accent); color:var(--ink); font-weight:700; }
+
+/* ── SECTION ── */
+.mc-section { border-bottom:1px solid var(--line); }
+.mc-section-first { border-top:1px solid var(--line); }
+.mc-section-hd {
+  width:100%; display:flex; align-items:center; gap:8px; padding:10px 14px;
+  background:transparent; border:none; color:var(--txt); font-family:inherit;
+  font-size:11px; cursor:pointer; text-align:left;
+}
+.mc-section-hd:hover { background:var(--node); }
+.mc-section-arrow { color:var(--accent); font-size:9px; }
+.mc-section-body { padding:14px; }
+
+/* ── ANIMATION CARDS ── */
+.mc-anim-card {
+  background:var(--panel2); border:1px solid var(--line); border-radius:6px;
+  margin-bottom:10px; overflow:hidden;
+}
+.mc-anim-card-hd {
+  display:flex; align-items:center; gap:8px; padding:9px 12px; cursor:pointer;
+}
+.mc-anim-card-hd:hover { background:var(--node); }
+.mc-anim-arrow { color:var(--accent); font-size:9px; flex-shrink:0; }
+.mc-anim-name { flex:1; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mc-anim-del {
+  background:transparent; border:none; color:var(--mut); cursor:pointer;
+  font-size:11px; padding:2px 4px; flex-shrink:0;
+}
+.mc-anim-del:hover { color:#ff6b6b; }
+.mc-anim-body { padding:12px; border-top:1px solid var(--line); }
+
+/* ── STOPS ── */
+.mc-stops-head {
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--mut);
+  margin:14px 0 8px;
+}
+.mc-add-stop-btn {
+  background:transparent; border:1px solid var(--line); color:var(--mut);
+  font-family:inherit; font-size:10px; padding:2px 8px; border-radius:3px; cursor:pointer;
+}
+.mc-add-stop-btn:hover { border-color:var(--accent); color:var(--accent); }
+.mc-stop {
+  background:var(--ink); border:1px solid var(--line); border-radius:5px;
+  padding:10px; margin-bottom:8px;
+}
+.mc-stop-hd { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.mc-stop-pct { font-size:11px; color:var(--accent); width:30px; flex-shrink:0; }
+.mc-stop-range { flex:1; }
+.mc-stop-del {
+  background:transparent; border:none; color:var(--mut); cursor:pointer; font-size:10px; padding:2px;
+}
+.mc-stop-del:hover { color:#ff6b6b; }
+.mc-stop-props { display:flex; flex-direction:column; gap:5px; }
+.mc-stop-prop-row { display:flex; align-items:center; gap:5px; }
+.mc-prop-name { font-size:10px; color:var(--accent); flex-shrink:0; min-width:90px; overflow:hidden; text-overflow:ellipsis; }
+.mc-prop-val { flex:1; }
+.mc-add-prop-row { display:flex; align-items:center; gap:5px; margin-top:4px; }
+.mc-prop-sel { flex:1; }
+.mc-add-prop-btn {
+  width:26px; height:26px; background:var(--accent-soft); border:1px solid var(--accent);
+  color:var(--accent); border-radius:4px; cursor:pointer; font-size:14px; flex-shrink:0;
+}
+
+/* ── SVG ── */
+.mc-svg-grid { display:flex; flex-direction:column; gap:6px; }
+.mc-svg-row { display:flex; align-items:center; gap:8px; }
+.mc-svg-val { flex:1; }
+
+/* ── MISC ── */
+.mc-empty {
+  color:var(--mut); text-align:center; padding:30px 16px; line-height:1.7; font-size:11px;
+}
+.mc-empty-icon { font-size:28px; color:var(--accent); margin-bottom:8px; }
+.mc-panel-intro {
+  font-size:11px; color:var(--mut); margin-bottom:14px;
+  padding-bottom:10px; border-bottom:1px solid var(--line); line-height:1.6;
+}
+.mc-code-inline {
+  background:var(--accent-soft); color:var(--accent); padding:1px 5px; border-radius:3px;
+}
+.mc-hint { font-size:10.5px; color:var(--mut); line-height:1.6; }
+.mc-add-btn {
+  width:100%; padding:9px; background:var(--accent-soft); border:1px solid var(--accent);
+  color:var(--accent); font-family:inherit; font-size:11px; border-radius:5px;
+  cursor:pointer; margin-bottom:14px;
+}
+.mc-add-btn:hover { background:var(--accent); color:var(--ink); }
+.mc-pill-btn {
+  padding:4px 10px; background:var(--panel2); border:1px solid var(--line);
+  color:var(--mut); font-family:inherit; font-size:12px; border-radius:4px; cursor:pointer;
+}
+.mc-pill-btn.is-on { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+
+/* ── EASING CURVE ── */
+.mc-easing-preview { margin-top:8px; margin-bottom:14px; }
+.mc-easing-label { font-size:10px; color:var(--mut); margin-bottom:6px; }
+.mc-curve-svg { display:block; background:var(--ink); border:1px solid var(--line); border-radius:6px; }
+
+.mc-tool-btn:disabled { opacity:0.3; cursor:default; pointer-events:none; }
+
+/* ── RULE COPY / PASTE ── */
+.mc-trans-actions { display:flex; gap:8px; align-items:center; margin-bottom:14px; }
+.mc-add-btn-inline {
+  flex:1; margin-bottom:0; padding:7px;
+}
+.mc-rule-copy-btn {
+  background:transparent; border:none; color:var(--mut); cursor:pointer;
+  font-size:13px; padding:2px 5px; border-radius:3px; flex-shrink:0;
+  transition: color 100ms;
+}
+.mc-rule-copy-btn:hover { color:var(--accent); }
+.mc-paste-btn {
+  flex-shrink:0; padding:5px 10px; background:var(--accent-soft);
+  border:1px dashed var(--accent); color:var(--accent); border-radius:5px;
+  cursor:pointer; font-family:inherit; font-size:10px;
+  transition: background 120ms;
+}
+.mc-paste-btn:hover { background:var(--accent); color:var(--ink); }
+.mc-paste-hint { font-weight:700; }
+
+/* ── TWO-STATE EDITOR ── */
+.mc-two-state {
+  display:flex; align-items:flex-start; gap:8px; margin-bottom:14px;
+  background:var(--ink); border:1px solid var(--line); border-radius:6px; padding:10px 8px;
+}
+.mc-state-col { flex:1; min-width:0; }
+.mc-state-label {
+  font-size:9.5px; text-transform:uppercase; letter-spacing:1px; color:var(--mut);
+  margin-bottom:6px;
+}
+.mc-state-arrow {
+  font-size:16px; color:var(--accent); align-self:center; flex-shrink:0; padding-top:14px;
+}
+
+/* ── PROP VALUE EDITOR ── */
+.mc-prop-value-row { display:flex; align-items:center; gap:8px; }
+.mc-transform-grid { display:flex; flex-direction:column; gap:6px; margin-top:4px; }
+.mc-transform-row  { display:flex; align-items:center; gap:8px; }
+.mc-transform-label { font-size:10px; color:var(--mut); width:52px; flex-shrink:0; }
+
+/* Clickable MotionCraft CSS rule lines */
+.mc-css-mc-rule {
+  cursor:pointer; border-radius:3px; display:block;
+  transition: background 100ms;
+}
+.mc-css-mc-rule:hover { background:var(--accent-soft); outline:1px solid var(--accent); }
+
+/* ── RESET BUTTONS ── */
+.mc-reset-btn {
+  background:transparent; border:none; color:var(--mut); cursor:pointer;
+  font-size:11px; padding:1px 4px; border-radius:3px; line-height:1;
+  transition: color 100ms;
+}
+.mc-reset-btn:hover { color:var(--accent); }
+.mc-reset-all-btn {
+  background:transparent; border:1px solid var(--line); color:var(--mut);
+  cursor:pointer; font-family:inherit; font-size:10px; padding:2px 7px;
+  border-radius:3px; float:right; transition: color 100ms, border-color 100ms;
+}
+.mc-reset-all-btn:hover { color:var(--accent); border-color:var(--accent); }
+.mc-field-row {
+  display:flex; align-items:center; justify-content:space-between; width:100%;
+}
+
+/* ── PANEL RESIZE GRIP ── */
+.mc-panel-grip {
+  position:absolute; top:0; bottom:0; width:6px; cursor:ew-resize; z-index:10;
+  touch-action:none;
+  background:var(--line);
+  transition: background 120ms;
+}
+.mc-panel-grip:hover, .mc-panel-grip:active {
+  background:var(--accent);
+}
+.mc-grip-right { right:0; }
+.mc-grip-left  { left:0; }
+
+/* ── CSS CODE VIEW ── */
+.mc-css-code-view { cursor:text; }
+.mc-css-hl { background:var(--accent-soft); border-radius:3px; outline:1px solid var(--accent); }
+.mc-css-mut { color:var(--mut); }
+
+/* ── CSS EDIT TEXTAREA ── */
+.mc-css-edit {
+  flex:1; width:100%; min-height:0; margin:0; padding:10px 12px;
+  background:var(--ink); border:none; border-top:1px solid var(--accent);
+  color:var(--txt); font-family:'Space Mono',ui-monospace,monospace;
+  font-size:10px; line-height:1.6; resize:none; outline:none;
+}
+.mc-edit-note { font-size:9.5px; color:var(--mut); white-space:nowrap; align-self:center; }
+.mc-copy-primary { background:var(--accent); color:var(--ink); border-color:var(--accent); }
+
+/* ── LEFT/RIGHT panels need position:relative for grip positioning ── */
+.mc-left  { position:relative; }
+.mc-right { position:relative; }
+
+
+/* ── DRAWER GRIP (vertical resize of CSS panel) ── */
+.mc-drawer-grip {
+  display:flex; justify-content:center; align-items:center;
+  height:8px; cursor:ns-resize; flex-shrink:0;
+  background:var(--line); transition: background 120ms;
+}
+.mc-drawer-grip:hover, .mc-drawer-grip:active { background:var(--accent); }
+.mc-drawer-grip-bar { width:34px; height:3px; border-radius:2px; background:var(--mut); transition:background 100ms; }
+.mc-drawer-grip:hover .mc-drawer-grip-bar { background:var(--ink); }
+
+/* ── CANVAS CONTROLS ── */
+.mc-canvas-controls {
+  display:flex; align-items:center; gap:8px; flex:1;
+  padding:0 12px; font-size:10.5px;
+}
+.mc-canvas-ctrl-label { color:var(--mut); flex-shrink:0; }
+.mc-canvas-ctrl-val   { color:var(--accent); font-size:10px; min-width:28px; }
+.mc-canvas-color {
+  width:22px; height:22px; border:1px solid var(--line); border-radius:4px;
+  padding:0; cursor:pointer; background:none; flex-shrink:0;
+}
+.mc-canvas-transp {
+  background:var(--panel2); border:1px solid var(--line); color:var(--mut);
+  font-family:inherit; font-size:10px; padding:3px 8px; border-radius:4px;
+  cursor:pointer; white-space:nowrap; flex-shrink:0;
+}
+.mc-canvas-transp:hover { border-color:var(--accent); color:var(--accent); }
+.mc-canvas-opacity { width:80px; flex-shrink:0; }
+
+.mc-app ::-webkit-scrollbar { width:8px; height:8px; }
+.mc-app ::-webkit-scrollbar-thumb { background:var(--track); border-radius:6px; }
+.mc-app ::-webkit-scrollbar-track { background:transparent; }
+`;
+
+// Inject styles
+const styleEl = document.createElement("style");
+styleEl.textContent = css;
+document.head.appendChild(styleEl);
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<MotionCraft />);
+</script>
+</body>
+</html>

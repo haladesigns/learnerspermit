@@ -872,6 +872,12 @@
       },
       {
         "type": "file",
+        "name": "FlexMotionCraft.html",
+        "label": "Flexmotioncraft",
+        "path": "s&box/FlexMotionCraft.html"
+      },
+      {
+        "type": "file",
         "name": "understanding-flexbox.pdf",
         "label": "Understanding Flexbox",
         "path": "s&box/understanding-flexbox.pdf"

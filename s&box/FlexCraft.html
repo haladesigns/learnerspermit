@@ -82,8 +82,8 @@ const makeContainer = () =>
     flexDirection: "row",
     justifyContent: "flex-start",
     alignItems: "stretch",
-    gap: 12,
-    padding: 16,
+    gap: 0,
+    padding: 0,
     flexWrap: "nowrap",
   });
 
@@ -93,7 +93,7 @@ const makeBox = () =>
     "div",
     "Box",
     {
-      padding: 20,
+      padding: 0,
       flexGrow: 0,
       flexShrink: 1,
       flexBasis: "auto",
@@ -590,13 +590,25 @@ function Segmented({ label, value, options, onChange, modified, onReset }) {
 
   // On mount + whenever the option set changes, measure overflow and scroll the
   // active option into view so the current value is never hidden off-edge.
+  // We scroll the TRACK element directly (el.scrollLeft) rather than calling
+  // scrollIntoView on the button — scrollIntoView can propagate up to the page
+  // and cause a jarring full-panel jump every time a value changes.
   React.useLayoutEffect(() => {
     updateEdges();
     const el = trackRef.current;
     if (!el) return;
     const active = el.querySelector(".is-active");
-    if (active && active.scrollIntoView) {
-      active.scrollIntoView({ inline: "nearest", block: "nearest" });
+    if (active) {
+      // Bring the active button into view within the track only.
+      const trackLeft  = el.scrollLeft;
+      const trackRight = trackLeft + el.clientWidth;
+      const btnLeft    = active.offsetLeft;
+      const btnRight   = btnLeft + active.offsetWidth;
+      if (btnLeft < trackLeft) {
+        el.scrollLeft = btnLeft;
+      } else if (btnRight > trackRight) {
+        el.scrollLeft = btnRight - el.clientWidth;
+      }
     }
     updateEdges();
   }, [value, options, updateEdges]);
@@ -1081,6 +1093,760 @@ function GapOverlay({ containerRef, node }) {
 }
 
 // ============================================================================
+//  Justify-content space overlay
+// ============================================================================
+// Computes the "free space" zones produced by justify-content on the MAIN axis
+// and returns an array of { left, top, width, height, label } rects in
+// container-local coords. One rect per distinct space zone.
+//
+//  space-between  → N-1 equal zones between items
+//  space-around   → N zones between + two half-zones on the outer edges
+//  space-evenly   → N+1 equal zones everywhere
+//  flex-start     → one free-space block at the END
+//  flex-end       → one free-space block at the START
+//  center         → two half-zones, one at each outer edge
+//
+// Works on both row (horizontal=true) and column containers by swapping the
+// main / cross axis coordinates. Returns [] when there's no measurable free
+// space (items fill the container exactly) or when justifyContent is flex-start
+// with zero free space.
+// insets = { padMain, padMainStart, padCross, padCrossStart, gapMain, childMargins }
+//   childMargins: array of { start, end, autoStart, autoEnd } — one per child
+//   in the same order as childRects. start/end are main-axis margin values.
+//   autoStart/autoEnd are true when that side is margin:auto.
+//
+// Item margins are consumed from free space BEFORE justify-content distributes.
+// getBoundingClientRect never includes margin, so we read it via getComputedStyle.
+// margin:auto absorbs ALL free space — justify-content sees 0 → return [].
+//
+// Wrapping: justify-content applies independently per flex line.
+function computeJustifyZones(childRects, containerRect, horizontal, justifyContent, insets) {
+  if (!childRects.length) return [];
+
+  const rects = childRects.map((r) => ({
+    left:   r.left   - containerRect.left,
+    top:    r.top    - containerRect.top,
+    right:  r.right  - containerRect.left,
+    bottom: r.bottom - containerRect.top,
+  }));
+
+  const padMain       = (insets && insets.padMain)       || 0;
+  const padMainStart  = (insets && insets.padMainStart)  || 0;
+  const padCross      = (insets && insets.padCross)      || 0;
+  const padCrossStart = (insets && insets.padCrossStart) || 0;
+  const gapMain       = (insets && insets.gapMain)       || 0;
+  const childMargins  = (insets && insets.childMargins)  || [];
+
+  // margin:auto on any item absorbs all free space — no justify zones.
+  if (childMargins.some((m) => m && (m.autoStart || m.autoEnd))) return [];
+
+  const containerMainSize = (horizontal ? containerRect.width : containerRect.height) - padMain;
+  const jc = justifyContent || "flex-start";
+
+  const viewportRects = rects.map((r) => ({
+    left:   r.left   + containerRect.left,
+    top:    r.top    + containerRect.top,
+    right:  r.right  + containerRect.left,
+    bottom: r.bottom + containerRect.top,
+  }));
+  const lineBoxes = groupIntoLines(viewportRects, containerRect, horizontal);
+
+  const allZones = [];
+
+  for (const lineBox of lineBoxes) {
+    const lineCrossStart = horizontal ? lineBox.top    : lineBox.left;
+    const lineCrossEnd   = horizontal ? lineBox.top + lineBox.height : lineBox.left + lineBox.width;
+
+    // Items on this line — keep original index so we can look up childMargins.
+    const lineItemsWithIdx = rects
+      .map((r, idx) => ({ r, idx }))
+      .filter(({ r }) => {
+        const mid = horizontal ? (r.top + r.bottom) / 2 : (r.left + r.right) / 2;
+        return mid >= lineCrossStart - 1 && mid <= lineCrossEnd + 1;
+      });
+    if (!lineItemsWithIdx.length) continue;
+
+    lineItemsWithIdx.sort((a, b) =>
+      horizontal ? a.r.left - b.r.left : a.r.top - b.r.top
+    );
+
+    const sorted  = lineItemsWithIdx.map(({ r }) => r);
+    const margins = lineItemsWithIdx.map(({ idx }) => childMargins[idx] || { start: 0, end: 0 });
+    const n = sorted.length;
+
+    const mainStart = horizontal ? sorted[0].left    : sorted[0].top;
+    const mainEnd   = horizontal ? sorted[n-1].right : sorted[n-1].bottom;
+
+    const totalItemSize = sorted.reduce((s, r) =>
+      s + (horizontal ? r.right - r.left : r.bottom - r.top), 0
+    );
+    const totalGap    = Math.max(0, n - 1) * gapMain;
+    // All item margins (start + end) are consumed before justify-content.
+    const totalMargin = margins.reduce((s, m) => s + (m.start || 0) + (m.end || 0), 0);
+    const freeSpace   = containerMainSize - totalItemSize - totalGap - totalMargin;
+    if (freeSpace < 1) continue;
+
+    const crossStart = lineCrossStart;
+    const crossSize  = lineCrossEnd - lineCrossStart;
+
+    const zone = (mainS, mainSz, label) => {
+      if (mainSz < 1) return null;
+      return horizontal
+        ? { left: mainS, top: crossStart, width: mainSz, height: crossSize, label }
+        : { left: crossStart, top: mainS, width: crossSize, height: mainSz, label };
+    };
+    const push = (z) => { if (z) allZones.push(z); };
+
+    // Leading anchor: padMainStart + first item's leading margin.
+    const leadMargin = margins[0] ? (margins[0].start || 0) : 0;
+    const leadAnchor = padMainStart + leadMargin;
+
+    if (jc === "space-between") {
+      if (n < 2) continue;
+      const gap = freeSpace / (n - 1);
+      for (let i = 0; i < n - 1; i++) {
+        push(zone(horizontal ? sorted[i].right : sorted[i].bottom, gap, `${Math.round(gap)}px`));
+      }
+    } else if (jc === "space-around") {
+      const half = freeSpace / (2 * n);
+      push(zone(leadAnchor, half, `${Math.round(half)}px`));
+      for (let i = 0; i < n - 1; i++) {
+        push(zone(horizontal ? sorted[i].right : sorted[i].bottom, half * 2, `${Math.round(half * 2)}px`));
+      }
+      push(zone(mainEnd + half, half, `${Math.round(half)}px`));
+    } else if (jc === "space-evenly") {
+      const gap = freeSpace / (n + 1);
+      for (let i = 0; i <= n; i++) {
+        const anchor = i === 0
+          ? leadAnchor
+          : (horizontal ? sorted[i-1].right : sorted[i-1].bottom);
+        push(zone(anchor, gap, `${Math.round(gap)}px`));
+      }
+    } else if (jc === "flex-end") {
+      // Free space at the start — from padMainStart to first item's margin-start edge.
+      const startZoneSize = mainStart - leadMargin - padMainStart;
+      push(zone(padMainStart, startZoneSize, `${Math.round(startZoneSize)}px`));
+    } else if (jc === "center") {
+      const half = freeSpace / 2;
+      push(zone(leadAnchor, half, `${Math.round(half)}px`));
+      push(zone(mainEnd,    half, `${Math.round(half)}px`));
+    } else {
+      // flex-start: free space at the end.
+      push(zone(mainEnd, freeSpace, `${Math.round(freeSpace)}px`));
+    }
+  }
+
+  return allZones;
+}
+
+// The overlay component: same measure-then-draw + equality-guard pattern as
+// GapOverlay and FlexLineOverlay. Draws dashed orange lines bounding each free-
+// space zone, with a small label showing the zone's pixel width/height.
+function JustifyOverlay({ containerRef, node }) {
+  const [zones, setZones] = React.useState([]);
+  const horizontal = (node.styles.flexDirection || "row").startsWith("row");
+
+  const layoutKey = JSON.stringify({
+    fd:  node.styles.flexDirection,
+    jc:  node.styles.justifyContent,
+    fw:  node.styles.flexWrap,
+    g:   node.styles.gap,
+    ai:  node.styles.alignItems,
+    n:   node.children.length,
+    w:   node.styles.width,
+    h:   node.styles.height,
+    // Include child margins so layout re-measures when margins change.
+    cm:  node.children.map((c) => c.styles && c.styles.margin).join(","),
+  });
+
+  React.useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => {
+      const cRect = el.getBoundingClientRect();
+      const kids = Array.from(el.children).filter(
+        (c) => c.classList && c.classList.contains("fc-node")
+      );
+      const rects = kids.map((k) => k.getBoundingClientRect());
+      // Read padding and gap from computed style so free-space is content-box accurate.
+      const cs = window.getComputedStyle(el);
+      const pL = parseFloat(cs.paddingLeft)   || 0;
+      const pR = parseFloat(cs.paddingRight)  || 0;
+      const pT = parseFloat(cs.paddingTop)    || 0;
+      const pB = parseFloat(cs.paddingBottom) || 0;
+      const gapH = parseFloat(cs.columnGap)   || 0;
+      const gapV = parseFloat(cs.rowGap)      || 0;
+      // Read each child's main-axis margins so freeSpace is correctly reduced.
+      // margin:auto is detected by checking getPropertyValue returns "auto".
+      const childMargins = kids.map((k) => {
+        const kcs = window.getComputedStyle(k);
+        if (horizontal) {
+          return {
+            start:     parseFloat(kcs.marginLeft)  || 0,
+            end:       parseFloat(kcs.marginRight) || 0,
+            autoStart: kcs.getPropertyValue("margin-left")  === "auto",
+            autoEnd:   kcs.getPropertyValue("margin-right") === "auto",
+          };
+        } else {
+          return {
+            start:     parseFloat(kcs.marginTop)    || 0,
+            end:       parseFloat(kcs.marginBottom) || 0,
+            autoStart: kcs.getPropertyValue("margin-top")    === "auto",
+            autoEnd:   kcs.getPropertyValue("margin-bottom") === "auto",
+          };
+        }
+      });
+      const insets = horizontal
+        ? { padMain: pL + pR, padMainStart: pL, padCross: pT + pB, padCrossStart: pT, gapMain: gapH, childMargins }
+        : { padMain: pT + pB, padMainStart: pT, padCross: pL + pR, padCrossStart: pL, gapMain: gapV, childMargins };
+      const next = computeJustifyZones(
+        rects, cRect, horizontal, node.styles.justifyContent, insets
+      );
+      setZones((prev) => {
+        if (
+          prev.length === next.length &&
+          prev.every((p, i) =>
+            p.left === next[i].left && p.top === next[i].top &&
+            p.width === next[i].width && p.height === next[i].height
+          )
+        ) return prev;
+        return next;
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    Array.from(el.children).forEach((c) => ro.observe(c));
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutKey, horizontal]);
+
+  return (
+    <>
+      {zones.map((z, i) => (
+        <div
+          key={i}
+          className="fc-jc-zone"
+          style={{
+            position: "absolute",
+            left:   z.left,
+            top:    z.top,
+            width:  z.width,
+            height: z.height,
+            pointerEvents: "none",
+            zIndex: 22,
+          }}
+        >
+          {/* Dashed boundary lines — two lines per zone (start edge + end edge).
+              We draw them as absolutely-positioned thin divs rather than a CSS
+              border so only the EDGES of the zone are marked, not the sides. */}
+          <div className="fc-jc-line fc-jc-line-start" />
+          <div className="fc-jc-line fc-jc-line-end" />
+          {/* Size label, centered in the zone, only shown when there's room */}
+          {(horizontal ? z.width : z.height) >= 20 && (
+            <span className="fc-jc-label">{z.label}</span>
+          )}
+        </div>
+      ))}
+      {/* Legend tag: which justify-content value is active */}
+      <span className="fc-jc-badge" style={{ position: "absolute", pointerEvents: "none", zIndex: 23 }}>
+        justify: {(node.styles.justifyContent || "flex-start").replace("flex-", "")}
+      </span>
+    </>
+  );
+}
+
+// ============================================================================
+//  Align-items overlay
+// ============================================================================
+// For each child, compute the cross-axis anchor position implied by the
+// container's align-items value and the child's own align-self override.
+// Returns one marker per child with geometry + mode metadata.
+//
+//  stretch    → bracket showing the full cross-axis extent the item fills
+//  flex-start → tick at the cross-start edge of the item
+//  flex-end   → tick at the cross-end edge of the item
+//  center     → tick at the cross-axis midpoint of the item
+//  baseline   → tick at cross-start (JS can't read true text baseline)
+//
+// Works for both row (cross = Y) and column (cross = X) containers.
+function computeAlignMarkers(childRects, childNodes, containerRect, horizontal, alignItems) {
+  if (!childRects.length) return [];
+  return childRects.map((r, i) => {
+    const loc = {
+      left:   r.left   - containerRect.left,
+      top:    r.top    - containerRect.top,
+      right:  r.right  - containerRect.left,
+      bottom: r.bottom - containerRect.top,
+    };
+    // align-self on the child overrides the container's align-items.
+    const selfVal = childNodes[i] && childNodes[i].styles && childNodes[i].styles.alignSelf;
+    const effective = (selfVal && selfVal !== "auto") ? selfVal : (alignItems || "stretch");
+
+    const mainStart = horizontal ? loc.left  : loc.top;
+    const mainSize  = horizontal ? loc.right - loc.left : loc.bottom - loc.top;
+    const crossStart = horizontal ? loc.top    : loc.left;
+    const crossEnd   = horizontal ? loc.bottom : loc.right;
+    const crossMid   = (crossStart + crossEnd) / 2;
+
+    let crossAnchor, mode;
+    if      (effective === "flex-end")  { crossAnchor = crossEnd;   mode = "end";      }
+    else if (effective === "center")    { crossAnchor = crossMid;   mode = "center";   }
+    else if (effective === "baseline")  { crossAnchor = crossStart; mode = "baseline"; }
+    else if (effective === "stretch")   { crossAnchor = crossMid;   mode = "stretch";  }
+    else                                { crossAnchor = crossStart; mode = "start";    }
+
+    const shortLabel = effective.replace("flex-", "");
+    return {
+      mainStart, mainSize, crossAnchor, crossStart, crossEnd, mode,
+      label: (selfVal && selfVal !== "auto") ? `self: ${shortLabel}` : shortLabel,
+      hasSelfOverride: !!(selfVal && selfVal !== "auto"),
+    };
+  });
+}
+
+function AlignItemsOverlay({ containerRef, node }) {
+  const [markers, setMarkers] = React.useState([]);
+  const horizontal = (node.styles.flexDirection || "row").startsWith("row");
+
+  const layoutKey = JSON.stringify({
+    fd: node.styles.flexDirection,
+    ai: node.styles.alignItems,
+    fw: node.styles.flexWrap,
+    g:  node.styles.gap,
+    n:  node.children.length,
+    as: node.children.map((c) => c.styles && c.styles.alignSelf).join(","),
+  });
+
+  React.useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => {
+      const cRect = el.getBoundingClientRect();
+      const kids = Array.from(el.children).filter(
+        (c) => c.classList && c.classList.contains("fc-node")
+      );
+      const rects = kids.map((k) => k.getBoundingClientRect());
+      const next = computeAlignMarkers(
+        rects, node.children, cRect, horizontal, node.styles.alignItems
+      );
+      setMarkers((prev) => {
+        if (
+          prev.length === next.length &&
+          prev.every((p, i) =>
+            p.mainStart   === next[i].mainStart &&
+            p.crossAnchor === next[i].crossAnchor &&
+            p.crossStart  === next[i].crossStart &&
+            p.crossEnd    === next[i].crossEnd &&
+            p.mode        === next[i].mode
+          )
+        ) return prev;
+        return next;
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    Array.from(el.children).forEach((c) => ro.observe(c));
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutKey, horizontal]);
+
+  // Teal for align-items; amber for align-self overrides (signals "differs").
+  const C_BASE     = "rgba(45,212,191,0.88)";
+  const C_OVERRIDE = "rgba(251,191,36,0.95)";
+  const C_STRETCH  = "rgba(45,212,191,0.07)";
+  const TICK = 1.5;
+  // Dashed line gradient — same style as jc-line, just a different color.
+  const dash = (c, dir) =>
+    `repeating-linear-gradient(${dir}, ${c} 0, ${c} 5px, transparent 5px, transparent 9px)`;
+
+  return (
+    <>
+      {markers.map((m, i) => {
+        const color = m.hasSelfOverride ? C_OVERRIDE : C_BASE;
+        const bgColor  = m.hasSelfOverride ? "rgba(251,191,36,0.95)" : "rgba(45,212,191,0.92)";
+        const txtColor = m.hasSelfOverride ? "#3a2300" : "#012e29";
+
+        if (horizontal) {
+          // Row container — cross axis is Y. Ticks are horizontal lines.
+          const tickPositions = m.mode === "stretch"
+            ? [m.crossStart, m.crossEnd - TICK]
+            : [m.crossAnchor - TICK / 2];
+          return (
+            <React.Fragment key={i}>
+              {m.mode === "stretch" && (
+                <div style={{
+                  position: "absolute", pointerEvents: "none",
+                  left: m.mainStart, top: m.crossStart,
+                  width: m.mainSize, height: m.crossEnd - m.crossStart,
+                  background: C_STRETCH, zIndex: 24,
+                }} />
+              )}
+              {tickPositions.map((t, ti) => (
+                <div key={ti} style={{
+                  position: "absolute", pointerEvents: "none", zIndex: 24,
+                  left: m.mainStart, top: t,
+                  width: m.mainSize, height: TICK,
+                  background: dash(color, "to right"),
+                }} />
+              ))}
+              {m.mainSize >= 28 && (
+                <span style={{
+                  position: "absolute", pointerEvents: "none", zIndex: 25,
+                  left: m.mainStart + m.mainSize / 2,
+                  top: m.crossAnchor,
+                  transform: "translate(-50%, -130%)",
+                  fontSize: "8.5px", fontWeight: 700, whiteSpace: "nowrap",
+                  fontFamily: "'Space Mono',monospace",
+                  background: bgColor, color: txtColor,
+                  padding: "1px 4px", borderRadius: 2,
+                }}>
+                  {m.label}
+                </span>
+              )}
+            </React.Fragment>
+          );
+        } else {
+          // Column container — cross axis is X. Ticks are vertical lines.
+          const tickPositions = m.mode === "stretch"
+            ? [m.crossStart, m.crossEnd - TICK]
+            : [m.crossAnchor - TICK / 2];
+          return (
+            <React.Fragment key={i}>
+              {m.mode === "stretch" && (
+                <div style={{
+                  position: "absolute", pointerEvents: "none",
+                  left: m.crossStart, top: m.mainStart,
+                  width: m.crossEnd - m.crossStart, height: m.mainSize,
+                  background: C_STRETCH, zIndex: 24,
+                }} />
+              )}
+              {tickPositions.map((t, ti) => (
+                <div key={ti} style={{
+                  position: "absolute", pointerEvents: "none", zIndex: 24,
+                  left: t, top: m.mainStart,
+                  width: TICK, height: m.mainSize,
+                  background: dash(color, "to bottom"),
+                }} />
+              ))}
+              {m.mainSize >= 28 && (
+                <span style={{
+                  position: "absolute", pointerEvents: "none", zIndex: 25,
+                  left: m.crossAnchor, top: m.mainStart + m.mainSize / 2,
+                  transform: "translate(6px, -50%)",
+                  fontSize: "8.5px", fontWeight: 700, whiteSpace: "nowrap",
+                  fontFamily: "'Space Mono',monospace",
+                  background: bgColor, color: txtColor,
+                  padding: "1px 4px", borderRadius: 2,
+                }}>
+                  {m.label}
+                </span>
+              )}
+            </React.Fragment>
+          );
+        }
+      })}
+      {/* Container badge: bottom-right, teal */}
+      <span style={{
+        position: "absolute", pointerEvents: "none", zIndex: 25,
+        bottom: 2, right: 4,
+        fontSize: "8.5px", fontWeight: 700, letterSpacing: "0.3px",
+        fontFamily: "'Space Mono',monospace",
+        background: "rgba(45,212,191,0.92)", color: "#012e29",
+        padding: "1px 6px", borderRadius: 3,
+      }}>
+        align: {(node.styles.alignItems || "stretch").replace("flex-", "")}
+      </span>
+    </>
+  );
+}
+
+// ============================================================================
+//  Align-content overlay
+// ============================================================================
+// align-content distributes flex LINES along the cross axis — the cross-axis
+// mirror of justify-content distributing items along the main axis. It only
+// has an effect when flex-wrap is set AND there are 2+ lines. We re-use
+// groupIntoLines to find the line rects, then apply the same zone math as
+// computeJustifyZones, but on the cross axis.
+//
+// Returns { zones, singleLine } where:
+//   zones      — array of { crossStart, mainStart, crossSize, mainSize, label }
+//                in container-local coords (one per free-space zone)
+//   singleLine — true when there's only one line (overlay shows "no effect" badge)
+// insets = { padCross, rowGap } — cross-axis padding total and row/column gap between lines.
+function computeAlignContentZones(childRects, containerRect, horizontal, alignContent, insets) {
+  if (!childRects.length) return { zones: [], singleLine: true };
+
+  const lines = groupIntoLines(childRects, containerRect, horizontal);
+  if (lines.length < 2) return { zones: [], singleLine: true };
+
+  const padCross        = (insets && insets.padCross)        || 0;
+  const gapCross        = (insets && insets.gapCross)        || 0;
+  // childCrossMargins: array of { start, end } per child (cross-axis margins).
+  // For row containers cross = Y: start=marginTop, end=marginBottom.
+  // For col containers cross = X: start=marginLeft, end=marginRight.
+  const childCrossMargins = (insets && insets.childCrossMargins) || [];
+
+  const containerCrossSize = (horizontal ? containerRect.height : containerRect.width) - padCross;
+
+  const contentMainStart = horizontal
+    ? Math.min(...lines.map((l) => l.left))
+    : Math.min(...lines.map((l) => l.top));
+  const contentMainEnd = horizontal
+    ? Math.max(...lines.map((l) => l.left + l.width))
+    : Math.max(...lines.map((l) => l.top + l.height));
+  const contentMainSize = contentMainEnd - contentMainStart;
+
+  // Each line's cross-axis span from groupIntoLines (border-box only — excludes
+  // item cross-axis margins). We add the max cross-axis margin contribution of
+  // each line: for each line, find items in it and take the max(marginStart) +
+  // max(marginEnd) as the line's margin envelope (conservative approximation —
+  // the browser uses the actual per-item margins but this is close enough for
+  // visual overlay purposes).
+  const localRects = childRects.map((r) => ({
+    left:   r.left   - containerRect.left,
+    top:    r.top    - containerRect.top,
+    right:  r.right  - containerRect.left,
+    bottom: r.bottom - containerRect.top,
+  }));
+
+  const lineCrossSizes = lines.map((line) => {
+    // Base cross size from bbox.
+    const base = horizontal ? line.height : line.width;
+    if (!childCrossMargins.length) return base;
+    // Find items in this line by cross-axis overlap.
+    const lineCrossStart = horizontal ? line.top  : line.left;
+    const lineCrossEnd   = horizontal ? line.top + line.height : line.left + line.width;
+    const lineItems = localRects
+      .map((r, idx) => ({ r, idx }))
+      .filter(({ r }) => {
+        const mid = horizontal ? (r.top + r.bottom) / 2 : (r.left + r.right) / 2;
+        return mid >= lineCrossStart - 1 && mid <= lineCrossEnd + 1;
+      });
+    if (!lineItems.length) return base;
+    const maxStart = Math.max(0, ...lineItems.map(({ idx }) => (childCrossMargins[idx] || {}).start || 0));
+    const maxEnd   = Math.max(0, ...lineItems.map(({ idx }) => (childCrossMargins[idx] || {}).end   || 0));
+    return base + maxStart + maxEnd;
+  });
+
+  const totalLineSize = lineCrossSizes.reduce((s, v) => s + v, 0);
+  const n = lines.length;
+  const totalLinegap = Math.max(0, n - 1) * gapCross;
+  const freeSpace = containerCrossSize - totalLineSize - totalLinegap;
+  if (freeSpace < 1) return { zones: [], singleLine: false };
+
+  const ac = alignContent || "stretch";
+  const lineStarts = lines.map((l) => horizontal ? l.top  : l.left);
+  const lineEnds   = lines.map((l) => horizontal ? l.top + l.height : l.left + l.width);
+
+  const zone = (crossS, crossSz, label) => {
+    if (crossSz < 1) return null;
+    return horizontal
+      ? { left: contentMainStart, top: crossS, width: contentMainSize, height: crossSz, label }
+      : { left: crossS, top: contentMainStart, width: crossSz, height: contentMainSize, label };
+  };
+
+  const zones = [];
+  const push = (z) => { if (z) zones.push(z); };
+
+  if (ac === "space-between") {
+    const gap = freeSpace / (n - 1);
+    for (let i = 0; i < n - 1; i++) {
+      push(zone(lineEnds[i], gap, `${Math.round(gap)}px`));
+    }
+  } else if (ac === "space-around") {
+    const half = freeSpace / (2 * n);
+    push(zone(0, half, `${Math.round(half)}px`));
+    for (let i = 0; i < n - 1; i++) {
+      push(zone(lineEnds[i], half * 2, `${Math.round(half * 2)}px`));
+    }
+    push(zone(lineEnds[n - 1] + half, half, `${Math.round(half)}px`));
+  } else if (ac === "space-evenly") {
+    const gap = freeSpace / (n + 1);
+    for (let i = 0; i <= n; i++) {
+      const crossS = i === 0 ? 0 : lineEnds[i - 1];
+      push(zone(crossS, gap, `${Math.round(gap)}px`));
+    }
+  } else if (ac === "flex-end") {
+    push(zone(0, lineStarts[0], `${Math.round(lineStarts[0])}px`));
+  } else if (ac === "center") {
+    const half = freeSpace / 2;
+    push(zone(0,           half, `${Math.round(half)}px`));
+    push(zone(lineEnds[n - 1], half, `${Math.round(half)}px`));
+  } else if (ac === "stretch") {
+    // stretch distributes extra space INTO the lines themselves — no free-space
+    // zones to draw. Show nothing; the badge explains.
+    return { zones: [], singleLine: false };
+  } else {
+    // flex-start: free space at the end
+    push(zone(lineEnds[n - 1], freeSpace, `${Math.round(freeSpace)}px`));
+  }
+
+  return { zones, singleLine: false };
+}
+
+// Sky-blue (#38bdf8 family) — distinct from violet (gap), orange (justify),
+// teal (align-items), and blue (flex-lines).
+function AlignContentOverlay({ containerRef, node }) {
+  const [state, setState] = React.useState({ zones: [], singleLine: true });
+  const horizontal = (node.styles.flexDirection || "row").startsWith("row");
+
+  const layoutKey = JSON.stringify({
+    fd: node.styles.flexDirection,
+    ac: node.styles.alignContent,
+    fw: node.styles.flexWrap,
+    g:  node.styles.gap,
+    ai: node.styles.alignItems,
+    n:  node.children.length,
+    w:  node.styles.width,
+    h:  node.styles.height,
+    cm: node.children.map((c) => c.styles && c.styles.margin).join(","),
+  });
+
+  React.useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => {
+      const cRect = el.getBoundingClientRect();
+      const kids = Array.from(el.children).filter(
+        (c) => c.classList && c.classList.contains("fc-node")
+      );
+      const rects = kids.map((k) => k.getBoundingClientRect());
+      const cs = window.getComputedStyle(el);
+      const pL = parseFloat(cs.paddingLeft)   || 0;
+      const pR = parseFloat(cs.paddingRight)  || 0;
+      const pT = parseFloat(cs.paddingTop)    || 0;
+      const pB = parseFloat(cs.paddingBottom) || 0;
+      const gapH = parseFloat(cs.columnGap)   || 0;
+      const gapV = parseFloat(cs.rowGap)      || 0;
+      // Cross-axis margins per child: affects line cross-size calculation.
+      const childCrossMargins = kids.map((k) => {
+        const kcs = window.getComputedStyle(k);
+        if (horizontal) {
+          return {
+            start: parseFloat(kcs.marginTop)    || 0,
+            end:   parseFloat(kcs.marginBottom) || 0,
+          };
+        } else {
+          return {
+            start: parseFloat(kcs.marginLeft)  || 0,
+            end:   parseFloat(kcs.marginRight) || 0,
+          };
+        }
+      });
+      const insets = horizontal
+        ? { padCross: pT + pB, gapCross: gapV, childCrossMargins }
+        : { padCross: pL + pR, gapCross: gapH, childCrossMargins };
+      const next = computeAlignContentZones(
+        rects, cRect, horizontal, node.styles.alignContent, insets
+      );
+      setState((prev) => {
+        if (
+          prev.singleLine === next.singleLine &&
+          prev.zones.length === next.zones.length &&
+          prev.zones.every((p, i) =>
+            p.left === next.zones[i].left && p.top === next.zones[i].top &&
+            p.width === next.zones[i].width && p.height === next.zones[i].height
+          )
+        ) return prev;
+        return next;
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    Array.from(el.children).forEach((c) => ro.observe(c));
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutKey, horizontal]);
+
+  const C    = "rgba(56,189,248,0.88)";   // sky-blue fill
+  const CBG  = "rgba(56,189,248,0.92)";   // badge/label background
+  const CTXT = "#022c3d";                  // dark text on sky-blue
+
+  const acVal = node.styles.alignContent || "stretch";
+  const acLabel = `align-content: ${acVal.replace("flex-", "")}`;
+
+  // "No effect" states: single line, or stretch (space goes into lines).
+  if (state.singleLine || state.zones.length === 0) {
+    const reason = state.singleLine
+      ? "single line — no effect"
+      : acVal === "stretch" ? "stretch — extra space added to lines" : "no free space";
+    return (
+      <span style={{
+        position: "absolute", pointerEvents: "none", zIndex: 26,
+        top: 2, left: "50%", transform: "translateX(-50%)",
+        fontSize: "8.5px", fontWeight: 700, whiteSpace: "nowrap",
+        fontFamily: "'Space Mono',monospace",
+        background: "rgba(56,189,248,0.55)", color: CTXT,
+        padding: "1px 6px", borderRadius: 3,
+      }}>
+        {acLabel} · {reason}
+      </span>
+    );
+  }
+
+  // Dashed edge lines: same approach as JustifyOverlay.
+  const TICK = 1.5;
+  const dashH = `repeating-linear-gradient(to right, ${C} 0, ${C} 5px, transparent 5px, transparent 9px)`;
+  const dashV = `repeating-linear-gradient(to bottom, ${C} 0, ${C} 5px, transparent 5px, transparent 9px)`;
+
+  return (
+    <>
+      {state.zones.map((z, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute", pointerEvents: "none", zIndex: 26,
+            left: z.left, top: z.top, width: z.width, height: z.height,
+            background: "rgba(56,189,248,0.07)",
+          }}
+        >
+          {/* Start + end boundary lines on the CROSS axis */}
+          {horizontal ? (
+            <>
+              <div style={{ position: "absolute", left: 0, top: 0, width: "100%", height: TICK, background: dashH }} />
+              <div style={{ position: "absolute", left: 0, bottom: 0, width: "100%", height: TICK, background: dashH }} />
+            </>
+          ) : (
+            <>
+              <div style={{ position: "absolute", top: 0, left: 0, width: TICK, height: "100%", background: dashV }} />
+              <div style={{ position: "absolute", top: 0, right: 0, width: TICK, height: "100%", background: dashV }} />
+            </>
+          )}
+          {/* Zone size label — only when there's room */}
+          {(horizontal ? z.height : z.width) >= 20 && (
+            <span style={{
+              position: "absolute", top: "50%", left: "50%",
+              transform: "translate(-50%, -50%)",
+              fontSize: "8.5px", fontWeight: 700, whiteSpace: "nowrap",
+              fontFamily: "'Space Mono',monospace",
+              background: CBG, color: CTXT,
+              padding: "1px 4px", borderRadius: 2, pointerEvents: "none",
+            }}>
+              {z.label}
+            </span>
+          )}
+        </div>
+      ))}
+      {/* Badge: top-center, sky-blue */}
+      <span style={{
+        position: "absolute", pointerEvents: "none", zIndex: 27,
+        top: 2, left: "50%", transform: "translateX(-50%)",
+        fontSize: "8.5px", fontWeight: 700, whiteSpace: "nowrap",
+        fontFamily: "'Space Mono',monospace",
+        background: CBG, color: CTXT,
+        padding: "1px 6px", borderRadius: 3,
+      }}>
+        {acLabel}
+      </span>
+    </>
+  );
+}
+
+// ============================================================================
 //  Canvas node renderer
 // ============================================================================
 function CanvasNode({
@@ -1097,6 +1863,9 @@ function CanvasNode({
   dragState,
   showBoxModel,
   showLines,
+  showJustify,
+  showAlign,
+  showAlignContent,
   hidePills,
   onResize,
   onResizeMany,
@@ -1333,6 +2102,16 @@ function CanvasNode({
   // padding/margin/gap all appear together when ▣ is on. gap is inert under
   // block, so this is flex-only too.
   const gapOn = overlayOn && isFlexContainer && node.children.length > 1;
+  // Justify-content space overlay: separate toggle (J key / toolbar button).
+  // Only meaningful on the PRIMARY flex container with at least one child.
+  const justifyOn = showJustify && isPrimary && isFlexContainer && node.children.length > 0;
+  // Align-items overlay: shows per-child cross-axis anchor ticks (A key).
+  const alignOn = showAlign && isPrimary && isFlexContainer && node.children.length > 0;
+  // Align-content overlay: shows cross-axis line distribution zones (C key).
+  // Requires flex-wrap (otherwise there's always only one line), but we still
+  // render the "single line — no effect" badge when wrap is off, so the user
+  // understands why nothing appears.
+  const alignContentOn = showAlignContent && isPrimary && isFlexContainer && node.children.length > 0;
 
   const dragProps = isRoot || editing
     ? {}
@@ -1385,6 +2164,9 @@ function CanvasNode({
         dragState={dragState}
         showBoxModel={showBoxModel}
         showLines={showLines}
+        showJustify={showJustify}
+        showAlign={showAlign}
+        showAlignContent={showAlignContent}
         hidePills={hidePills}
         onResize={onResize}
         onResizeMany={onResizeMany}
@@ -1528,6 +2310,9 @@ function CanvasNode({
       )}
       {gapOn && <GapOverlay containerRef={elRef} node={node} />}
       {linesOn && <FlexLineOverlay containerRef={elRef} node={node} />}
+      {justifyOn && <JustifyOverlay containerRef={elRef} node={node} />}
+      {alignOn && <AlignItemsOverlay containerRef={elRef} node={node} />}
+      {alignContentOn && <AlignContentOverlay containerRef={elRef} node={node} />}
       {!hidePills && (
         <span className="fc-node-tag">
           {`${node.tag}-${node.id}`}
@@ -1760,6 +2545,204 @@ function CodeView({ segments, selectedId, joiner }) {
 }
 
 // ============================================================================
+//  Ruler overlay — live distance measurement from cursor to element edges
+// ============================================================================
+// mode:       "h" | "v" | "both"
+// unit:       "px" | "%" | "rem"  — cycles on label click
+// rulerInfo:  { rect, x, y, refLeft, refRight, refTop, refBottom, gapMode }
+//   rect          = bounding rect of the hovered element (for % conversion base)
+//   refLeft/Right/Top/Bottom = the EDGE coordinates used to draw lines
+//   gapMode       = true when measuring from cursor to sibling edges (gap space)
+//
+// Gap-aware: when the cursor hovers a CONTAINER (not a leaf), we scan its
+// direct fc-node children and find the nearest child edges on each axis.
+// If the cursor is between two children, both edges are shown — measuring the
+// gap. If outside all children (past the last one), we fall back to the
+// container's own edge on that side.
+
+// SVG cursors — red crosshair (24×24, hotspot centred) and fallback.
+const SVG_CURSOR_RED = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='2' fill='%23ef4444' /%3E%3Cline x1='12' y1='2' x2='12' y2='9' stroke='%23ef4444' stroke-width='1.5'/%3E%3Cline x1='12' y1='15' x2='12' y2='22' stroke='%23ef4444' stroke-width='1.5'/%3E%3Cline x1='2' y1='12' x2='9' y2='12' stroke='%23ef4444' stroke-width='1.5'/%3E%3Cline x1='15' y1='12' x2='22' y2='12' stroke='%23ef4444' stroke-width='1.5'/%3E%3C/svg%3E") 12 12, crosshair`;
+
+// Compute gap-aware ruler reference edges from a hovered DOM element.
+// Returns { refLeft, refRight, refTop, refBottom, gapMode }.
+// If elt has direct fc-node children AND the cursor is in a gap (not inside a
+// child), we snap the reference edges to the nearest children's outer edges.
+// Otherwise we use elt's own edges (normal inner-element measurement).
+function computeRulerRefs(elt, cx, cy) {
+  const cRect = elt.getBoundingClientRect();
+
+  // Collect direct fc-node children.
+  const kids = Array.from(elt.children).filter(
+    (c) => c.classList && c.classList.contains("fc-node")
+  );
+  if (!kids.length) {
+    // No children — measure to own edges.
+    return {
+      refLeft: cRect.left, refRight: cRect.right,
+      refTop:  cRect.top,  refBottom: cRect.bottom,
+      gapMode: false,
+    };
+  }
+
+  // Is the cursor directly inside any child?
+  const overChild = kids.find((k) => {
+    const r = k.getBoundingClientRect();
+    return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+  });
+  if (overChild) {
+    // Cursor is inside a child — measure to that child's own edges (standard).
+    const r = overChild.getBoundingClientRect();
+    return {
+      refLeft: r.left, refRight: r.right,
+      refTop:  r.top,  refBottom: r.bottom,
+      gapMode: false,
+    };
+  }
+
+  // Cursor is in a gap (between or outside children).
+  // For each axis find the nearest child edge on each side of the cursor.
+  const rects = kids.map((k) => k.getBoundingClientRect());
+
+  // Horizontal: find the nearest right-edge of a child to the LEFT of cursor,
+  // and nearest left-edge of a child to the RIGHT of cursor.
+  const leftsOfCursor  = rects.map((r) => r.right).filter((e) => e <= cx);
+  const rightsOfCursor = rects.map((r) => r.left).filter((e) => e >= cx);
+  const refLeft  = leftsOfCursor.length  ? Math.max(...leftsOfCursor)  : cRect.left;
+  const refRight = rightsOfCursor.length ? Math.min(...rightsOfCursor) : cRect.right;
+
+  // Vertical: nearest bottom-edge above cursor, nearest top-edge below cursor.
+  const aboveCursor = rects.map((r) => r.bottom).filter((e) => e <= cy);
+  const belowCursor = rects.map((r) => r.top).filter((e) => e >= cy);
+  const refTop    = aboveCursor.length ? Math.max(...aboveCursor) : cRect.top;
+  const refBottom = belowCursor.length ? Math.min(...belowCursor) : cRect.bottom;
+
+  return { refLeft, refRight, refTop, refBottom, gapMode: true };
+}
+
+function RulerOverlay({ rulerInfo, mode, unit, onCycleUnit }) {
+  if (!rulerInfo) return null;
+  const { rect, x, y, refLeft, refRight, refTop, refBottom, gapMode, snapped } = rulerInfo;
+
+  // Root font-size for rem conversion.
+  const remBase = typeof document !== "undefined"
+    ? parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+    : 16;
+
+  const fmt = (px, axis) => {
+    if (unit === "rem") {
+      const v = px / remBase;
+      return `${v % 1 === 0 ? v : v.toFixed(2)}rem`;
+    }
+    if (unit === "%") {
+      const base = axis === "h" ? rect.width : rect.height;
+      if (!base) return `${Math.round(px)}px`;
+      const v = (px / base) * 100;
+      return `${v % 1 === 0 ? v : v.toFixed(1)}%`;
+    }
+    return `${Math.round(px)}px`;
+  };
+
+  // Distances from cursor to REFERENCE edges (may be child edges in gap mode).
+  const left   = Math.max(0, x - refLeft);
+  const right  = Math.max(0, refRight - x);
+  const top    = Math.max(0, y - refTop);
+  const bottom = Math.max(0, refBottom - y);
+
+  // Gap mode uses a distinct amber colour; normal mode uses gold.
+  const lineColor  = gapMode ? "rgba(251,146,60,0.9)"  : "rgba(255,200,0,0.9)";
+  const labelColor = gapMode ? "rgba(251,146,60,0.95)" : "rgba(255,200,0,0.95)";
+  const textColor  = gapMode ? "#2d1000" : "#1a1200";
+
+  const lineBase = {
+    position: "fixed", pointerEvents: "none", zIndex: 9998,
+    background: lineColor,
+  };
+  const labelBase = {
+    position: "fixed", pointerEvents: "auto", zIndex: 9999,
+    fontSize: "9px", fontWeight: 700,
+    fontFamily: "'Space Mono',monospace",
+    background: labelColor, color: textColor,
+    padding: "2px 5px", borderRadius: 3,
+    cursor: "pointer", userSelect: "none", whiteSpace: "nowrap",
+  };
+
+  const showH = mode === "h" || mode === "both";
+  const showV = mode === "v" || mode === "both";
+
+  return (
+    <>
+      {/* Horizontal: left of cursor */}
+      {showH && left > 1 && (
+        <>
+          <div style={{ ...lineBase, left: refLeft, top: y - 0.75, width: left, height: 1.5 }} />
+          <span style={{ ...labelBase, left: refLeft + left / 2, top: y + 4, transform: "translateX(-50%)" }}
+            onClick={onCycleUnit} title="Click to cycle unit (px / % / rem)">
+            {fmt(left, "h")}
+          </span>
+        </>
+      )}
+      {/* Horizontal: right of cursor */}
+      {showH && right > 1 && (
+        <>
+          <div style={{ ...lineBase, left: x, top: y - 0.75, width: right, height: 1.5 }} />
+          <span style={{ ...labelBase, left: x + right / 2, top: y + 4, transform: "translateX(-50%)" }}
+            onClick={onCycleUnit} title="Click to cycle unit (px / % / rem)">
+            {fmt(right, "h")}
+          </span>
+        </>
+      )}
+      {/* Vertical: above cursor */}
+      {showV && top > 1 && (
+        <>
+          <div style={{ ...lineBase, left: x - 0.75, top: refTop, width: 1.5, height: top }} />
+          <span style={{ ...labelBase, left: x + 4, top: refTop + top / 2, transform: "translateY(-50%)" }}
+            onClick={onCycleUnit} title="Click to cycle unit (px / % / rem)">
+            {fmt(top, "v")}
+          </span>
+        </>
+      )}
+      {/* Vertical: below cursor */}
+      {showV && bottom > 1 && (
+        <>
+          <div style={{ ...lineBase, left: x - 0.75, top: y, width: 1.5, height: bottom }} />
+          <span style={{ ...labelBase, left: x + 4, top: y + bottom / 2, transform: "translateY(-50%)" }}
+            onClick={onCycleUnit} title="Click to cycle unit (px / % / rem)">
+            {fmt(bottom, "v")}
+          </span>
+        </>
+      )}
+      {/* Cursor dot — square when snapped, circle when free */}
+      <div style={{
+        ...lineBase,
+        left: x - (snapped ? 4 : 3),
+        top:  y - (snapped ? 4 : 3),
+        width:  snapped ? 8 : 6,
+        height: snapped ? 8 : 6,
+        borderRadius: snapped ? 2 : "50%",
+        background: lineColor, zIndex: 10000,
+      }} />
+      {/* Mode + unit + snap badge */}
+      <span style={{
+        position: "fixed",
+        left: (refRight ?? x) + 6,
+        top:  (refBottom ?? y) + 4,
+        fontSize: "8.5px", fontWeight: 700,
+        fontFamily: "'Space Mono',monospace",
+        background: snapped ? "rgba(99,210,255,0.95)" : labelColor,
+        color: snapped ? "#002030" : textColor,
+        padding: "1px 6px", borderRadius: 3,
+        pointerEvents: "none", zIndex: 9999,
+      }}>
+        {gapMode ? "gap " : ""}
+        {mode === "h" ? "← ruler →" : mode === "v" ? "↑ ruler ↓" : "✛ ruler"}
+        {" · "}{unit}
+        {snapped ? " · ⊞ snap" : ""}
+      </span>
+    </>
+  );
+}
+
+// ============================================================================
 //  Hover tooltip — live readout of the element under the cursor
 // ============================================================================
 function HoverTooltip({ info, treeRootId }) {
@@ -1913,8 +2896,19 @@ function FlexCraft() {
   const [mobilePane, setMobilePane] = useState("canvas"); // canvas|add|style|code
   const [showBoxModel, setShowBoxModel] = useState(false);
   const [showLines, setShowLines] = useState(false);
+  const [showJustify, setShowJustify] = useState(false);
+  const [showAlign, setShowAlign] = useState(false);
+  const [showAlignContent, setShowAlignContent] = useState(false);
   const [hidePills, setHidePills] = useState(false);
+  // Center the root container horizontally in the canvas scroll area.
+  // Only meaningful when the root has an explicit width — otherwise it fills
+  // the available space anyway. Toggled via toolbar button.
+  const [centerCanvas, setCenterCanvas] = useState(false);
   const [syncDims, setSyncDims] = useState(false);
+  // W/H link toggle: when on, changing either width or height in the box-model
+  // panel mirrors the same value to the other axis (aspect-ratio lock in the
+  // panel, independent of the square-lock drag feature).
+  const [dimLinked, setDimLinked] = useState(false);
   // Multi-resize toggle (distinct from syncDims, the per-element square-lock).
   // When ON and 2+ selected, dragging the anchor's handle applies the SAME
   // DELTA to every selected element on the dragged axis. Toolbar button shows
@@ -1949,6 +2943,7 @@ function FlexCraft() {
   // through refs refreshed each render to avoid stale calls.
   const cutRef = useRef(null);
   const copyRef = useRef(null);
+  const duplicateRef = useRef(null);
   const escapeRef = useRef(null);
   const [snapStep, setSnapStep] = useState(5); // resize grid snap (px); 1 = off
   const [drawerHeight, setDrawerHeight] = useState(170);
@@ -1959,6 +2954,14 @@ function FlexCraft() {
   const [isDragging, setIsDragging] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true); // hover readout, on by default
   const [hoverInfo, setHoverInfo] = useState(null); // { node, rect, x, y }
+  // Ruler overlay. rulerMode cycles: null → "h" → "v" → "both" → null (M key).
+  // rulerUnit cycles: "px" → "%" → "rem" (click on any label in the overlay).
+  // rulerInfo holds the live rect + cursor pos, updated on mousemove.
+  // rulerCursor: "svg" = red SVG crosshair, "browser" = native crosshair.
+  const [rulerMode, setRulerMode] = useState(null);
+  const [rulerUnit, setRulerUnit] = useState("px");
+  const [rulerInfo, setRulerInfo] = useState(null);
+  const [rulerCursor, setRulerCursor] = useState("svg");
   // Keybinding for the hover tooltip. `tipKey` is a descriptor:
   //   { kind:'modifier'|'key', value:'Control'|'Shift'|'Alt'|'Meta'|<key> }
   // Pressing the bound key TOGGLES the tooltip on/off, exactly like clicking the
@@ -2125,12 +3128,28 @@ function FlexCraft() {
       // in a field / editing text, or while modifier combos are held (so we
       // don't hijack browser shortcuts like Ctrl-L). Bare lowercase letters only.
       if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+      // Shift+D: duplicate. Shift is safe here — no browser combo conflict.
+      if (e.shiftKey && e.key.toLowerCase() === "d") {
+        duplicateRef.current && duplicateRef.current();
+        return;
+      }
+      // All remaining shortcuts are bare (no shift).
+      if (e.shiftKey) return;
       switch (e.key.toLowerCase()) {
-        case "b": setShowBoxModel((v) => !v); break;   // box model
-        case "l": setShowLines((v) => !v); break;      // flex lines
-        case "p": setHidePills((v) => !v); break;      // name pills
-        case "s": squareLockRef.current && squareLockRef.current(); break; // square-lock (Sync W/H)
-        case "r": setSyncSelection((v) => !v); break; // resize all selected together
+        case "b": setShowBoxModel((v) => !v); break;
+        case "l": setShowLines((v) => !v); break;
+        case "j": setShowJustify((v) => !v); break;
+        case "a": setShowAlign((v) => !v); break;
+        case "c": setShowAlignContent((v) => !v); break;
+        case "p": setHidePills((v) => !v); break;
+        case "m": setRulerMode((v) => {       // cycle: null→h→v→both→null
+          if (v === null)   return "h";
+          if (v === "h")    return "v";
+          if (v === "v")    return "both";
+          return null;
+        }); break;
+        case "s": squareLockRef.current && squareLockRef.current(); break;
+        case "r": setSyncSelection((v) => !v); break;
         default: break;
       }
     };
@@ -2852,6 +3871,7 @@ function FlexCraft() {
   squareLockRef.current = toggleSquareLock;
   cutRef.current = cutSelection;
   copyRef.current = copySelection;
+  duplicateRef.current = duplicateSelected;
   // Escape priority: cancel paste mode if active, otherwise clear the selection.
   escapeRef.current = () => {
     if (cutBuffer || copyBuffer) cancelCut(); // cancelCut handles both buffers
@@ -3007,14 +4027,16 @@ function FlexCraft() {
       </div>
       <div className="fc-shortcut-list">
         {[
-          { k: "B", label: "Box model", on: showBoxModel },
-          { k: "L", label: "Flex lines", on: showLines },
-          { k: "P", label: "Name pills", on: hidePills },
-          { k: "S", label: "Sync W/H", on: syncDims },
-          // Resize-together only does anything with 2+ selected (the toolbar
-          // button is multi-only too). Always listed so the vocabulary is
-          // visible; dimmed when it can't act yet.
-          { k: "R", label: "Resize together", on: syncSelection, dim: !multi },
+          { k: "B",  label: "Box model",       on: showBoxModel },
+          { k: "L",  label: "Flex lines",       on: showLines },
+          { k: "J",  label: "Justify zones",    on: showJustify },
+          { k: "A",  label: "Align ticks",      on: showAlign },
+          { k: "C",  label: "Content zones",    on: showAlignContent },
+          { k: "M",  label: "Ruler (Alt=snap)",  on: !!rulerMode },
+          { k: "P",  label: "Name pills",       on: hidePills },
+          { k: "S",  label: "Sync W/H",         on: syncDims },
+          { k: "R",  label: "Resize together",  on: syncSelection, dim: !multi },
+          { k: "⇧D", label: "Duplicate",        on: false, dim: !selectedId || selectedId === tree.id },
         ].map((s) => (
           <div
             className={"fc-shortcut-mini" + (s.on ? " is-on" : "") + (s.dim ? " is-dim" : "")}
@@ -3067,6 +4089,30 @@ function FlexCraft() {
   // Suppressed during a drag (tooltip would just be in the way). Cleared on leave.
   const onCanvasHover = useCallback(
     (e) => {
+      // Ruler info: always update when ruler is active, regardless of tooltip state.
+      if (rulerMode) {
+        const elt = e.target.closest && e.target.closest("[data-node-id]");
+        if (elt) {
+          const rect = elt.getBoundingClientRect();
+          let cx = e.clientX;
+          let cy = e.clientY;
+          // Alt held: snap the cursor to the nearest grid step, measured from the
+          // element's own top-left so snapped distances are exact multiples of the
+          // grid step (e.g. 10px grid → always reads 10, 20, 30…).
+          if (e.altKey && snapStep > 1) {
+            const step = snapStep;
+            cx = rect.left + Math.round((e.clientX - rect.left) / step) * step;
+            cy = rect.top  + Math.round((e.clientY - rect.top)  / step) * step;
+          }
+          const refs = computeRulerRefs(elt, cx, cy);
+          setRulerInfo({ rect, x: cx, y: cy, ...refs, snapped: e.altKey && snapStep > 1 });
+        } else {
+          setRulerInfo(null);
+        }
+      } else if (rulerInfo) {
+        setRulerInfo(null);
+      }
+
       if (!showTooltip || isDragging) {
         if (hoverInfo) setHoverInfo(null);
         return;
@@ -3080,17 +4126,16 @@ function FlexCraft() {
       const node = findNode(tree, id);
       if (!node) return;
       const rect = elt.getBoundingClientRect();
-      // Flex-item props only mean anything when the PARENT is a flex container.
-      // Resolve here (we have the tree) so the tooltip can gate itemBits.
       const hp = findParent(tree, id);
       const parentIsFlex = !!hp && hp.styles.display === "flex";
       setHoverInfo({ node, rect, x: e.clientX, y: e.clientY, parentIsFlex });
     },
-    [showTooltip, isDragging, hoverInfo, tree]
+    [rulerMode, rulerInfo, showTooltip, isDragging, hoverInfo, tree]
   );
   const onCanvasLeave = useCallback(() => {
     if (hoverInfo) setHoverInfo(null);
-  }, [hoverInfo]);
+    if (rulerInfo) setRulerInfo(null);
+  }, [hoverInfo, rulerInfo]);
 
   const PropsPanel = !selected ? (
     <div className="fc-empty">
@@ -3122,7 +4167,7 @@ function FlexCraft() {
               <button className="fc-icon-btn" title="Copy (Ctrl+C) — then click slots to stamp copies" onClick={copySelection}>
                 ⧉⧉
               </button>
-              <button className="fc-icon-btn" title="Duplicate" onClick={duplicateSelected}>
+              <button className="fc-icon-btn" title="Duplicate (Shift+D)" onClick={duplicateSelected}>
                 ⧉
               </button>
               <button className="fc-icon-btn is-danger" title="Delete" onClick={deleteSelected}>
@@ -3446,20 +4491,86 @@ function FlexCraft() {
       )}
 
       <CollapsibleSection id="box-model" title="Box model" collapsed={collapsedSections} onToggle={toggleSection}>
-        <DimInput
-          label="width"
-          value={sv("width")}
-          onChange={(v) => setStyle({ width: v })}
-          measuredDefault={measuredSize.w}
-          {...rp("width")}
-        />
-        <DimInput
-          label="height"
-          value={sv("height")}
-          onChange={(v) => setStyle({ height: v })}
-          measuredDefault={measuredSize.h}
-          {...rp("height")}
-        />
+        {/* Width / height — collapses to a single "W+H" control when linked.
+            On link: width wins (height is overwritten to match in one commit).
+            On unlink: the two fields reappear independently at whatever the
+            current values are (no destructive reset). */}
+        {dimLinked ? (
+          <>
+            {/* Linked: one control drives both axes. Unlink button sits as a
+                small accent pill on the right side of the label row. */}
+            <DimInput
+              label="W + H"
+              value={sv("width")}
+              onChange={(v) => setStyle({ width: v, height: v })}
+              measuredDefault={measuredSize.w}
+              modified={!isDefaultValue(selected, "width") || !isDefaultValue(selected, "height")}
+              onReset={() => { resetProp("width"); resetProp("height"); }}
+            />
+            {/* "linked" badge + unlink affordance, tucked just below the field */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              marginTop: -10, marginBottom: 14,
+            }}>
+              <div style={{ flex: 1, height: 1, background: "var(--accent-soft)" }} />
+              <button
+                title="Unlink — edit width and height independently"
+                onClick={() => setDimLinked(false)}
+                style={{
+                  background: "var(--accent-soft)", border: "1px solid var(--accent)",
+                  color: "var(--accent)", borderRadius: 4, cursor: "pointer",
+                  fontSize: 9, lineHeight: 1, padding: "2px 6px",
+                  fontFamily: "inherit", flexShrink: 0,
+                }}
+              >
+                🔗 linked · click to unlink
+              </button>
+              <div style={{ flex: 1, height: 1, background: "var(--accent-soft)" }} />
+            </div>
+          </>
+        ) : (
+          <>
+            <DimInput
+              label="width"
+              value={sv("width")}
+              onChange={(v) => setStyle({ width: v })}
+              measuredDefault={measuredSize.w}
+              {...rp("width")}
+            />
+            {/* Link bridge — hairlines either side of the toggle button */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              marginTop: -10, marginBottom: 6,
+            }}>
+              <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+              <button
+                title="Link width and height — changes to one will mirror the other"
+                onClick={() => {
+                  // Width wins: overwrite height to current width value in one commit.
+                  const curW = sv("width");
+                  setStyle({ height: curW });
+                  setDimLinked(true);
+                }}
+                style={{
+                  background: "var(--panel2)", border: "1px solid var(--line)",
+                  color: "var(--mut)", borderRadius: 4, cursor: "pointer",
+                  fontSize: 10, lineHeight: 1, padding: "3px 6px",
+                  fontFamily: "inherit", flexShrink: 0,
+                }}
+              >
+                ⛓ link
+              </button>
+              <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+            </div>
+            <DimInput
+              label="height"
+              value={sv("height")}
+              onChange={(v) => setStyle({ height: v })}
+              measuredDefault={measuredSize.h}
+              {...rp("height")}
+            />
+          </>
+        )}
         <Slider
           label="padding"
           value={sv("padding", 0)}
@@ -3468,14 +4579,41 @@ function FlexCraft() {
           onChange={(v) => setStyle({ padding: v })}
           {...rp("padding")}
         />
-        <Slider
-          label="margin"
-          value={sv("margin", 0)}
-          min={0}
-          max={80}
-          onChange={(v) => setStyle({ margin: v })}
-          {...rp("margin")}
-        />
+        {/* Margin: numeric slider OR `auto` keyword. `margin: auto` on a flex
+            item absorbs all free space on the main axis, centering the item
+            (or pushing it to one side when combined with a fixed size).
+            The toggle switches between the last numeric value and "auto". */}
+        {(() => {
+          const marVal = sv("margin", 0);
+          const isAuto = marVal === "auto";
+          return (
+            <Slider
+              label={
+                <span>
+                  margin{" "}
+                  <button
+                    type="button"
+                    className="fc-inline-btn"
+                    title={isAuto ? "Switch back to a numeric margin" : "Set margin: auto — absorbs free space to center or push items"}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setStyle({ margin: isAuto ? 0 : "auto" });
+                    }}
+                  >
+                    {isAuto ? "↺ numeric" : "→ auto"}
+                  </button>
+                </span>
+              }
+              value={isAuto ? 0 : (marVal ?? 0)}
+              min={0}
+              max={80}
+              onChange={(v) => setStyle({ margin: v })}
+              modified={marVal !== 0 && marVal !== undefined}
+              onReset={() => setStyle({ margin: 0 })}
+            />
+          );
+        })()}
         <Slider
           label="border width"
           value={sv("borderWidth", 0)}
@@ -3699,9 +4837,8 @@ function FlexCraft() {
       )}
       <div
         className={"fc-canvas-scroll" + (marquee ? " is-marqueeing" : "")}
+        style={rulerMode ? { cursor: rulerCursor === "svg" ? SVG_CURSOR_RED : "crosshair" } : undefined}
         onClick={() => {
-          // Swallow the synthesized click that follows a resize drag OR a
-          // marquee drag, so neither doubles as a background "deselect" click.
           if (justResized.current) { justResized.current = false; return; }
           if (justMarqueed.current) { justMarqueed.current = false; return; }
           return cutBuffer || copyBuffer ? cancelCut() : clearSelection();
@@ -3712,6 +4849,12 @@ function FlexCraft() {
         onMouseMove={onCanvasHover}
         onMouseLeave={onCanvasLeave}
       >
+        {/* Centering wrapper: when on, the root container sits centred in the
+            scroll area. Meaningful when the root has an explicit width set;
+            with auto width it fills the area regardless. */}
+        <div style={centerCanvas ? {
+          display: "flex", justifyContent: "center", alignItems: "flex-start", minHeight: "100%",
+        } : undefined}>
         <CanvasNode
           node={tree}
           isRoot
@@ -3726,6 +4869,9 @@ function FlexCraft() {
           dragState={dragState}
           showBoxModel={showBoxModel}
           showLines={showLines}
+          showJustify={showJustify}
+          showAlign={showAlign}
+          showAlignContent={showAlignContent}
           hidePills={hidePills}
           onResize={onResize}
           onResizeMany={onResizeMany}
@@ -3739,6 +4885,7 @@ function FlexCraft() {
           onText={onText}
           onDelete={deleteNodeById}
         />
+        </div>{/* end centering wrapper */}
         {/* Marquee rectangle. Drawn in VIEWPORT coords (position:fixed) so it
             matches the clientX/clientY we store and needs no scroll-offset math.
             pointer-events:none so it never intercepts the drag it's visualizing. */}
@@ -3756,12 +4903,21 @@ function FlexCraft() {
         )}
       </div>
       {showTooltip && hoverInfo && <HoverTooltip info={hoverInfo} treeRootId={tree.id} />}
+      {rulerMode && <RulerOverlay
+        rulerInfo={rulerInfo}
+        mode={rulerMode}
+        unit={rulerUnit}
+        onCycleUnit={() => setRulerUnit((u) => u === "px" ? "%" : u === "%" ? "rem" : "px")}
+      />}
     </>
   );
 
   return (
     <div className={"fc-app fc-theme-" + theme}>
       <style>{css}</style>
+      {rulerMode && (
+        <style>{`.fc-node, .fc-node * { cursor: ${rulerCursor === "svg" ? SVG_CURSOR_RED : "crosshair"} !important; }`}</style>
+      )}
       {siteMsg && <div className="fc-toast">{siteMsg}</div>}
       {pendingExport && (
         <div className="fc-modal-backdrop" onClick={() => resolveExport("cancel")}>
@@ -3819,16 +4975,68 @@ function FlexCraft() {
           <button
             className={"fc-tool-btn" + (showLines ? " is-on" : "")}
             onClick={() => setShowLines((v) => !v)}
-            title="Show flex lines & main axis on selected container"
+            title="Show flex lines & main axis on selected container (L)"
           >
             ☰
           </button>
+          <button
+            className={"fc-tool-btn" + (showJustify ? " is-on" : "")}
+            onClick={() => setShowJustify((v) => !v)}
+            title="Show justify-content space zones on selected container (J)"
+          >
+            ⇔
+          </button>
+          <button
+            className={"fc-tool-btn" + (showAlign ? " is-on" : "")}
+            onClick={() => setShowAlign((v) => !v)}
+            title="Show align-items cross-axis anchors on selected container (A)"
+          >
+            ⇕
+          </button>
+          <button
+            className={"fc-tool-btn" + (showAlignContent ? " is-on" : "")}
+            onClick={() => setShowAlignContent((v) => !v)}
+            title="Show align-content line distribution zones on selected container (C)"
+          >
+            ⇳
+          </button>
+          {/* Ruler: cycles h → v → both → off on click; M key does the same */}
+          <button
+            className={"fc-tool-btn" + (rulerMode ? " is-on" : "")}
+            onClick={() => setRulerMode((v) => v === null ? "h" : v === "h" ? "v" : v === "v" ? "both" : null)}
+            title={
+              rulerMode === null  ? "Ruler: off — click or M to activate (h → v → both)" :
+              rulerMode === "h"   ? "Ruler: horizontal — click or M to switch to vertical" :
+              rulerMode === "v"   ? "Ruler: vertical — click or M to switch to both" :
+                                    "Ruler: both axes — click or M to turn off"
+            }
+          >
+            {rulerMode === "h" ? "↔" : rulerMode === "v" ? "↕" : rulerMode === "both" ? "✛" : "⊢"}
+          </button>
+          {/* Cursor style toggle — only meaningful while ruler is on */}
+          {rulerMode && (
+            <button
+              className="fc-tool-btn"
+              onClick={() => setRulerCursor((v) => v === "svg" ? "browser" : "svg")}
+              title={rulerCursor === "svg" ? "Cursor: red SVG crosshair — click to switch to browser default" : "Cursor: browser crosshair — click to switch to red SVG"}
+              style={{ fontSize: 11 }}
+            >
+              {rulerCursor === "svg" ? "✛" : "⊕"}
+            </button>
+          )}
           <button
             className={"fc-tool-btn" + (hidePills ? " is-on" : "")}
             onClick={() => setHidePills((v) => !v)}
             title={hidePills ? "Show name pills" : "Minimize name pills"}
           >
             🏷
+          </button>
+          <button
+            className={"fc-tool-btn" + (centerCanvas ? " is-on" : "")}
+            onClick={() => setCenterCanvas((v) => !v)}
+            title={centerCanvas ? "Canvas: centered — click to left-align" : "Canvas: center root container horizontally (works best with a fixed width)"}
+          >
+            ⊙
           </button>
           <button
             className={"fc-tool-btn" + (syncDims ? " is-on" : "")}
@@ -4498,6 +5706,44 @@ const css = `
   font-family:'Space Mono',monospace;
 }
 
+/* ---- justify-content space overlay (orange/red, distinct from gap violet) ---- */
+.fc-jc-zone{
+  /* Subtle fill so the zone is visible but doesn't swamp the content */
+  background: rgba(251,113,54,0.08);
+}
+/* The two edge lines per zone — start and end on the main axis */
+.fc-jc-line{
+  position:absolute; background:rgba(251,113,54,0.9);
+  pointer-events:none;
+}
+/* Row container: lines are vertical (full height, 1px wide) */
+.fc-jc-line-start{ top:0; bottom:0; left:0; width:1.5px;
+  background: repeating-linear-gradient(to bottom,
+    rgba(251,113,54,0.9) 0, rgba(251,113,54,0.9) 5px,
+    transparent 5px, transparent 9px);
+}
+.fc-jc-line-end{ top:0; bottom:0; right:0; width:1.5px;
+  background: repeating-linear-gradient(to bottom,
+    rgba(251,113,54,0.9) 0, rgba(251,113,54,0.9) 5px,
+    transparent 5px, transparent 9px);
+}
+/* Label centered in the zone */
+.fc-jc-label{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-size:8.5px; font-weight:700; white-space:nowrap;
+  background:rgba(251,113,54,0.92); color:#fff;
+  padding:1px 4px; border-radius:2px;
+  font-family:'Space Mono',monospace; pointer-events:none;
+}
+/* Badge showing the active justify-content value */
+.fc-jc-badge{
+  bottom:2px; left:50%; transform:translateX(-50%);
+  font-size:8.5px; font-weight:700; letter-spacing:0.3px;
+  background:rgba(251,113,54,0.95); color:#fff;
+  padding:1px 6px; border-radius:3px;
+  font-family:'Space Mono',monospace;
+}
+
 /* ---- hover tooltip ---- */
 .fc-tooltip{
   background:var(--panel2); border:1px solid var(--accent);
@@ -4541,6 +5787,15 @@ const css = `
   cursor:pointer; max-width:108px;
 }
 .fc-unit-select:focus{ outline:none; border-color:var(--accent); }
+/* option/optgroup don't inherit CSS variables — set concrete colors per theme.
+   Dark (default): near-black bg, light text so the dropdown is legible. */
+.fc-unit-select option, .fc-unit-select optgroup{
+  background:#1b1f2a; color:#e6e8ee; font-family:'Space Mono',monospace;
+}
+.fc-theme-light .fc-unit-select option,
+.fc-theme-light .fc-unit-select optgroup{
+  background:#ece8dd; color:#1d1f26;
+}
 .fc-dim-value{ display:flex; align-items:center; gap:8px; }
 .fc-dim-value .fc-range{ flex:1; min-width:0; }
 .fc-dim-num{ width:64px; flex-shrink:0; padding:5px 6px; font-size:11px; }

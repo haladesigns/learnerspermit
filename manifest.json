@@ -872,6 +872,12 @@
       },
       {
         "type": "file",
+        "name": "FlexCraft_1.html",
+        "label": "Flexcraft 1",
+        "path": "s&box/FlexCraft_1.html"
+      },
+      {
+        "type": "file",
         "name": "FlexMotionCraft.html",
         "label": "Flexmotioncraft",
         "path": "s&box/FlexMotionCraft.html"
